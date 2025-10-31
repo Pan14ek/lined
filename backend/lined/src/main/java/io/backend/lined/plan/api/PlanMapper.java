@@ -4,7 +4,7 @@ import io.backend.lined.plan.domain.PlanEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "lined",
+@Mapper(componentModel = "spring",
     unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface PlanMapper {
 

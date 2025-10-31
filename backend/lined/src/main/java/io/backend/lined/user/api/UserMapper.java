@@ -14,7 +14,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "lined",
+@Mapper(componentModel = "spring",
     uses = {RoleMapper.class, SubscriptionMapper.class},
     unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface UserMapper {

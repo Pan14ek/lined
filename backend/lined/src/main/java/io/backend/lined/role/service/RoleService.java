@@ -1,12 +1,14 @@
 package io.backend.lined.role.service;
 
+import io.backend.lined.role.api.RoleDto;
+import java.util.List;
 import java.util.Set;
 
 public interface RoleService {
 
-  Set<String> listAll();                    // ["ROLE_USER", "ROLE_ADMIN", ...]
+  List<RoleDto> listAll();
 
-  void ensureExists(String roleName);       // idempotent init
+  void ensureExists(String roleName);
 
   Set<String> setUserRoles(Long userId, Set<String> roles);
 
