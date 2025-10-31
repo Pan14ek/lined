@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  postgres-lineddb:
+    image: postgres:18
+    container_name: postgres-lineddb
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lineddb
+      TZ: "UTC"
+      PGTZ: "UTC"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_lined-data:/var/lib/postgresql/data
+      - ./lined/src/main/resources/database/postgresql-config.yml:/docker-entrypoint-initdb.d/postgresql-config.yml
+
+volumes:
+  postgres_lined-data:
