@@ -3,6 +3,8 @@ package io.backend.lined.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,23 +13,30 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
 
   @Bean
-  public OpenAPI linedOpenAPI() {
+  public OpenAPI customOpenAPI() {
     return new OpenAPI()
         .info(new Info()
-            .title("Lined API")
-            .version("1.0.0")
-            .description("API documentation for Lined backend")
-            .contact(new Contact()
-                .name("Oleksii Makieiev")
-                .email("oleksii.makieiev@nure.ua")));
+            .title("lined-backend API")
+            .version("0.1.0")
+            .description("API documentation for lined-backend")
+            .contact(new Contact().name("Dev Team").email("dev@example.com"))
+        )
+        .servers(List.of(new Server().url("http://localhost:8080")));
   }
 
   @Bean
   public GroupedOpenApi usersApi() {
     return GroupedOpenApi.builder()
         .group("users")
-        .packagesToScan("io.backend.lined.user")
-        .pathsToMatch("/**")
+        .pathsToMatch("/api/users/**")
+        .build();
+  }
+
+  @Bean
+  public GroupedOpenApi rolesApi() {
+    return GroupedOpenApi.builder()
+        .group("roles")
+        .pathsToMatch("/api/roles/**")
         .build();
   }
 

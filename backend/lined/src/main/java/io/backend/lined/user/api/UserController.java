@@ -1,14 +1,11 @@
 package io.backend.lined.user.api;
 
-import io.backend.lined.common.exception.ApiError;
 import io.backend.lined.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,20 +29,6 @@ public class UserController {
       summary = "Create user",
       description = "Creates a new user with unique username & email."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "201", description = "Created",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = UserDto.class),
-              examples = @ExampleObject(value = """
-                    {
-                      "id": 1,
-                      "username": "alex",
-                      "email": "alex@example.com"
-                    }
-                  """))),
-      @ApiResponse(responseCode = "400", description = "Validation error",
-          content = @Content(mediaType = "application/json"))
-  })
   @PostMapping
   public UserDto create(
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -69,15 +52,6 @@ public class UserController {
       summary = "Update user",
       description = "Partial update of an existing user by ID."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "OK",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = UserDto.class))),
-      @ApiResponse(responseCode = "400", description = "Validation error",
-          content = @Content(schema = @Schema(implementation = ApiError.class))),
-      @ApiResponse(responseCode = "404", description = "User not found",
-          content = @Content(schema = @Schema(implementation = ApiError.class)))
-  })
   @PatchMapping("/{id}")
   public UserDto update(
       @Parameter(description = "User ID", example = "1")
@@ -102,13 +76,6 @@ public class UserController {
       summary = "Get user",
       description = "Returns a user by ID."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "OK",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = UserDto.class))),
-      @ApiResponse(responseCode = "404", description = "User not found",
-          content = @Content(schema = @Schema(implementation = ApiError.class)))
-  })
   @GetMapping("/{id}")
   public UserDto get(
       @Parameter(description = "User ID", example = "1")
