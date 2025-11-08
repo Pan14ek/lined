@@ -9,7 +9,7 @@ public record SubscriptionDto(
     String planName,
     OffsetDateTime startDate,
     OffsetDateTime endDate,
-    boolean isActive,
+    boolean active,
     OffsetDateTime createdAt
 ) {
 }
