@@ -1,6 +1,15 @@
 package io.backend.lined.user.api;
 
+import io.backend.lined.common.exception.ApiError;
 import io.backend.lined.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Users", description = "Action on users")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -18,18 +28,91 @@ public class UserController {
 
   private final UserService userService;
 
+  @Operation(
+      summary = "Create user",
+      description = "Creates a new user with unique username & email."
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Created",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = UserDto.class),
+              examples = @ExampleObject(value = """
+                    {
+                      "id": 1,
+                      "username": "alex",
+                      "email": "alex@example.com"
+                    }
+                  """))),
+      @ApiResponse(responseCode = "400", description = "Validation error",
+          content = @Content(mediaType = "application/json"))
+  })
   @PostMapping
-  public UserDto create(@Valid @RequestBody UserCreateDto dto) {
+  public UserDto create(
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true,
+          description = "User payload",
+          content = @Content(schema = @Schema(implementation = UserCreateDto.class),
+              examples = @ExampleObject(name = "valid", value = """
+                    {
+                      "username": "alex",
+                      "email": "alex@example.com",
+                      "password": "P@ssw0rd!"
+                    }
+                  """)
+          )
+      )
+      @Valid @RequestBody UserCreateDto dto) {
     return userService.create(dto);
   }
 
+  @Operation(
+      summary = "Update user",
+      description = "Partial update of an existing user by ID."
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "OK",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = UserDto.class))),
+      @ApiResponse(responseCode = "400", description = "Validation error",
+          content = @Content(schema = @Schema(implementation = ApiError.class))),
+      @ApiResponse(responseCode = "404", description = "User not found",
+          content = @Content(schema = @Schema(implementation = ApiError.class)))
+  })
   @PatchMapping("/{id}")
-  public UserDto update(@PathVariable Long id, @Valid @RequestBody UserUpdateDto dto) {
+  public UserDto update(
+      @Parameter(description = "User ID", example = "1")
+      @PathVariable Long id,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true,
+          description = "Fields to update",
+          content = @Content(schema = @Schema(implementation = UserUpdateDto.class),
+              examples = @ExampleObject(value = """
+                    {
+                      "email": "new.mail@example.com",
+                      "password": "N3wP@ss!"
+                    }
+                  """)
+          )
+      )
+      @Valid @RequestBody UserUpdateDto dto) {
     return userService.update(id, dto);
   }
 
+  @Operation(
+      summary = "Get user",
+      description = "Returns a user by ID."
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "OK",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = UserDto.class))),
+      @ApiResponse(responseCode = "404", description = "User not found",
+          content = @Content(schema = @Schema(implementation = ApiError.class)))
+  })
   @GetMapping("/{id}")
-  public UserDto get(@PathVariable Long id) {
+  public UserDto get(
+      @Parameter(description = "User ID", example = "1")
+      @PathVariable Long id) {
     return userService.getById(id);
   }
 
