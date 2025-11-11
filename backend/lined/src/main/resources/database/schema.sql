@@ -44,21 +44,23 @@ CREATE TABLE IF NOT EXISTS user_subscriptions
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_users_username_nocase ON users (LOWER(username));
-CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_nocase    ON users (LOWER(email));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_nocase ON users (LOWER(email));
 CREATE UNIQUE INDEX IF NOT EXISTS uq_roles_name_nocase ON roles (LOWER(name));
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles (user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_plans_name_nocase ON plans (LOWER(name));
 CREATE INDEX IF NOT EXISTS idx_user_sub_user_active ON user_subscriptions (user_id, is_active);
-CREATE INDEX IF NOT EXISTS idx_user_sub_dates       ON user_subscriptions (user_id, start_date);
+CREATE INDEX IF NOT EXISTS idx_user_sub_dates ON user_subscriptions (user_id, start_date);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_user_active_sub
     ON user_subscriptions (user_id)
     WHERE is_active;
 
-INSERT INTO roles (name) VALUES ('ROLE_USER')
+INSERT INTO roles (name)
+VALUES ('ROLE_USER')
 ON CONFLICT (LOWER(name)) DO NOTHING;
 
-INSERT INTO roles (name) VALUES ('ROLE_ADMIN')
+INSERT INTO roles (name)
+VALUES ('ROLE_ADMIN')
 ON CONFLICT (LOWER(name)) DO NOTHING;
 
 
@@ -67,3 +69,18 @@ VALUES ('FREE', 0.00, 0),
        ('PRO', 9.99, 30),
        ('FAMILY', 19.99, 30)
 ON CONFLICT (LOWER(name)) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS lobbies
+(
+    id         BIGSERIAL PRIMARY KEY,
+    name       VARCHAR(64) NOT NULL,
+    lobby_type VARCHAR(16) NOT NULL CHECK (lobby_type IN ('COUPLE', 'FAMILY', 'FRIENDS', 'WORK')),
+    owner_id   BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE lobby_members
+(
+    lobby_id BIGINT NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
+    user_id  BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    PRIMARY KEY (lobby_id, user_id)
+);

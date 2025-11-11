@@ -40,4 +40,12 @@ public class OpenApiConfig {
         .build();
   }
 
+  @Bean
+  public GroupedOpenApi lobbiesApi() {
+    return GroupedOpenApi.builder()
+        .group("lobbies")
+        .pathsToMatch("/api/lobbies/**")
+        .build();
+  }
+
 }
