@@ -56,4 +56,12 @@ public class OpenApiConfig {
         .build();
   }
 
+  @Bean
+  public GroupedOpenApi eventsApi() {
+    return GroupedOpenApi.builder()
+        .group("events")
+        .pathsToMatch("/api/events/**")
+        .build();
+  }
+
 }
