@@ -84,3 +84,20 @@ CREATE TABLE lobby_members
     user_id  BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     PRIMARY KEY (lobby_id, user_id)
 );
+
+CREATE TABLE tasks
+(
+    id          BIGSERIAL PRIMARY KEY,
+    title       VARCHAR(160) NOT NULL,
+    status      VARCHAR(16)  NOT NULL,
+    lobby_id    BIGINT       NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
+    creator_id  BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    assignee_id BIGINT       REFERENCES users (id) ON DELETE SET NULL,
+    due_date    DATE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_tasks_lobby ON tasks (lobby_id);
+CREATE INDEX idx_tasks_assignee ON tasks (assignee_id);
+CREATE INDEX idx_tasks_status ON tasks (status);
+

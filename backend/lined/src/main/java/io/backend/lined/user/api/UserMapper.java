@@ -1,10 +1,10 @@
 package io.backend.lined.user.api;
 
 import io.backend.lined.role.api.RoleMapper;
-import io.backend.lined.subscription.api.SubscriptionMapper;
 import io.backend.lined.role.domain.RoleEntity;
-import io.backend.lined.user.domain.UserEntity;
+import io.backend.lined.subscription.api.SubscriptionMapper;
 import io.backend.lined.subscription.domain.UserSubscriptionEntity;
+import io.backend.lined.user.domain.UserEntity;
 import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -48,4 +48,12 @@ public class OpenApiConfig {
         .build();
   }
 
+  @Bean
+  public GroupedOpenApi tasksApi() {
+    return GroupedOpenApi.builder()
+        .group("tasks")
+        .pathsToMatch("/api/tasks/**")
+        .build();
+  }
+
 }
