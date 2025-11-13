@@ -101,3 +101,17 @@ CREATE INDEX idx_tasks_lobby ON tasks (lobby_id);
 CREATE INDEX idx_tasks_assignee ON tasks (assignee_id);
 CREATE INDEX idx_tasks_status ON tasks (status);
 
+CREATE TABLE events (
+                        id BIGSERIAL PRIMARY KEY,
+                        title VARCHAR(160) NOT NULL,
+                        shared BOOLEAN NOT NULL,
+                        start_at TIMESTAMPTZ NOT NULL,
+                        end_at   TIMESTAMPTZ NOT NULL,
+                        timezone VARCHAR(64) NOT NULL,
+                        lobby_id BIGINT NOT NULL REFERENCES lobbies(id) ON DELETE CASCADE,
+                        owner_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_events_lobby ON events(lobby_id);
+CREATE INDEX idx_events_time ON events(lobby_id, start_at, end_at);
