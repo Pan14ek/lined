@@ -72,4 +72,12 @@ public class OpenApiConfig {
         .build();
   }
 
+  @Bean
+  public GroupedOpenApi subscriptionApi() {
+    return GroupedOpenApi.builder()
+        .group("subscriptions")
+        .pathsToMatch("/api/subscriptions/**")
+        .build();
+  }
+
 }
