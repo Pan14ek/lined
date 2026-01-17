@@ -71,7 +71,8 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          cat build/reports/spotbugs/main.xml | reviewdog -f=findbugs \
+          ./gradlew spotbugsMain -q --console=plain > spotbugs_output.txt
+          cat spotbugs_output.txt | reviewdog -efm="%*\\w %f:%l:%c: %m" \
             -name="spotbugs" \
             -reporter=github-pr-review \
             -filter-mode=added \
