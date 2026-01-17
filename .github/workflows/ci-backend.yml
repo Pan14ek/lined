@@ -75,14 +75,20 @@ jobs:
         working-directory: backend/lined
         run: ./gradlew checkstyleMain checkstyleTest
 
-      - name: ReviewDog Checkstyle Reporter
-        uses: reviewdog/action-checkstyle@v1
+      - name: Report Checkstyle with reviewdog
+        uses: reviewdog/action-reviewdog@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          name: checkstyle
           reporter: github-pr-review
-          level: error
+          tool_name: checkstyle
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: warning
+          filter_mode: nofilter
           fail_on_error: false
-          checkstyle_input: backend/lined/build/reports/checkstyle/main.xml
+          working_directory: backend/lined
+          input: cat backend/lined/build/reports/checkstyle/main.xml
+          format: checkstyle
+
 
   reviewdog-spotbugs:
     name: SpotBugs reviewdog
