@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<FindBugsFilter>
+    <!-- Ігноруємо EI/EI2 для доменних entity та DTO -->
+    <Match>
+        <Package name="io.backend.lined.*.domain"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Package name="io.backend.lined.*.api"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
