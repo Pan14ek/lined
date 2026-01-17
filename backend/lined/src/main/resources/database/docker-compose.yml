@@ -17,6 +17,9 @@ services:
       - postgres_lined-data:/var/lib/postgresql/data
       - ./lined/src/main/resources/database/postgresql-config.yml:/docker-entrypoint-initdb.d/postgresql-config.yml
       - ./lined/src/main/resources/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-
+  sonarqube:
+    image: sonarqube:lts
+    ports:
+      - "9000:9000"
 volumes:
   postgres_lined-data:
