@@ -1,7 +1,11 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.6'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.github.spotbugs' version '6.0.18'
+    id 'checkstyle'
 }
 
 group = 'io.backend'
@@ -9,21 +13,21 @@ version = '0.0.1-SNAPSHOT'
 description = 'Lined — Where life and quality time meet.'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-	implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.40.0'
-	implementation 'io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.40.0'
-	implementation 'org.springframework.security:spring-security-crypto:6.4.4'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.40.0'
+    implementation 'io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.40.0'
+    implementation 'org.springframework.security:spring-security-crypto:6.4.4'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
@@ -33,7 +37,7 @@ dependencies {
 
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.0'
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-	annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 
     compileOnly 'org.projectlombok:lombok'
 
@@ -44,11 +48,42 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+}
+
+spotbugs {
+    effort = 'max'
+    reportLevel = 'low'
+    ignoreFailures = true
+    excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
+}
+
+
+checkstyle {
+    toolVersion = '10.20.0'
+    configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+    ignoreFailures = false
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        xml.required = false
+        html.required = true
+        html.outputLocation = file("$buildDir/reports/spotbugs/spotbugs.html")
+    }
+}
+
+tasks.withType(Checkstyle).configureEach {
+    reports {
+        xml.required = false
+        html.required = true
+        html.outputLocation = file("$buildDir/reports/checkstyle/checkstyle.html")
+    }
 }
