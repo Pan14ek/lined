@@ -58,22 +58,25 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew build sonarqube --info -Dsonar.login=$SONAR_TOKEN
 
-      - name: Annotate Checkstyle Warnings with Reviewdog
-        uses: reviewdog/action-checkstyle@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          tool_name: checkstyle
-          level: warning
-          fail_on_error: false
-          checkstyle_input: backend/lined/build/reports/checkstyle/main.xml
+      - name: Generate SpotBugs XML
+        run: ./gradlew spotbugsMain
 
-      - name: Annotate SpotBugs Warnings with Reviewdog
-        uses: reviewdog/action-spotbugs@v1
+      - name: Annotate SpotBugs with reviewdog
+        uses: reviewdog/action-reviewdog@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          name: spotbugs
           reporter: github-pr-review
           tool_name: spotbugs
-          level: warning
           fail_on_error: false
-          spotbugs_input: backend/lined/build/reports/spotbugs/main.xml
+          filter_mode: added
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run: cat backend/lined/build/reports/spotbugs/main.xml
+          format: checkstyle
+
+      - name: Annotate Checkstyle
+        uses: dbelyaev/action-checkstyle@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          checkstyle_config: backend/lined/config/checkstyle/checkstyle.xml
+          workdir: backend/lined
+          reporter: github-pr-review
