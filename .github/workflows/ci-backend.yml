@@ -71,7 +71,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          cat build/reports/spotbugs/main.xml | reviewdog -f=findbugs \
+          cat build/reports/spotbugs/main.xml | reviewdog -f=checkstyle \
             -name="spotbugs" \
             -reporter=github-pr-review \
             -filter-mode=added \
