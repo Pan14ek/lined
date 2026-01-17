@@ -61,17 +61,20 @@ jobs:
       - name: Generate SpotBugs XML
         run: ./gradlew spotbugsMain
 
-      - name: Annotate SpotBugs with reviewdog
-        uses: reviewdog/action-reviewdog@v5
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
         with:
-          name: spotbugs
-          reporter: github-pr-review
-          tool_name: spotbugs
-          fail_on_error: false
-          filter_mode: added
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          run: cat backend/lined/build/reports/spotbugs/main.xml
-          format: checkstyle
+          reviewdog_version: latest
+
+      - name: Annotate SpotBugs with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            cat build/reports/spotbugs/main.xml | reviewdog -f=checkstyle \
+              -name="spotbugs" \
+              -reporter=github-pr-review \
+              -filter-mode=added \
+              -fail-on-error=false
 
       - name: Annotate Checkstyle
         uses: dbelyaev/action-checkstyle@v1
