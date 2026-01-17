@@ -24,14 +24,6 @@ jacoco {
     toolVersion = "0.8.10"
 }
 
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true
-        html.required = true
-    }
-}
-
 repositories {
     mavenCentral()
 }
@@ -85,6 +77,23 @@ checkstyle {
     ignoreFailures = false
 }
 
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco')
+    }
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "Pan14ek_lined"
+        property "sonar.organization", "pan14ek"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+    }
+}
+
 tasks.withType(SpotBugsTask).configureEach {
     reports {
         xml.required = true
@@ -98,12 +107,5 @@ tasks.withType(Checkstyle).configureEach {
         xml.required = true
         html.required = true
         html.outputLocation = file("$buildDir/reports/checkstyle/checkstyle.html")
-    }
-}
-
-sonar {
-    properties {
-        property "sonar.projectKey", "Pan14ek_lined"
-        property "sonar.organization", "pan14ek"
     }
 }
