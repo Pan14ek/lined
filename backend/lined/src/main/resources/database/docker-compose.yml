@@ -16,6 +16,7 @@ services:
     volumes:
       - postgres_lined-data:/var/lib/postgresql/data
       - ./lined/src/main/resources/database/postgresql-config.yml:/docker-entrypoint-initdb.d/postgresql-config.yml
+      - ./lined/src/main/resources/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
 
 volumes:
   postgres_lined-data:
