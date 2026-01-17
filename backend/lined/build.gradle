@@ -6,6 +6,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.spotbugs' version '6.0.18'
     id 'checkstyle'
+    id 'jacoco'
     id "org.sonarqube" version "7.2.2.6593"
 }
 
@@ -16,6 +17,18 @@ description = 'Lined — Where life and quality time meet.'
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
     }
 }
 
@@ -66,7 +79,6 @@ spotbugs {
     excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
 }
 
-
 checkstyle {
     toolVersion = '10.20.0'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
@@ -75,7 +87,7 @@ checkstyle {
 
 tasks.withType(SpotBugsTask).configureEach {
     reports {
-        xml.required = false
+        xml.required = true
         html.required = true
         html.outputLocation = file("$buildDir/reports/spotbugs/spotbugs.html")
     }
@@ -83,7 +95,7 @@ tasks.withType(SpotBugsTask).configureEach {
 
 tasks.withType(Checkstyle).configureEach {
     reports {
-        xml.required = false
+        xml.required = true
         html.required = true
         html.outputLocation = file("$buildDir/reports/checkstyle/checkstyle.html")
     }
