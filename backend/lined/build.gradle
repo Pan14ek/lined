@@ -6,6 +6,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.spotbugs' version '6.0.18'
     id 'checkstyle'
+    id 'jacoco'
     id "org.sonarqube" version "7.2.2.6593"
 }
 
@@ -17,6 +18,10 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+}
+
+jacoco {
+    toolVersion = "0.8.10"
 }
 
 repositories {
@@ -66,26 +71,18 @@ spotbugs {
     excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
 }
 
-
 checkstyle {
     toolVersion = '10.20.0'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
     ignoreFailures = false
 }
 
-tasks.withType(SpotBugsTask).configureEach {
+jacocoTestReport {
+    dependsOn test
     reports {
-        xml.required = false
+        xml.required = true
         html.required = true
-        html.outputLocation = file("$buildDir/reports/spotbugs/spotbugs.html")
-    }
-}
-
-tasks.withType(Checkstyle).configureEach {
-    reports {
-        xml.required = false
-        html.required = true
-        html.outputLocation = file("$buildDir/reports/checkstyle/checkstyle.html")
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco')
     }
 }
 
@@ -93,5 +90,23 @@ sonar {
     properties {
         property "sonar.projectKey", "Pan14ek_lined"
         property "sonar.organization", "pan14ek"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+    }
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        xml.required = true
+        xml.outputLocation = file("$buildDir/reports/spotbugs/main.xml")
+        html.required = true
+        html.outputLocation = file("$buildDir/reports/spotbugs/spotbugs.html")
+    }
+}
+
+tasks.withType(Checkstyle).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = file("$buildDir/reports/checkstyle/checkstyle.html")
     }
 }

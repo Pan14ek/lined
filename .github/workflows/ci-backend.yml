@@ -1,4 +1,4 @@
-name: CI pipeline
+name: CI backend pipeline
 
 on:
   push:
@@ -50,7 +50,40 @@ jobs:
       - name: Run static checks (Checkstyle + SpotBugs + Tests)
         run: ./gradlew check
 
+      - name: Generate code coverage report
+        run: ./gradlew jacocoTestReport
+
       - name: Build and analyze with SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew build sonarqube --info -Dsonar.login=$SONAR_TOKEN
+
+      - name: Generate SpotBugs XML
+        run: ./gradlew spotbugsMain
+
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Annotate SpotBugs with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          ./gradlew spotbugsMain -q --console=plain > spotbugs_output.txt
+          cat spotbugs_output.txt | reviewdog -efm="%*\\w %f:%l:%c: %m" \
+            -name="spotbugs" \
+            -reporter=github-pr-review \
+            -filter-mode=added \
+            -fail-on-error=false \
+            -level=error
+
+
+      - name: Annotate Checkstyle
+        uses: dbelyaev/action-checkstyle@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          checkstyle_config: backend/lined/config/checkstyle/checkstyle.xml
+          workdir: backend/lined
+          reporter: github-pr-review
