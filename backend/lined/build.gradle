@@ -6,7 +6,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.spotbugs' version '6.0.18'
     id 'checkstyle'
-    id "org.sonarqube" version "4.4.1.3373"
+    id "org.sonarqube" version "7.2.2.6593"
 }
 
 group = 'io.backend'
@@ -89,16 +89,9 @@ tasks.withType(Checkstyle).configureEach {
     }
 }
 
-sonarqube {
+sonar {
     properties {
-        property "sonar.projectKey", "lined"
-        property "sonar.projectName", "Lined"
-        property "sonar.sources", "src/main/java"
-        property "sonar.tests", "src/test/java"
-        property "sonar.java.binaries", "build/classes"
-
-        if (System.getenv("SONAR_TOKEN")) {
-            property "sonar.login", System.getenv("SONAR_TOKEN")
-        }
+        property "sonar.projectKey", "Pan14ek_lined"
+        property "sonar.organization", "pan14ek"
     }
 }
