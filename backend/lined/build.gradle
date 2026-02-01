@@ -98,8 +98,12 @@ tasks.withType(SpotBugsTask).configureEach {
     reports {
         xml.required = true
         xml.outputLocation = file("$buildDir/reports/spotbugs/main.xml")
+
         html.required = true
         html.outputLocation = file("$buildDir/reports/spotbugs/spotbugs.html")
+
+        sarif.required = true
+        sarif.outputLocation = file("$buildDir/reports/spotbugs/main.sarif")
     }
 }
 

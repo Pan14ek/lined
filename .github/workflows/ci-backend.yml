@@ -9,6 +9,12 @@ on:
       - main
     types: [ opened, synchronize, reopened ]
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  security-events: write
+
 jobs:
   build:
     name: Build and analyze
@@ -87,15 +93,22 @@ jobs:
         with:
           reviewdog_version: latest
 
-      - name: Annotate SpotBugs with reviewdog
+      - name: Upload SpotBugs SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: backend/lined/build/reports/spotbugs/main.sarif
+
+      - name: Annotate Checkstyle (XML -> reviewdog)
+        if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -o pipefail
-          ./gradlew spotbugsMain -q --console=plain > spotbugs_output.txt
-          cat spotbugs_output.txt | reviewdog -efm="%*\\w %f:%l:%c: %m" \
-            -name="spotbugs" \
+          set -euo pipefail
+          ./gradlew checkstyleMain
+          reviewdog -f=checkstyle \
+            -name="checkstyle" \
             -reporter=github-pr-review \
             -filter-mode=added \
-            -fail-on-error=false \
-            -level=error
+            -fail-on-error=true \
+            < build/reports/checkstyle/main.xml
