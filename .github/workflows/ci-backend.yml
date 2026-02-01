@@ -53,13 +53,34 @@ jobs:
       - name: Generate code coverage report
         run: ./gradlew jacocoTestReport
 
+      - name: Annotate Checkstyle
+        uses: dbelyaev/action-checkstyle@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          checkstyle_config: backend/lined/config/checkstyle/checkstyle.xml
+          workdir: backend/lined
+          reporter: github-pr-review
+
+      - name: Generate SpotBugs XML
+        run: ./gradlew spotbugsMain
+
       - name: Build and analyze with SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew build sonarqube --info -Dsonar.login=$SONAR_TOKEN
 
-      - name: Generate SpotBugs XML
-        run: ./gradlew spotbugsMain
+      - name: Upload reports (JaCoCo + Checkstyle + SpotBugs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/lined/build/reports/jacoco/**
+            backend/lined/build/reports/checkstyle/**
+            backend/lined/build/reports/spotbugs/**
+            backend/lined/build/jacoco/*.exec
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Setup reviewdog
         uses: reviewdog/action-setup@v1
@@ -78,12 +99,3 @@ jobs:
             -filter-mode=added \
             -fail-on-error=false \
             -level=error
-
-
-      - name: Annotate Checkstyle
-        uses: dbelyaev/action-checkstyle@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          checkstyle_config: backend/lined/config/checkstyle/checkstyle.xml
-          workdir: backend/lined
-          reporter: github-pr-review
