@@ -87,15 +87,30 @@ jobs:
         with:
           reviewdog_version: latest
 
-      - name: Annotate SpotBugs with reviewdog
+      - name: Annotate SpotBugs (XML -> reviewdog)
+        if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -o pipefail
-          ./gradlew spotbugsMain -q --console=plain > spotbugs_output.txt
-          cat spotbugs_output.txt | reviewdog -efm="%*\\w %f:%l:%c: %m" \
+          set -euo pipefail
+          ./gradlew spotbugsMain
+          reviewdog -f=checkstyle \
             -name="spotbugs" \
             -reporter=github-pr-review \
             -filter-mode=added \
             -fail-on-error=false \
-            -level=error
+            < build/reports/spotbugs/main.xml
+
+      - name: Annotate Checkstyle (XML -> reviewdog)
+        if: github.event_name == 'pull_request'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ./gradlew checkstyleMain
+          reviewdog -f=checkstyle \
+            -name="checkstyle" \
+            -reporter=github-pr-review \
+            -filter-mode=added \
+            -fail-on-error=true \
+            < build/reports/checkstyle/main.xml
