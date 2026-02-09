@@ -112,3 +112,14 @@ jobs:
             -filter-mode=added \
             -fail-on-error=true \
             < build/reports/checkstyle/main.xml
+      - name: Install metrics collector deps
+        working-directory: backend/fitness-metrics-collector
+        run: npm ci
+
+      - name: Collect metrics
+        working-directory: backend/fitness-metrics-collector
+        env:
+          CHECKSTYLE_XML: ../lined/build/reports/checkstyle/main.xml
+          SPOTBUGS_XML: ../lined/build/reports/spotbugs/main.xml
+          JACOCO_XML: ../lined/build/reports/jacoco/test/jacocoTestReport.xml
+        run: npm run metrics
