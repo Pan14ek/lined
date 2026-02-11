@@ -7,6 +7,15 @@
     "@types/node": "22.0.0"
   },
   "scripts": {
-    "metrics": "ts-node scripts/collectMetrics.ts"
+    "metrics": "node -r ts-node/register scripts/collectMetrics.ts"
+  },
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true
   }
 }
