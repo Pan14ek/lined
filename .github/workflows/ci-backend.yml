@@ -117,10 +117,16 @@ jobs:
         working-directory: fitness-metrics-collector
         run: npm ci
 
+      - name: Debug reports paths
+        run: |
+          ls -la backend/lined/build/reports/spotbugs || true
+          ls -la backend/lined/build/reports/checkstyle || true
+          ls -la backend/lined/build/reports/jacoco/test || true
+
       - name: Collect metrics
         working-directory: fitness-metrics-collector
         env:
-          CHECKSTYLE_XML: ../lined/build/reports/checkstyle/main.xml
-          SPOTBUGS_XML: ../lined/build/reports/spotbugs/main.xml
-          JACOCO_XML: ../lined/build/reports/jacoco/test/jacocoTestReport.xml
+          CHECKSTYLE_XML: ../backend/lined/build/reports/checkstyle/main.xml
+          SPOTBUGS_XML: ../backend/lined/build/reports/spotbugs/main.xml
+          JACOCO_XML: ../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml
         run: npm run metrics
