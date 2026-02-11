@@ -2,11 +2,11 @@
   "name": "lined-metrics",
   "private": true,
   "devDependencies": {
-    "ts-node": "10.9.2",
-    "typescript": "5.6.3",
-    "@types/node": "22.0.0"
+    "typescript": "^5.6.3",
+    "@types/node": "^22.0.0"
   },
   "scripts": {
-    "metrics": "node --loader ts-node/esm scripts/collectMetrics.ts"
+    "build": "tsc -p tsconfig.json",
+    "metrics": "npm run build && node dist/collectMetrics.js"
   }
 }
