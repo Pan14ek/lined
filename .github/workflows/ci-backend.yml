@@ -112,6 +112,7 @@ jobs:
             -filter-mode=added \
             -fail-on-error=true \
             < build/reports/checkstyle/main.xml
+
       - name: Install metrics collector deps
         working-directory: fitness-metrics-collector
         run: npm ci
