@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import fs from "fs";
 
 /* =======================
    TYPES
@@ -10,17 +10,27 @@ type Metrics = {
     jacoco_line_coverage?: number;
 };
 
-type ValidationResult = {
+type Result = {
     metrics: Metrics;
-    spotbugs_valid: boolean;
     checkstyle_valid: boolean;
+    spotbugs_valid: boolean;
 };
+
+/* =======================
+   HELPERS
+======================= */
+function readFile(path: string): string {
+    if (!fs.existsSync(path)) {
+        throw new Error(`File not found: ${path}`);
+    }
+    return fs.readFileSync(path, "utf-8");
+}
 
 /* =======================
    CHECKSTYLE
 ======================= */
 function readCheckstyleViolations(path: string): number {
-    const xml = readFileSync(path, "utf-8");
+    const xml = readFile(path);
     const matches = xml.match(/<error\b/g);
     return matches ? matches.length : 0;
 }
@@ -29,9 +39,10 @@ function readCheckstyleViolations(path: string): number {
    SPOTBUGS
 ======================= */
 function readSpotbugsAttr(path: string, attr: string): number {
-    const xml = readFileSync(path, "utf-8");
-    const m = xml.match(new RegExp(`${attr}="(\\d+)"`));
-    if (!m) throw new Error(`SpotBugs: ${attr} not found`);
+    const xml = readFile(path);
+    const re = new RegExp(`${attr}="(\\d+)"`);
+    const m = xml.match(re);
+    if (!m) throw new Error(`SpotBugs: ${attr} not found in ${path}`);
     return Number(m[1]);
 }
 
@@ -39,58 +50,54 @@ function readSpotbugsAttr(path: string, attr: string): number {
    JACOCO
 ======================= */
 function readJacocoLineCoverage(path: string): number {
-    const xml = readFileSync(path, "utf-8");
+    const xml = readFile(path);
+    const m = xml.match(/<counter type="LINE" missed="(\d+)" covered="(\d+)"/);
+    if (!m) throw new Error(`JaCoCo LINE counter not found in ${path}`);
 
-    const regex = /<counter type="LINE" missed="(\d+)" covered="(\d+)"/g;
+    const missed = Number(m[1]);
+    const covered = Number(m[2]);
+    const total = missed + covered;
 
-    let match: RegExpExecArray | null;
-    let lastMissed = 0;
-    let lastCovered = 0;
-    let found = false;
-
-    while ((match = regex.exec(xml)) !== null) {
-        lastMissed = Number(match[1]);
-        lastCovered = Number(match[2]);
-        found = true;
-    }
-
-    if (!found) {
-        throw new Error("JaCoCo LINE counter not found");
-    }
-
-    const total = lastMissed + lastCovered;
-    return total === 0 ? 0 : (lastCovered / total) * 100;
+    return total === 0 ? 0 : (covered / total) * 100;
 }
-
 
 /* =======================
    MAIN
 ======================= */
 function main() {
-    const checkstylePath = process.env.CHECKSTYLE_XML ?? "build/reports/checkstyle/main.xml";
-    const spotbugsPath = process.env.SPOTBUGS_XML ?? "build/reports/spotbugs/main.xml";
-    const jacocoPath = process.env.JACOCO_XML ?? "build/reports/jacoco/test/jacocoTestReport.xml";
+    // IMPORTANT: read spotbugsMain report (not test)
+    const checkstylePath =
+        process.env.CHECKSTYLE_XML ?? "../backend/lined/build/reports/checkstyle/main.xml";
+
+    const spotbugsPath =
+        process.env.SPOTBUGS_XML ?? "../backend/lined/build/reports/spotbugs/spotbugsMain.xml";
+
+    const jacocoPath =
+        process.env.JACOCO_XML ?? "../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml";
 
     const metrics: Metrics = {
-        checkstyle_violations: existsSync(checkstylePath) ? readCheckstyleViolations(checkstylePath) : 0,
+        checkstyle_violations: readCheckstyleViolations(checkstylePath),
         spotbugs_total: readSpotbugsAttr(spotbugsPath, "total_bugs"),
-        spotbugs_total_classes: readSpotbugsAttr(spotbugsPath, "total_classes"),
+        spotbugs_total_classes: readSpotbugsAttr(spotbugsPath, "total_classes")
     };
 
-    if (existsSync(jacocoPath)) {
+    if (fs.existsSync(jacocoPath)) {
         metrics.jacoco_line_coverage = Number(readJacocoLineCoverage(jacocoPath).toFixed(2));
     }
 
-    const result: ValidationResult = {
+    const result: Result = {
         metrics,
         checkstyle_valid: true,
-        spotbugs_valid: metrics.spotbugs_total_classes > 0,
+        spotbugs_valid: metrics.spotbugs_total_classes > 0
     };
 
     console.log(JSON.stringify(result, null, 2));
 
     if (!result.spotbugs_valid) {
-        console.error("ERROR: SpotBugs analysis is invalid (total_classes = 0). Ensure spotbugsMain ran and main.xml is generated.");
+        console.error(
+            `ERROR: SpotBugs invalid (total_classes=0). ` +
+            `Check that spotbugsMain report is used and not overwritten by spotbugsTest.`
+        );
         process.exit(2);
     }
 }
