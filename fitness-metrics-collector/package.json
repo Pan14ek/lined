@@ -7,6 +7,6 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "metrics": "npm run build && node scripts/collectMetrics.ts"
+    "metrics": "npm run build && node dist/scripts/collectMetrics.js"
   }
 }
