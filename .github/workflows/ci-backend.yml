@@ -123,6 +123,11 @@ jobs:
           ls -la build/reports/checkstyle || true
           ls -la build/reports/jacoco/test || true
 
+      - name: Debug SpotBugs report
+        run: |
+          ls -la backend/lined/build/reports/spotbugs || true
+          head -n 30 backend/lined/build/reports/spotbugs/spotbugsMain.xml || true
+
       - name: Collect metrics
         working-directory: fitness-metrics-collector
         env:
