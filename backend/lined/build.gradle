@@ -107,27 +107,15 @@ tasks.withType(SpotBugsTask).configureEach {
 }
 
 tasks.named("spotbugsMain", SpotBugsTask) {
-    dependsOn(tasks.named("classes"))
-
-    classes.setFrom(sourceSets.main.output)
-
+    dependsOn tasks.named("classes")
+    classes.setFrom(sourceSets.main.output.classesDirs)
     sourceDirs.setFrom(sourceSets.main.allSource.srcDirs)
-
-    auxiliaryClasspath.setFrom(sourceSets.main.compileClasspath)
+    auxClassPaths.setFrom(sourceSets.main.compileClasspath)
 }
 
 tasks.named("spotbugsTest", SpotBugsTask) {
-    dependsOn(tasks.named("testClasses"))
-
-    classes.setFrom(sourceSets.test.output)
+    dependsOn tasks.named("testClasses")
+    classes.setFrom(sourceSets.test.output.classesDirs)
     sourceDirs.setFrom(sourceSets.test.allSource.srcDirs)
-    auxiliaryClasspath.setFrom(sourceSets.test.compileClasspath)
-}
-
-tasks.withType(Checkstyle).configureEach {
-    reports {
-        xml.required = true
-        html.required = true
-        html.outputLocation = file("$buildDir/reports/checkstyle/${name}.html")
-    }
+    auxClassPaths.setFrom(sourceSets.test.compileClasspath)
 }
