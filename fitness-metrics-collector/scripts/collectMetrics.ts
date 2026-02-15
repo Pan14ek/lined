@@ -46,6 +46,16 @@ function readSpotbugsAttr(path: string, attr: string): number {
     return Number(m[1]);
 }
 
+function readSpotbugsTotalClassesFromHtml(path: string): number {
+    const html = readFile(path);
+
+    const m = html.match(/in\s+(\d+)\s+classes\b/i);
+    if (!m) {
+        throw new Error(`SpotBugs HTML: total classes not found in ${path}`);
+    }
+    return Number(m[1]);
+}
+
 /* =======================
    JACOCO
 ======================= */
@@ -65,20 +75,31 @@ function readJacocoLineCoverage(path: string): number {
    MAIN
 ======================= */
 function main() {
-    // IMPORTANT: read spotbugsMain report (not test)
     const checkstylePath =
         process.env.CHECKSTYLE_XML ?? "../backend/lined/build/reports/checkstyle/main.xml";
 
-    const spotbugsPath =
+    const spotbugsXmlPath =
         process.env.SPOTBUGS_XML ?? "../backend/lined/build/reports/spotbugs/spotbugsMain.xml";
+
+    const spotbugsHtmlPath =
+        process.env.SPOTBUGS_HTML ?? "../backend/lined/build/reports/spotbugs/spotbugsMain.html";
 
     const jacocoPath =
         process.env.JACOCO_XML ?? "../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml";
 
+    const spotbugs_total = readSpotbugsAttr(spotbugsXmlPath, "total_bugs");
+
+    let spotbugs_total_classes: number;
+    if (fs.existsSync(spotbugsHtmlPath)) {
+        spotbugs_total_classes = readSpotbugsTotalClassesFromHtml(spotbugsHtmlPath);
+    } else {
+        spotbugs_total_classes = readSpotbugsAttr(spotbugsXmlPath, "total_classes");
+    }
+
     const metrics: Metrics = {
         checkstyle_violations: readCheckstyleViolations(checkstylePath),
-        spotbugs_total: readSpotbugsAttr(spotbugsPath, "total_bugs"),
-        spotbugs_total_classes: readSpotbugsAttr(spotbugsPath, "total_classes")
+        spotbugs_total,
+        spotbugs_total_classes
     };
 
     if (fs.existsSync(jacocoPath)) {
@@ -96,7 +117,7 @@ function main() {
     if (!result.spotbugs_valid) {
         console.error(
             `ERROR: SpotBugs invalid (total_classes=0). ` +
-            `Check that spotbugsMain report is used and not overwritten by spotbugsTest.`
+            `Make sure spotbugsMain.html exists and contains "in N classes".`
         );
         process.exit(2);
     }
