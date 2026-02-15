@@ -107,19 +107,21 @@ tasks.withType(SpotBugsTask).configureEach {
 }
 
 tasks.named("spotbugsMain", SpotBugsTask) {
-    dependsOn tasks.named("classes")
+    dependsOn(tasks.named("classes"))
 
-    classes.from(sourceSets.main.output.classesDirs)
-    sourceDirs.from(sourceSets.main.allSource.srcDirs)
-    auxClassPaths.from(sourceSets.main.compileClasspath)
+    classes.setFrom(sourceSets.main.output)
+
+    sourceDirs.setFrom(sourceSets.main.allSource.srcDirs)
+
+    auxiliaryClasspath.setFrom(sourceSets.main.compileClasspath)
 }
 
 tasks.named("spotbugsTest", SpotBugsTask) {
-    dependsOn tasks.named("testClasses")
+    dependsOn(tasks.named("testClasses"))
 
-    classes.from(sourceSets.test.output.classesDirs)
-    sourceDirs.from(sourceSets.test.allSource.srcDirs)
-    auxClassPaths.from(sourceSets.test.compileClasspath)
+    classes.setFrom(sourceSets.test.output)
+    sourceDirs.setFrom(sourceSets.test.allSource.srcDirs)
+    auxiliaryClasspath.setFrom(sourceSets.test.compileClasspath)
 }
 
 tasks.withType(Checkstyle).configureEach {
