@@ -56,7 +56,6 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.h2database:h2'
-
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -95,12 +94,6 @@ sonar {
 }
 
 tasks.withType(SpotBugsTask).configureEach {
-    dependsOn tasks.named("classes")
-
-    classes = files(sourceSets.main.output.classesDirs)
-    sourceDirs = files(sourceSets.main.allSource.srcDirs)
-    classpath = sourceSets.main.compileClasspath
-
     reports {
         xml.required = true
         xml.outputLocation = file("$buildDir/reports/spotbugs/${name}.xml")
@@ -113,12 +106,20 @@ tasks.withType(SpotBugsTask).configureEach {
     }
 }
 
+tasks.named("spotbugsMain", SpotBugsTask) {
+    dependsOn tasks.named("classes")
+
+    classes.from(sourceSets.main.output.classesDirs)
+    sourceDirs.from(sourceSets.main.allSource.srcDirs)
+    auxClassPaths.from(sourceSets.main.compileClasspath)
+}
+
 tasks.named("spotbugsTest", SpotBugsTask) {
     dependsOn tasks.named("testClasses")
 
-    classes = files(sourceSets.test.output.classesDirs)
-    sourceDirs = files(sourceSets.test.allSource.srcDirs)
-    classpath = sourceSets.test.compileClasspath
+    classes.from(sourceSets.test.output.classesDirs)
+    sourceDirs.from(sourceSets.test.allSource.srcDirs)
+    auxClassPaths.from(sourceSets.test.compileClasspath)
 }
 
 tasks.withType(Checkstyle).configureEach {
