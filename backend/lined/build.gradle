@@ -106,21 +106,18 @@ tasks.withType(SpotBugsTask).configureEach {
     }
 }
 
-tasks.named("spotbugsMain", SpotBugsTask).configure {
-    dependsOn("classes")
+tasks.named("spotbugsMain", SpotBugsTask) {
+    dependsOn(tasks.named("classes"))
 
-    // IMPORTANT: pass plain files, not FileCollection
-    classes.setFrom(sourceSets.main.output.classesDirs.files)
-    sourceDirs.setFrom(sourceSets.main.allSource.srcDirs)
-
-    // for SpotBugs "aux" classpath is what it uses as dependencies
-    auxClassPaths.setFrom(sourceSets.main.compileClasspath.files)
+    classes = sourceSets.main.output.classesDirs
+    sourceDirs = files(sourceSets.main.allSource.srcDirs)
+    auxClassPaths = sourceSets.main.compileClasspath
 }
 
-tasks.named("spotbugsTest", SpotBugsTask).configure {
-    dependsOn("testClasses")
+tasks.named("spotbugsTest", SpotBugsTask) {
+    dependsOn(tasks.named("testClasses"))
 
-    classes.setFrom(sourceSets.test.output.classesDirs.files)
-    sourceDirs.setFrom(sourceSets.test.allSource.srcDirs)
-    auxClassPaths.setFrom(sourceSets.test.compileClasspath.files)
+    classes = sourceSets.test.output.classesDirs
+    sourceDirs = files(sourceSets.test.allSource.srcDirs)
+    auxClassPaths = sourceSets.test.compileClasspath
 }
