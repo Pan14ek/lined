@@ -95,6 +95,12 @@ sonar {
 }
 
 tasks.withType(SpotBugsTask).configureEach {
+    dependsOn tasks.named("classes")
+
+    classes = files(sourceSets.main.output.classesDirs)
+    sourceDirs = files(sourceSets.main.allSource.srcDirs)
+    classpath = sourceSets.main.compileClasspath
+
     reports {
         xml.required = true
         xml.outputLocation = file("$buildDir/reports/spotbugs/${name}.xml")
@@ -105,6 +111,14 @@ tasks.withType(SpotBugsTask).configureEach {
         sarif.required = true
         sarif.outputLocation = file("$buildDir/reports/spotbugs/${name}.sarif")
     }
+}
+
+tasks.named("spotbugsTest", SpotBugsTask) {
+    dependsOn tasks.named("testClasses")
+
+    classes = files(sourceSets.test.output.classesDirs)
+    sourceDirs = files(sourceSets.test.allSource.srcDirs)
+    classpath = sourceSets.test.compileClasspath
 }
 
 tasks.withType(Checkstyle).configureEach {
