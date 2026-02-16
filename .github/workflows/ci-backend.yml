@@ -97,7 +97,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: backend/lined/build/reports/spotbugs/main.sarif
+          sarif_file: backend/lined/build/reports/spotbugs/spotbugsMain.sarif
 
       - name: Annotate Checkstyle (XML -> reviewdog)
         if: github.event_name == 'pull_request'
@@ -112,3 +112,27 @@ jobs:
             -filter-mode=added \
             -fail-on-error=true \
             < build/reports/checkstyle/main.xml
+
+      - name: Install metrics collector deps
+        working-directory: fitness-metrics-collector
+        run: npm ci
+
+      - name: Debug reports paths
+        run: |
+          ls -la build/reports/spotbugs || true
+          ls -la build/reports/checkstyle || true
+          ls -la build/reports/jacoco/test || true
+
+      - name: Debug SpotBugs report
+        run: |
+          ls -la build/reports/spotbugs || true
+          head -n 30 build/reports/spotbugs/spotbugsMain.xml || true
+
+      - name: Collect metrics
+        working-directory: fitness-metrics-collector
+        env:
+          CHECKSTYLE_XML: ../backend/lined/build/reports/checkstyle/main.xml
+          SPOTBUGS_XML: ../backend/lined/build/reports/spotbugs/spotbugsMain.xml
+          JACOCO_XML: ../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml
+          SPOTBUGS_HTML: ../backend/lined/build/reports/spotbugs/spotbugsMain.html
+        run: npm run metrics
