@@ -88,3 +88,5 @@ The goal of Lined is to turn schedule chaos into harmony: you instantly see when
 - *“Lined — because time together matters.”*  
 
 ---
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Pan14ek_lined&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Pan14ek_lined)
