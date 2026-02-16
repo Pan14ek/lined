@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 
 /* =======================
    TYPES
@@ -35,7 +35,7 @@ const DEFAULT_PATHS = {
 
 const REGEX_PATTERNS = {
     CHECKSTYLE_ERROR: /<error\b/g,
-    SPOTBUGS_ATTR: (attr: string) => new RegExp(`${attr}="(\\d+)"`),
+    SPOTBUGS_ATTR: (attr: string) => new RegExp(String.raw`${attr}="(\d+)"`),
     SPOTBUGS_CLASSES: /in\s+(\d+)\s+classes\b/i,
     JACOCO_LINE: /<counter type="LINE" missed="(\d+)" covered="(\d+)"/,
 } as const;
@@ -61,7 +61,7 @@ const readFile = (path: string): string => {
 
 const extractNumber = (content: string, pattern: RegExp, errorMsg: string): number => {
     const match = pattern.exec(content);
-    if (!match || !match[1]) {
+    if (!match?.[1]) {
         throw new Error(errorMsg);
     }
     return Number(match[1]);
@@ -69,12 +69,11 @@ const extractNumber = (content: string, pattern: RegExp, errorMsg: string): numb
 
 const countMatches = (content: string, pattern: RegExp): number => {
     let count = 0;
-    let match: RegExpExecArray | null;
 
     // Reset lastIndex to ensure we start from the beginning
     pattern.lastIndex = 0;
 
-    while ((match = pattern.exec(content)) !== null) {
+    while (pattern.exec(content) !== null) {
         count++;
     }
 
