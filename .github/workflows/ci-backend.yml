@@ -135,4 +135,6 @@ jobs:
           SPOTBUGS_XML: ../backend/lined/build/reports/spotbugs/spotbugsMain.xml
           JACOCO_XML: ../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml
           SPOTBUGS_HTML: ../backend/lined/build/reports/spotbugs/spotbugsMain.html
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: npm run metrics
