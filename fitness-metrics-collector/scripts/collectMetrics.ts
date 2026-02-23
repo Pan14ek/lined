@@ -8,8 +8,8 @@ type Metrics = {
     spotbugs_total: number;
     spotbugs_total_classes: number;
     jacoco_line_coverage?: number;
-    sonar_cloud_main_branch_metrics?: Record<string, any>;
-    sonar_cloud_current_branch_metrics?: Record<string, any>;
+    sonar_cloud_main_branch_metrics?: SonarMetricsMap;
+    sonar_cloud_current_branch_metrics?: SonarMetricsMap;
     current_branch_name?: string;
 };
 
@@ -183,7 +183,15 @@ const readJacocoLineCoverage = (path: string): number | undefined => {
 /* =======================
    METRICS COLLECTION
 ======================= */
-const collectMetrics = (config: Config): Metrics => {
+const collectMetrics = async (config: Config): Promise<Metrics> => {
+    const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
+
+    const mainMetrics = await fetchSonarCloudMetrics("main");
+
+    const currentMetrics = config.branchName
+        ? await fetchSonarCloudMetrics(config.branchName, {allowNotFound: true})
+        : undefined;
+
     const metrics: Metrics = {
         checkstyle_violations: readCheckstyleViolations(config.checkstylePath),
         spotbugs_total: readSpotbugsTotalBugs(config.spotbugsXmlPath),
@@ -191,12 +199,11 @@ const collectMetrics = (config: Config): Metrics => {
             config.spotbugsXmlPath,
             config.spotbugsHtmlPath
         ),
-        sonar_cloud_main_branch_metrics: fetchSonarCloudMetrics(),
-        sonar_cloud_current_branch_metrics: config.branchName ? fetchSonarCloudMetrics(config.branchName) : undefined,
+        sonar_cloud_main_branch_metrics: mainMetrics,
+        sonar_cloud_current_branch_metrics: currentMetrics,
         current_branch_name: config.branchName,
     };
 
-    const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
     if (jacocoCoverage !== undefined) {
         metrics.jacoco_line_coverage = jacocoCoverage;
     }
@@ -232,7 +239,9 @@ const parseSonarMeasures = (data: SonarResponse): SonarMetricsMap => {
     return out;
 };
 
-const fetchSonarCloudMetrics = async (branchName: string = "main") => {
+const fetchSonarCloudMetrics = async (branchName: string = "main", opts: {
+    allowNotFound?: boolean
+} = {}): Promise<SonarMetricsMap> => {
     const token = process.env.SONAR_TOKEN;
     if (!token) throw new Error("SONAR_TOKEN is not set");
 
@@ -298,17 +307,26 @@ const fetchSonarCloudMetrics = async (branchName: string = "main") => {
 
     const componentKey = "Pan14ek_lined";
 
-    const url =
-        "https://sonarcloud.io/api/measures/component?" +
-        `metricKeys=${encodeURIComponent(metricKeys)}` +
-        `&component=${encodeURIComponent(componentKey)}` +
-        `&branch=${encodeURIComponent(branchName)}`;
+    const url = new URL("https://sonarcloud.io/api/measures/component");
+    url.searchParams.set("metricKeys", metricKeys);
+    url.searchParams.set("component", componentKey);
+    url.searchParams.set("branch", branchName);
 
-    console.log(`[sonar] GET ${url}`);
+    console.log("[sonar] endpoint:", `${url.origin}${url.pathname}`);
+    console.log("[sonar] branch:", branchName);
+    console.log("[sonar] component:", componentKey);
+    console.log("[sonar] metricKeys count:", metricKeys.split(",").length);
+    console.log("[sonar] query tail:", url.search.slice(-220));
 
     const response = await fetch(url, {
         headers: {Authorization: `Basic ${basic}`},
     });
+
+    if (response.status === 404 && opts.allowNotFound) {
+        const text = await response.text().catch(() => "");
+        console.warn(`[sonar] 404 (allowed) for branch=${branchName}. Body: ${text}`);
+        return {};
+    }
 
     if (!response.ok) {
         const text = await response.text().catch(() => "");
@@ -324,10 +342,10 @@ const fetchSonarCloudMetrics = async (branchName: string = "main") => {
 /* =======================
    MAIN
 ======================= */
-const main = (): void => {
+const main = async (): Promise<void> => {
     try {
         const config = getConfig();
-        const metrics = collectMetrics(config);
+        const metrics = await collectMetrics(config);
         const result = validateMetrics(metrics);
 
         console.log(JSON.stringify(result, null, 2));
@@ -345,4 +363,4 @@ const main = (): void => {
     }
 };
 
-main();
+void main();
