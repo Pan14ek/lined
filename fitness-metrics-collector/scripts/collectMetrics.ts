@@ -13,6 +13,10 @@ type Metrics = {
     current_branch_name?: string;
 };
 
+type SonarScope =
+    | { kind: "branch"; name: string }
+    | { kind: "pullRequest"; id: string };
+
 type SonarPeriod = { index: number; value?: string; bestValue?: boolean };
 type SonarMeasure = {
     metric: string;
@@ -41,6 +45,7 @@ type Config = {
     spotbugsXmlPath: string;
     spotbugsHtmlPath: string;
     jacocoPath: string;
+    pullRequestId?: string;
     branchName?: string;
 };
 
@@ -108,6 +113,7 @@ const getConfig = (): Config => {
         spotbugsHtmlPath: process.env.SPOTBUGS_HTML ?? DEFAULT_PATHS.SPOTBUGS_HTML,
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
         branchName: process.env.BRANCH_NAME,
+        pullRequestId: process.env.PR_NUMBER,
     };
 };
 
@@ -180,35 +186,12 @@ const readJacocoLineCoverage = (path: string): number | undefined => {
     return Number(coverage.toFixed(2));
 };
 
-/* =======================
-   METRICS COLLECTION
-======================= */
-const collectMetrics = async (config: Config): Promise<Metrics> => {
-    const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
+const getCurrentScope = (config: Config): SonarScope => {
+    const pr = config.pullRequestId;
+    if (pr && pr.trim() !== "") return {kind: "pullRequest", id: pr.trim()};
 
-    const mainMetrics = await fetchSonarCloudMetrics("main");
-
-    const currentMetrics = config.branchName
-        ? await fetchSonarCloudMetrics(config.branchName, {allowNotFound: true})
-        : undefined;
-
-    const metrics: Metrics = {
-        checkstyle_violations: readCheckstyleViolations(config.checkstylePath),
-        spotbugs_total: readSpotbugsTotalBugs(config.spotbugsXmlPath),
-        spotbugs_total_classes: readSpotbugsTotalClasses(
-            config.spotbugsXmlPath,
-            config.spotbugsHtmlPath
-        ),
-        sonar_cloud_main_branch_metrics: mainMetrics,
-        sonar_cloud_current_branch_metrics: currentMetrics,
-        current_branch_name: config.branchName,
-    };
-
-    if (jacocoCoverage !== undefined) {
-        metrics.jacoco_line_coverage = jacocoCoverage;
-    }
-
-    return metrics;
+    const b = config.branchName?.trim();
+    return {kind: "branch", name: b && b !== "" ? b : "main"};
 };
 
 const validateMetrics = (metrics: Metrics): Result => {
@@ -239,7 +222,7 @@ const parseSonarMeasures = (data: SonarResponse): SonarMetricsMap => {
     return out;
 };
 
-const fetchSonarCloudMetrics = async (branchName: string = "main", opts: {
+const fetchSonarCloudMetrics = async (scope: SonarScope, opts: {
     allowNotFound?: boolean
 } = {}): Promise<SonarMetricsMap> => {
     const token = process.env.SONAR_TOKEN;
@@ -310,10 +293,16 @@ const fetchSonarCloudMetrics = async (branchName: string = "main", opts: {
     const url = new URL("https://sonarcloud.io/api/measures/component");
     url.searchParams.set("metricKeys", metricKeys);
     url.searchParams.set("component", componentKey);
-    url.searchParams.set("branch", branchName);
+
+    if (scope.kind === "branch") {
+        url.searchParams.set("branch", scope.name);
+        console.log("[sonar] branch:", scope.name);
+    } else {
+        url.searchParams.set("pullRequest", scope.id);
+        console.log("[sonar] pullRequest id:", scope.id);
+    }
 
     console.log("[sonar] endpoint:", `${url.origin}${url.pathname}`);
-    console.log("[sonar] branch:", branchName);
     console.log("[sonar] component:", componentKey);
     console.log("[sonar] metricKeys count:", metricKeys.split(",").length);
     console.log("[sonar] query tail:", url.search.slice(-220));
@@ -324,7 +313,7 @@ const fetchSonarCloudMetrics = async (branchName: string = "main", opts: {
 
     if (response.status === 404 && opts.allowNotFound) {
         const text = await response.text().catch(() => "");
-        console.warn(`[sonar] 404 (allowed) for branch=${branchName}. Body: ${text}`);
+        console.warn(`[sonar] 404 (allowed) scope=${scope.kind}. Body: ${text}`);
         return {};
     }
 
@@ -337,6 +326,37 @@ const fetchSonarCloudMetrics = async (branchName: string = "main", opts: {
 
     const data = (await response.json()) as SonarResponse;
     return parseSonarMeasures(data);
+};
+
+/* =======================
+   METRICS COLLECTION
+======================= */
+const collectMetrics = async (config: Config): Promise<Metrics> => {
+    const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
+
+    const mainMetrics = await fetchSonarCloudMetrics({kind: "branch", name: "main"});
+
+    const currentScope = getCurrentScope(config);
+
+    const currentMetrics = await fetchSonarCloudMetrics(currentScope, {allowNotFound: true});
+
+    const metrics: Metrics = {
+        checkstyle_violations: readCheckstyleViolations(config.checkstylePath),
+        spotbugs_total: readSpotbugsTotalBugs(config.spotbugsXmlPath),
+        spotbugs_total_classes: readSpotbugsTotalClasses(
+            config.spotbugsXmlPath,
+            config.spotbugsHtmlPath
+        ),
+        sonar_cloud_main_branch_metrics: mainMetrics,
+        sonar_cloud_current_branch_metrics: currentMetrics,
+        current_branch_name: config.branchName,
+    };
+
+    if (jacocoCoverage !== undefined) {
+        metrics.jacoco_line_coverage = jacocoCoverage;
+    }
+
+    return metrics;
 };
 
 /* =======================
