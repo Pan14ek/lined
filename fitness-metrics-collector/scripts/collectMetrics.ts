@@ -11,6 +11,7 @@ type Metrics = {
     sonar_cloud_main_branch_metrics?: SonarMetricsMap;
     sonar_cloud_current_branch_metrics?: SonarMetricsMap;
     current_branch_name?: string;
+    sonar_diff?: MetricsDiffMap;
 };
 
 type SonarScope =
@@ -33,6 +34,14 @@ type SonarResponse = {
 
 type SonarMetricValue = string | number;
 type SonarMetricsMap = Record<string, SonarMetricValue>;
+
+type MetricDiff = {
+    base?: number;
+    current?: number;
+    delta?: number;
+};
+
+type MetricsDiffMap = Record<string, MetricDiff>;
 
 type Result = {
     metrics: Metrics;
@@ -328,6 +337,38 @@ const fetchSonarCloudMetrics = async (scope: SonarScope, opts: {
     return parseSonarMeasures(data);
 };
 
+const toNumber = (v: unknown): number | null => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : null;
+    if (typeof v === "string") {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    }
+    return null;
+};
+
+const computeDiff = (base?: number, current?: number): MetricDiff | null => {
+    if (base == null && current == null) return null;
+
+    const delta = base != null && current != null ? current - base : undefined;
+
+    return {base, current, delta};
+};
+
+const diffMetrics = (base: SonarMetricsMap, current: SonarMetricsMap): MetricsDiffMap => {
+    const allKeys = new Set([...Object.keys(base), ...Object.keys(current)]);
+    const result: MetricsDiffMap = {};
+
+    for (const key of allKeys) {
+        const baseValue = toNumber(base[key]) ?? undefined;
+        const currentValue = toNumber(current[key]) ?? undefined;
+
+        const diff = computeDiff(baseValue, currentValue);
+        if (diff) result[key] = diff;
+    }
+
+    return result;
+};
+
 /* =======================
    METRICS COLLECTION
 ======================= */
@@ -350,6 +391,7 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
         sonar_cloud_main_branch_metrics: mainMetrics,
         sonar_cloud_current_branch_metrics: currentMetrics,
         current_branch_name: config.branchName,
+        sonar_diff: diffMetrics(mainMetrics, currentMetrics)
     };
 
     if (jacocoCoverage !== undefined) {
