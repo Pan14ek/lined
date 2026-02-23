@@ -354,15 +354,42 @@ const computeDiff = (base?: number, current?: number): MetricDiff | null => {
     return {base, current, delta};
 };
 
-const diffMetrics = (base: SonarMetricsMap, current: SonarMetricsMap): MetricsDiffMap => {
-    const allKeys = new Set([...Object.keys(base), ...Object.keys(current)]);
-    const result: MetricsDiffMap = {};
+const DIFF_KEYS = [
+    "new_bugs",
+    "new_code_smells",
+    "new_vulnerabilities",
+    "new_security_hotspots",
+    "new_violations",
+    "new_blocker_violations",
+    "new_critical_violations",
+    "new_major_violations",
+    "new_minor_violations",
+    "new_info_violations",
+    "new_coverage",
+    "new_line_coverage",
+    "new_branch_coverage",
+    "new_duplicated_lines",
+    "new_duplicated_lines_density",
+    "new_technical_debt",
+    "new_lines",
+    "new_lines_to_cover",
+    "new_conditions_to_cover",
+] as const;
 
-    for (const key of allKeys) {
-        const baseValue = toNumber(base[key]) ?? undefined;
-        const currentValue = toNumber(current[key]) ?? undefined;
+type DiffKey = (typeof DIFF_KEYS)[number];
+type MetricsDiffMapStrict = Partial<Record<DiffKey, MetricDiff>>;
 
-        const diff = computeDiff(baseValue, currentValue);
+const diffSelectedMetrics = (
+    base: SonarMetricsMap,
+    current: SonarMetricsMap
+): MetricsDiffMapStrict => {
+    const result: MetricsDiffMapStrict = {};
+
+    for (const key of DIFF_KEYS) {
+        const b = toNumber(base[key]) ?? undefined;
+        const c = toNumber(current[key]) ?? undefined;
+
+        const diff = computeDiff(b, c);
         if (diff) result[key] = diff;
     }
 
@@ -391,7 +418,7 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
         sonar_cloud_main_branch_metrics: mainMetrics,
         sonar_cloud_current_branch_metrics: currentMetrics,
         current_branch_name: config.branchName,
-        sonar_diff: diffMetrics(mainMetrics, currentMetrics)
+        sonar_diff: diffSelectedMetrics(mainMetrics, currentMetrics)
     };
 
     if (jacocoCoverage !== undefined) {
