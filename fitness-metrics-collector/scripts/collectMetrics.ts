@@ -8,7 +8,27 @@ type Metrics = {
     spotbugs_total: number;
     spotbugs_total_classes: number;
     jacoco_line_coverage?: number;
+    sonar_cloud_main_branch_metrics?: Record<string, any>;
+    sonar_cloud_current_branch_metrics?: Record<string, any>;
+    current_branch_name?: string;
 };
+
+type SonarPeriod = { index: number; value?: string; bestValue?: boolean };
+type SonarMeasure = {
+    metric: string;
+    value?: string;
+    bestValue?: boolean;
+    periods?: SonarPeriod[];
+};
+
+type SonarResponse = {
+    component?: {
+        measures?: SonarMeasure[];
+    };
+};
+
+type SonarMetricValue = string | number;
+type SonarMetricsMap = Record<string, SonarMetricValue>;
 
 type Result = {
     metrics: Metrics;
@@ -21,6 +41,7 @@ type Config = {
     spotbugsXmlPath: string;
     spotbugsHtmlPath: string;
     jacocoPath: string;
+    branchName?: string;
 };
 
 /* =======================
@@ -86,6 +107,7 @@ const getConfig = (): Config => {
         spotbugsXmlPath: process.env.SPOTBUGS_XML ?? DEFAULT_PATHS.SPOTBUGS_XML,
         spotbugsHtmlPath: process.env.SPOTBUGS_HTML ?? DEFAULT_PATHS.SPOTBUGS_HTML,
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
+        branchName: process.env.BRANCH_NAME,
     };
 };
 
@@ -169,6 +191,9 @@ const collectMetrics = (config: Config): Metrics => {
             config.spotbugsXmlPath,
             config.spotbugsHtmlPath
         ),
+        sonar_cloud_main_branch_metrics: fetchSonarCloudMetrics(),
+        sonar_cloud_current_branch_metrics: config.branchName ? fetchSonarCloudMetrics(config.branchName) : undefined,
+        current_branch_name: config.branchName,
     };
 
     const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
@@ -185,6 +210,113 @@ const validateMetrics = (metrics: Metrics): Result => {
         checkstyle_valid: true,
         spotbugs_valid: metrics.spotbugs_total_classes > 0,
     };
+};
+
+const extractMeasureValue = (m: SonarMeasure): string | undefined => {
+    if (m.value != null) return m.value;
+    const p1 = m.periods?.find(p => p.index === 1);
+    return p1?.value;
+};
+
+const parseSonarMeasures = (data: SonarResponse): SonarMetricsMap => {
+    const measures = data.component?.measures;
+    if (!Array.isArray(measures)) {
+        throw new TypeError("Unexpected SonarCloud response: component.measures missing");
+    }
+
+    const out: SonarMetricsMap = {};
+    for (const m of measures) {
+        const v = extractMeasureValue(m);
+        if (v != null) out[m.metric] = v;
+    }
+    return out;
+};
+
+const fetchSonarCloudMetrics = async (branchName: string = "main") => {
+    const token = process.env.SONAR_TOKEN;
+    if (!token) throw new Error("SONAR_TOKEN is not set");
+
+    const basic = Buffer.from(`${token}:`).toString("base64");
+
+    const metricKeys = [
+        "alert_status",
+        "bugs",
+        "code_smells",
+        "vulnerabilities",
+        "security_hotspots",
+        "violations",
+        "blocker_violations",
+        "critical_violations",
+        "major_violations",
+        "minor_violations",
+        "info_violations",
+        "confirmed_issues",
+        "open_issues",
+        "reopened_issues",
+        "accepted_issues",
+        "false_positive_issues",
+        "sqale_rating",
+        "reliability_rating",
+        "coverage",
+        "line_coverage",
+        "branch_coverage",
+        "lines_to_cover",
+        "conditions_to_cover",
+        "duplicated_lines",
+        "duplicated_lines_density",
+        "duplicated_blocks",
+        "duplicated_files",
+        "ncloc",
+        "lines",
+        "classes",
+        "files",
+        "functions",
+        "complexity",
+        "cognitive_complexity",
+        "new_bugs",
+        "new_code_smells",
+        "new_vulnerabilities",
+        "new_security_hotspots",
+        "new_violations",
+        "new_blocker_violations",
+        "new_critical_violations",
+        "new_major_violations",
+        "new_minor_violations",
+        "new_info_violations",
+        "new_maintainability_rating",
+        "new_reliability_rating",
+        "new_coverage",
+        "new_line_coverage",
+        "new_branch_coverage",
+        "new_lines_to_cover",
+        "new_conditions_to_cover",
+        "new_duplicated_lines",
+        "new_duplicated_lines_density",
+        "new_technical_debt",
+        "new_lines",
+    ].join(",");
+
+    const componentKey = "Pan14ek_lined";
+
+    const url =
+        "https://sonarcloud.io/api/measures/component?" +
+        `metricKeys=${encodeURIComponent(metricKeys)}` +
+        `&component=${encodeURIComponent(componentKey)}` +
+        `&branch=${encodeURIComponent(branchName)}`;
+
+    const response = await fetch(url, {
+        headers: {Authorization: `Basic ${basic}`},
+    });
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(
+            `SonarCloud HTTP ${response.status} ${response.statusText}. Body: ${text}`
+        );
+    }
+
+    const data = (await response.json()) as SonarResponse;
+    return parseSonarMeasures(data);
 };
 
 /* =======================
