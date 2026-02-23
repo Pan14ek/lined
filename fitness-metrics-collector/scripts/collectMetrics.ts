@@ -304,6 +304,8 @@ const fetchSonarCloudMetrics = async (branchName: string = "main") => {
         `&component=${encodeURIComponent(componentKey)}` +
         `&branch=${encodeURIComponent(branchName)}`;
 
+    console.log(`[sonar] GET ${url}`);
+
     const response = await fetch(url, {
         headers: {Authorization: `Basic ${basic}`},
     });
