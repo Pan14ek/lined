@@ -20,6 +20,7 @@
         <module name="Indentation">
             <property name="basicOffset" value="2"/>
             <property name="caseIndent" value="2"/>
+            <property name="arrayInitIndent" value="2"/>
         </module>
         <module name="EmptyBlock"/>         <!-- No empty catch/if blocks -->
         <module name="NeedBraces"/>         <!-- Always use braces for if/for/while -->
