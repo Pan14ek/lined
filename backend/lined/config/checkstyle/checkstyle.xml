@@ -16,7 +16,7 @@
 
         <!-- Code style -->
         <module name="Indentation">
-            <property name="basicOffset" value="4"/>
+            <property name="basicOffset" value="2"/>
         </module>
         <module name="EmptyBlock"/>         <!-- No empty catch/if blocks -->
         <module name="NeedBraces"/>         <!-- Always use braces for if/for/while -->
