@@ -5,6 +5,29 @@
 
 <module name="Checker">
     <module name="TreeWalker">
+
+        <!-- Already have -->
         <module name="UnusedImports"/>
+
+        <!-- Naming conventions -->
+        <module name="TypeName"/>           <!-- Classes must be UpperCamelCase -->
+        <module name="MethodName"/>         <!-- Methods must be lowerCamelCase -->
+        <module name="ConstantName"/>       <!-- Constants must be UPPER_SNAKE_CASE -->
+
+        <!-- Code style -->
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+        </module>
+        <module name="EmptyBlock"/>         <!-- No empty catch/if blocks -->
+        <module name="NeedBraces"/>         <!-- Always use braces for if/for/while -->
+
+        <!-- Size limits -->
+        <module name="MethodLength">
+            <property name="max" value="50"/>
+        </module>
+        <module name="ParameterNumber">
+            <property name="max" value="7"/>
+        </module>
+
     </module>
 </module>

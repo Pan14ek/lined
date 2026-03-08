@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import {CosmosClient} from "@azure/cosmos";
 
 /* =======================
    TYPES
@@ -54,6 +55,8 @@ type Config = {
     spotbugsXmlPath: string;
     spotbugsHtmlPath: string;
     jacocoPath: string;
+    commitHash?: string;
+    cosmosDbConnectionString?: string;
     pullRequestId?: string;
     branchName?: string;
 };
@@ -123,8 +126,42 @@ const getConfig = (): Config => {
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
         branchName: process.env.BRANCH_NAME,
         pullRequestId: process.env.PR_NUMBER,
+        commitHash: process.env.GITHUB_SHA,
+        cosmosDbConnectionString: process.env.COSMOS_DB_CONNECTION_STRING,
     };
 };
+
+/* =======================
+   SAVE DATA IN COSMOS DB
+======================= */
+const saveMetrics = async (config: Config, data: Metrics): Promise<void> => {
+    if (!config.cosmosDbConnectionString) {
+        console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
+        return;
+    }
+
+    const client = new CosmosClient(config.cosmosDbConnectionString);
+
+    const id = `${config.branchName ?? "unknown"}-${config.commitHash}`;
+
+    const container = client.database("metrics").container("pipeline-runs");
+
+    const {resource} = await container.item(id, config.branchName).read()
+
+    if (resource) {
+        console.log(`[metrics] already saved for commit ${config.commitHash}, skipping`);
+        return;
+    }
+
+    await container.items.create({
+        id: id,
+        timestamp: new Date().toISOString(),
+        branch: config.branchName,
+        commitHash: process.env.GITHUB_SHA,
+        pullRequestId: config.pullRequestId,
+        metrics: data
+    });
+}
 
 /* =======================
    PARSERS
@@ -433,9 +470,9 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
 ======================= */
 const main = async (): Promise<void> => {
     try {
-        const config = getConfig();
-        const metrics = await collectMetrics(config);
-        const result = validateMetrics(metrics);
+        const config: Config = getConfig();
+        const metrics: Metrics = await collectMetrics(config);
+        const result: Result = validateMetrics(metrics);
 
         console.log(JSON.stringify(result, null, 2));
 
@@ -446,6 +483,8 @@ const main = async (): Promise<void> => {
             );
             process.exit(EXIT_CODES.SPOTBUGS_INVALID);
         }
+
+       // await saveMetrics(config, metrics);
     } catch (error) {
         console.error("Fatal error:", error instanceof Error ? error.message : error);
         process.exit(1);
