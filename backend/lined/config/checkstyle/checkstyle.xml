@@ -35,5 +35,6 @@
     </module>
     <module name="SuppressionFilter">
         <property name="file" value="config/checkstyle/checkstyle-suppressions.xml"/>
+        <property name="optional" value="true"/>
     </module>
 </module>
