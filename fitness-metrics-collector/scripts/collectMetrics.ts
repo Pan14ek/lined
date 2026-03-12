@@ -155,43 +155,43 @@ const computeFitnessFunction = async (
 ): Promise<FitnessScore> => {
     const isMainBranch = config.branchName === "main";
 
+    // Sonar metrics — always available live, no DB needed
+    const mainSonar = current.sonar_cloud_main_branch_metrics ?? {};
+    const currentSonar = current.sonar_cloud_current_branch_metrics ?? {};
+
+    const mainCritical = toNumber(mainSonar["critical_violations"]) ?? 0;
+    const currentCritical = toNumber(currentSonar["critical_violations"]) ?? 0;
+
+    const mainSmells = toNumber(mainSonar["code_smells"]) ?? 0;
+    const currentSmells = toNumber(currentSonar["code_smells"]) ?? 0;
+
+    const mainDuplication = toNumber(mainSonar["duplicated_lines_density"]) ?? 0;
+    const currentDuplication = toNumber(currentSonar["duplicated_lines_density"]) ?? 0;
+
+    // SpotBugs + Checkstyle — try Cosmos DB, fall back to 0
     const query = isMainBranch
         ? "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 1 LIMIT 1"
         : "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
 
-    const {resources} = await container.items
-        .query(query)
-        .fetchAll();
+    const {resources} = await container.items.query(query).fetchAll();
+    const snapshot = resources[0] as { metrics: Metrics } | undefined;
 
-    if (resources.length === 0) {
-        console.log("[fitness] No main baseline found, skipping F calculation");
-        return null;
+    if (!snapshot) {
+        console.log("[fitness] No main baseline in DB — using 0 for SpotBugs/Checkstyle baseline");
     }
 
-    const mainMetrics: Metrics = resources[0].metrics;
+    const mainSpotbugs = snapshot?.metrics.spotbugs_total ?? 0;
+    const mainCheckstyle = snapshot?.metrics.checkstyle_violations ?? 0;
+    const mainCoverage = snapshot?.metrics.jacoco_line_coverage ?? 0;
 
-    const mainCritical = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["critical_violations"]) ?? 0;
-    const currentCritical = toNumber(current.sonar_cloud_current_branch_metrics?.["critical_violations"]) ?? 0;
-
-    const mainSmells = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["code_smells"]) ?? 0;
-    const currentSmells = toNumber(current.sonar_cloud_current_branch_metrics?.["code_smells"]) ?? 0;
-
-    const mainDuplication = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["duplicated_lines_density"]) ?? 0;
-    const currentDuplication = toNumber(current.sonar_cloud_current_branch_metrics?.["duplicated_lines_density"]) ?? 0;
-
-    const mainCoverage = mainMetrics.jacoco_line_coverage ?? 0;
+    const currentSpotbugs = current.spotbugs_total;
+    const currentCheckstyle = current.checkstyle_violations;
     const currentCoverage = current.jacoco_line_coverage ?? 0;
-
-    const mainSpotbugs = mainMetrics.spotbugs_total ?? 0;
-    const currentSpotbugs = current.spotbugs_total ?? 0;
-
-    const mainCheckstyle = mainMetrics.checkstyle_violations ?? 0;
-    const currentCheckstyle = current.checkstyle_violations ?? 0;
 
     const F =
         0.25 * normalize(mainSpotbugs, currentSpotbugs, false) +
         0.25 * normalize(mainCritical, currentCritical, false) +
-        0.30 * normalize(mainCoverage, currentCoverage, true) +
+        0.3 * normalize(mainCoverage, currentCoverage, true) +
         0.07 * normalize(mainSmells, currentSmells, false) +
         0.07 * normalize(mainDuplication, currentDuplication, false) +
         0.06 * normalize(mainCheckstyle, currentCheckstyle, false);
@@ -203,7 +203,7 @@ const computeFitnessFunction = async (
    SAVE DATA IN COSMOS DB
 ======================= */
 const sanitizeBranchName = (name: string): string =>
-    name.replace(/[/\\#?]/g, '-');
+    name.replaceAll(/[/\\#?]/g, '-');
 
 const saveMetrics = async (
     config: Config,
