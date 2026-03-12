@@ -4,6 +4,8 @@ import {CosmosClient} from "@azure/cosmos";
 /* =======================
    TYPES
 ======================= */
+type FitnessScore = number | null;
+
 type Metrics = {
     checkstyle_violations: number;
     spotbugs_total: number;
@@ -131,22 +133,89 @@ const getConfig = (): Config => {
     };
 };
 
+/* ==============================
+   CALCULATE THE FITNESS FUNCTION
+================================= */
+const clamp = (value: number, min: number, max: number): number =>
+    Math.max(min, Math.min(max, value));
+
+const normalize = (main: number, current: number, higherIsBetter: boolean): number => {
+    if (main === 0 && current === 0) return 0;
+    if (main === 0) return current > 0 ? -1 : 1;
+    const delta = higherIsBetter
+        ? (current - main) / main
+        : (main - current) / main;
+    return clamp(delta, -1, 1);
+};
+
+const computeFitnessFunction = async (
+    config: Config,
+    container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>,
+    current: Metrics
+): Promise<FitnessScore> => {
+    const isMainBranch = config.branchName === "main";
+
+    const query = isMainBranch
+        ? "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 1 LIMIT 1"
+        : "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
+
+    const {resources} = await container.items
+        .query(query)
+        .fetchAll();
+
+    if (resources.length === 0) {
+        console.log("[fitness] No main baseline found, skipping F calculation");
+        return null;
+    }
+
+    const mainMetrics: Metrics = resources[0].metrics;
+
+    const mainCritical = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["critical_violations"]) ?? 0;
+    const currentCritical = toNumber(current.sonar_cloud_current_branch_metrics?.["critical_violations"]) ?? 0;
+
+    const mainSmells = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["code_smells"]) ?? 0;
+    const currentSmells = toNumber(current.sonar_cloud_current_branch_metrics?.["code_smells"]) ?? 0;
+
+    const mainDuplication = toNumber(mainMetrics.sonar_cloud_main_branch_metrics?.["duplicated_lines_density"]) ?? 0;
+    const currentDuplication = toNumber(current.sonar_cloud_current_branch_metrics?.["duplicated_lines_density"]) ?? 0;
+
+    const mainCoverage = mainMetrics.jacoco_line_coverage ?? 0;
+    const currentCoverage = current.jacoco_line_coverage ?? 0;
+
+    const mainSpotbugs = mainMetrics.spotbugs_total ?? 0;
+    const currentSpotbugs = current.spotbugs_total ?? 0;
+
+    const mainCheckstyle = mainMetrics.checkstyle_violations ?? 0;
+    const currentCheckstyle = current.checkstyle_violations ?? 0;
+
+    const F =
+        0.25 * normalize(mainSpotbugs, currentSpotbugs, false) +
+        0.25 * normalize(mainCritical, currentCritical, false) +
+        0.30 * normalize(mainCoverage, currentCoverage, true) +
+        0.07 * normalize(mainSmells, currentSmells, false) +
+        0.07 * normalize(mainDuplication, currentDuplication, false) +
+        0.06 * normalize(mainCheckstyle, currentCheckstyle, false);
+
+    return Number(F.toFixed(4));
+};
+
 /* =======================
    SAVE DATA IN COSMOS DB
 ======================= */
-const saveMetrics = async (config: Config, data: Metrics): Promise<void> => {
+const saveMetrics = async (
+    config: Config,
+    container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>,
+    data: Metrics,
+    fitnessScore: FitnessScore): Promise<void> => {
     if (!config.cosmosDbConnectionString) {
         console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
         return;
     }
 
-    const client = new CosmosClient(config.cosmosDbConnectionString);
+    const partitionKey = config.branchName ?? "unknown";
+    const id = `${partitionKey}-${config.commitHash}`;
 
-    const id = `${config.branchName ?? "unknown"}-${config.commitHash}`;
-
-    const container = client.database("metrics").container("pipeline-runs");
-
-    const {resource} = await container.item(id, config.branchName).read()
+    const {resource} = await container.item(id, partitionKey).read();
 
     if (resource) {
         console.log(`[metrics] already saved for commit ${config.commitHash}, skipping`);
@@ -154,12 +223,13 @@ const saveMetrics = async (config: Config, data: Metrics): Promise<void> => {
     }
 
     await container.items.create({
-        id: id,
+        id,
         timestamp: new Date().toISOString(),
         branch: config.branchName,
         commitHash: process.env.GITHUB_SHA,
         pullRequestId: config.pullRequestId,
-        metrics: data
+        metrics: data,
+        fitnessScore
     });
 }
 
@@ -441,9 +511,11 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
 
     const mainMetrics = await fetchSonarCloudMetrics({kind: "branch", name: "main"});
 
-    const currentScope = getCurrentScope(config);
+    const isMainBranch = config.branchName === "main";
 
-    const currentMetrics = await fetchSonarCloudMetrics(currentScope, {allowNotFound: true});
+    const currentMetrics = isMainBranch ?
+        mainMetrics :
+        await fetchSonarCloudMetrics(getCurrentScope(config), {allowNotFound: true});
 
     const metrics: Metrics = {
         checkstyle_violations: readCheckstyleViolations(config.checkstylePath),
@@ -455,7 +527,7 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
         sonar_cloud_main_branch_metrics: mainMetrics,
         sonar_cloud_current_branch_metrics: currentMetrics,
         current_branch_name: config.branchName,
-        sonar_diff: diffSelectedMetrics(mainMetrics, currentMetrics)
+        sonar_diff: isMainBranch ? {} : diffSelectedMetrics(mainMetrics, currentMetrics)
     };
 
     if (jacocoCoverage !== undefined) {
@@ -484,7 +556,18 @@ const main = async (): Promise<void> => {
             process.exit(EXIT_CODES.SPOTBUGS_INVALID);
         }
 
-       // await saveMetrics(config, metrics);
+        if (!config.cosmosDbConnectionString) {
+            console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
+            return;
+        }
+
+        const client = new CosmosClient(config.cosmosDbConnectionString);
+        const container = client.database("metrics").container("pipeline-runs");
+
+        const fitnessScore = await computeFitnessFunction(config, container, metrics);
+
+        console.log(`[fitness] F = ${fitnessScore}`);
+        await saveMetrics(config, container, metrics, fitnessScore);
     } catch (error) {
         console.error("Fatal error:", error instanceof Error ? error.message : error);
         process.exit(1);

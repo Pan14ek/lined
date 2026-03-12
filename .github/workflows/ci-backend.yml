@@ -1,6 +1,8 @@
 name: CI backend pipeline
 
 on:
+  schedule:
+    - cron: '0 9 * * *'
   push:
     branches:
       - main
@@ -59,21 +61,10 @@ jobs:
       - name: Generate code coverage report
         run: ./gradlew jacocoTestReport
 
-      - name: Annotate Checkstyle
-        uses: dbelyaev/action-checkstyle@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          checkstyle_config: backend/lined/config/checkstyle/checkstyle.xml
-          workdir: backend/lined
-          reporter: github-pr-review
-
-      - name: Generate SpotBugs XML
-        run: ./gradlew spotbugsMain
-
-      - name: Build and analyze with SonarCloud
+      - name: Analyze with SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonarqube --info -Dsonar.login=$SONAR_TOKEN
+        run: ./gradlew sonarqube --info -Dsonar.login=$SONAR_TOKEN
 
       - name: Upload reports (JaCoCo + Checkstyle + SpotBugs)
         if: always()
@@ -99,13 +90,12 @@ jobs:
         with:
           sarif_file: backend/lined/build/reports/spotbugs/spotbugsMain.sarif
 
-      - name: Annotate Checkstyle (XML -> reviewdog)
+      - name: Annotate Checkstyle via reviewdog
         if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          ./gradlew checkstyleMain
           reviewdog -f=checkstyle \
             -name="checkstyle" \
             -reporter=github-pr-review \
@@ -116,17 +106,6 @@ jobs:
       - name: Install metrics collector deps
         working-directory: fitness-metrics-collector
         run: npm ci
-
-      - name: Debug reports paths
-        run: |
-          ls -la build/reports/spotbugs || true
-          ls -la build/reports/checkstyle || true
-          ls -la build/reports/jacoco/test || true
-
-      - name: Debug SpotBugs report
-        run: |
-          ls -la build/reports/spotbugs || true
-          head -n 30 build/reports/spotbugs/spotbugsMain.xml || true
 
       - name: Collect metrics
         working-directory: fitness-metrics-collector
