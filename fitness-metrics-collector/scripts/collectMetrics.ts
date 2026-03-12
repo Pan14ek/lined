@@ -202,6 +202,9 @@ const computeFitnessFunction = async (
 /* =======================
    SAVE DATA IN COSMOS DB
 ======================= */
+const sanitizeBranchName = (name: string): string =>
+    name.replace(/[/\\#?]/g, '-');
+
 const saveMetrics = async (
     config: Config,
     container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>,
@@ -212,7 +215,7 @@ const saveMetrics = async (
         return;
     }
 
-    const partitionKey = config.branchName ?? "unknown";
+    const partitionKey = sanitizeBranchName(config.branchName ?? "unknown");
     const id = `${partitionKey}-${config.commitHash}`;
 
     const {resource} = await container.item(id, partitionKey).read();
@@ -225,7 +228,7 @@ const saveMetrics = async (
     await container.items.create({
         id,
         timestamp: new Date().toISOString(),
-        branch: config.branchName,
+        branch: partitionKey,
         commitHash: process.env.GITHUB_SHA,
         pullRequestId: config.pullRequestId,
         metrics: data,
