@@ -141,7 +141,10 @@ const clamp = (value: number, min: number, max: number): number =>
 
 const normalize = (main: number, current: number, higherIsBetter: boolean): number => {
     if (main === 0 && current === 0) return 0;
-    if (main === 0) return current > 0 ? -1 : 1;
+    if (main === 0) {
+        if (higherIsBetter) return current > 0 ? 1 : -1;
+        return current > 0 ? -1 : 1;
+    }
     const delta = higherIsBetter
         ? (current - main) / main
         : (main - current) / main;
