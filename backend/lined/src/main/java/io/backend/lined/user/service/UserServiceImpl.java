@@ -41,9 +41,7 @@ public class UserServiceImpl implements UserService {
     UserEntity entity = userMapper.toEntity(dto);
     entity.setPassword(passwordEncoder.encode(dto.password()));
 
-    if (dto.roles() != null && !dto.roles().isEmpty()) {
-      entity.setRoles(resolveRoles(dto.roles()));
-    }
+    if (dto.roles() != null && !dto.roles().isEmpty()) entity.setRoles(resolveRoles(dto.roles()));
 
     try {
       return userMapper.toDto(userRepository.save(entity));
@@ -55,7 +53,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getById(Long id) {
     UserEntity u = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("User not found: " + id));
+        .orElse(null);
     return userMapper.toDto(u);
   }
 
