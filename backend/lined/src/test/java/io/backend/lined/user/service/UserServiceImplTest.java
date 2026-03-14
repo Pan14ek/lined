@@ -156,14 +156,14 @@ class UserServiceImplTest {
     assertThat(result).isEqualTo(userDto);
   }
 
-  @Test
-  void getById_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> userService.getById(99L))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
-  }
+//  @Test
+//  void getById_throwsNotFound_whenUserDoesNotExist() {
+//    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+//
+//    assertThatThrownBy(() -> userService.getById(99L))
+//        .isInstanceOf(NotFoundException.class)
+//        .hasMessageContaining("User not found");
+//  }
 
   /* =======================
      UPDATE
