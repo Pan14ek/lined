@@ -1,5 +1,7 @@
 package io.backend.lined.role.service;
 
+import static java.lang.String.format;
+
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.api.RoleDto;
 import io.backend.lined.role.api.RoleMapper;
@@ -10,7 +12,9 @@ import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class RoleServiceImpl implements RoleService {
 
+  private static final String USER_NOT_FOUND_ERROR_MESSAGE = "User not found: %s";
+  
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final RoleMapper roleMapper;
@@ -38,14 +44,17 @@ public class RoleServiceImpl implements RoleService {
       return;
     }
 
-    roleRepository.findByNameIgnoreCase(roleName)
-        .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(roleName).build()));
+    Optional<RoleEntity> foundRoleEntity = roleRepository.findByNameIgnoreCase(roleName);
+
+    if (foundRoleEntity.isEmpty()) {
+      roleRepository.save(RoleEntity.builder().name(roleName).build());
+    }
   }
 
   @Override
   public Set<String> setUserRoles(Long userId, Set<String> roles) {
     UserEntity user = userRepository.findWithRolesById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
 
     Set<RoleEntity> newRoles = resolveRoles(roles);
 
@@ -62,7 +71,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     UserEntity user = userRepository.findWithRolesById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
 
     Set<RoleEntity> add = resolveRoles(roles);
     user.getRoles().addAll(add);
@@ -77,12 +86,12 @@ public class RoleServiceImpl implements RoleService {
       return getUserRoleNames(userId);
     }
     UserEntity user = userRepository.findWithRolesById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
 
     Set<String> toRemove = roles.stream().filter(Objects::nonNull)
-        .map(String::toLowerCase).collect(Collectors.toSet());
+        .map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
 
-    user.getRoles().removeIf(r -> toRemove.contains(r.getName().toLowerCase()));
+    user.getRoles().removeIf(r -> toRemove.contains(r.getName().toLowerCase(Locale.ROOT)));
     userRepository.save(user);
 
     return toNames(user.getRoles());
@@ -90,7 +99,7 @@ public class RoleServiceImpl implements RoleService {
 
   private Set<String> getUserRoleNames(Long userId) {
     UserEntity user = userRepository.findWithRolesById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
     return toNames(user.getRoles());
   }
 
@@ -105,7 +114,7 @@ public class RoleServiceImpl implements RoleService {
       }
 
       RoleEntity role = roleRepository.findByNameIgnoreCase(name)
-          .orElseThrow(() -> new NotFoundException("Role not found: " + name));
+          .orElseThrow(() -> new NotFoundException(format("Role not found: %s", name)));
       out.add(role);
     }
     return out;
