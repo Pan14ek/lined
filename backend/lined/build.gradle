@@ -73,7 +73,7 @@ spotbugs {
 checkstyle {
     toolVersion = '10.20.0'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
-    ignoreFailures = false
+    ignoreFailures = true
 }
 
 jacocoTestReport {

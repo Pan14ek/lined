@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.HashMap;
+import java.util.LinkedList;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,5 +84,83 @@ public class UserController {
       @PathVariable Long id) {
     return userService.getById(id);
   }
+
+  public void debugEndpoint(String a, String b, String c, String d,
+                            String e, String f, String g, String h) {
+    // padding line 1
+    // padding line 1
+    // padding line 1// padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1// padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+// padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+    // padding line 1
+  }
+
 
 }

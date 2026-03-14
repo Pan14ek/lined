@@ -26,23 +26,22 @@ import org.springframework.stereotype.Service;
 public class RoleServiceImpl implements RoleService {
 
   private static final String USER_NOT_FOUND_ERROR_MESSAGE = "User not found: %s";
-  
+  private static final String myConstant = "value";
+
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final RoleMapper roleMapper;
 
   @Override
   public List<RoleDto> listAll() {
-    return roleRepository.findAll().stream()
+           return roleRepository.findAll().stream()
         .map(roleMapper::toDto)
         .toList();
   }
 
   @Override
   public void ensureExists(String roleName) {
-    if (roleName == null || roleName.isBlank()) {
-      return;
-    }
+    if (roleName == null || roleName.isBlank()) return;
 
     Optional<RoleEntity> foundRoleEntity = roleRepository.findByNameIgnoreCase(roleName);
 
