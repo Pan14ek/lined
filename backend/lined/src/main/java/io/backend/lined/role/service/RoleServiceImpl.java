@@ -10,6 +10,7 @@ import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -80,9 +81,9 @@ public class RoleServiceImpl implements RoleService {
         .orElseThrow(() -> new NotFoundException("User not found: " + userId));
 
     Set<String> toRemove = roles.stream().filter(Objects::nonNull)
-        .map(String::toLowerCase).collect(Collectors.toSet());
+        .map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
 
-    user.getRoles().removeIf(r -> toRemove.contains(r.getName().toLowerCase()));
+    user.getRoles().removeIf(r -> toRemove.contains(r.getName().toLowerCase(Locale.ROOT)));
     userRepository.save(user);
 
     return toNames(user.getRoles());
