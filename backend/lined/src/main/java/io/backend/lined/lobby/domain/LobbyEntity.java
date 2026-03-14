@@ -14,6 +14,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,12 +52,13 @@ public class LobbyEntity {
   @JoinColumn(name = "owner_id", nullable = false)
   private UserEntity owner;
 
+  @Builder.Default
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "lobby_members",
       joinColumns = @JoinColumn(name = "lobby_id"),
       inverseJoinColumns = @JoinColumn(name = "user_id")
   )
-  private Set<UserEntity> members;
+  private Set<UserEntity> members = new HashSet<>();
 
 }
