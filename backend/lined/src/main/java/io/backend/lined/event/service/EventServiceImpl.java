@@ -1,9 +1,11 @@
 package io.backend.lined.event.service;
 
+import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
 import io.backend.lined.event.api.EventUpdateDto;
+import io.backend.lined.event.api.UserConflictDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.lobby.domain.LobbyEntity;
@@ -12,6 +14,7 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -96,6 +99,47 @@ public class EventServiceImpl implements EventService {
     }
 
     return repo.findOverlapping(lobbyId, from, to).stream().map(mapper::toDto).toList();
+  }
+
+  @Override
+  public List<EventConflictDto> findConflicts(Long lobbyId,
+                                              OffsetDateTime start, OffsetDateTime end,
+                                              Long requesterId) {
+    var lobby = mustLobby(lobbyId);
+    ensureMember(lobby, requesterId);
+    if (!start.isBefore(end)) {
+      throw new IllegalArgumentException("start must be before end");
+    }
+    var events = repo.findOverlapping(lobbyId, start, end);
+    List<EventConflictDto> conflicts = new ArrayList<>();
+    for (int i = 0; i < events.size(); i++) {
+      for (int j = i + 1; j < events.size(); j++) {
+        var a = events.get(i);
+        var b = events.get(j);
+        var overlapStart = a.getStartAt().isAfter(b.getStartAt())
+            ? a.getStartAt() : b.getStartAt();
+        var overlapEnd = a.getEndAt().isBefore(b.getEndAt())
+            ? a.getEndAt() : b.getEndAt();
+        if (overlapStart.isBefore(overlapEnd)) {
+          conflicts.add(new EventConflictDto(
+              mapper.toDto(a), mapper.toDto(b), overlapStart, overlapEnd));
+        }
+      }
+    }
+    return conflicts;
+  }
+
+  @Override
+  public UserConflictDto hasConflict(Long userId, OffsetDateTime start,
+                                     OffsetDateTime end, Long requesterId) {
+    if (!start.isBefore(end)) {
+      throw new IllegalArgumentException("start must be before end");
+    }
+    var overlapping = repo.findOverlappingByUser(userId, start, end);
+    if (overlapping.isEmpty()) {
+      return new UserConflictDto(userId, false, null);
+    }
+    return new UserConflictDto(userId, true, mapper.toDto(overlapping.get(0)));
   }
 
   private UserEntity mustUser(Long id) {
