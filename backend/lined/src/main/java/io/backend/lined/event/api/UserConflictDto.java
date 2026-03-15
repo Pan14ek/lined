@@ -1,7 +1,6 @@
 package io.backend.lined.event.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.OffsetDateTime;
 
 @Schema(name = "UserConflictDto", description = "Whether a user has a conflicting event in a time window")
 public record UserConflictDto(

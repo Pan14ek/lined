@@ -69,23 +69,23 @@ class EventServiceImplConflictTest {
     now = OffsetDateTime.now();
     windowStart = now.plusHours(1);
     windowEnd = now.plusHours(5);
+    owner = buildUser(1L, "owner");
+    member = buildUser(2L, "member");
+    buildLobby();
+    buildEvents();
+    buildDtos();
+  }
 
-    owner = new UserEntity();
-    owner.setId(1L);
-    owner.setUsername("owner");
+  private void buildDtos() {
+    dtoA = new EventDto(1L, "Event A", true,
+        eventA.getStartAt(), eventA.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
+    dtoB = new EventDto(2L, "Event B", true,
+        eventB.getStartAt(), eventB.getEndAt(), "Europe/Kyiv", 101L, 2L, now);
+    dtoC = new EventDto(3L, "Event C", true,
+        eventC.getStartAt(), eventC.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
+  }
 
-    member = new UserEntity();
-    member.setId(2L);
-    member.setUsername("member");
-
-    lobby = LobbyEntity.builder()
-        .id(101L)
-        .name("Our Family")
-        .lobbyType(LobbyTypes.FAMILY)
-        .owner(owner)
-        .members(new HashSet<>(Set.of(owner, member)))
-        .build();
-
+  private void buildEvents() {
     // Event A: 1h–3h (overlaps with B)
     eventA = EventEntity.builder()
         .id(1L)
@@ -121,13 +121,23 @@ class EventServiceImplConflictTest {
         .lobby(lobby)
         .owner(owner)
         .build();
+  }
 
-    dtoA = new EventDto(1L, "Event A", true,
-        eventA.getStartAt(), eventA.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
-    dtoB = new EventDto(2L, "Event B", true,
-        eventB.getStartAt(), eventB.getEndAt(), "Europe/Kyiv", 101L, 2L, now);
-    dtoC = new EventDto(3L, "Event C", true,
-        eventC.getStartAt(), eventC.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
+  private void buildLobby() {
+    lobby = LobbyEntity.builder()
+        .id(101L)
+        .name("Our Family")
+        .lobbyType(LobbyTypes.FAMILY)
+        .owner(owner)
+        .members(new HashSet<>(Set.of(owner, member)))
+        .build();
+  }
+
+  private UserEntity buildUser(long id, String username) {
+    UserEntity user = new UserEntity();
+    user.setId(id);
+    user.setUsername(username);
+    return user;
   }
 
   /* ======================= FIND CONFLICTS ======================= */
@@ -209,7 +219,8 @@ class EventServiceImplConflictTest {
 
     assertThat(result).hasSize(1);
     EventConflictDto conflict = result.get(0);
-    assertThat(conflict.overlapStart()).isEqualTo(eventB.getStartAt()); // max(startA, startB) = startB
+    assertThat(conflict.overlapStart()).isEqualTo(
+        eventB.getStartAt()); // max(startA, startB) = startB
     assertThat(conflict.overlapEnd()).isEqualTo(eventA.getEndAt());     // min(endA, endB) = endA
   }
 
