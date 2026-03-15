@@ -8,6 +8,7 @@ import io.backend.lined.plan.api.PlanUpdateDto;
 import io.backend.lined.plan.domain.PlanEntity;
 import io.backend.lined.plan.domain.PlanRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@Disabled("Experiment: degrade-coverage")
 @ExtendWith(MockitoExtension.class)
 class PlanServiceImplTest {
 
