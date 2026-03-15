@@ -82,6 +82,8 @@ public class UserController {
   public UserDto get(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id) {
+
+    String newValue = getHelloValue();
     return userService.getById(id);
   }
 
@@ -99,6 +101,16 @@ public class UserController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
     return ResponseEntity.ok(userService.getByRole(role, page, size));
+  }
+
+  private String getHelloValue() {
+    String result = "hello";
+
+    if (result != null) {
+      return result;
+    }
+
+    return "world";
   }
 
 }
