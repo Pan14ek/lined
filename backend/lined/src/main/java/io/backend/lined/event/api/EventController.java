@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -86,6 +87,26 @@ public class EventController {
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId) {
     service.delete(id, currentUserId);
+  }
+
+  @GetMapping("/conflicts")
+  public ResponseEntity<List<EventConflictDto>> findConflicts(
+      @RequestParam Long lobbyId,
+      @RequestParam OffsetDateTime start,
+      @RequestParam OffsetDateTime end,
+      @RequestParam Long requesterId) {
+    return ResponseEntity.ok(
+        service.findConflicts(lobbyId, start, end, requesterId));
+  }
+
+  @GetMapping("/user-conflict")
+  public ResponseEntity<UserConflictDto> hasConflict(
+      @RequestParam Long userId,
+      @RequestParam OffsetDateTime start,
+      @RequestParam OffsetDateTime end,
+      @RequestParam Long requesterId) {
+    return ResponseEntity.ok(
+        service.hasConflict(userId, start, end, requesterId));
   }
 
 }

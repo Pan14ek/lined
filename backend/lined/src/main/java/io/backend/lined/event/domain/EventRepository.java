@@ -25,4 +25,17 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       @Param("to") OffsetDateTime to
   );
 
+  @Query("""
+  SELECT e FROM EventEntity e
+  WHERE e.owner.id = :userId
+  AND e.startAt < :to
+  AND e.endAt > :from
+  ORDER BY e.startAt ASC
+  """)
+  List<EventEntity> findOverlappingByUser(
+      @Param("userId") Long userId,
+      @Param("from") OffsetDateTime from,
+      @Param("to") OffsetDateTime to
+  );
+
 }
