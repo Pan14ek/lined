@@ -35,7 +35,6 @@ public class UserServiceImpl implements UserService {
   private final RoleRepository roleRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
-  private String unusedField = "debug";
 
   @Override
   public UserDto create(UserCreateDto dto) {
@@ -63,14 +62,14 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getById(Long id) {
     UserEntity u = userRepository.findById(id)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("User not found: " + id));
     return userMapper.toDto(u);
   }
 
   @Override
   public UserDto update(Long id, UserUpdateDto dto) {
     UserEntity entity = userRepository.findById(id)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("User not found: " + id));
 
     if (dto.username() != null && !dto.username().equalsIgnoreCase(entity.getUsername()) &&
         userRepository.existsByUsernameIgnoreCase(dto.username())) {
@@ -111,7 +110,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void changePassword(Long userId, String rawNewPassword) {
     UserEntity u = userRepository.findById(userId)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
     u.setPassword(passwordEncoder.encode(rawNewPassword));
     userRepository.save(u);
   }
@@ -122,7 +121,7 @@ public class UserServiceImpl implements UserService {
       throw new ConflictException("Email already exists: " + newEmail);
     }
     UserEntity u = userRepository.findById(userId)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
     u.setEmail(newEmail);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -137,7 +136,7 @@ public class UserServiceImpl implements UserService {
       throw new ConflictException("Username already exists: " + newUsername);
     }
     UserEntity u = userRepository.findById(userId)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
     u.setUsername(newUsername);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -160,7 +159,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserPageDto getByRole(String roleName, int page, int size) {
     roleRepository.findByNameIgnoreCase(roleName)
-        .orElse(null);
+        .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
     Page<UserEntity> result = userRepository.findAllByRoleName(roleName, pageable);
     List<UserSearchResultDto> content = result.getContent()
@@ -180,6 +179,12 @@ public class UserServiceImpl implements UserService {
       out.add(r.get());
     }
     return out;
+  }
+
+  // Add this to UserServiceImpl — SpotBugs detects it, but no tests break
+  private String unsafeDebug(Long id) {
+    UserEntity user = userRepository.findById(id).orElse(null);
+    return user.getUsername(); // NP_NULL_ON_SOME_PATH
   }
 
 }
