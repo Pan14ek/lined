@@ -7,15 +7,22 @@ import io.backend.lined.role.domain.RoleRepository;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.api.UserMapper;
+import io.backend.lined.user.api.UserPageDto;
+import io.backend.lined.user.api.UserSearchResultDto;
 import io.backend.lined.user.api.UserUpdateDto;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -138,6 +145,30 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  @Override
+  public UserPageDto search(String query, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
+    Page<UserEntity> result = userRepository.searchWithRoles(query, pageable);
+    List<UserSearchResultDto> content = result.getContent()
+        .stream()
+        .map(userMapper::toSearchResultDto)
+        .toList();
+    return new UserPageDto(content, page, size, result.getTotalElements(), result.getTotalPages());
+  }
+
+  @Override
+  public UserPageDto getByRole(String roleName, int page, int size) {
+    roleRepository.findByNameIgnoreCase(roleName)
+        .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
+    Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
+    Page<UserEntity> result = userRepository.findAllByRoleName(roleName, pageable);
+    List<UserSearchResultDto> content = result.getContent()
+        .stream()
+        .map(userMapper::toSearchResultDto)
+        .toList();
+    return new UserPageDto(content, page, size, result.getTotalElements(), result.getTotalPages());
+  }
+
   private Set<RoleEntity> resolveRoles(Set<String> roleNames) {
     Set<RoleEntity> out = new HashSet<>();
     for (String roleName : roleNames) {
@@ -149,4 +180,5 @@ public class UserServiceImpl implements UserService {
     }
     return out;
   }
+
 }

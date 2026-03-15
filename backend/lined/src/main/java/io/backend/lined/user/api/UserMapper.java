@@ -64,4 +64,6 @@ public interface UserMapper {
         .filter(s -> s.getEndDate() == null || !s.getEndDate().isBefore(now))
         .findFirst().orElse(null);
   }
+
+  UserSearchResultDto toSearchResultDto(UserEntity entity);
 }
