@@ -47,4 +47,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
                or lower(u.email)    like lower(concat('%', :q, '%'))
           """)
   Page<UserEntity> searchWithRoles(@Param("q") String q, Pageable pageable);
+
+  @EntityGraph(attributePaths = "roles")
+  @Query("""
+      select u from UserEntity u
+      join u.roles r
+      where lower(r.name) = lower(:roleName)
+      """)
+  Page<UserEntity> findAllByRoleName(@Param("roleName") String roleName, Pageable pageable);
 }

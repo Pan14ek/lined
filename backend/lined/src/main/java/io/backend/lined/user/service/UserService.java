@@ -2,6 +2,7 @@ package io.backend.lined.user.service;
 
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
+import io.backend.lined.user.api.UserPageDto;
 import io.backend.lined.user.api.UserUpdateDto;
 
 public interface UserService {
@@ -19,5 +20,9 @@ public interface UserService {
   UserDto changeEmail(Long userId, String newEmail);
 
   UserDto changeUsername(Long userId, String newUsername);
+
+  UserPageDto search(String query, int page, int size);
+
+  UserPageDto getByRole(String roleName, int page, int size);
 
 }
