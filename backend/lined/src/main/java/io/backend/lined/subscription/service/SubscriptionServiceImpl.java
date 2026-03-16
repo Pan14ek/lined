@@ -94,4 +94,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         .map(mapper::toDto)
         .toList();
   }
+
+  private String formatEntityInfo(Long id, String name) {
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    String trimmed = name.trim();
+    String lower = trimmed.toLowerCase();
+    String result = lower + "-" + id;
+    return result;
+  }
 }
