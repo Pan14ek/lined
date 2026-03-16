@@ -1,5 +1,7 @@
 package io.backend.lined.user.service;
 
+import static java.lang.String.format;
+
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.domain.RoleEntity;
@@ -31,6 +33,9 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class UserServiceImpl implements UserService {
 
+  private static final String USER_NOT_FOUND_ERROR_MESSAGE = "User not found: %s";
+  private static final String USERNAME_ALREADY_EXISTS_ERROR_MESSAGE = "Username already exists: %s";
+
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final UserMapper userMapper;
@@ -39,7 +44,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto create(UserCreateDto dto) {
     if (userRepository.existsByUsernameIgnoreCase(dto.username())) {
-      throw new ConflictException("Username already exists: " + dto.username());
+      throw new ConflictException(format(USERNAME_ALREADY_EXISTS_ERROR_MESSAGE, dto.username()));
     }
     if (userRepository.existsByEmailIgnoreCase(dto.email())) {
       throw new ConflictException("Email already exists: " + dto.email());
@@ -62,18 +67,18 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getById(Long id) {
     UserEntity u = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("User not found: " + id));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
     return userMapper.toDto(u);
   }
 
   @Override
   public UserDto update(Long id, UserUpdateDto dto) {
     UserEntity entity = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("User not found: " + id));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
 
     if (dto.username() != null && !dto.username().equalsIgnoreCase(entity.getUsername()) &&
         userRepository.existsByUsernameIgnoreCase(dto.username())) {
-      throw new ConflictException("Username already exists: " + dto.username());
+      throw new ConflictException(format(USERNAME_ALREADY_EXISTS_ERROR_MESSAGE, dto.username()));
     }
 
     if (dto.email() != null && !dto.email().equalsIgnoreCase(entity.getEmail()) &&
@@ -102,7 +107,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void delete(Long id) {
     if (!userRepository.existsById(id)) {
-      throw new NotFoundException("User not found: " + id);
+      throw new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id));
     }
     userRepository.deleteById(id);
   }
@@ -110,7 +115,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void changePassword(Long userId, String rawNewPassword) {
     UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
     u.setPassword(passwordEncoder.encode(rawNewPassword));
     userRepository.save(u);
   }
@@ -121,7 +126,7 @@ public class UserServiceImpl implements UserService {
       throw new ConflictException("Email already exists: " + newEmail);
     }
     UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_ERROR_MESSAGE + userId));
     u.setEmail(newEmail);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -133,10 +138,10 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto changeUsername(Long userId, String newUsername) {
     if (userRepository.existsByUsernameIgnoreCase(newUsername)) {
-      throw new ConflictException("Username already exists: " + newUsername);
+      throw new ConflictException(format(USERNAME_ALREADY_EXISTS_ERROR_MESSAGE, newUsername));
     }
     UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_ERROR_MESSAGE + userId));
     u.setUsername(newUsername);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -146,7 +151,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserPageDto search(String query, int page, int size) {
+  public UserPageDto findUsers(String query, int page, int size) {
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
     Page<UserEntity> result = userRepository.searchWithRoles(query, pageable);
     List<UserSearchResultDto> content = result.getContent()
@@ -157,7 +162,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserPageDto getByRole(String roleName, int page, int size) {
+  public UserPageDto findUsersByRole(String roleName, int page, int size) {
     roleRepository.findByNameIgnoreCase(roleName)
         .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());

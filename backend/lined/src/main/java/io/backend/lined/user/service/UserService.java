@@ -21,8 +21,8 @@ public interface UserService {
 
   UserDto changeUsername(Long userId, String newUsername);
 
-  UserPageDto search(String query, int page, int size);
+  UserPageDto findUsers(String query, int page, int size);
 
-  UserPageDto getByRole(String roleName, int page, int size);
+  UserPageDto findUsersByRole(String roleName, int page, int size);
 
 }

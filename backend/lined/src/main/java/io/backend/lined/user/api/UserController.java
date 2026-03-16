@@ -86,19 +86,19 @@ public class UserController {
   }
 
   @GetMapping("/search")
-  public ResponseEntity<UserPageDto> search(
+  public ResponseEntity<UserPageDto> findUsers(
       @RequestParam String q,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(userService.search(q, page, size));
+    return ResponseEntity.ok(userService.findUsers(q, page, size));
   }
 
   @GetMapping("/by-role")
-  public ResponseEntity<UserPageDto> getByRole(
+  public ResponseEntity<UserPageDto> findUsersByRole(
       @RequestParam String role,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(userService.getByRole(role, page, size));
+    return ResponseEntity.ok(userService.findUsersByRole(role, page, size));
   }
 
 }
