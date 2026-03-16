@@ -1,10 +1,10 @@
 package io.backend.lined.event.service;
 
-import io.backend.lined.event.api.EventConflictDto;
-import io.backend.lined.event.api.EventCreateDto;
-import io.backend.lined.event.api.EventDto;
-import io.backend.lined.event.api.EventUpdateDto;
-import io.backend.lined.event.api.UserConflictDto;
+import io.backend.lined.event.api.dto.EventConflictDto;
+import io.backend.lined.event.api.dto.EventCreateDto;
+import io.backend.lined.event.api.dto.EventDto;
+import io.backend.lined.event.api.dto.EventUpdateDto;
+import io.backend.lined.event.api.dto.UserConflictDto;
 import java.time.OffsetDateTime;
 import java.util.List;
 

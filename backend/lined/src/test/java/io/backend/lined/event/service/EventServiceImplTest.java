@@ -7,10 +7,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.backend.lined.event.api.EventCreateDto;
-import io.backend.lined.event.api.EventDto;
-import io.backend.lined.event.api.EventMapper;
-import io.backend.lined.event.api.EventUpdateDto;
+import io.backend.lined.event.api.dto.EventCreateDto;
+import io.backend.lined.event.api.dto.EventDto;
+import io.backend.lined.event.api.dto.EventMapper;
+import io.backend.lined.event.api.dto.EventUpdateDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.lobby.domain.LobbyEntity;

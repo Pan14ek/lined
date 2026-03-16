@@ -3,8 +3,8 @@ package io.backend.lined.role.service;
 import static java.lang.String.format;
 
 import io.backend.lined.common.exception.NotFoundException;
-import io.backend.lined.role.api.RoleDto;
-import io.backend.lined.role.api.RoleMapper;
+import io.backend.lined.role.api.dto.RoleDto;
+import io.backend.lined.role.api.dto.RoleMapper;
 import io.backend.lined.role.domain.RoleEntity;
 import io.backend.lined.role.domain.RoleRepository;
 import io.backend.lined.user.domain.UserEntity;

@@ -1,8 +1,8 @@
 package io.backend.lined.lobby.service;
 
-import io.backend.lined.lobby.api.LobbyCreateDto;
-import io.backend.lined.lobby.api.LobbyDto;
-import io.backend.lined.lobby.api.LobbyMapper;
+import io.backend.lined.lobby.api.dto.LobbyCreateDto;
+import io.backend.lined.lobby.api.dto.LobbyDto;
+import io.backend.lined.lobby.api.dto.LobbyMapper;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;

@@ -1,5 +1,8 @@
 package io.backend.lined.plan.api;
 
+import io.backend.lined.plan.api.dto.PlanCreateDto;
+import io.backend.lined.plan.api.dto.PlanDto;
+import io.backend.lined.plan.api.dto.PlanUpdateDto;
 import io.backend.lined.plan.service.PlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

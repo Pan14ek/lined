@@ -1,10 +1,10 @@
 package io.backend.lined.plan.service;
 
 import io.backend.lined.common.exception.NotFoundException;
-import io.backend.lined.plan.api.PlanCreateDto;
-import io.backend.lined.plan.api.PlanDto;
-import io.backend.lined.plan.api.PlanMapper;
-import io.backend.lined.plan.api.PlanUpdateDto;
+import io.backend.lined.plan.api.dto.PlanCreateDto;
+import io.backend.lined.plan.api.dto.PlanDto;
+import io.backend.lined.plan.api.dto.PlanMapper;
+import io.backend.lined.plan.api.dto.PlanUpdateDto;
 import io.backend.lined.plan.domain.PlanEntity;
 import io.backend.lined.plan.domain.PlanRepository;
 import org.junit.jupiter.api.BeforeEach;

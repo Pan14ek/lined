@@ -1,9 +1,9 @@
 package io.backend.lined.task.service;
 
 
-import io.backend.lined.task.api.TaskCreateDto;
-import io.backend.lined.task.api.TaskDto;
-import io.backend.lined.task.api.TaskUpdateDto;
+import io.backend.lined.task.api.dto.TaskCreateDto;
+import io.backend.lined.task.api.dto.TaskDto;
+import io.backend.lined.task.api.dto.TaskUpdateDto;
 import java.util.List;
 
 /**

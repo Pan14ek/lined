@@ -1,5 +1,10 @@
 package io.backend.lined.event.api;
 
+import io.backend.lined.event.api.dto.EventConflictDto;
+import io.backend.lined.event.api.dto.EventCreateDto;
+import io.backend.lined.event.api.dto.EventDto;
+import io.backend.lined.event.api.dto.EventUpdateDto;
+import io.backend.lined.event.api.dto.UserConflictDto;
 import io.backend.lined.event.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

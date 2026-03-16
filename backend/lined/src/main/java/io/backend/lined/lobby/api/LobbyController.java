@@ -1,5 +1,7 @@
 package io.backend.lined.lobby.api;
 
+import io.backend.lined.lobby.api.dto.LobbyCreateDto;
+import io.backend.lined.lobby.api.dto.LobbyDto;
 import io.backend.lined.lobby.service.LobbyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

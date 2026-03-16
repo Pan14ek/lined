@@ -1,8 +1,8 @@
 package io.backend.lined.plan.service;
 
-import io.backend.lined.plan.api.PlanCreateDto;
-import io.backend.lined.plan.api.PlanDto;
-import io.backend.lined.plan.api.PlanUpdateDto;
+import io.backend.lined.plan.api.dto.PlanCreateDto;
+import io.backend.lined.plan.api.dto.PlanDto;
+import io.backend.lined.plan.api.dto.PlanUpdateDto;
 import java.util.List;
 
 public interface PlanService {

@@ -1,9 +1,9 @@
 package io.backend.lined.user.service;
 
-import io.backend.lined.user.api.UserCreateDto;
-import io.backend.lined.user.api.UserDto;
-import io.backend.lined.user.api.UserPageDto;
-import io.backend.lined.user.api.UserUpdateDto;
+import io.backend.lined.user.api.dto.UserCreateDto;
+import io.backend.lined.user.api.dto.UserDto;
+import io.backend.lined.user.api.dto.UserPageDto;
+import io.backend.lined.user.api.dto.UserUpdateDto;
 
 /**
  * Service interface for managing user accounts.
