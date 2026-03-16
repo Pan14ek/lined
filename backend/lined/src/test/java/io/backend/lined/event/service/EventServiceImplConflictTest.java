@@ -69,14 +69,14 @@ class EventServiceImplConflictTest {
     now = OffsetDateTime.now();
     windowStart = now.plusHours(1);
     windowEnd = now.plusHours(5);
-    owner = buildUser(1L, "owner");
-    member = buildUser(2L, "member");
-    buildLobby();
-    buildEvents();
-    buildDtos();
+    owner = setupUser(1L, "owner");
+    member = setupUser(2L, "member");
+    setupLobby();
+    setupEvents();
+    setupDtos();
   }
 
-  private void buildDtos() {
+  private void setupDtos() {
     dtoA = new EventDto(1L, "Event A", true,
         eventA.getStartAt(), eventA.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
     dtoB = new EventDto(2L, "Event B", true,
@@ -85,7 +85,7 @@ class EventServiceImplConflictTest {
         eventC.getStartAt(), eventC.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
   }
 
-  private void buildEvents() {
+  private void setupEvents() {
     // Event A: 1h–3h (overlaps with B)
     eventA = EventEntity.builder()
         .id(1L)
@@ -123,7 +123,7 @@ class EventServiceImplConflictTest {
         .build();
   }
 
-  private void buildLobby() {
+  private void setupLobby() {
     lobby = LobbyEntity.builder()
         .id(101L)
         .name("Our Family")
@@ -133,7 +133,7 @@ class EventServiceImplConflictTest {
         .build();
   }
 
-  private UserEntity buildUser(long id, String username) {
+  private UserEntity setupUser(long id, String username) {
     UserEntity user = new UserEntity();
     user.setId(id);
     user.setUsername(username);

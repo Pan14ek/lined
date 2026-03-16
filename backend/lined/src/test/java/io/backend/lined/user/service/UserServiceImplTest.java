@@ -43,18 +43,18 @@ class UserServiceImplTest {
   @InjectMocks
   private UserServiceImpl userService;
 
-  private UserEntity userEntity;
-  private UserDto userDto;
+  private UserEntity testUser;
+  private UserDto expectedDto;
 
   @BeforeEach
   void setUp() {
-    userEntity = new UserEntity();
-    userEntity.setId(1L);
-    userEntity.setUsername("testuser");
-    userEntity.setEmail("test@example.com");
-    userEntity.setPassword("encoded_password");
+    testUser = new UserEntity();
+    testUser.setId(1L);
+    testUser.setUsername("testuser");
+    testUser.setEmail("test@example.com");
+    testUser.setPassword("encoded_password");
 
-    userDto = new UserDto(1L, "testuser", "test@example.com", null, Set.of(), null, null);
+    expectedDto = new UserDto(1L, "testuser", "test@example.com", null, Set.of(), null, null);
   }
 
   /* =======================
@@ -67,15 +67,15 @@ class UserServiceImplTest {
 
     when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(false);
     when(userRepository.existsByEmailIgnoreCase("test@example.com")).thenReturn(false);
-    when(userMapper.toEntity(dto)).thenReturn(userEntity);
+    when(userMapper.toEntity(dto)).thenReturn(testUser);
     when(passwordEncoder.encode("password")).thenReturn("encoded_password");
-    when(userRepository.save(userEntity)).thenReturn(userEntity);
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.create(dto);
 
-    assertThat(result).isEqualTo(userDto);
-    verify(userRepository).save(userEntity);
+    assertThat(result).isEqualTo(expectedDto);
+    verify(userRepository).save(testUser);
   }
 
   @Test
@@ -114,11 +114,11 @@ class UserServiceImplTest {
 
     when(userRepository.existsByUsernameIgnoreCase(anyString())).thenReturn(false);
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-    when(userMapper.toEntity(dto)).thenReturn(userEntity);
+    when(userMapper.toEntity(dto)).thenReturn(testUser);
     when(passwordEncoder.encode(anyString())).thenReturn("encoded");
     when(roleRepository.findByNameIgnoreCase("ADMIN")).thenReturn(Optional.of(role));
-    when(userRepository.save(userEntity)).thenReturn(userEntity);
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.create(dto);
 
@@ -133,7 +133,7 @@ class UserServiceImplTest {
 
     when(userRepository.existsByUsernameIgnoreCase(anyString())).thenReturn(false);
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-    when(userMapper.toEntity(dto)).thenReturn(userEntity);
+    when(userMapper.toEntity(dto)).thenReturn(testUser);
     when(passwordEncoder.encode(anyString())).thenReturn("encoded");
     when(roleRepository.findByNameIgnoreCase("UNKNOWN_ROLE")).thenReturn(Optional.empty());
 
@@ -148,12 +148,12 @@ class UserServiceImplTest {
 
   @Test
   void getById_success() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.getById(1L);
 
-    assertThat(result).isEqualTo(userDto);
+    assertThat(result).isEqualTo(expectedDto);
   }
 
   @Test
@@ -173,15 +173,15 @@ class UserServiceImplTest {
   void update_success() {
     UserUpdateDto dto = new UserUpdateDto("newuser", null, null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
-    when(userRepository.save(userEntity)).thenReturn(userEntity);
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.update(1L, dto);
 
     assertThat(result).isNotNull();
-    verify(userMapper).updateEntity(userEntity, dto);
+    verify(userMapper).updateEntity(testUser, dto);
   }
 
   @Test
@@ -199,7 +199,7 @@ class UserServiceImplTest {
   void update_throwsConflict_whenNewUsernameAlreadyTaken() {
     UserUpdateDto dto = new UserUpdateDto("takenuser", null, null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.existsByUsernameIgnoreCase("takenuser")).thenReturn(true);
 
     assertThatThrownBy(() -> userService.update(1L, dto))
@@ -211,7 +211,7 @@ class UserServiceImplTest {
   void update_throwsConflict_whenNewEmailAlreadyTaken() {
     UserUpdateDto dto = new UserUpdateDto(null, "taken@example.com", null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
 
     assertThatThrownBy(() -> userService.update(1L, dto))
@@ -249,13 +249,13 @@ class UserServiceImplTest {
 
   @Test
   void changePassword_success() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(passwordEncoder.encode("newpassword")).thenReturn("encoded_new");
 
     userService.changePassword(1L, "newpassword");
 
-    assertThat(userEntity.getPassword()).isEqualTo("encoded_new");
-    verify(userRepository).save(userEntity);
+    assertThat(testUser.getPassword()).isEqualTo("encoded_new");
+    verify(userRepository).save(testUser);
   }
 
   @Test
@@ -276,14 +276,14 @@ class UserServiceImplTest {
   @Test
   void changeEmail_success() {
     when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
-    when(userRepository.save(userEntity)).thenReturn(userEntity);
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.changeEmail(1L, "new@example.com");
 
     assertThat(result).isNotNull();
-    assertThat(userEntity.getEmail()).isEqualTo("new@example.com");
+    assertThat(testUser.getEmail()).isEqualTo("new@example.com");
   }
 
   @Test
@@ -314,14 +314,14 @@ class UserServiceImplTest {
   @Test
   void changeUsername_success() {
     when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
-    when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
-    when(userRepository.save(userEntity)).thenReturn(userEntity);
-    when(userMapper.toDto(userEntity)).thenReturn(userDto);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.changeUsername(1L, "newuser");
 
     assertThat(result).isNotNull();
-    assertThat(userEntity.getUsername()).isEqualTo("newuser");
+    assertThat(testUser.getUsername()).isEqualTo("newuser");
   }
 
   @Test
