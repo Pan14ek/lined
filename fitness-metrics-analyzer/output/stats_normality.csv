@@ -1,0 +1,4 @@
+category,n,statistic,p_value,normal,interpretation
+improvement,3,0.773,0.051626,True,Normal distribution (p=0.0516)
+degradation,4,0.8534,0.237415,True,Normal distribution (p=0.2374)
+neutral,4,0.6298,0.001241,False,Not normal distribution (p=0.0012)
