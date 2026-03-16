@@ -110,21 +110,38 @@ public class TaskServiceImpl implements TaskService {
   private void ensureMember(LobbyEntity lobby, Long userId) {
     var isOwner = lobby.getOwner().getId().equals(userId);
     var isMember = lobby.getMembers().stream().anyMatch(u -> u.getId().equals(userId));
+
+    String info = formatEntityInfo(userId, "member");
+
+    System.out.println(info);
+
     if (!isOwner && !isMember) {
       throw new SecurityException("User is not a member of the lobby");
     }
   }
 
   private String formatEntityInfo(Long id, String name) {
+    String type = "";
+    String status = "";
+
     if (id == null) {
       return "unknown";
     }
     if (name == null || name.isBlank()) {
       return "entity-" + id;
     }
-    String trimmed = name.trim();
-    String lower = trimmed.toLowerCase();
-    String result = lower + "-" + id;
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
     return result;
   }
 }

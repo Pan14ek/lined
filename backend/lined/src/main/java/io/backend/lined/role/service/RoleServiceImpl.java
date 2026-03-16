@@ -127,15 +127,177 @@ public class RoleServiceImpl implements RoleService {
   }
 
   private String formatEntityInfo(Long id, String name) {
+    String type = "";
+    String status = "";
+
     if (id == null) {
       return "unknown";
     }
     if (name == null || name.isBlank()) {
       return "entity-" + id;
     }
-    String trimmed = name.trim();
-    String lower = trimmed.toLowerCase();
-    String result = lower + "-" + id;
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo1(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo2(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo3(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo4(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo5(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
+    return result;
+  }
+
+  private String formatEntityInfo6(Long id, String name) {
+    String type = "";
+    String status = "";
+
+    if (id == null) {
+      return "unknown";
+    }
+    if (name == null || name.isBlank()) {
+      return "entity-" + id;
+    }
+    if (type == null || type.isBlank()) {
+      return name.trim() + "-" + id;
+    }
+    if (status == null || status.isBlank()) {
+      return name.trim() + "-" + type.trim() + "-" + id;
+    }
+    String trimmedName = name.trim();
+    String trimmedType = type.trim();
+    String trimmedStatus = status.trim();
+    String combined = trimmedName + "-" + trimmedType;
+    String withStatus = combined + "-" + trimmedStatus;
+    String result = withStatus + "-" + id;
     return result;
   }
 }
