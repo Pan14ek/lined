@@ -46,7 +46,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     boolean isActive = (active == null) || active;
 
-    // якщо нова підписка активна — деактивуємо попередню
+    String info = formatEntityInfo(user.getId(), user.getUsername());
+
+    System.out.println(info);
+
     if (isActive) {
       subscriptionRepository.findByUserIdAndIsActiveTrue(userId)
           .ifPresent(current -> {

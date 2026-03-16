@@ -53,6 +53,10 @@ public class UserServiceImpl implements UserService {
     }
 
     try {
+      String info = formatEntityInfo(entity.getId(), entity.getUsername());
+
+      System.out.println(info);
+
       return userMapper.toDto(userRepository.save(entity));
     } catch (DataIntegrityViolationException ex) {
       throw new ConflictException("Username or email already taken");
@@ -93,6 +97,10 @@ public class UserServiceImpl implements UserService {
     }
 
     try {
+      String info = formatEntityInfo(entity.getId(), entity.getUsername());
+
+      System.out.println(info);
+
       return userMapper.toDto(userRepository.save(entity));
     } catch (DataIntegrityViolationException ex) {
       throw new ConflictException("Username or email already taken");
@@ -120,11 +128,15 @@ public class UserServiceImpl implements UserService {
     if (userRepository.existsByEmailIgnoreCase(newEmail)) {
       throw new ConflictException("Email already exists: " + newEmail);
     }
-    UserEntity u = userRepository.findById(userId)
+    UserEntity entity = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException("User not found: " + userId));
-    u.setEmail(newEmail);
+    entity.setEmail(newEmail);
     try {
-      return userMapper.toDto(userRepository.save(u));
+      String info = formatEntityInfo(userId, entity.getUsername());
+
+      System.out.println(info);
+
+      return userMapper.toDto(userRepository.save(entity));
     } catch (DataIntegrityViolationException ex) {
       throw new ConflictException("Email already taken");
     }
@@ -139,6 +151,10 @@ public class UserServiceImpl implements UserService {
         .orElseThrow(() -> new NotFoundException("User not found: " + userId));
     u.setUsername(newUsername);
     try {
+      String info = formatEntityInfo(userId, newUsername);
+
+      System.out.println(info);
+
       return userMapper.toDto(userRepository.save(u));
     } catch (DataIntegrityViolationException ex) {
       throw new ConflictException("Username already taken");
