@@ -1,7 +1,7 @@
 package io.backend.lined.lobby.service;
 
-import io.backend.lined.lobby.api.LobbyCreateDto;
-import io.backend.lined.lobby.api.LobbyDto;
+import io.backend.lined.lobby.api.dto.LobbyCreateDto;
+import io.backend.lined.lobby.api.dto.LobbyDto;
 import java.util.List;
 
 public interface LobbyService {

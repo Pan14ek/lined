@@ -1,5 +1,8 @@
 package io.backend.lined.task.api;
 
+import io.backend.lined.task.api.dto.TaskCreateDto;
+import io.backend.lined.task.api.dto.TaskDto;
+import io.backend.lined.task.api.dto.TaskUpdateDto;
 import io.backend.lined.task.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

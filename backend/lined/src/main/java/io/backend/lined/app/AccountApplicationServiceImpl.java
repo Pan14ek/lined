@@ -1,12 +1,12 @@
 package io.backend.lined.app;
 
-import io.backend.lined.plan.api.PlanDto;
+import io.backend.lined.plan.api.dto.PlanDto;
 import io.backend.lined.plan.service.PlanService;
 import io.backend.lined.role.service.RoleService;
-import io.backend.lined.subscription.api.SubscriptionDto;
+import io.backend.lined.subscription.api.dto.SubscriptionDto;
 import io.backend.lined.subscription.service.SubscriptionService;
-import io.backend.lined.user.api.UserCreateDto;
-import io.backend.lined.user.api.UserDto;
+import io.backend.lined.user.api.dto.UserCreateDto;
+import io.backend.lined.user.api.dto.UserDto;
 import io.backend.lined.user.service.UserService;
 import jakarta.transaction.Transactional;
 import java.util.Set;

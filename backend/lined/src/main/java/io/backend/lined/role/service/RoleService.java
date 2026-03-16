@@ -1,6 +1,6 @@
 package io.backend.lined.role.service;
 
-import io.backend.lined.role.api.RoleDto;
+import io.backend.lined.role.api.dto.RoleDto;
 import java.util.List;
 import java.util.Set;
 

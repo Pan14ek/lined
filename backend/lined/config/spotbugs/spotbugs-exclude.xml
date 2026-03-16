@@ -4,7 +4,7 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
     <Match>
-        <Class name="io.backend.lined.user.api.UserMapper"/>
+        <Class name="io.backend.lined.user.api.dto.UserMapper"/>
         <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
     </Match>
 </FindBugsFilter>

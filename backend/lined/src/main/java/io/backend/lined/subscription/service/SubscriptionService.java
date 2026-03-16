@@ -1,6 +1,6 @@
 package io.backend.lined.subscription.service;
 
-import io.backend.lined.subscription.api.SubscriptionDto;
+import io.backend.lined.subscription.api.dto.SubscriptionDto;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;

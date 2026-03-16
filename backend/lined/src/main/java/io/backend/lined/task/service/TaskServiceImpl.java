@@ -2,10 +2,10 @@ package io.backend.lined.task.service;
 
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
-import io.backend.lined.task.api.TaskCreateDto;
-import io.backend.lined.task.api.TaskDto;
-import io.backend.lined.task.api.TaskMapper;
-import io.backend.lined.task.api.TaskUpdateDto;
+import io.backend.lined.task.api.dto.TaskCreateDto;
+import io.backend.lined.task.api.dto.TaskDto;
+import io.backend.lined.task.api.dto.TaskMapper;
+import io.backend.lined.task.api.dto.TaskUpdateDto;
 import io.backend.lined.task.domain.TaskEntity;
 import io.backend.lined.task.domain.TaskRepository;
 import io.backend.lined.task.domain.TaskStatus;

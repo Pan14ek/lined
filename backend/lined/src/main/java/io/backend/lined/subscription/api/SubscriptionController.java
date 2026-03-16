@@ -1,5 +1,7 @@
 package io.backend.lined.subscription.api;
 
+import io.backend.lined.subscription.api.dto.SubscriptionCreateDto;
+import io.backend.lined.subscription.api.dto.SubscriptionDto;
 import io.backend.lined.subscription.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
