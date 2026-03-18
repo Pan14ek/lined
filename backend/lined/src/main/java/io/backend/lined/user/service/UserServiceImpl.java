@@ -2,6 +2,7 @@ package io.backend.lined.user.service;
 
 import static java.lang.String.format;
 
+import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.domain.RoleEntity;
@@ -66,15 +67,13 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto getById(Long id) {
-    UserEntity u = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
+    UserEntity u = mustUser(id);
     return userMapper.toDto(u);
   }
 
   @Override
   public UserDto update(Long id, UserUpdateDto dto) {
-    UserEntity entity = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
+    UserEntity entity = mustUser(id);
 
     if (dto.username() != null && !dto.username().equalsIgnoreCase(entity.getUsername()) &&
         userRepository.existsByUsernameIgnoreCase(dto.username())) {
@@ -114,8 +113,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void changePassword(Long userId, String rawNewPassword) {
-    UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
+    UserEntity u = mustUser(userId);
     u.setPassword(passwordEncoder.encode(rawNewPassword));
     userRepository.save(u);
   }
@@ -125,8 +123,7 @@ public class UserServiceImpl implements UserService {
     if (userRepository.existsByEmailIgnoreCase(newEmail)) {
       throw new ConflictException("Email already exists: " + newEmail);
     }
-    UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_ERROR_MESSAGE + userId));
+    UserEntity u = mustUser(userId);
     u.setEmail(newEmail);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -140,8 +137,7 @@ public class UserServiceImpl implements UserService {
     if (userRepository.existsByUsernameIgnoreCase(newUsername)) {
       throw new ConflictException(format(USERNAME_ALREADY_EXISTS_ERROR_MESSAGE, newUsername));
     }
-    UserEntity u = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_ERROR_MESSAGE + userId));
+    UserEntity u = mustUser(userId);
     u.setUsername(newUsername);
     try {
       return userMapper.toDto(userRepository.save(u));
@@ -184,6 +180,12 @@ public class UserServiceImpl implements UserService {
       out.add(r.get());
     }
     return out;
+  }
+
+  private UserEntity mustUser(Long id) {
+    return EntityFinder.findOrThrow(
+        userRepository.findById(id),
+        () -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
   }
 
 }

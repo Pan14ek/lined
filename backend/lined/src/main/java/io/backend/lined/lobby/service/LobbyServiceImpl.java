@@ -1,5 +1,6 @@
 package io.backend.lined.lobby.service;
 
+import io.backend.lined.common.EntityFinder;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -40,8 +41,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto getById(Long id) {
-    var lobby = lobbyRepo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(id)));
+    var lobby = mustLobby(id);
     return mapper.toDto(lobby);
   }
 
@@ -53,8 +53,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto addMember(Long lobbyId, Long userIdToAdd, Long requesterId) {
-    var lobby = lobbyRepo.findById(lobbyId)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(lobbyId)));
+    var lobby = mustLobby(lobbyId);
 
     ensureOwner(lobby, requesterId);
 
@@ -67,8 +66,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId) {
-    var lobby = lobbyRepo.findById(lobbyId)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(lobbyId)));
+    var lobby = mustLobby(lobbyId);
 
     ensureOwner(lobby, requesterId);
 
@@ -82,8 +80,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public void delete(Long lobbyId, Long requesterId) {
-    var lobby = lobbyRepo.findById(lobbyId)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(lobbyId)));
+    var lobby = mustLobby(lobbyId);
     ensureOwner(lobby, requesterId);
     lobbyRepo.delete(lobby);
   }
@@ -93,4 +90,11 @@ public class LobbyServiceImpl implements LobbyService {
       throw new SecurityException("Only lobby owner can perform this action");
     }
   }
+
+  private LobbyEntity mustLobby(Long id) {
+    return EntityFinder.findOrThrow(
+        lobbyRepo.findById(id),
+        () -> new NoSuchElementException("Lobby %d not found".formatted(id)));
+  }
+
 }
