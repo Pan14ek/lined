@@ -5,6 +5,7 @@ from typing import Optional, List
 CATEGORY_MAP = {
     "improve":  "improvement",
     "fix":      "improvement",
+    "reduce":   "improvement",
     "feature":  "feature",
     "degrade":  "degradation",
     "neutral":  "neutral",
