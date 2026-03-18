@@ -1,5 +1,6 @@
 package io.backend.lined.task.service;
 
+import io.backend.lined.common.EntityFinder;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.task.api.TaskCreateDto;
@@ -103,8 +104,8 @@ public class TaskServiceImpl implements TaskService {
   }
 
   private TaskEntity mustTask(Long id) {
-    return repo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Task %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(repo.findById(id),
+        () -> new NoSuchElementException("Task %d not found".formatted(id)));
   }
 
   private void ensureMember(LobbyEntity lobby, Long userId) {
