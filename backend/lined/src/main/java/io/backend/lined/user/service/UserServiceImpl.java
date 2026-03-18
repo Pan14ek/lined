@@ -183,8 +183,9 @@ public class UserServiceImpl implements UserService {
   }
 
   private UserEntity mustUser(Long id) {
-    return EntityFinder.findOrThrow(userRepository.findById(id),
-        () -> new NotFoundException("User %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(
+        userRepository.findById(id),
+        () -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
   }
 
 }
