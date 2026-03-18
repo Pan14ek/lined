@@ -81,7 +81,9 @@ def main():
     df = df[df["branch"].str.startswith("experiment")].reset_index(drop=True)
 
     # Keep only the last run per branch (handles re-runs)
-    df = df.sort_values("timestamp").drop_duplicates(subset="branch", keep="last")
+    # Keep only the last run per branch that has a valid fitness score
+    df = df[df["fitness_score"].notna()]
+    df = df.sort_values("timestamp", na_position="first").drop_duplicates(subset="branch", keep="last")
     df = df.sort_values("fitness_score", ascending=False).reset_index(drop=True)
 
     print(f"After deduplication: {len(df)} unique experiment(s).")

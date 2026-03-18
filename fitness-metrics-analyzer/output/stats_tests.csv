@@ -1,6 +1,6 @@
 test,group_a,group_b,n_a,n_b,statistic,p_value,significant,interpretation,mean_a,mean_b,d,magnitude
-Mann-Whitney U,improvement,degradation,3.0,4.0,12.0,0.028571,True,Significant: improvement F scores are significantly higher than degradation (p=0.0286),,,,
-Mann-Whitney U,improvement,neutral,3.0,4.0,9.0,0.179506,False,Not significant: improvement F scores are not significantly higher than neutral (p=0.1795),,,,
-Kruskal-Wallis H,,,,,5.3935,0.067424,False,Not significant: category groups do not differ significantly (p=0.0674),,,,
-Cohen's d,improvement,degradation,,,,,,Effect size d=2.838 (large): improvement mean F (0.477) vs degradation mean F (-0.023),0.4772,-0.0226,2.8378,large
-Cohen's d,improvement,neutral,,,,,,Effect size d=1.521 (large): improvement mean F (0.477) vs neutral mean F (0.242),0.4772,0.2423,1.5208,large
+Mann-Whitney U,improvement,degradation,4.0,4.0,16.0,0.014286,True,Significant: improvement F scores are significantly higher than degradation (p=0.0143),,,,
+Mann-Whitney U,improvement,neutral,4.0,4.0,11.5,0.178085,False,Not significant: improvement F scores are not significantly higher than neutral (p=0.1781),,,,
+Kruskal-Wallis H,,,,,6.048,0.048606,True,Significant: category groups do differ significantly (p=0.0486),,,,
+Cohen's d,improvement,degradation,,,,,,Effect size d=2.651 (large): improvement mean F (0.438) vs degradation mean F (-0.023),0.4379,-0.0226,2.6507,large
+Cohen's d,improvement,neutral,,,,,,Effect size d=1.289 (large): improvement mean F (0.438) vs neutral mean F (0.242),0.4379,0.2423,1.2893,large

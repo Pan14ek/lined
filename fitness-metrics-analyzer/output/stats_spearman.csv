@@ -1,4 +1,4 @@
 metric,rho,p_value,significant,interpretation
-JaCoCo line coverage,0.5266,0.096098,False,"rho=0.527, p=0.0961 (not significant)"
-SpotBugs violations,-0.1225,0.719678,False,"rho=-0.123, p=0.7197 (not significant)"
-Checkstyle violations,-0.1009,0.767804,False,"rho=-0.101, p=0.7678 (not significant)"
+JaCoCo line coverage,0.5275,0.077979,False,"rho=0.528, p=0.0780 (not significant)"
+SpotBugs violations,-0.1308,0.685311,False,"rho=-0.131, p=0.6853 (not significant)"
+Checkstyle violations,-0.1334,0.679454,False,"rho=-0.133, p=0.6795 (not significant)"
