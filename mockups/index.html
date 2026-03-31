@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Lined — MVP Web Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:      #5B9B6B;
+    --green-lt:   #E8F5EE;
+    --green-dk:   #3D7050;
+    --sidebar:    #1B2A1F;
+    --sidebar-hov:#283D2B;
+    --white:      #FFFFFF;
+    --beige:      #F7F3ED;
+    --beige-dk:   #EDE7DC;
+    --bg:         #F4F4F7;
+    --text-pri:   #1A1A2E;
+    --text-sec:   #6B7280;
+    --text-muted: #9CA3AF;
+    --text-light: #C8D4C9;
+    --border:     #E5E7EB;
+    --input-bg:   #F9F9FB;
+    --couple:     #F4479B;
+    --family:     #FB8A2F;
+    --friends:    #A78BFA;
+    --work:       #3FA6FA;
+    --todo:       #94A3B8;
+    --inprog:     #3B82F6;
+    --done:       #10B981;
+    --shadow-sm:  0 1px 4px rgba(0,0,0,.06);
+    --shadow-md:  0 4px 16px rgba(0,0,0,.08);
+    --shadow-lg:  0 8px 32px rgba(0,0,0,.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #E8E8EC; }
+
+  /* ── NAV TABS ──────────────────────────────────────────────── */
+  .screen-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 44px;
+    display: flex; gap: 4px; padding: 6px 16px;
+    background: #1A1A2E; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  .screen-nav a {
+    padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+    color: #9CA3AF; text-decoration: none; transition: all .15s;
+  }
+  .screen-nav a:hover { background: #2A2A3E; color: #fff; }
+  .screen-nav a.active { background: var(--green); color: #fff; }
+  .screen-nav .brand { color: var(--green); font-weight: 700; font-size: 14px; margin-right: 8px; display: flex; align-items: center; }
+
+  /* ── SCREEN WRAPPER ─────────────────────────────────────────── */
+  .screens { padding-top: 84px; height: 100vh; display: flex; flex-direction: column; }
+  .screen { display: none; flex: 1; min-height: 0; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ════════════════════════════════════════════════════════════
+     AUTH SCREENS
+  ════════════════════════════════════════════════════════════ */
+  .auth-bg {
+    flex: 1; background: var(--beige);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .auth-bg::before {
+    content: ''; position: absolute; width: 320px; height: 320px;
+    background: var(--green-lt); border-radius: 50%;
+    top: -80px; left: -80px; opacity: .5;
+  }
+  .auth-bg::after {
+    content: ''; position: absolute; width: 240px; height: 240px;
+    background: var(--beige-dk); border-radius: 50%;
+    bottom: -60px; right: -40px; opacity: .6;
+  }
+  .auth-card {
+    width: 480px; background: var(--white); border-radius: 16px;
+    box-shadow: var(--shadow-lg); position: relative; z-index: 1; overflow: hidden;
+  }
+  .auth-card-accent { height: 4px; background: var(--green); }
+  .auth-card-body { padding: 32px 40px 40px; }
+  .auth-logo { font-size: 32px; font-weight: 700; color: var(--green); text-align: center; }
+  .auth-tagline { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 6px; }
+  .auth-divider { height: 1px; background: var(--border); margin: 24px 0; }
+  .auth-heading { font-size: 22px; font-weight: 700; color: var(--text-pri); }
+  .auth-sub { font-size: 13px; color: var(--text-sec); margin-top: 4px; }
+  .form-group { margin-top: 20px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-sec); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; height: 48px; padding: 0 16px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 14px; color: var(--text-muted);
+    font-family: inherit;
+  }
+  .form-input:focus { outline: none; border-color: var(--green); }
+  .auth-forgot { font-size: 12px; color: var(--green); margin-top: 6px; }
+  .btn-primary {
+    width: 100%; height: 48px; background: var(--green); color: #fff;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+    font-family: inherit; cursor: pointer; margin-top: 24px;
+  }
+  .auth-or { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+  .auth-or span { font-size: 12px; color: var(--text-muted); }
+  .auth-or::before, .auth-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .auth-link { font-size: 13px; color: var(--green); text-align: center; }
+  .auth-terms { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 12px; }
+
+  /* ════════════════════════════════════════════════════════════
+     SIDEBAR
+  ════════════════════════════════════════════════════════════ */
+  .layout { display: flex; flex: 1; min-height: 0; }
+  .sidebar {
+    width: 240px; background: var(--sidebar);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sb-logo { padding: 26px 24px 16px; font-size: 22px; font-weight: 700; color: var(--green); }
+  .sb-divider { height: 1px; background: var(--sidebar-hov); margin: 0 24px; }
+  .sb-section-label { font-size: 10px; font-weight: 600; color: var(--text-light); letter-spacing: .08em; padding: 16px 24px 6px; }
+  .sb-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 24px; font-size: 14px; color: var(--text-light);
+    cursor: pointer; position: relative; border-radius: 0;
+  }
+  .sb-nav-item.active {
+    background: var(--sidebar-hov); color: #fff; font-weight: 600;
+  }
+  .sb-nav-item.active::before {
+    content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 3px;
+    background: var(--green); border-radius: 2px;
+  }
+  .sb-nav-item.active { padding-left: 36px; }
+  .sb-icon { font-size: 14px; width: 18px; text-align: center; }
+  .sb-lobby-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 24px; font-size: 13px; color: var(--text-light); cursor: pointer;
+  }
+  .sb-lobby-item.active { color: #fff; font-weight: 500; background: var(--sidebar-hov); }
+  .sb-lobby-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sb-add-lobby { font-size: 11px; color: var(--green); margin-left: auto; }
+  .sb-user { margin-top: auto; padding: 16px 24px; border-top: 1px solid var(--sidebar-hov); display: flex; align-items: center; gap: 10px; }
+  .sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .sb-user-name { font-size: 13px; font-weight: 500; color: #fff; }
+  .sb-user-email { font-size: 11px; color: var(--text-light); }
+
+  /* ════════════════════════════════════════════════════════════
+     MAIN AREA
+  ════════════════════════════════════════════════════════════ */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+  .topbar {
+    height: 64px; background: var(--white); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 32px;
+    box-shadow: var(--shadow-sm); flex-shrink: 0; gap: 16px;
+  }
+  .topbar-title { font-size: 20px; font-weight: 600; color: var(--text-pri); }
+  .topbar-meta { font-size: 13px; color: var(--text-sec); }
+  .topbar-spacer { flex: 1; }
+  .btn-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg); border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .btn-green { height: 36px; padding: 0 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .btn-outline { height: 36px; padding: 0 16px; background: var(--white); color: var(--text-pri); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .content { flex: 1; padding: 24px 32px; background: var(--bg); overflow-y: auto; min-height: 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 17px; font-weight: 600; color: var(--text-pri); }
+  .see-all { font-size: 13px; color: var(--green); }
+
+  /* ════════════════════════════════════════════════════════════
+     DASHBOARD
+  ════════════════════════════════════════════════════════════ */
+  .lobby-cards { display: flex; gap: 18px; margin-bottom: 28px; }
+  .lobby-card {
+    flex: 1; background: var(--white); border-radius: 12px;
+    box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .lobby-card-accent { height: 4px; }
+  .lobby-card-body { padding: 14px 16px 16px; }
+  .lobby-type-badge {
+    display: inline-flex; padding: 2px 10px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin-bottom: 8px;
+  }
+  .lobby-name { font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 10px; }
+  .lobby-stats { display: flex; gap: 12px; font-size: 12px; color: var(--text-sec); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 468px; gap: 20px; }
+
+  .event-card {
+    background: var(--white); border-radius: 10px; padding: 0;
+    box-shadow: var(--shadow-sm); display: flex; align-items: center;
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .event-accent { width: 3px; align-self: stretch; flex-shrink: 0; }
+  .event-icon { font-size: 20px; padding: 12px 14px; }
+  .event-info { flex: 1; }
+  .event-title { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .event-time { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .event-lobby-badge {
+    margin-right: 14px; padding: 2px 10px; border-radius: 10px;
+    font-size: 10px; font-weight: 500;
+  }
+
+  .task-card {
+    background: var(--white); border-radius: 10px; padding: 10px 14px;
+    box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .task-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .task-info { flex: 1; min-width: 0; }
+  .task-title { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .status-badge { display: inline-flex; padding: 2px 8px; border-radius: 9px; font-size: 10px; font-weight: 600; margin-top: 3px; }
+  .task-due { font-size: 11px; color: var(--text-muted); text-align: right; }
+
+  .free-slot-card {
+    background: var(--green-lt); border-radius: 12px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px; margin-top: 4px;
+  }
+  .free-slot-text .title { font-size: 14px; font-weight: 600; color: var(--green-dk); }
+  .free-slot-text .sub { font-size: 12px; color: var(--green-dk); margin-top: 2px; }
+  .free-slot-cta { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--green); white-space: nowrap; }
+
+  /* ════════════════════════════════════════════════════════════
+     LOBBY DETAIL
+  ════════════════════════════════════════════════════════════ */
+  .lobby-header {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 0 32px; box-shadow: var(--shadow-sm);
+  }
+  .lobby-header-top { display: flex; align-items: center; gap: 16px; padding: 16px 0 12px; }
+  .lobby-avatar { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .lobby-header-name { font-size: 20px; font-weight: 700; color: var(--text-pri); }
+  .lobby-members { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+  .member-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; border: 2px solid #fff; margin-left: -6px; }
+  .member-avatar:first-child { margin-left: 0; }
+  .member-count { font-size: 12px; color: var(--text-sec); margin-left: 6px; }
+  .lobby-header-actions { margin-left: auto; display: flex; gap: 10px; }
+
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--white); padding: 0 32px; }
+  .tab { padding: 12px 20px; font-size: 14px; color: var(--text-sec); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--text-pri); font-weight: 600; border-bottom-color: var(--couple); }
+
+  .filter-bar {
+    background: var(--white); border-radius: 10px; padding: 6px 16px;
+    display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .filter-pill { padding: 4px 14px; border-radius: 14px; font-size: 13px; cursor: pointer; }
+  .filter-pill.active { background: var(--green-lt); color: var(--green-dk); font-weight: 600; }
+  .filter-sort { margin-left: auto; font-size: 12px; color: var(--text-sec); }
+
+  .task-row {
+    background: var(--white); border-radius: 10px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); margin-bottom: 8px;
+  }
+  .checkbox { width: 20px; height: 20px; border-radius: 4px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .checkbox.done { border-color: var(--done); background: var(--done); color: #fff; font-size: 11px; }
+  .task-row-title { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .task-row-desc { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .task-row-status { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .assignee-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .task-due-sm { font-size: 12px; min-width: 48px; text-align: right; }
+  .add-task-btn { background: var(--white); border: 1px dashed var(--border); border-radius: 10px; padding: 12px; text-align: center; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+
+  /* ════════════════════════════════════════════════════════════
+     CALENDAR
+  ════════════════════════════════════════════════════════════ */
+  .calendar-layout { display: flex; flex: 1; min-height: 0; }
+  .calendar-grid { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .cal-topbar { height: 64px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 32px; gap: 16px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
+  .cal-month { font-size: 16px; font-weight: 600; color: var(--text-pri); }
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .view-btn { padding: 6px 16px; font-size: 13px; font-family: inherit; border: none; cursor: pointer; background: var(--white); color: var(--text-sec); }
+  .view-btn.active { background: var(--green); color: #fff; font-weight: 600; }
+
+  .day-headers { display: flex; background: var(--white); border-bottom: 1px solid var(--border); padding-left: 56px; }
+  .day-header { flex: 1; text-align: center; padding: 8px 0; font-size: 12px; color: var(--text-sec); }
+  .day-header.today { color: var(--green-dk); font-weight: 600; background: var(--green-lt); position: relative; }
+  .day-header.today::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); }
+
+  .time-grid { display: flex; flex: 1; overflow-y: auto; background: var(--white); }
+  .time-labels { width: 56px; flex-shrink: 0; }
+  .time-label { height: 80px; display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 8px 0 0; font-size: 11px; color: var(--text-muted); }
+  .day-columns { flex: 1; display: flex; min-width: 0; }
+  .day-col { flex: 1; border-left: 1px solid var(--border); position: relative; }
+  .day-col.today { background: rgba(232,245,238,.25); }
+  .hour-line { height: 80px; border-bottom: 1px solid var(--border); }
+  .cal-event {
+    position: absolute; left: 3px; right: 3px; border-radius: 6px;
+    padding: 4px 6px; font-size: 11px; font-weight: 600; color: #fff;
+    overflow: hidden; opacity: .92;
+  }
+  .cal-event-sub { font-size: 10px; font-weight: 400; opacity: .85; }
+  .free-band { position: absolute; left: 2px; right: 2px; border-radius: 6px; background: #B4EBD0; opacity: .6; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--green-dk); }
+  .now-line { position: absolute; left: 0; right: 0; height: 2px; background: #E53E3E; z-index: 10; }
+  .now-dot { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #E53E3E; }
+
+  .event-detail-panel {
+    width: 280px; flex-shrink: 0; margin: 16px 16px 16px 0;
+    background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md);
+    overflow: hidden; align-self: flex-start;
+  }
+  .edp-accent { height: 4px; }
+  .edp-body { padding: 16px 20px; }
+  .edp-title { font-size: 16px; font-weight: 700; color: var(--text-pri); margin-bottom: 8px; }
+  .edp-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-pri); margin-bottom: 8px; }
+  .edp-icon { font-size: 14px; }
+  .edp-divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .edp-actions { display: flex; gap: 8px; }
+  .btn-sm-red { flex: 1; height: 36px; border: 1px solid #E53E3E; border-radius: 8px; background: var(--white); color: #E53E3E; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; }
+
+  .cal-legend { padding: 8px 32px; background: var(--white); border-top: 1px solid var(--border); display: flex; gap: 20px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-sec); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ════════════════════════════════════════════════════════════
+     TASK BOARD (KANBAN)
+  ════════════════════════════════════════════════════════════ */
+  .kanban-filters { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; }
+  .filter-btn { padding: 6px 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-family: inherit; color: var(--text-sec); cursor: pointer; }
+  .kanban-board { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+  .kanban-col { background: #EDEDF0; border-radius: 12px; overflow: hidden; }
+  .kanban-col-header { padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+  .kanban-col-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .kanban-col-title { font-size: 14px; font-weight: 600; color: var(--text-pri); flex: 1; }
+  .kanban-count { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .kanban-plus { font-size: 20px; color: var(--text-muted); cursor: pointer; }
+  .kanban-cards { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+  .kanban-card { background: var(--white); border-radius: 10px; padding: 14px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+  .kanban-card-prio { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+  .kanban-card-content { padding-left: 10px; }
+  .kanban-card-title { font-size: 13px; font-weight: 600; color: var(--text-pri); margin-bottom: 6px; }
+  .kanban-card-title.done-title { color: var(--text-muted); text-decoration: line-through; }
+  .lobby-tag { display: inline-flex; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 500; margin-bottom: 8px; }
+  .kanban-card-footer { display: flex; align-items: center; gap: 8px; }
+  .kanban-due { font-size: 11px; color: var(--text-sec); flex: 1; }
+  .kanban-due.overdue { color: #E53E3E; }
+  .kanban-done-check { width: 20px; height: 20px; border-radius: 50%; background: var(--done); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; }
+  .kanban-add-btn { margin: 10px 12px 12px; background: var(--white); border: 1px dashed var(--border); border-radius: 10px; padding: 10px; text-align: center; font-size: 13px; color: var(--text-muted); cursor: pointer; }
+
+  /* Utility */
+  .mt-4 { margin-top: 16px; }
+  .mb-2 { margin-bottom: 8px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .screen.active { position: relative; }
+
+  /* ════════════════════════════════════════════════════════════
+     MODAL / OVERLAY
+  ════════════════════════════════════════════════════════════ */
+  .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .modal-dialog { background: var(--white); border-radius: 16px; box-shadow: var(--shadow-lg); width: 520px; max-width: 90%; overflow: hidden; }
+  .modal-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--text-pri); }
+  .modal-close { font-size: 18px; color: var(--text-muted); cursor: pointer; background: none; border: none; font-family: inherit; line-height: 1; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 0 24px 20px; display: flex; justify-content: flex-end; gap: 10px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-select { width: 100%; height: 48px; padding: 0 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-pri); font-family: inherit; }
+  .form-textarea { width: 100%; padding: 12px 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-muted); font-family: inherit; resize: none; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .toggle-label { font-size: 14px; font-weight: 500; color: var(--text-pri); }
+  .toggle-sub { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .toggle-switch { width: 44px; height: 24px; background: var(--green); border-radius: 12px; position: relative; cursor: pointer; flex-shrink: 0; }
+  .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; right: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .toggle-switch.off { background: var(--border); }
+  .toggle-switch.off::after { right: auto; left: 3px; }
+  .free-slot-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--green-lt); color: var(--green-dk); padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+
+  /* ════════════════════════════════════════════════════════════
+     CREATE DROPDOWN
+  ════════════════════════════════════════════════════════════ */
+  .topbar-btn-wrap { position: relative; }
+  .create-dropdown { position: absolute; right: 0; top: calc(100% + 8px); background: var(--white); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); min-width: 220px; overflow: hidden; z-index: 50; }
+  .create-dd-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; font-size: 14px; color: var(--text-pri); cursor: pointer; }
+  .create-dd-item:hover { background: var(--bg); }
+  .create-dd-icon { font-size: 16px; width: 22px; text-align: center; }
+  .create-dd-divider { height: 1px; background: var(--border); }
+  .create-dd-highlight { background: var(--green-lt); }
+  .create-dd-highlight .create-dd-label { color: var(--green-dk); font-weight: 600; }
+
+  /* ════════════════════════════════════════════════════════════
+     SETTINGS
+  ════════════════════════════════════════════════════════════ */
+  .settings-inner { display: flex; flex: 1; min-height: 0; }
+  .settings-menu { width: 220px; background: var(--white); border-right: 1px solid var(--border); flex-shrink: 0; padding: 20px 0; }
+  .settings-menu-section { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: .07em; padding: 12px 20px 6px; }
+  .settings-menu-item { padding: 10px 20px; font-size: 14px; color: var(--text-sec); cursor: pointer; border-left: 3px solid transparent; }
+  .settings-menu-item.active { color: var(--text-pri); font-weight: 600; border-left-color: var(--green); background: rgba(91,155,107,.08); }
+  .settings-scroll { flex: 1; overflow-y: auto; padding: 32px; background: var(--bg); }
+  .settings-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow-sm); margin-bottom: 20px; overflow: hidden; }
+  .settings-card-hd { padding: 14px 24px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; color: var(--text-pri); }
+  .settings-rows { padding: 0 24px; }
+  .settings-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-info { flex: 1; }
+  .settings-row-label { font-size: 13px; font-weight: 500; color: var(--text-sec); }
+  .settings-row-val { font-size: 14px; color: var(--text-pri); margin-top: 2px; }
+  .settings-input { height: 40px; padding: 0 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-pri); font-family: inherit; }
+  .settings-avatar-row { display: flex; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .settings-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .danger-card { border: 1.5px solid #FECACA; border-radius: 12px; background: #FFF5F5; margin-bottom: 20px; overflow: hidden; }
+  .danger-card-hd { padding: 14px 24px; border-bottom: 1px solid #FECACA; font-size: 14px; font-weight: 700; color: #DC2626; }
+  .danger-rows { padding: 0 24px; }
+  .danger-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+  .danger-row + .danger-row { border-top: 1px solid #FEE2E2; }
+  .danger-row-text .dt { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .danger-row-text .ds { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .btn-danger { height: 36px; padding: 0 16px; border: 1.5px solid #E53E3E; border-radius: 8px; background: var(--white); color: #E53E3E; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+  .btn-danger-fill { height: 36px; padding: 0 16px; border: none; border-radius: 8px; background: #DC2626; color: #fff; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+
+  /* ════════════════════════════════════════════════════════════
+     MEMBER CARDS
+  ════════════════════════════════════════════════════════════ */
+  .member-list { display: flex; flex-direction: column; gap: 10px; }
+  .member-card { background: var(--white); border-radius: 12px; padding: 16px 20px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 14px; }
+  .mc-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .mc-info { flex: 1; }
+  .mc-name { font-size: 15px; font-weight: 600; color: var(--text-pri); }
+  .mc-username { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .role-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .role-owner { background: rgba(91,155,107,.15); color: var(--green-dk); }
+  .role-member { background: var(--bg); color: var(--text-sec); }
+  .mc-actions { display: flex; gap: 8px; }
+  .mc-joined { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ════════════════════════════════════════════════════════════
+     ADD MEMBER SEARCH
+  ════════════════════════════════════════════════════════════ */
+  .search-results { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .search-result { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; }
+  .search-result:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .sr-info { flex: 1; }
+  .sr-name { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .sr-username { font-size: 12px; color: var(--text-sec); }
+
+  /* ════════════════════════════════════════════════════════════
+     DRAWER (add task)
+  ════════════════════════════════════════════════════════════ */
+  .drawer-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.3); z-index: 200; display: flex; justify-content: flex-end; }
+  .drawer { width: 420px; background: var(--white); display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+  .drawer-hd { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .drawer-title { font-size: 16px; font-weight: 700; color: var(--text-pri); }
+  .drawer-bd { flex: 1; padding: 20px 24px; overflow-y: auto; }
+  .drawer-ft { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0; }
+
+  /* ════════════════════════════════════════════════════════════
+     LOBBY TYPE PICKER
+  ════════════════════════════════════════════════════════════ */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .type-opt { border: 2px solid var(--border); border-radius: 10px; padding: 14px 12px; cursor: pointer; text-align: center; }
+  .type-opt.selected { border-color: var(--green); background: var(--green-lt); }
+  .type-opt-icon { font-size: 22px; margin-bottom: 6px; }
+  .type-opt-label { font-size: 13px; font-weight: 600; color: var(--text-pri); }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ────────────────────────────────────────────────────── -->
+<nav class="screen-nav" style="flex-wrap:wrap;height:auto;padding:4px 16px">
+  <span class="brand">Lined</span>
+  <a href="#" class="active" onclick="show('signin')">Sign In</a>
+  <a href="#" onclick="show('signup')">Sign Up</a>
+  <a href="#" onclick="show('dashboard')">Dashboard</a>
+  <a href="#" onclick="show('dashboard-create')">+ Create</a>
+  <a href="#" onclick="show('lobby')">Lobby: Tasks</a>
+  <a href="#" onclick="show('lobby-calendar')">Lobby: Calendar</a>
+  <a href="#" onclick="show('lobby-members')">Lobby: Members</a>
+  <a href="#" onclick="show('add-member')">Add Member</a>
+  <a href="#" onclick="show('add-task')">Add Task</a>
+  <a href="#" onclick="show('lobby-settings')">Lobby Settings</a>
+  <a href="#" onclick="show('calendar')">Calendar</a>
+  <a href="#" onclick="show('create-event')">Create Event</a>
+  <a href="#" onclick="show('reserve-slot')">Reserve Slot</a>
+  <a href="#" onclick="show('tasks')">Tasks Board</a>
+  <a href="#" onclick="show('user-settings')">User Settings</a>
+</nav>
+
+<div class="screens">
+
+<!-- ════════════════════════════════════════════════════════════
+     SIGN IN
+════════════════════════════════════════════════════════════ -->
+<div id="signin" class="screen active">
+  <div class="auth-bg">
+    <div class="auth-card">
+      <div class="auth-card-accent"></div>
+      <div class="auth-card-body">
+        <div class="auth-logo">Lined</div>
+        <div class="auth-tagline">Where life and quality time meet</div>
+        <div class="auth-divider"></div>
+        <div class="auth-heading">Welcome back</div>
+        <div class="auth-sub">Sign in to your Lined account</div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="alex@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="••••••••">
+          <div class="auth-forgot" style="margin-top:6px">Forgot password?</div>
+        </div>
+        <button class="btn-primary">Sign in</button>
+        <div class="auth-or"><span>or</span></div>
+        <div class="auth-link">New to Lined? <strong>Create an account →</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SIGN UP
+════════════════════════════════════════════════════════════ -->
+<div id="signup" class="screen">
+  <div class="auth-bg">
+    <div class="auth-card">
+      <div class="auth-card-accent"></div>
+      <div class="auth-card-body">
+        <div class="auth-logo">Lined</div>
+        <div class="auth-tagline">Where life and quality time meet</div>
+        <div class="auth-divider"></div>
+        <div class="auth-heading">Create your account</div>
+        <div class="auth-sub">Join Lined and start coordinating together</div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" placeholder="alex_johnson">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="alex@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="Create a strong password">
+        </div>
+        <div class="auth-terms">By creating an account you agree to our Terms &amp; Privacy Policy</div>
+        <button class="btn-primary">Create account</button>
+        <div class="auth-or"><span>or</span></div>
+        <div class="auth-link">Already have an account? <strong>Sign in →</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     DASHBOARD
+════════════════════════════════════════════════════════════ -->
+<div id="dashboard" class="screen">
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label" style="display:flex;justify-content:space-between;align-items:center;padding-right:16px">
+      MY LOBBIES <span style="font-size:11px;color:var(--green);font-weight:500;letter-spacing:0">+ New</span>
+    </div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div>
+    </div>
+  </div>
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-meta" style="font-size:12px;margin-top:1px">Saturday, 28 March 2026</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-icon">🔔</button>
+      <button class="btn-green">+ Create</button>
+    </div>
+    <div class="content">
+      <!-- Lobby Cards -->
+      <div class="section-header"><span class="section-title">My Lobbies</span><span class="see-all">See all →</span></div>
+      <div class="lobby-cards">
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--couple)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(244,71,155,.12);color:var(--couple)">Couple</span><div class="lobby-name">Alex &amp; Anastasiia</div><div class="lobby-stats"><span>👥 2 members</span><span>📅 3 events</span><span>✓ 5 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--family)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(251,138,47,.12);color:var(--family)">Family</span><div class="lobby-name">Johnson Family</div><div class="lobby-stats"><span>👥 5 members</span><span>📅 7 events</span><span>✓ 12 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--friends)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(167,139,250,.12);color:var(--friends)">Friends</span><div class="lobby-name">College Crew</div><div class="lobby-stats"><span>👥 6 members</span><span>📅 2 events</span><span>✓ 3 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--work)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(63,166,250,.12);color:var(--work)">Work</span><div class="lobby-name">Design Team</div><div class="lobby-stats"><span>👥 4 members</span><span>📅 8 events</span><span>✓ 19 tasks</span></div></div></div>
+      </div>
+      <!-- Two columns -->
+      <div class="two-col">
+        <!-- Events -->
+        <div>
+          <div class="section-header"><span class="section-title">Upcoming Events</span><span class="see-all">View calendar →</span></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--couple)"></div><div class="event-icon">🛒</div><div class="event-info"><div class="event-title">Weekly Grocery Run</div><div class="event-time">Today · 5:00 PM</div></div><span class="event-lobby-badge" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--family)"></div><div class="event-icon">🍽️</div><div class="event-info"><div class="event-title">Family Sunday Dinner</div><div class="event-time">Sun, 29 Mar · 7:00 PM</div></div><span class="event-lobby-badge" style="background:rgba(251,138,47,.1);color:var(--family)">Johnson Family</span></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--work)"></div><div class="event-icon">📋</div><div class="event-info"><div class="event-title">Sprint Planning</div><div class="event-time">Mon, 30 Mar · 10:00 AM</div></div><span class="event-lobby-badge" style="background:rgba(63,166,250,.1);color:var(--work)">Design Team</span></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--friends)"></div><div class="event-icon">🎉</div><div class="event-info"><div class="event-title">Maria's Birthday Party</div><div class="event-time">Fri, 3 Apr · 8:00 PM</div></div><span class="event-lobby-badge" style="background:rgba(167,139,250,.1);color:var(--friends)">College Crew</span></div>
+        </div>
+        <!-- Tasks + free slot -->
+        <div>
+          <div class="section-header"><span class="section-title">My Tasks</span><span class="see-all">All tasks →</span></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--todo)"></div><div class="task-info"><div class="task-title">Plan weekly meals</div><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span></div><div class="task-due" style="color:#E53E3E">Today</div></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--inprog)"></div><div class="task-info"><div class="task-title">Prepare design review</div><span class="status-badge" style="background:rgba(59,130,246,.12);color:var(--inprog)">IN PROGRESS</span></div><div class="task-due">Mar 30</div></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--todo)"></div><div class="task-info"><div class="task-title">Book birthday venue</div><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span></div><div class="task-due">Apr 1</div></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--done)"></div><div class="task-info"><div class="task-title" style="color:var(--text-muted)">Send birthday invites</div><span class="status-badge" style="background:rgba(16,185,129,.12);color:var(--done)">DONE</span></div><div class="task-due" style="color:var(--text-muted)">Done</div></div>
+          <div class="free-slot-card">
+            <span style="font-size:20px">✨</span>
+            <div class="free-slot-text"><div class="title">Free time found!</div><div class="sub">You &amp; Anastasiia are both free Sunday 2–5 PM</div></div>
+            <div class="free-slot-cta">Plan something →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     LOBBY DETAIL
+════════════════════════════════════════════════════════════ -->
+<div id="lobby" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <!-- Lobby header -->
+    <div class="lobby-header" style="border-top:4px solid var(--couple)">
+      <div class="lobby-header-top">
+        <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+        <div>
+          <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+          <div class="lobby-members">
+            <div class="member-avatar" style="background:var(--green)">A</div>
+            <div class="member-avatar" style="background:var(--inprog)">An</div>
+            <span class="member-count">2 members</span>
+            <span class="lobby-type-badge" style="background:rgba(244,71,155,.1);color:var(--couple);margin-left:8px">Couple</span>
+          </div>
+        </div>
+        <div class="lobby-header-actions">
+          <button class="btn-outline">+ Add member</button>
+          <button class="btn-outline">⚙ Settings</button>
+        </div>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <div class="tab">📅 Calendar</div>
+      <div class="tab active">✅ Tasks</div>
+      <div class="tab">👥 Members</div>
+    </div>
+    <!-- Task list content -->
+    <div class="content">
+      <div class="filter-bar">
+        <div class="filter-pill active">All (6)</div>
+        <div class="filter-pill">To Do (3)</div>
+        <div class="filter-pill">In Progress (2)</div>
+        <div class="filter-pill">Done (1)</div>
+        <div class="filter-sort">Sort: Due date ↑</div>
+      </div>
+      <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Plan date night</div><div class="task-row-desc">Choose restaurant and book reservation</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span><div class="assignee-av" style="background:var(--green)">A</div><div class="task-due-sm" style="color:#E53E3E">Today</div><div style="width:8px;height:8px;border-radius:50%;background:#E53E3E"></div></div></div>
+      <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Grocery shopping</div><div class="task-row-desc">Weekly groceries — check shared list first</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span><div class="assignee-av" style="background:var(--inprog)">An</div><div class="task-due-sm" style="color:#E53E3E">Today</div><div style="width:8px;height:8px;border-radius:50%;background:#FB8A2F"></div></div></div>
+      <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Pay rent</div><div class="task-row-desc">Transfer by end of month</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(59,130,246,.12);color:var(--inprog)">IN PROGRESS</span><div class="assignee-av" style="background:var(--green)">A</div><div class="task-due-sm">Mar 31</div><div style="width:8px;height:8px;border-radius:50%;background:#E53E3E"></div></div></div>
+      <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Fix kitchen light</div><div class="task-row-desc">Replace the bulb above the counter</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span><div class="assignee-av" style="background:var(--inprog)">An</div><div class="task-due-sm">Apr 2</div><div style="width:8px;height:8px;border-radius:50%;background:var(--done)"></div></div></div>
+      <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Book weekend trip</div><div class="task-row-desc">Look into Airbnbs in the mountains</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(59,130,246,.12);color:var(--inprog)">IN PROGRESS</span><div class="assignee-av" style="background:var(--green)">A</div><div class="task-due-sm">Apr 5</div><div style="width:8px;height:8px;border-radius:50%;background:#FB8A2F"></div></div></div>
+      <div class="task-row" style="opacity:.7"><div class="checkbox done">✓</div><div><div class="task-row-title" style="color:var(--text-muted);text-decoration:line-through">Cancel gym membership</div><div class="task-row-desc">Call or cancel online before billing date</div></div><div class="task-row-status"><span class="status-badge" style="background:rgba(16,185,129,.12);color:var(--done)">DONE</span><div class="assignee-av" style="background:var(--green)">A</div><div class="task-due-sm" style="color:var(--text-muted)">Done</div></div></div>
+      <div class="add-task-btn mt-4">+ Add task</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     CALENDAR
+════════════════════════════════════════════════════════════ -->
+<div id="calendar" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item active"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div></div></div>
+  </div>
+  <div class="main" style="overflow:hidden">
+    <div class="cal-topbar">
+      <span class="cal-month">← &nbsp;March 2026&nbsp; →</span>
+      <button class="btn-outline" style="height:32px;padding:0 12px;font-size:13px">Today</button>
+      <div class="view-toggle"><button class="view-btn active">Week</button><button class="view-btn">Month</button></div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-green">+ New event</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <!-- Day headers -->
+        <div class="day-headers" style="flex-shrink:0">
+          <div class="day-header">Mon 23</div>
+          <div class="day-header">Tue 24</div>
+          <div class="day-header">Wed 25</div>
+          <div class="day-header">Thu 26</div>
+          <div class="day-header">Fri 27</div>
+          <div class="day-header today">Sat 28</div>
+          <div class="day-header">Sun 29</div>
+        </div>
+        <!-- Time grid -->
+        <div style="display:flex;flex:1;overflow-y:auto">
+          <div class="time-labels">
+            <div class="time-label">9 AM</div><div class="time-label">10 AM</div>
+            <div class="time-label">11 AM</div><div class="time-label">12 PM</div>
+            <div class="time-label">1 PM</div><div class="time-label">2 PM</div>
+            <div class="time-label">3 PM</div><div class="time-label">4 PM</div>
+            <div class="time-label">5 PM</div><div class="time-label">6 PM</div>
+          </div>
+          <div class="day-columns">
+            <!-- Mon -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--work);top:80px;height:76px">Sprint Planning<div class="cal-event-sub">Design Team</div></div>
+            </div>
+            <!-- Tue -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--work);top:0;height:40px">Standup</div>
+              <div class="free-band" style="top:400px;height:160px">Free slot</div>
+            </div>
+            <!-- Wed -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--work);top:400px;height:156px">Design Review<div class="cal-event-sub">Design Team</div></div>
+              <div class="free-band" style="top:400px;height:160px;opacity:.3">Free slot</div>
+            </div>
+            <!-- Thu -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--family);top:640px;height:76px">Family Call<div class="cal-event-sub">Johnson Family</div></div>
+            </div>
+            <!-- Fri -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--work);top:0;height:40px">Standup</div>
+            </div>
+            <!-- Sat (today) -->
+            <div class="day-col today" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="now-line" style="top:480px"><div class="now-dot"></div></div>
+              <div class="cal-event" style="background:var(--couple);top:640px;height:76px">Grocery Run<div class="cal-event-sub">with Anastasiia</div></div>
+            </div>
+            <!-- Sun -->
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--family);top:640px;height:76px">Family Dinner<div class="cal-event-sub">Johnson Family</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="cal-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--couple)"></div>Couple</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--family)"></div>Family</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--friends)"></div>Friends</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--work)"></div>Work</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#B4EBD0"></div>Free slot</div>
+        </div>
+      </div>
+      <!-- Event detail panel -->
+      <div class="event-detail-panel" style="margin:16px">
+        <div class="edp-accent" style="background:var(--couple)"></div>
+        <div class="edp-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="edp-title">Grocery Run</div>
+            <span style="color:var(--text-muted);cursor:pointer;font-size:14px">✕</span>
+          </div>
+          <span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple);margin-bottom:12px">Alex &amp; Anastasiia</span>
+          <div class="edp-meta"><span class="edp-icon">◷</span> Sat 28 Mar · 5:00 – 6:00 PM</div>
+          <div class="edp-meta"><span class="edp-icon">📍</span> Whole Foods Market</div>
+          <div class="edp-meta"><span class="edp-icon">🔗</span> Shared event</div>
+          <div class="edp-divider"></div>
+          <div class="edp-actions">
+            <button class="btn-green" style="flex:1;height:36px">Edit event</button>
+            <button class="btn-sm-red">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TASKS BOARD
+════════════════════════════════════════════════════════════ -->
+<div id="tasks" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item active"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">All Tasks</div>
+      <div class="kanban-filters" style="margin:0 0 0 16px">
+        <button class="filter-btn">All Lobbies</button>
+        <button class="filter-btn">All Members</button>
+        <button class="filter-btn">All Dates</button>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-green">+ New task</button>
+    </div>
+    <div class="content">
+      <div class="kanban-board">
+        <!-- TO DO -->
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-dot" style="background:var(--todo)"></div>
+            <div class="kanban-col-title">To Do</div>
+            <span class="kanban-count" style="background:rgba(148,163,184,.15);color:var(--todo)">4</span>
+            <span class="kanban-plus">+</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#E53E3E"></div><div class="kanban-card-content"><div class="kanban-card-title">Plan date night</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due overdue">Due: Today</div><div class="assignee-av" style="background:var(--green);width:26px;height:26px;font-size:11px">A</div></div></div></div>
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#FB8A2F"></div><div class="kanban-card-content"><div class="kanban-card-title">Grocery shopping</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due overdue">Due: Today</div><div class="assignee-av" style="background:var(--inprog);width:26px;height:26px;font-size:11px">An</div></div></div></div>
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:var(--done)"></div><div class="kanban-card-content"><div class="kanban-card-title">Fix kitchen light</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due">Due: Apr 2</div><div class="assignee-av" style="background:var(--inprog);width:26px;height:26px;font-size:11px">An</div></div></div></div>
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#FB8A2F"></div><div class="kanban-card-content"><div class="kanban-card-title">Research family vacation</div><span class="lobby-tag" style="background:rgba(251,138,47,.1);color:var(--family)">Johnson Family</span><div class="kanban-card-footer"><div class="kanban-due">Due: Apr 10</div><div class="assignee-av" style="background:#FB8A2F;width:26px;height:26px;font-size:11px">M</div></div></div></div>
+          </div>
+          <div class="kanban-add-btn">+ Add task</div>
+        </div>
+        <!-- IN PROGRESS -->
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-dot" style="background:var(--inprog)"></div>
+            <div class="kanban-col-title">In Progress</div>
+            <span class="kanban-count" style="background:rgba(59,130,246,.15);color:var(--inprog)">3</span>
+            <span class="kanban-plus">+</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#E53E3E"></div><div class="kanban-card-content"><div class="kanban-card-title">Pay rent</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due overdue">Due: Mar 31</div><div class="assignee-av" style="background:var(--green);width:26px;height:26px;font-size:11px">A</div></div></div></div>
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#E53E3E"></div><div class="kanban-card-content"><div class="kanban-card-title">Prepare design review</div><span class="lobby-tag" style="background:rgba(63,166,250,.1);color:var(--work)">Design Team</span><div class="kanban-card-footer"><div class="kanban-due overdue">Due: Mar 30</div><div class="assignee-av" style="background:var(--green);width:26px;height:26px;font-size:11px">A</div></div></div></div>
+            <div class="kanban-card"><div class="kanban-card-prio" style="background:#FB8A2F"></div><div class="kanban-card-content"><div class="kanban-card-title">Book weekend trip</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due">Due: Apr 5</div><div class="assignee-av" style="background:var(--green);width:26px;height:26px;font-size:11px">A</div></div></div></div>
+          </div>
+          <div class="kanban-add-btn">+ Add task</div>
+        </div>
+        <!-- DONE -->
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-dot" style="background:var(--done)"></div>
+            <div class="kanban-col-title">Done</div>
+            <span class="kanban-count" style="background:rgba(16,185,129,.15);color:var(--done)">3</span>
+            <span class="kanban-plus">+</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" style="opacity:.75"><div class="kanban-card-prio" style="background:var(--done)"></div><div class="kanban-card-content"><div class="kanban-card-title done-title">Cancel gym membership</div><span class="lobby-tag" style="background:rgba(244,71,155,.1);color:var(--couple)">Alex &amp; Anastasiia</span><div class="kanban-card-footer"><div class="kanban-due">Mar 20</div><div class="kanban-done-check">✓</div></div></div></div>
+            <div class="kanban-card" style="opacity:.75"><div class="kanban-card-prio" style="background:#FB8A2F"></div><div class="kanban-card-content"><div class="kanban-card-title done-title">Send birthday invites</div><span class="lobby-tag" style="background:rgba(167,139,250,.1);color:var(--friends)">College Crew</span><div class="kanban-card-footer"><div class="kanban-due">Mar 22</div><div class="kanban-done-check">✓</div></div></div></div>
+            <div class="kanban-card" style="opacity:.75"><div class="kanban-card-prio" style="background:#E53E3E"></div><div class="kanban-card-content"><div class="kanban-card-title done-title">Submit expenses report</div><span class="lobby-tag" style="background:rgba(63,166,250,.1);color:var(--work)">Design Team</span><div class="kanban-card-footer"><div class="kanban-due">Mar 25</div><div class="kanban-done-check">✓</div></div></div></div>
+          </div>
+          <div class="kanban-add-btn">+ Add task</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     DASHBOARD + CREATE DROPDOWN
+════════════════════════════════════════════════════════════ -->
+<div id="dashboard-create" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label" style="display:flex;justify-content:space-between;align-items:center;padding-right:16px">
+      MY LOBBIES <span style="font-size:11px;color:var(--green);font-weight:500;letter-spacing:0">+ Add</span>
+    </div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-meta" style="font-size:12px;margin-top:1px">Saturday, 28 March 2026</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-icon">🔔</button>
+      <div class="topbar-btn-wrap">
+        <button class="btn-green" style="background:var(--green-dk)">+ Create ▾</button>
+        <div class="create-dropdown">
+          <div class="create-dd-item"><span class="create-dd-icon">📅</span><span class="create-dd-label">New Event</span></div>
+          <div class="create-dd-item"><span class="create-dd-icon">✅</span><span class="create-dd-label">New Task</span></div>
+          <div class="create-dd-item"><span class="create-dd-icon">👥</span><span class="create-dd-label">New Lobby</span></div>
+          <div class="create-dd-divider"></div>
+          <div class="create-dd-item create-dd-highlight"><span class="create-dd-icon">✨</span><span class="create-dd-label">Reserve Free Slot</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="content" style="opacity:.35;pointer-events:none">
+      <div class="section-header"><span class="section-title">My Lobbies</span><span class="see-all">See all →</span></div>
+      <div class="lobby-cards">
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--couple)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(244,71,155,.12);color:var(--couple)">Couple</span><div class="lobby-name">Alex &amp; Anastasiia</div><div class="lobby-stats"><span>👥 2 members</span><span>📅 3 events</span><span>✓ 5 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--family)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(251,138,47,.12);color:var(--family)">Family</span><div class="lobby-name">Johnson Family</div><div class="lobby-stats"><span>👥 5 members</span><span>📅 7 events</span><span>✓ 12 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--friends)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(167,139,250,.12);color:var(--friends)">Friends</span><div class="lobby-name">College Crew</div><div class="lobby-stats"><span>👥 6 members</span><span>📅 2 events</span><span>✓ 3 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--work)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(63,166,250,.12);color:var(--work)">Work</span><div class="lobby-name">Design Team</div><div class="lobby-stats"><span>👥 4 members</span><span>📅 8 events</span><span>✓ 19 tasks</span></div></div></div>
+      </div>
+      <div class="two-col" style="margin-top:8px">
+        <div>
+          <div class="section-header"><span class="section-title">Upcoming Events</span></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--couple)"></div><div class="event-icon">🛒</div><div class="event-info"><div class="event-title">Weekly Grocery Run</div><div class="event-time">Today · 5:00 PM</div></div></div>
+          <div class="event-card"><div class="event-accent" style="background:var(--family)"></div><div class="event-icon">🍽️</div><div class="event-info"><div class="event-title">Family Sunday Dinner</div><div class="event-time">Sun, 29 Mar · 7:00 PM</div></div></div>
+        </div>
+        <div>
+          <div class="section-header"><span class="section-title">My Tasks</span></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--todo)"></div><div class="task-info"><div class="task-title">Plan weekly meals</div><span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">TODO</span></div></div>
+          <div class="task-card"><div class="task-dot" style="background:var(--inprog)"></div><div class="task-info"><div class="task-title">Prepare design review</div><span class="status-badge" style="background:rgba(59,130,246,.12);color:var(--inprog)">IN PROGRESS</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     CREATE EVENT (modal over calendar)
+════════════════════════════════════════════════════════════ -->
+<div id="create-event" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item active"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div></div></div>
+  </div>
+  <div class="main" style="overflow:hidden;position:relative">
+    <!-- Calendar in background (dimmed) -->
+    <div style="opacity:.25;pointer-events:none;display:flex;flex-direction:column;height:100%">
+      <div class="cal-topbar">
+        <span class="cal-month">← &nbsp;March 2026&nbsp; →</span>
+        <div class="topbar-spacer"></div>
+        <button class="btn-green">+ New event</button>
+      </div>
+      <div class="day-headers" style="flex-shrink:0">
+        <div class="day-header">Mon 23</div><div class="day-header">Tue 24</div><div class="day-header">Wed 25</div>
+        <div class="day-header">Thu 26</div><div class="day-header">Fri 27</div>
+        <div class="day-header today">Sat 28</div><div class="day-header">Sun 29</div>
+      </div>
+      <div style="flex:1;background:var(--white)"></div>
+    </div>
+    <!-- Modal overlay -->
+    <div class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">New Event</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Event title</label>
+            <input class="form-input" type="text" placeholder="e.g. Movie night, Doctor appointment…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lobby</label>
+            <select class="form-select">
+              <option>Alex &amp; Anastasiia</option>
+              <option>Johnson Family</option>
+              <option>College Crew</option>
+              <option>Design Team</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin-top:20px">
+            <div>
+              <label class="form-label">Start</label>
+              <input class="form-input" type="text" placeholder="Sat 28 Mar · 6:00 PM">
+            </div>
+            <div>
+              <label class="form-label">End</label>
+              <input class="form-input" type="text" placeholder="Sat 28 Mar · 7:00 PM">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location (optional)</label>
+            <input class="form-input" type="text" placeholder="e.g. Home, Central Park…">
+          </div>
+          <div class="toggle-row" style="margin-top:16px">
+            <div><div class="toggle-label">Shared event</div><div class="toggle-sub">Visible to all lobby members</div></div>
+            <div class="toggle-switch"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Notify members</div><div class="toggle-sub">Send a notification when created</div></div>
+            <div class="toggle-switch"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-green" style="height:40px;padding:0 24px;font-size:14px">Create Event</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     RESERVE FREE SLOT
+════════════════════════════════════════════════════════════ -->
+<div id="reserve-slot" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main" style="position:relative">
+    <!-- Dashboard content dimmed in background -->
+    <div style="opacity:.2;pointer-events:none;display:flex;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-spacer"></div>
+        <button class="btn-green">+ Create</button>
+      </div>
+      <div class="content">
+        <div style="height:120px;background:var(--white);border-radius:12px;margin-bottom:16px"></div>
+        <div style="height:200px;background:var(--white);border-radius:12px"></div>
+      </div>
+    </div>
+    <!-- Modal overlay -->
+    <div class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Reserve Free Slot</div>
+            <div style="margin-top:6px"><span class="free-slot-tag">✨ Sunday 2:00 – 5:00 PM · Both free</span></div>
+          </div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="background:var(--green-lt);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;margin-bottom:16px">
+            <span style="font-size:20px">💑</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--green-dk)">Alex &amp; Anastasiia are both free</div>
+              <div style="font-size:12px;color:var(--green-dk);margin-top:2px">Sunday, 29 March · 2:00 – 5:00 PM</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">What would you like to do?</label>
+            <input class="form-input" type="text" placeholder="e.g. Walk in the park, Cook together…">
+          </div>
+          <div class="form-row" style="margin-top:20px">
+            <div>
+              <label class="form-label">Start time</label>
+              <input class="form-input" type="text" value="2:00 PM">
+            </div>
+            <div>
+              <label class="form-label">End time</label>
+              <input class="form-input" type="text" value="5:00 PM">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location (optional)</label>
+            <input class="form-input" type="text" placeholder="Where will you meet?">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Invite</label>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">A</div>
+              <span style="font-size:14px;color:var(--text-pri)">Alex Johnson</span>
+              <span style="font-size:12px;color:var(--text-sec)">(you)</span>
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--inprog);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-left:8px">An</div>
+              <span style="font-size:14px;color:var(--text-pri)">Anastasiia</span>
+              <span style="margin-left:auto;font-size:18px;color:var(--done)">✓</span>
+            </div>
+          </div>
+          <div class="toggle-row" style="margin-top:16px">
+            <div><div class="toggle-label">Notify Anastasiia</div><div class="toggle-sub">She'll get a notification about this plan</div></div>
+            <div class="toggle-switch"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-green" style="height:40px;padding:0 24px;font-size:14px">Reserve Slot ✨</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     USER SETTINGS
+════════════════════════════════════════════════════════════ -->
+<div id="user-settings" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Settings</div>
+      <div class="topbar-spacer"></div>
+    </div>
+    <div class="settings-inner">
+      <!-- Settings left menu -->
+      <div class="settings-menu">
+        <div class="settings-menu-section">ACCOUNT</div>
+        <div class="settings-menu-item active">Profile</div>
+        <div class="settings-menu-item">Password &amp; Security</div>
+        <div class="settings-menu-item">Notifications</div>
+        <div class="settings-menu-section">PREFERENCES</div>
+        <div class="settings-menu-item">Appearance</div>
+        <div class="settings-menu-item">Language &amp; Region</div>
+        <div class="settings-menu-section">DANGER</div>
+        <div class="settings-menu-item" style="color:#DC2626">Delete Account</div>
+      </div>
+      <!-- Settings content -->
+      <div class="settings-scroll">
+        <!-- Profile section -->
+        <div class="settings-card">
+          <div class="settings-card-hd">Profile</div>
+          <div class="settings-avatar-row">
+            <div class="settings-avatar">A</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--text-pri)">Alex Johnson</div>
+              <div style="font-size:13px;color:var(--text-sec);margin-top:2px">alex@lined.app</div>
+              <button class="btn-outline" style="margin-top:10px;height:32px;font-size:12px">Change photo</button>
+            </div>
+          </div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Display name</div>
+                <div class="settings-row-val">Alex Johnson</div>
+              </div>
+              <input class="settings-input" style="width:220px" value="Alex Johnson">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Username</div>
+                <div class="settings-row-val">@alex_johnson</div>
+              </div>
+              <input class="settings-input" style="width:220px" value="alex_johnson">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Email address</div>
+                <div class="settings-row-val">alex@lined.app</div>
+              </div>
+              <input class="settings-input" style="width:220px" value="alex@lined.app">
+            </div>
+          </div>
+          <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+            <button class="btn-green" style="height:38px;padding:0 20px">Save changes</button>
+          </div>
+        </div>
+        <!-- Notifications section -->
+        <div class="settings-card">
+          <div class="settings-card-hd">Notifications</div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">New shared events</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Notify when a lobby member adds a shared event</div>
+              </div>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Task assigned to me</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Alert when someone assigns a task to you</div>
+              </div>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Free slot detected</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Notify when a free time slot opens up for your lobbies</div>
+              </div>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Event reminders</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Reminders 30 minutes before an event</div>
+              </div>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Email digests</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Weekly summary of shared activity</div>
+              </div>
+              <div class="toggle-switch off"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Appearance section -->
+        <div class="settings-card">
+          <div class="settings-card-hd">Appearance</div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Theme</div>
+                <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Choose your preferred colour scheme</div>
+              </div>
+              <select class="form-select" style="width:160px;height:40px;font-size:13px">
+                <option>Light</option>
+                <option>Dark</option>
+                <option>System</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Danger zone -->
+        <div class="danger-card">
+          <div class="danger-card-hd">⚠ Danger Zone</div>
+          <div class="danger-rows">
+            <div class="danger-row">
+              <div class="danger-row-text">
+                <div class="dt">Delete my account</div>
+                <div class="ds">Permanently remove your account and all data. This cannot be undone.</div>
+              </div>
+              <button class="btn-danger-fill">Delete account</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     LOBBY SETTINGS
+════════════════════════════════════════════════════════════ -->
+<div id="lobby-settings" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <!-- Lobby header -->
+    <div class="lobby-header" style="border-top:4px solid var(--couple)">
+      <div class="lobby-header-top">
+        <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+        <div>
+          <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+          <div class="lobby-members">
+            <div class="member-avatar" style="background:var(--green)">A</div>
+            <div class="member-avatar" style="background:var(--inprog)">An</div>
+            <span class="member-count">2 members</span>
+            <span class="lobby-type-badge" style="background:rgba(244,71,155,.1);color:var(--couple);margin-left:8px">Couple</span>
+          </div>
+        </div>
+        <div class="lobby-header-actions">
+          <button class="btn-outline">+ Add member</button>
+          <button class="btn-green">⚙ Settings</button>
+        </div>
+      </div>
+    </div>
+    <!-- No tab bar — settings is a direct sub-page -->
+    <div class="content">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px;font-size:14px;color:var(--text-sec)">
+        <span style="cursor:pointer;color:var(--green)">← Back to lobby</span>
+        <span>·</span>
+        <span style="color:var(--text-pri);font-weight:600">Lobby Settings</span>
+      </div>
+      <!-- General settings -->
+      <div class="settings-card">
+        <div class="settings-card-hd">General</div>
+        <div class="settings-rows">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Lobby name</div>
+              <div class="settings-row-val">Alex &amp; Anastasiia</div>
+            </div>
+            <input class="settings-input" style="width:260px" value="Alex &amp; Anastasiia">
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Lobby type</div>
+              <div class="settings-row-val" style="font-size:13px;color:var(--text-sec)">Determines how the lobby is labelled</div>
+            </div>
+          </div>
+          <div style="padding:0 0 16px">
+            <div class="type-grid">
+              <div class="type-opt selected">
+                <div class="type-opt-icon">💑</div>
+                <div class="type-opt-label">Couple</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">👨‍👩‍👧‍👦</div>
+                <div class="type-opt-label">Family</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">🎉</div>
+                <div class="type-opt-label">Friends</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">💼</div>
+                <div class="type-opt-label">Work</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+          <button class="btn-green" style="height:38px;padding:0 20px">Save changes</button>
+        </div>
+      </div>
+      <!-- Notifications for this lobby -->
+      <div class="settings-card">
+        <div class="settings-card-hd">Lobby Notifications</div>
+        <div class="settings-rows">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">New events in this lobby</div>
+            </div>
+            <div class="toggle-switch"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Task updates</div>
+            </div>
+            <div class="toggle-switch"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Free slot notifications</div>
+            </div>
+            <div class="toggle-switch off"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Danger zone -->
+      <div class="danger-card">
+        <div class="danger-card-hd">⚠ Danger Zone</div>
+        <div class="danger-rows">
+          <div class="danger-row">
+            <div class="danger-row-text">
+              <div class="dt">Leave lobby</div>
+              <div class="ds">You'll lose access to all shared events and tasks in this lobby.</div>
+            </div>
+            <button class="btn-danger">Leave</button>
+          </div>
+          <div class="danger-row">
+            <div class="danger-row-text">
+              <div class="dt">Delete lobby</div>
+              <div class="ds">Permanently delete this lobby and all its content. Only the owner can do this.</div>
+            </div>
+            <button class="btn-danger-fill">Delete lobby</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     ADD MEMBER (modal over lobby)
+════════════════════════════════════════════════════════════ -->
+<div id="add-member" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main" style="position:relative">
+    <!-- Lobby in background (dimmed) -->
+    <div style="opacity:.25;pointer-events:none;display:flex;flex-direction:column;height:100%">
+      <div class="lobby-header" style="border-top:4px solid var(--couple)">
+        <div class="lobby-header-top">
+          <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+          <div>
+            <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+            <div class="lobby-members">
+              <div class="member-avatar" style="background:var(--green)">A</div>
+              <div class="member-avatar" style="background:var(--inprog)">An</div>
+              <span class="member-count">2 members</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">📅 Calendar</div>
+        <div class="tab active">✅ Tasks</div>
+        <div class="tab">👥 Members</div>
+      </div>
+      <div class="content"><div style="height:200px;background:var(--white);border-radius:12px"></div></div>
+    </div>
+    <!-- Modal -->
+    <div class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Add Member</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:13px;color:var(--text-sec);margin-bottom:16px">Search by username or email to invite someone to <strong>Alex &amp; Anastasiia</strong>.</div>
+          <div class="form-group" style="margin-top:0">
+            <label class="form-label">Search user</label>
+            <div style="position:relative">
+              <input class="form-input" type="text" value="nastia" style="padding-left:40px">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px">🔍</span>
+            </div>
+          </div>
+          <!-- Search results -->
+          <div class="search-results">
+            <div class="search-result" style="background:var(--green-lt)">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--inprog);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">An</div>
+              <div class="sr-info">
+                <div class="sr-name">Anastasiia Kovalenko</div>
+                <div class="sr-username">@nastia_k · already in lobby</div>
+              </div>
+              <span style="font-size:18px;color:var(--done)">✓</span>
+            </div>
+            <div class="search-result">
+              <div style="width:36px;height:36px;border-radius:50%;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">N</div>
+              <div class="sr-info">
+                <div class="sr-name">Nastia Bondar</div>
+                <div class="sr-username">@nastia_bondar</div>
+              </div>
+              <button class="btn-green" style="height:32px;padding:0 14px;font-size:13px">Invite</button>
+            </div>
+            <div class="search-result">
+              <div style="width:36px;height:36px;border-radius:50%;background:#8B5CF6;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">N</div>
+              <div class="sr-info">
+                <div class="sr-name">Natascha M.</div>
+                <div class="sr-username">@natascha_m</div>
+              </div>
+              <button class="btn-green" style="height:32px;padding:0 14px;font-size:13px">Invite</button>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:12px 14px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--text-sec)">
+            💡 You can also share an invite link: <span style="color:var(--green);font-weight:600">lined.app/invite/abc123</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     LOBBY DETAIL — CALENDAR TAB
+════════════════════════════════════════════════════════════ -->
+<div id="lobby-calendar" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main" style="overflow:hidden">
+    <!-- Lobby header -->
+    <div class="lobby-header" style="border-top:4px solid var(--couple)">
+      <div class="lobby-header-top">
+        <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+        <div>
+          <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+          <div class="lobby-members">
+            <div class="member-avatar" style="background:var(--green)">A</div>
+            <div class="member-avatar" style="background:var(--inprog)">An</div>
+            <span class="member-count">2 members</span>
+            <span class="lobby-type-badge" style="background:rgba(244,71,155,.1);color:var(--couple);margin-left:8px">Couple</span>
+          </div>
+        </div>
+        <div class="lobby-header-actions">
+          <button class="btn-outline">+ Add member</button>
+          <button class="btn-outline">⚙ Settings</button>
+        </div>
+      </div>
+    </div>
+    <!-- Tabs — Calendar active -->
+    <div class="tab-bar">
+      <div class="tab active" style="border-bottom-color:var(--couple)">📅 Calendar</div>
+      <div class="tab">✅ Tasks</div>
+      <div class="tab">👥 Members</div>
+    </div>
+    <!-- Calendar content -->
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="cal-topbar" style="padding:0 24px">
+          <span class="cal-month">← &nbsp;March 2026&nbsp; →</span>
+          <button class="btn-outline" style="height:32px;padding:0 12px;font-size:13px">Today</button>
+          <div class="view-toggle"><button class="view-btn active">Week</button><button class="view-btn">Month</button></div>
+          <div class="topbar-spacer"></div>
+          <button class="btn-green">+ New event</button>
+        </div>
+        <div class="day-headers" style="padding-left:56px">
+          <div class="day-header">Mon 23</div><div class="day-header">Tue 24</div><div class="day-header">Wed 25</div>
+          <div class="day-header">Thu 26</div><div class="day-header">Fri 27</div>
+          <div class="day-header today">Sat 28</div><div class="day-header">Sun 29</div>
+        </div>
+        <div style="display:flex;flex:1;overflow-y:auto">
+          <div class="time-labels">
+            <div class="time-label">9 AM</div><div class="time-label">10 AM</div>
+            <div class="time-label">11 AM</div><div class="time-label">12 PM</div>
+            <div class="time-label">1 PM</div><div class="time-label">2 PM</div>
+            <div class="time-label">3 PM</div><div class="time-label">4 PM</div>
+            <div class="time-label">5 PM</div><div class="time-label">6 PM</div>
+          </div>
+          <div class="day-columns">
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+            </div>
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="cal-event" style="background:var(--couple);top:320px;height:76px">Lunch date<div class="cal-event-sub">with Anastasiia</div></div>
+              <div class="free-band" style="top:480px;height:160px">✨ Both free</div>
+            </div>
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+            </div>
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+            </div>
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+            </div>
+            <div class="day-col today" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="now-line" style="top:480px"><div class="now-dot"></div></div>
+              <div class="cal-event" style="background:var(--couple);top:640px;height:76px">Grocery Run<div class="cal-event-sub">with Anastasiia</div></div>
+            </div>
+            <div class="day-col" style="position:relative">
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div><div class="hour-line"></div>
+              <div class="free-band" style="top:400px;height:240px">✨ Both free Sun 2–5 PM</div>
+              <div class="cal-event" style="background:var(--couple);top:640px;height:76px">Family Dinner<div class="cal-event-sub">Anastasiia's family</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cal-legend" style="padding:8px 24px">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--couple)"></div>Shared event</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#B4EBD0"></div>Free slot (both available)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     LOBBY DETAIL — MEMBERS TAB
+════════════════════════════════════════════════════════════ -->
+<div id="lobby-members" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <!-- Lobby header -->
+    <div class="lobby-header" style="border-top:4px solid var(--couple)">
+      <div class="lobby-header-top">
+        <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+        <div>
+          <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+          <div class="lobby-members">
+            <div class="member-avatar" style="background:var(--green)">A</div>
+            <div class="member-avatar" style="background:var(--inprog)">An</div>
+            <span class="member-count">2 members</span>
+            <span class="lobby-type-badge" style="background:rgba(244,71,155,.1);color:var(--couple);margin-left:8px">Couple</span>
+          </div>
+        </div>
+        <div class="lobby-header-actions">
+          <button class="btn-green">+ Add member</button>
+          <button class="btn-outline">⚙ Settings</button>
+        </div>
+      </div>
+    </div>
+    <!-- Tabs — Members active -->
+    <div class="tab-bar">
+      <div class="tab">📅 Calendar</div>
+      <div class="tab">✅ Tasks</div>
+      <div class="tab active" style="border-bottom-color:var(--couple)">👥 Members</div>
+    </div>
+    <div class="content">
+      <div class="section-header" style="margin-bottom:20px">
+        <span class="section-title">Members · 2</span>
+      </div>
+      <div class="member-list">
+        <!-- Alex (owner) -->
+        <div class="member-card">
+          <div class="mc-avatar" style="background:var(--green)">A</div>
+          <div class="mc-info">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="mc-name">Alex Johnson</div>
+              <span class="role-badge role-owner">Owner</span>
+            </div>
+            <div class="mc-username">@alex_johnson</div>
+            <div class="mc-joined">Joined March 2025</div>
+          </div>
+          <div class="mc-actions">
+            <span style="font-size:13px;color:var(--text-muted);padding:0 8px">That's you</span>
+          </div>
+        </div>
+        <!-- Anastasiia -->
+        <div class="member-card">
+          <div class="mc-avatar" style="background:var(--inprog)">An</div>
+          <div class="mc-info">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="mc-name">Anastasiia Kovalenko</div>
+              <span class="role-badge role-member">Member</span>
+            </div>
+            <div class="mc-username">@nastia_k</div>
+            <div class="mc-joined">Joined March 2025</div>
+          </div>
+          <div class="mc-actions">
+            <button class="btn-outline" style="height:32px;font-size:12px">Make owner</button>
+            <button class="btn-danger" style="height:32px;font-size:12px">Remove</button>
+          </div>
+        </div>
+      </div>
+      <!-- Pending invite -->
+      <div style="margin-top:24px">
+        <div class="section-title" style="font-size:14px;margin-bottom:12px">Pending Invites</div>
+        <div style="background:var(--white);border-radius:12px;padding:16px 20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--beige-dk);display:flex;align-items:center;justify-content:center;font-size:20px">?</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:600;color:var(--text-pri)">nastia_bondar</div>
+            <div style="font-size:12px;color:var(--text-sec);margin-top:2px">Invite sent · Mar 27, 2026</div>
+          </div>
+          <button class="btn-outline" style="height:32px;font-size:12px">Resend</button>
+          <button class="btn-danger" style="height:32px;font-size:12px">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     ADD TASK (drawer over lobby tasks)
+════════════════════════════════════════════════════════════ -->
+<div id="add-task" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item active"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main" style="position:relative;overflow:hidden">
+    <!-- Lobby tasks in background (dimmed) -->
+    <div style="opacity:.3;pointer-events:none;display:flex;flex-direction:column;height:100%;overflow:hidden">
+      <div class="lobby-header" style="border-top:4px solid var(--couple)">
+        <div class="lobby-header-top">
+          <div class="lobby-avatar" style="background:rgba(244,71,155,.12)">💑</div>
+          <div>
+            <div class="lobby-header-name">Alex &amp; Anastasiia</div>
+            <div class="lobby-members">
+              <div class="member-avatar" style="background:var(--green)">A</div>
+              <div class="member-avatar" style="background:var(--inprog)">An</div>
+              <span class="member-count">2 members</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">📅 Calendar</div>
+        <div class="tab active">✅ Tasks</div>
+        <div class="tab">👥 Members</div>
+      </div>
+      <div class="content">
+        <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Plan date night</div></div></div>
+        <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Grocery shopping</div></div></div>
+        <div class="task-row"><div class="checkbox"></div><div><div class="task-row-title">Pay rent</div></div></div>
+      </div>
+    </div>
+    <!-- Drawer overlay -->
+    <div class="drawer-overlay">
+      <div class="drawer">
+        <div class="drawer-hd">
+          <div class="drawer-title">Add Task</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="drawer-bd">
+          <div class="form-group" style="margin-top:0">
+            <label class="form-label">Task title</label>
+            <input class="form-input" type="text" placeholder="What needs to be done?">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description (optional)</label>
+            <textarea class="form-textarea" rows="3" placeholder="Add more details…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assign to</label>
+            <div style="display:flex;gap:10px;margin-top:6px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+                <div style="width:48px;height:48px;border-radius:50%;background:var(--green);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff">A</div>
+                <span style="font-size:11px;color:var(--green-dk);font-weight:600">Alex</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+                <div style="width:48px;height:48px;border-radius:50%;background:var(--inprog);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">An</div>
+                <span style="font-size:11px;color:var(--text-sec)">Anastasiia</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Due date</label>
+            <input class="form-input" type="text" placeholder="Apr 5, 2026">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select">
+              <option>TO DO</option>
+              <option>IN PROGRESS</option>
+              <option>DONE</option>
+            </select>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Notify assignee</div><div class="toggle-sub">Send a notification when the task is assigned</div></div>
+            <div class="toggle-switch"></div>
+          </div>
+        </div>
+        <div class="drawer-ft">
+          <button class="btn-outline" style="flex:1">Cancel</button>
+          <button class="btn-green" style="flex:2;height:40px;font-size:14px">Add Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /screens -->
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen-nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
