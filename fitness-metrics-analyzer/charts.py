@@ -156,19 +156,9 @@ def plot_f_over_time(df: pd.DataFrame, save: bool = True) -> plt.Figure:
 
 def plot_qg_vs_f(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Compare SonarQube Quality Gate binary result vs continuous F score."""
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=(13, 6))
 
     qg_numeric = df["sonarqube_qg"].map({"OK": 1, "ERROR": 0, "UNKNOWN": 0.5})
-
-    # Only label these notable/outlier experiments
-    label_these = {
-        "degrade-duplication",   # only truly negative F
-        "improve-spotbugs",      # highest F improvement
-        "improve-coverage-unit-tests",  # second improvement
-        "degrade-coverage",      # degradation that passed QG (anomaly)
-        "neutral-move-packages", # neutral that failed QG (anomaly)
-        "degrade-checkstyle",    # degradation with highest F score
-    }
 
     rng = np.random.default_rng(42)
     jitter = rng.uniform(-0.06, 0.06, len(df))
@@ -177,56 +167,71 @@ def plot_qg_vs_f(df: pd.DataFrame, save: bool = True) -> plt.Figure:
         y_pos = qg_numeric[idx] + jitter[i]
         ax.scatter(
             row["fitness_score"], y_pos,
-            color=row["color"], s=100, zorder=3, alpha=0.85,
+            color=row["color"], s=110, zorder=3, alpha=0.85,
         )
 
-        # Only annotate notable experiments
-        if row["short_name"] in label_these:
-            # Decide offset direction based on position
-            x_off = 8 if row["fitness_score"] < 0.4 else -8
-            ha = "left" if x_off > 0 else "right"
-            ax.annotate(
-                row["short_name"],
-                (row["fitness_score"], y_pos),
-                fontsize=8,
-                xytext=(x_off, 6),
-                textcoords="offset points",
-                color="#333",
-                ha=ha,
-                zorder=5,
-                arrowprops=dict(arrowstyle="-", color="#aaa", lw=0.8),
-            )
+    # Quadrant shading
+    ax.axhspan(0.5, 1.3, xmin=0.5, alpha=0.06, color="#1D9E75")
+    ax.axhspan(-0.3, 0.5, xmax=0.5, alpha=0.06, color="#E24B4A")
 
-    # Quadrant shading — ideal zones
-    ax.axhspan(0.5, 1.3, xmin=0.5, alpha=0.04, color="#1D9E75",
-               label="Ideal: improvement detected (F>0, QG OK)")
-    ax.axhspan(-0.3, 0.5, xmax=0.5, alpha=0.04, color="#E24B4A",
-               label="Ideal: degradation detected (F<0, QG ERROR)")
+    # Quadrant labels — explicitly name both methods
+    ax.text(0.38, 1.18, "Both methods agree:\nF > 0  ·  QG = OK",
+            fontsize=8, color="#1D9E75", ha="center",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#1D9E75", alpha=0.7))
+    ax.text(-0.28, -0.18, "Both methods agree:\nF < 0  ·  QG = ERROR",
+            fontsize=8, color="#E24B4A", ha="center",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#E24B4A", alpha=0.7))
+    ax.text(0.25, -0.18, "Methods disagree:\nF > 0  ·  QG = ERROR",
+            fontsize=8, color="#888", ha="center",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#aaa", alpha=0.7))
+    ax.text(-0.28, 1.18, "Methods disagree:\nF < 0  ·  QG = OK",
+            fontsize=8, color="#888", ha="center",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#aaa", alpha=0.7))
 
     ax.axvline(0, color="black", linewidth=0.8, linestyle="--", alpha=0.4)
     ax.axhline(0.5, color="#aaa", linewidth=0.5, linestyle=":")
+
+    # Axis labels — explicitly name both methods
     ax.set_yticks([0, 1])
-    ax.set_yticklabels(["ERROR", "OK"], fontsize=12)
-    ax.set_xlabel("F score", fontsize=11)
-    ax.set_title("SonarQube Quality Gate vs F score\n(labeled = notable/anomalous results)", fontsize=12)
+    ax.set_yticklabels(["ERROR", "OK"], fontsize=12, fontweight="bold")
+    ax.set_xlabel("Fitness function F score  (proposed method)", fontsize=11)
+    ax.set_ylabel("SonarQube Quality Gate verdict  (baseline method)", fontsize=11)
+    ax.set_title(
+        "Proposed fitness function (X-axis) vs SonarQube Quality Gate (Y-axis)\n"
+        "across 12 controlled experiments",
+        fontsize=12
+    )
     ax.set_ylim(-0.3, 1.3)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.grid(axis="x", alpha=0.15)
 
-    legend_handles = [
+    # Two-part legend: categories + method explanation
+    from matplotlib.lines import Line2D
+    category_handles = [
         mpatches.Patch(color=c, label=k)
         for k, c in CATEGORY_COLORS.items()
     ]
-    ax.legend(handles=legend_handles, fontsize=9, loc="center right")
-    plt.tight_layout()
+    method_handles = [
+        Line2D([0], [0], color="none", label="── Methods ──"),
+        mpatches.Patch(color="#378ADD", label="X-axis: fitness function F (continuous, −1 to +1)"),
+        mpatches.Patch(color="#888", label="Y-axis: SonarQube Quality Gate (binary: OK / ERROR)"),
+    ]
+    ax.legend(
+        handles=category_handles + method_handles,
+        fontsize=8.5,
+        loc="lower right",
+        framealpha=0.6,
+        title="Experiment category & methods",
+        title_fontsize=9,
+    )
 
+    plt.tight_layout()
     if save:
         _ensure_output_dir()
         fig.savefig(f"{OUTPUT_DIR}/qg_vs_f.png", dpi=150, bbox_inches="tight")
         print(f"Saved: {OUTPUT_DIR}/qg_vs_f.png")
     return fig
-
 
 def plot_descriptive_stats_table(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Render descriptive statistics as a formatted table figure (paper-ready)."""
