@@ -50,6 +50,13 @@ loaded into kind is used without requiring a container registry.
 Run from `backend/lined/`:
 
 ```bash
+kubectl apply -f k8s/kind/namespace.yaml
+kubectl -n lined create secret generic lined-postgres \
+  --from-literal=username=postgres \
+  --from-literal=password=postgres \
+  --from-literal=database=lineddb \
+  --dry-run=client \
+  -o yaml | kubectl apply -f -
 kubectl apply -k k8s/kind
 ```
 
@@ -98,11 +105,29 @@ Actuator health details in local experiment configuration.
 - PostgreSQL image: `postgres:15`
 - PostgreSQL Service: `lined-postgres:5432`
 - Backend Service: `lined-backend:8080`
-- Database credentials are stored in the local-only Kubernetes Secret
-  `lined-postgres` with username `postgres`, password `postgres`, and database
-  `lineddb`.
+- Database credentials are created as the local-only Kubernetes Secret
+  `lined-postgres`. The secret manifest is generated locally by `kubectl` and
+  is not stored in git.
 - The backend pod sets `OTEL_SDK_DISABLED=true` because telemetry collection is
   introduced by a later experiment task.
+
+## Open in Lens
+
+Lens reads the same kubeconfig context used by `kubectl`.
+
+1. Create or select the kind cluster so `kubectl config current-context` returns
+   `kind-lined`.
+2. Open Lens and add the cluster from the local kubeconfig.
+3. Select the `kind-lined` cluster in Lens.
+4. After applying the baseline manifests from the terminal, open the `lined`
+   namespace in Lens and inspect:
+   - Workloads > Deployments: `lined-postgres`, `lined-backend`
+   - Network > Services: `lined-postgres`, `lined-backend`
+   - Storage > Persistent Volume Claims: `lined-postgres-data`
+
+Use the terminal commands in this guide as the source of truth for applying the
+baseline because they create the local Secret before applying the kustomize
+manifests.
 
 ## Cleanup
 
@@ -110,6 +135,7 @@ Delete the baseline resources:
 
 ```bash
 kubectl delete -k k8s/kind
+kubectl -n lined delete secret lined-postgres
 ```
 
 Delete the whole local cluster if it was created only for this experiment:
