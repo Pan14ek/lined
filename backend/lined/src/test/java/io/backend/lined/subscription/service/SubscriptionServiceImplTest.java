@@ -1,5 +1,13 @@
 package io.backend.lined.subscription.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.plan.domain.PlanEntity;
 import io.backend.lined.plan.domain.PlanRepository;
@@ -9,6 +17,10 @@ import io.backend.lined.subscription.domain.UserSubscriptionEntity;
 import io.backend.lined.subscription.domain.UserSubscriptionRepository;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,23 +29,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceImplTest {
 
-  @Mock private UserSubscriptionRepository subscriptionRepository;
-  @Mock private UserRepository userRepository;
-  @Mock private PlanRepository planRepository;
-  @Mock private SubscriptionMapper mapper;
+  @Mock
+  private UserSubscriptionRepository subscriptionRepository;
+  @Mock
+  private UserRepository userRepository;
+  @Mock
+  private PlanRepository planRepository;
+  @Mock
+  private SubscriptionMapper mapper;
 
   @InjectMocks
   private SubscriptionServiceImpl subscriptionService;
@@ -108,7 +114,8 @@ class SubscriptionServiceImplTest {
 
     assertThat(result).isNotNull();
 
-    ArgumentCaptor<UserSubscriptionEntity> captor = ArgumentCaptor.forClass(UserSubscriptionEntity.class);
+    ArgumentCaptor<UserSubscriptionEntity> captor =
+        ArgumentCaptor.forClass(UserSubscriptionEntity.class);
     verify(subscriptionRepository).save(captor.capture());
 
     UserSubscriptionEntity saved = captor.getValue();
@@ -128,7 +135,8 @@ class SubscriptionServiceImplTest {
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(planRepository.findById(2L)).thenReturn(Optional.of(plan));
-    when(subscriptionRepository.findByUserIdAndIsActiveTrue(1L)).thenReturn(Optional.of(previousSub));
+    when(subscriptionRepository.findByUserIdAndIsActiveTrue(1L)).thenReturn(
+        Optional.of(previousSub));
     when(subscriptionRepository.save(any())).thenReturn(subscriptionEntity);
     when(mapper.toDto(subscriptionEntity)).thenReturn(subscriptionDto);
 

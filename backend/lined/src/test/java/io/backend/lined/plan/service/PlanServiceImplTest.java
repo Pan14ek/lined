@@ -1,5 +1,12 @@
 package io.backend.lined.plan.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.plan.api.PlanCreateDto;
 import io.backend.lined.plan.api.PlanDto;
@@ -7,6 +14,10 @@ import io.backend.lined.plan.api.PlanMapper;
 import io.backend.lined.plan.api.PlanUpdateDto;
 import io.backend.lined.plan.domain.PlanEntity;
 import io.backend.lined.plan.domain.PlanRepository;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,21 +25,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class PlanServiceImplTest {
 
-  @Mock private PlanRepository repository;
-  @Mock private PlanMapper mapper;
+  @Mock
+  private PlanRepository repository;
+  @Mock
+  private PlanMapper mapper;
 
   @InjectMocks
   private PlanServiceImpl planService;
@@ -118,7 +121,8 @@ class PlanServiceImplTest {
         .durationDays(30)
         .createdAt(OffsetDateTime.now())
         .build();
-    PlanDto secondDto = new PlanDto(2L, "BASIC_MONTHLY", new BigDecimal("4.99"), 30, second.getCreatedAt());
+    PlanDto secondDto =
+        new PlanDto(2L, "BASIC_MONTHLY", new BigDecimal("4.99"), 30, second.getCreatedAt());
 
     when(repository.findAll()).thenReturn(List.of(planEntity, second));
     when(mapper.toDto(planEntity)).thenReturn(planDto);

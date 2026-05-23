@@ -36,14 +36,14 @@ for cluster inspection and debugging.
 
 Initial platform target:
 
-| Layer | Target |
-| --- | --- |
-| Kubernetes | kind local cluster |
-| Database | PostgreSQL inside Kubernetes |
-| Backend | Spring Boot container deployed to Kubernetes |
-| Health | Spring Boot Actuator health endpoints |
-| Metrics | Actuator Prometheus endpoint, later Prometheus/OpenTelemetry Collector |
-| Workload | k6 or JMeter load-test scenarios |
+| Layer      | Target                                                                 |
+|------------|------------------------------------------------------------------------|
+| Kubernetes | kind local cluster                                                     |
+| Database   | PostgreSQL inside Kubernetes                                           |
+| Backend    | Spring Boot container deployed to Kubernetes                           |
+| Health     | Spring Boot Actuator health endpoints                                  |
+| Metrics    | Actuator Prometheus endpoint, later Prometheus/OpenTelemetry Collector |
+| Workload   | k6 or JMeter load-test scenarios                                       |
 
 Managed cloud is not required for the first evaluation. It can be discussed as
 future validation if the local experiment produces a useful baseline.
@@ -53,25 +53,25 @@ future validation if the local experiment produces a useful baseline.
 The experiment should extend the current structural fitness baseline with
 runtime and deployment signals.
 
-| Dimension | Example signals |
-| --- | --- |
-| Structural quality | Checkstyle violations, SpotBugs issues, JaCoCo coverage, SonarCloud issues. |
-| Runtime performance | p95/p99 latency, throughput, request duration histograms. |
-| Reliability | error rate, failed requests, availability, health transitions. |
-| Deployment configuration | replicas, CPU/memory requests and limits, HPA settings, probe settings. |
-| Operational stability | restart count, rollout stability, autoscaling oscillation. |
-| Economic efficiency | CPU/memory utilization, overprovisioning proxy, cost proxy. |
+| Dimension                | Example signals                                                             |
+|--------------------------|-----------------------------------------------------------------------------|
+| Structural quality       | Checkstyle violations, SpotBugs issues, JaCoCo coverage, SonarCloud issues. |
+| Runtime performance      | p95/p99 latency, throughput, request duration histograms.                   |
+| Reliability              | error rate, failed requests, availability, health transitions.              |
+| Deployment configuration | replicas, CPU/memory requests and limits, HPA settings, probe settings.     |
+| Operational stability    | restart count, rollout stability, autoscaling oscillation.                  |
+| Economic efficiency      | CPU/memory utilization, overprovisioning proxy, cost proxy.                 |
 
 ## Baseline Comparison
 
 Compare at least these approaches:
 
-| Approach | Purpose |
-| --- | --- |
-| Binary quality gate | Shows pass/fail CI control behavior. |
-| Existing fixed-weight fitness | Existing scalar baseline from CI metrics. |
-| Adaptive weighted fitness | Tests context-sensitive weights under load, SLO, or resource pressure. |
-| Pareto-based GA | Preserves trade-offs between conflicting objectives. |
+| Approach                      | Purpose                                                                |
+|-------------------------------|------------------------------------------------------------------------|
+| Binary quality gate           | Shows pass/fail CI control behavior.                                   |
+| Existing fixed-weight fitness | Existing scalar baseline from CI metrics.                              |
+| Adaptive weighted fitness     | Tests context-sensitive weights under load, SLO, or resource pressure. |
+| Pareto-based GA               | Preserves trade-offs between conflicting objectives.                   |
 
 ## First Experiment Flow
 

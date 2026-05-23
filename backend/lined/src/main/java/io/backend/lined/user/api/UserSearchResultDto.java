@@ -11,4 +11,5 @@ public record UserSearchResultDto(
     @Schema(description = "Email address") String email,
     @Schema(description = "Creation timestamp") OffsetDateTime createdAt,
     @Schema(description = "Assigned roles") Set<String> roles
-) {}
+) {
+}

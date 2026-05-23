@@ -18,14 +18,14 @@ Kubernetes, telemetry, load testing, and fitness-model evaluation.
 
 Use `docs/README.md` as the backend documentation index.
 
-| Name | Description | Path | When you should use it | Cases for using |
-| --- | --- | --- | --- | --- |
-| Backend Docs Index | Routing table for all backend documentation. | `docs/README.md` | Start here when you need backend documentation context. | Choosing which document to read, checking docs coverage, adding new backend docs. |
-| Architecture Guide | Backend modules, layers, domain boundaries, and known architecture notes. | `docs/architecture.md` | Before changing backend structure or adding a module. | New feature design, refactoring, checking layering, documenting architecture decisions. |
-| Testing Guide | Backend test conventions, tools, and expectations. | `docs/testing.md` | Before writing or changing backend tests. | Unit tests, integration tests, service behavior coverage, Mockito patterns. |
-| API Documentation | Current backend API reference. | `docs/api.md` | When changing endpoints, DTOs, or API behavior. | Request/response review, endpoint coverage, Swagger/API alignment. |
-| Experiment Plan | Scientific experiment context and adaptation strategy. | `docs/experiment-plan.md` | Before experiment-related backend, Kubernetes, telemetry, or load-test work. | Containerization, kind deployment, runtime metrics, fitness-model extension. |
-| Experiment Tasks | One-PR task table for iterative experiment work. | `docs/experiment-tasks.md` | Before starting an experiment implementation branch. | Branch planning, PR scope control, experiment roadmap tracking. |
+| Name               | Description                                                               | Path                       | When you should use it                                                       | Cases for using                                                                         |
+|--------------------|---------------------------------------------------------------------------|----------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Backend Docs Index | Routing table for all backend documentation.                              | `docs/README.md`           | Start here when you need backend documentation context.                      | Choosing which document to read, checking docs coverage, adding new backend docs.       |
+| Architecture Guide | Backend modules, layers, domain boundaries, and known architecture notes. | `docs/architecture.md`     | Before changing backend structure or adding a module.                        | New feature design, refactoring, checking layering, documenting architecture decisions. |
+| Testing Guide      | Backend test conventions, tools, and expectations.                        | `docs/testing.md`          | Before writing or changing backend tests.                                    | Unit tests, integration tests, service behavior coverage, Mockito patterns.             |
+| API Documentation  | Current backend API reference.                                            | `docs/api.md`              | When changing endpoints, DTOs, or API behavior.                              | Request/response review, endpoint coverage, Swagger/API alignment.                      |
+| Experiment Plan    | Scientific experiment context and adaptation strategy.                    | `docs/experiment-plan.md`  | Before experiment-related backend, Kubernetes, telemetry, or load-test work. | Containerization, kind deployment, runtime metrics, fitness-model extension.            |
+| Experiment Tasks   | One-PR task table for iterative experiment work.                          | `docs/experiment-tasks.md` | Before starting an experiment implementation branch.                         | Branch planning, PR scope control, experiment roadmap tracking.                         |
 
 ## Commands
 

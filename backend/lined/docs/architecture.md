@@ -26,24 +26,24 @@ Domain modules follow a three-layer structure:
 
 Current domain modules:
 
-| Module | Responsibility |
-| --- | --- |
-| `user` | User accounts, profile data, search, role and subscription projection. |
-| `lobby` | Shared group spaces for couples, families, friends, or work groups. |
-| `task` | Shared tasks, assignees, statuses, and due dates inside lobbies. |
-| `event` | Calendar events, shared schedule data, and conflict checks. |
-| `plan` | Subscription plan catalog. |
-| `subscription` | User subscription history and active-plan state. |
-| `role` | Role catalog and role assignment. |
+| Module         | Responsibility                                                         |
+|----------------|------------------------------------------------------------------------|
+| `user`         | User accounts, profile data, search, role and subscription projection. |
+| `lobby`        | Shared group spaces for couples, families, friends, or work groups.    |
+| `task`         | Shared tasks, assignees, statuses, and due dates inside lobbies.       |
+| `event`        | Calendar events, shared schedule data, and conflict checks.            |
+| `plan`         | Subscription plan catalog.                                             |
+| `subscription` | User subscription history and active-plan state.                       |
+| `role`         | Role catalog and role assignment.                                      |
 
 Supporting packages:
 
-| Package | Responsibility |
-| --- | --- |
-| `app` | Application-level orchestration across modules. |
-| `common` | Shared utility code such as entity lookup helpers. |
-| `common.exception` | Application exception hierarchy and API error types. |
-| `config` | Spring configuration, exception handling, OpenAPI, and security config. |
+| Package            | Responsibility                                                          |
+|--------------------|-------------------------------------------------------------------------|
+| `app`              | Application-level orchestration across modules.                         |
+| `common`           | Shared utility code such as entity lookup helpers.                      |
+| `common.exception` | Application exception hierarchy and API error types.                    |
+| `config`           | Spring configuration, exception handling, OpenAPI, and security config. |
 
 ## Layering Rules
 
@@ -89,14 +89,14 @@ application.
 
 Candidate architecture/deployment alternatives:
 
-| Alternative | What changes | Why it matters |
-| --- | --- | --- |
-| Replica count | Backend pod replicas. | Tests availability, throughput, and latency trade-offs. |
-| Resource requests and limits | CPU and memory requests/limits. | Supports cost and utilization objectives. |
-| HPA policy | Autoscaling thresholds and min/max replicas. | Tests autoscaling stability and SLO behavior. |
-| Probe configuration | Readiness and liveness probe timing. | Tests recovery and deployment stability. |
-| Telemetry pipeline | Prometheus and OpenTelemetry collection. | Enables runtime-aware fitness evaluation. |
-| Load profile | Baseline, spike, and sustained workloads. | Provides runtime context for adaptive weighting. |
+| Alternative                  | What changes                                 | Why it matters                                          |
+|------------------------------|----------------------------------------------|---------------------------------------------------------|
+| Replica count                | Backend pod replicas.                        | Tests availability, throughput, and latency trade-offs. |
+| Resource requests and limits | CPU and memory requests/limits.              | Supports cost and utilization objectives.               |
+| HPA policy                   | Autoscaling thresholds and min/max replicas. | Tests autoscaling stability and SLO behavior.           |
+| Probe configuration          | Readiness and liveness probe timing.         | Tests recovery and deployment stability.                |
+| Telemetry pipeline           | Prometheus and OpenTelemetry collection.     | Enables runtime-aware fitness evaluation.               |
+| Load profile                 | Baseline, spike, and sustained workloads.    | Provides runtime context for adaptive weighting.        |
 
 ## Known Inconsistencies and Risks
 

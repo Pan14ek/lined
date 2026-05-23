@@ -20,6 +20,7 @@ Run tests from `backend/lined/`:
 Use fast unit tests for service behavior by default:
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class SomeServiceImplTest {
 
@@ -43,14 +44,14 @@ behavior, configuration, or an integration boundary.
 
 Every new service behavior should have tests for:
 
-| Case | Expectation |
-| --- | --- |
-| Success path | Returns the expected DTO or state change. |
-| Missing entity | Throws the expected not-found exception. |
-| Invalid input | Rejects invalid state and does not persist changes. |
-| Authorization or membership rule | Rejects users without required ownership or membership. |
-| Partial update | Changes only non-null or intentionally provided fields. |
-| Repository interaction | Saves, deletes, or avoids persistence calls as appropriate. |
+| Case                             | Expectation                                                 |
+|----------------------------------|-------------------------------------------------------------|
+| Success path                     | Returns the expected DTO or state change.                   |
+| Missing entity                   | Throws the expected not-found exception.                    |
+| Invalid input                    | Rejects invalid state and does not persist changes.         |
+| Authorization or membership rule | Rejects users without required ownership or membership.     |
+| Partial update                   | Changes only non-null or intentionally provided fields.     |
+| Repository interaction           | Saves, deletes, or avoids persistence calls as appropriate. |
 
 ## Naming Pattern
 
