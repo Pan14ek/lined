@@ -7,4 +7,5 @@ public record UserConflictDto(
     @Schema(description = "User id") Long userId,
     @Schema(description = "Whether a conflict exists") boolean hasConflict,
     @Schema(description = "The conflicting event if any") EventDto conflictingEvent
-) {}
+) {
+}

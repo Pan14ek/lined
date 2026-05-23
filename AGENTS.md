@@ -31,6 +31,14 @@ development surface. The web app (`lined-web/`) is the next product surface
 being built. The mobile app is in its earliest scaffolding phase. Two
 research/tooling sub-projects handle CI quality metrics.
 
+This root file is the monorepo router. For backend implementation, backend
+documentation, or scientific experiment work, read `backend/lined/AGENTS.md`
+and the documentation index at `backend/lined/docs/README.md` before editing.
+
+Scientific experiment work must be done iteratively. Use the task table in
+`backend/lined/docs/experiment-tasks.md`, create one pull request per task, and
+use the `experiment/` branch prefix for those PRs.
+
 ---
 
 ## Repository Layout
@@ -54,6 +62,10 @@ Navigate into the relevant directory before running commands.
 
 **Location:** `backend/lined/`
 **Stack:** Java 17, Spring Boot 3.5.6, Gradle 8.14.3, PostgreSQL 15
+
+Backend-specific agent instructions live in `backend/lined/AGENTS.md`. Treat
+that file as the source of truth for backend architecture, tests, quality
+gates, documentation routing, and experiment preparation.
 
 ### Purpose
 

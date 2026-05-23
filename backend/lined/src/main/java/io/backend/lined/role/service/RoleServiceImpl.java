@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
 public class RoleServiceImpl implements RoleService {
 
   private static final String USER_NOT_FOUND_ERROR_MESSAGE = "User not found: %s";
-  
+
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final RoleMapper roleMapper;

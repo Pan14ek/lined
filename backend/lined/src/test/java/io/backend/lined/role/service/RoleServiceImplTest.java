@@ -1,5 +1,13 @@
 package io.backend.lined.role.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.api.RoleDto;
 import io.backend.lined.role.api.RoleMapper;
@@ -7,6 +15,10 @@ import io.backend.lined.role.domain.RoleEntity;
 import io.backend.lined.role.domain.RoleRepository;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,22 +26,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class RoleServiceImplTest {
 
-  @Mock private UserRepository userRepository;
-  @Mock private RoleRepository roleRepository;
-  @Mock private RoleMapper roleMapper;
+  @Mock
+  private UserRepository userRepository;
+  @Mock
+  private RoleRepository roleRepository;
+  @Mock
+  private RoleMapper roleMapper;
 
   @InjectMocks
   private RoleServiceImpl roleService;

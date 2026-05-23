@@ -9,4 +9,5 @@ public record EventConflictDto(
     @Schema(description = "Second conflicting event") EventDto second,
     @Schema(description = "Overlap start") OffsetDateTime overlapStart,
     @Schema(description = "Overlap end") OffsetDateTime overlapEnd
-) {}
+) {
+}
