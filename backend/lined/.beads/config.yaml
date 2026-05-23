@@ -1,0 +1,4 @@
+repos:
+  primary: "."
+  additional:
+    - "/Users/oleksii_makieiev/.beads-planning"
