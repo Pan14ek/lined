@@ -126,6 +126,19 @@ container should be restarted. The liveness group only checks the application
 liveness state; the readiness group also checks PostgreSQL because the backend
 cannot serve normal API traffic without the database.
 
+## Verify Runtime Metrics
+
+The backend exposes Prometheus-compatible runtime metrics through Spring Boot
+Actuator:
+
+```bash
+curl http://localhost:8080/actuator/prometheus
+curl http://localhost:8080/actuator/metrics/http.server.requests
+```
+
+See `docs/runtime-metrics-baseline.md` for the runtime signal map and the
+Prometheus scrape expectations for this baseline.
+
 ## Configuration Notes
 
 - Namespace: `lined`
@@ -133,6 +146,7 @@ cannot serve normal API traffic without the database.
 - PostgreSQL image: `postgres:15`
 - PostgreSQL Service: `lined-postgres:5432`
 - Backend Service: `lined-backend:8080`
+- Metrics endpoint: `/actuator/prometheus`
 - Database credentials are created as the local-only Kubernetes Secret
   `lined-postgres`. The secret manifest is generated locally by `kubectl` and
   is not stored in git.
