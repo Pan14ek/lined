@@ -87,6 +87,8 @@ In another terminal, verify Actuator health:
 
 ```bash
 curl http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/health/liveness
+curl http://localhost:8080/actuator/health/readiness
 ```
 
 Expected result:
@@ -97,6 +99,32 @@ Expected result:
 
 The exact response can include health details because the backend exposes
 Actuator health details in local experiment configuration.
+
+## Verify Kubernetes Probes
+
+The backend Deployment uses Spring Boot Actuator health groups for Kubernetes
+probes:
+
+- Liveness: `/actuator/health/liveness`
+- Readiness: `/actuator/health/readiness`
+
+Inspect the applied Deployment to confirm both probes are present:
+
+```bash
+kubectl -n lined get deployment lined-backend -o yaml
+```
+
+Inspect the running pod if the rollout does not become available:
+
+```bash
+kubectl -n lined describe pod -l app.kubernetes.io/name=lined-backend
+```
+
+Kubernetes uses the readiness probe to decide whether the backend pod should
+receive Service traffic. It uses the liveness probe to decide whether the
+container should be restarted. The liveness group only checks the application
+liveness state; the readiness group also checks PostgreSQL because the backend
+cannot serve normal API traffic without the database.
 
 ## Configuration Notes
 
