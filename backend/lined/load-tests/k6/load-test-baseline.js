@@ -69,6 +69,10 @@ const ENDPOINTS = {
   readiness: '/actuator/health/readiness',
   task: (taskId) => `/api/tasks/${taskId}`,
   tasks: '/api/tasks',
+  tasksByAssigneeAnyStatus: (lobbyId, assigneeId) => queryPath('/api/tasks', {
+    assigneeId,
+    lobbyId,
+  }),
   tasksByAssignee: (lobbyId, assigneeId) => queryPath('/api/tasks', {
     assigneeId,
     lobbyId,
@@ -146,6 +150,7 @@ const WORKLOAD = parseWorkload(__ENV.WORKLOAD || DEFAULTS.workload);
 const USER_COUNT = parseIntegerEnv('USER_COUNT', DEFAULTS.userCount, 2);
 const BASELINE_VUS = parseIntegerEnv('VUS', DEFAULTS.baselineVus, 1);
 const BASELINE_DURATION = __ENV.DURATION || DEFAULTS.baselineDuration;
+const MISSING_USER_ID = -1;
 const STRESS_MAX_VUS = parseIntegerEnv('STRESS_MAX_VUS', DEFAULTS.stressMaxVus, 2);
 const STRESS_STAGE_DURATION = __ENV.STRESS_STAGE_DURATION || DEFAULTS.stressStageDuration;
 const THINK_TIME_SECONDS = parseFloatEnv(
@@ -311,7 +316,7 @@ export const readHeavyWorkflow = (data) => {
 
   group('read-heavy tasks', () => {
     expectStatus(
-        get(ENDPOINTS.tasksByAssignee(data.lobby.id, assignee.id), 'tasks', 'list'),
+        get(ENDPOINTS.tasksByAssigneeAnyStatus(data.lobby.id, assignee.id), 'tasks', 'list'),
         MESSAGES.listTasks);
   });
 
@@ -336,25 +341,29 @@ export const writeHeavyWorkflow = (data) => {
   const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
 
   group('write-heavy tasks', () => {
-    const task = createTask(user.id, data.lobby.id, assignee.id, `Write task ${iterationLabel}`);
-    expectStatus(
-        patchJsonForUser(
-            ENDPOINTS.task(task.id),
-            { status: STATUSES.inProgress, title: `Write updated ${iterationLabel}` },
-            user.id,
-            'tasks',
-            'update'),
-        MESSAGES.updateTask);
-    expectStatus(
-        delForUser(ENDPOINTS.task(task.id), user.id, 'tasks', 'delete'),
-        MESSAGES.deleteTask);
+    let task = null;
+    try {
+      task = createTask(user.id, data.lobby.id, assignee.id, `Write task ${iterationLabel}`);
+      expectStatus(
+          patchJsonForUser(
+              ENDPOINTS.task(task.id),
+              { status: STATUSES.inProgress, title: `Write updated ${iterationLabel}` },
+              user.id,
+              'tasks',
+              'update'),
+          MESSAGES.updateTask);
+    } finally {
+      deleteCreatedTask(task, user.id);
+    }
   });
 
   group('write-heavy calendar', () => {
-    const event = createEvent(user.id, data.lobby.id, `Write event ${iterationLabel}`, 0);
-    expectStatus(
-        delForUser(ENDPOINTS.event(event.id), user.id, 'calendar', 'delete-event'),
-        MESSAGES.deleteEvent);
+    let event = null;
+    try {
+      event = createEvent(user.id, data.lobby.id, `Write event ${iterationLabel}`, 0);
+    } finally {
+      deleteCreatedEvent(event, user.id);
+    }
   });
 
   sleep(THINK_TIME_SECONDS);
@@ -420,7 +429,7 @@ export const negativeValidationSmoke = (data) => {
         MESSAGES.validateDuplicateUserConflict,
         [409]);
     expectStatus(
-        get(ENDPOINTS.user(999999999), 'users', 'missing-get', [404]),
+        get(ENDPOINTS.user(MISSING_USER_ID), 'users', 'missing-get', [404]),
         MESSAGES.validateMissingUser,
         [404]);
     expectStatus(
@@ -538,6 +547,24 @@ const createEvent = (currentUserId, lobbyId, title, offsetHours) => {
       'create-event');
   expectStatus(res, MESSAGES.createEvent);
   return responseJson(res, 'create event');
+};
+
+const deleteCreatedTask = (task, userId) => {
+  if (!task) {
+    return;
+  }
+  expectStatus(
+      delForUser(ENDPOINTS.task(task.id), userId, 'tasks', 'delete'),
+      MESSAGES.deleteTask);
+};
+
+const deleteCreatedEvent = (event, userId) => {
+  if (!event) {
+    return;
+  }
+  expectStatus(
+      delForUser(ENDPOINTS.event(event.id), userId, 'calendar', 'delete-event'),
+      MESSAGES.deleteEvent);
 };
 
 const get = (path, domain, endpoint, expectedStatuses = [200]) => http.get(

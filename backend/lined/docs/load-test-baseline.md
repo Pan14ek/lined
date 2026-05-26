@@ -166,11 +166,19 @@ Setup creates:
 - a bounded task corpus
 - a bounded event corpus
 
-The measured loop is intentionally stable. It reads users and lobbies, updates
-seeded tasks, lists tasks with bounded filters, lists seeded events, and calls
-calendar conflict endpoints against the bounded event window. It does not keep
-adding tasks or events during the measured loop, because unbounded local data
-growth would distort latency measurements.
+The `smoke`, `baseline`, `read-heavy`, and `stress` profiles run against
+bounded setup data. They read users and lobbies, update seeded tasks where
+relevant, list tasks with bounded filters, list seeded events, and call
+calendar conflict endpoints against the bounded event window.
+
+The `write-heavy` profile intentionally creates task and event rows during the
+measured loop to exercise write paths. The `mixed` profile combines reads,
+seeded task updates, and per-iteration task create/delete traffic. Those
+per-iteration rows are deleted in the same iteration so the local database does
+not grow unboundedly during normal successful runs.
+
+The `negative-smoke` profile is a validation check. It intentionally sends
+invalid or conflicting requests and expects `400`, `404`, or `409` responses.
 
 Teardown deletes the seeded events and tasks before deleting the seeded lobby.
 The explicit delete order keeps cleanup independent of whether the local
@@ -190,8 +198,8 @@ useful.
 | `USER_COUNT` | `4` | Synthetic users created during setup; minimum `2`. |
 | `SEED_TASK_COUNT` | `12` | Seeded tasks in the bounded task corpus; minimum `2`. |
 | `SEED_EVENT_COUNT` | `8` | Seeded events in the bounded event corpus; minimum `2`. |
-| `VUS` | `5` | Virtual users for the baseline workload. |
-| `DURATION` | `2m` | Duration for the baseline workload. |
+| `VUS` | `5` | Virtual users for `baseline`, `read-heavy`, `write-heavy`, and `mixed`. |
+| `DURATION` | `2m` | Duration for `baseline`, `read-heavy`, `write-heavy`, and `mixed`. |
 | `STRESS_MAX_VUS` | `20` | Maximum virtual users for the stress workload; minimum `2`. |
 | `STRESS_STAGE_DURATION` | `30s` | Duration of each stress ramp stage. |
 | `THINK_TIME_SECONDS` | `1` | Sleep between workflow iterations. |
