@@ -101,6 +101,16 @@ k6 run \
   load-tests/k6/load-test-baseline.js
 ```
 
+Run a negative validation smoke when you want to confirm expected `400`, `404`,
+and `409` responses without mixing those errors into the performance baseline:
+
+```bash
+k6 run \
+  -e WORKLOAD=negative-smoke \
+  -e BASE_URL=http://localhost:8080 \
+  load-tests/k6/load-test-baseline.js
+```
+
 The default baseline uses 5 virtual users for 2 minutes. Override it when a
 specific experiment variant needs a different local load profile:
 
@@ -175,7 +185,7 @@ useful.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `BASE_URL` | `http://localhost:8080` | Backend URL reached through local port-forwarding. |
-| `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, `write-heavy`, `mixed`, or `stress`. |
+| `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, `write-heavy`, `mixed`, `stress`, or `negative-smoke`. |
 | `RUN_ID` | current timestamp | Prefix used for synthetic users and seeded data. |
 | `USER_COUNT` | `4` | Synthetic users created during setup; minimum `2`. |
 | `SEED_TASK_COUNT` | `12` | Seeded tasks in the bounded task corpus; minimum `2`. |
@@ -188,7 +198,9 @@ useful.
 | `ALLOW_REMOTE_BASE_URL` | `false` | Must be `true` for intentional non-local targets. |
 
 The script rejects malformed numeric values and unknown workload names so a
-mistyped smoke run does not silently become a longer baseline run.
+mistyped smoke run does not silently become a longer baseline run. The
+`negative-smoke` profile marks expected validation/conflict/not-found responses
+as expected k6 responses so they do not count as `http_req_failed`.
 
 ## Expected k6 Signals
 

@@ -18,6 +18,7 @@ const DEFAULTS = {
 const WORKLOADS = {
   baseline: 'baseline',
   mixed: 'mixed',
+  negativeSmoke: 'negative-smoke',
   readHeavy: 'read-heavy',
   smoke: 'smoke',
   stress: 'stress',
@@ -101,6 +102,10 @@ const MESSAGES = {
   listTasks: 'list tasks succeeds',
   readiness: 'readiness is healthy',
   updateTask: 'update task succeeds',
+  validateDuplicateUserConflict: 'duplicate user returns conflict',
+  validateInvalidLobbyPayload: 'invalid lobby payload returns bad request',
+  validateInvalidUserPayload: 'invalid user payload returns bad request',
+  validateMissingUser: 'missing user returns not found',
 };
 
 const parseIntegerEnv = (name, fallback, minimum) => {
@@ -194,6 +199,15 @@ const workloadScenario = () => {
         { duration: STRESS_STAGE_DURATION, target: STRESS_MAX_VUS },
         { duration: STRESS_STAGE_DURATION, target: 0 },
       ],
+    };
+  }
+  if (WORKLOAD === WORKLOADS.negativeSmoke) {
+    return {
+      exec: 'negativeValidationSmoke',
+      executor: 'shared-iterations',
+      iterations: 1,
+      maxDuration: '1m',
+      vus: 1,
     };
   }
   return {
@@ -387,6 +401,37 @@ export const mixedWorkflow = (data) => {
   sleep(THINK_TIME_SECONDS);
 };
 
+export const negativeValidationSmoke = (data) => {
+  group('negative validation', () => {
+    expectStatus(
+        postJson(ENDPOINTS.users, {
+          email: 'not-an-email',
+          password: SYNTHETIC_PASSWORD,
+          username: `bad_${data.runId}`,
+        }, 'users', 'invalid-create', [400]),
+        MESSAGES.validateInvalidUserPayload,
+        [400]);
+    expectStatus(
+        postJson(ENDPOINTS.users, {
+          email: data.users[0].email,
+          password: SYNTHETIC_PASSWORD,
+          username: data.users[0].username,
+        }, 'users', 'duplicate-create', [409]),
+        MESSAGES.validateDuplicateUserConflict,
+        [409]);
+    expectStatus(
+        get(ENDPOINTS.user(999999999), 'users', 'missing-get', [404]),
+        MESSAGES.validateMissingUser,
+        [404]);
+    expectStatus(
+        postJsonForUser(ENDPOINTS.lobbies, {
+          name: `invalid lobby ${data.runId}`,
+        }, data.users[0].id, 'lobbies', 'invalid-create', [400]),
+        MESSAGES.validateInvalidLobbyPayload,
+        [400]);
+  });
+};
+
 export default baselineWorkflow;
 
 export const teardown = (data) => {
@@ -495,26 +540,34 @@ const createEvent = (currentUserId, lobbyId, title, offsetHours) => {
   return responseJson(res, 'create event');
 };
 
-const get = (path, domain, endpoint) => http.get(url(path), requestParams(domain, endpoint));
-
-const getForUser = (path, userId, domain, endpoint) => http.get(
+const get = (path, domain, endpoint, expectedStatuses = [200]) => http.get(
     url(path),
-    requestParams(domain, endpoint, userId));
+    requestParams(domain, endpoint, null, expectedStatuses));
 
-const postForUser = (path, body, userId, domain, endpoint) => http.post(
+const getForUser = (path, userId, domain, endpoint, expectedStatuses = [200]) => http.get(
+    url(path),
+    requestParams(domain, endpoint, userId, expectedStatuses));
+
+const postForUser = (path, body, userId, domain, endpoint, expectedStatuses = [200]) => http.post(
     url(path),
     body,
-    requestParams(domain, endpoint, userId));
+    requestParams(domain, endpoint, userId, expectedStatuses));
 
-const postJson = (path, payload, domain, endpoint) => http.post(
+const postJson = (path, payload, domain, endpoint, expectedStatuses = [200]) => http.post(
     url(path),
     JSON.stringify(payload),
-    requestParams(domain, endpoint));
+    requestParams(domain, endpoint, null, expectedStatuses));
 
-const postJsonForUser = (path, payload, userId, domain, endpoint) => http.post(
+const postJsonForUser = (
+    path,
+    payload,
+    userId,
+    domain,
+    endpoint,
+    expectedStatuses = [200]) => http.post(
     url(path),
     JSON.stringify(payload),
-    requestParams(domain, endpoint, userId));
+    requestParams(domain, endpoint, userId, expectedStatuses));
 
 const patchJsonForUser = (path, payload, userId, domain, endpoint) => http.patch(
     url(path),
@@ -526,11 +579,12 @@ const delForUser = (path, userId, domain, endpoint) => http.del(
     null,
     requestParams(domain, endpoint, userId));
 
-const requestParams = (domain, endpoint, userId = null) => ({
+const requestParams = (domain, endpoint, userId = null, expectedStatuses = [200]) => ({
   headers: userId === null ? JSON_HEADERS : {
     ...JSON_HEADERS,
     'X-User-Id': String(userId),
   },
+  responseCallback: http.expectedStatuses(...expectedStatuses),
   tags: {
     domain,
     endpoint,
