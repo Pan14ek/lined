@@ -15,6 +15,7 @@ const DEFAULTS = {
 
 const WORKLOADS = {
   baseline: 'baseline',
+  readHeavy: 'read-heavy',
   smoke: 'smoke',
 };
 
@@ -124,8 +125,8 @@ const parseFloatEnv = (name, fallback, minimum) => {
 };
 
 const parseWorkload = (raw) => {
-  if (raw !== WORKLOADS.smoke && raw !== WORKLOADS.baseline) {
-    throw new Error('WORKLOAD must be either smoke or baseline');
+  if (!Object.values(WORKLOADS).includes(raw)) {
+    throw new Error(`WORKLOAD must be one of: ${Object.values(WORKLOADS).join(', ')}`);
   }
   return raw;
 };
@@ -143,18 +144,35 @@ const SEED_TASK_COUNT = parseIntegerEnv('SEED_TASK_COUNT', DEFAULTS.seedTaskCoun
 const SEED_EVENT_COUNT = parseIntegerEnv('SEED_EVENT_COUNT', DEFAULTS.seedEventCount, 2);
 const ALLOW_REMOTE_BASE_URL = __ENV.ALLOW_REMOTE_BASE_URL === 'true';
 
-export const options = {
-  scenarios: {
-    lined_workflow: WORKLOAD === WORKLOADS.smoke ? {
+const workloadScenario = () => {
+  if (WORKLOAD === WORKLOADS.smoke) {
+    return {
+      exec: 'baselineWorkflow',
       executor: 'shared-iterations',
       iterations: 1,
       maxDuration: '1m',
       vus: 1,
-    } : {
+    };
+  }
+  if (WORKLOAD === WORKLOADS.readHeavy) {
+    return {
       duration: BASELINE_DURATION,
+      exec: 'readHeavyWorkflow',
       executor: 'constant-vus',
       vus: BASELINE_VUS,
-    },
+    };
+  }
+  return {
+    duration: BASELINE_DURATION,
+    exec: 'baselineWorkflow',
+    executor: 'constant-vus',
+    vus: BASELINE_VUS,
+  };
+};
+
+export const options = {
+  scenarios: {
+    lined_workflow: workloadScenario(),
   },
   thresholds: {
     checks: ['rate>0.99'],
@@ -182,7 +200,7 @@ export const setup = () => {
   };
 };
 
-export default (data) => {
+export const baselineWorkflow = (data) => {
   const user = data.users[exec.vu.idInTest % data.users.length];
   const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
   const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
@@ -227,6 +245,44 @@ export default (data) => {
 
   sleep(THINK_TIME_SECONDS);
 };
+
+export const readHeavyWorkflow = (data) => {
+  const user = data.users[exec.vu.idInTest % data.users.length];
+  const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
+
+  group('read-heavy users', () => {
+    expectStatus(get(ENDPOINTS.user(user.id), 'users', 'get'), MESSAGES.getUser);
+  });
+
+  group('read-heavy lobbies', () => {
+    expectStatus(
+        getForUser(ENDPOINTS.myLobbies, user.id, 'lobbies', 'mine'),
+        MESSAGES.listLobbies);
+    expectStatus(get(ENDPOINTS.lobby(data.lobby.id), 'lobbies', 'get'), MESSAGES.getLobby);
+  });
+
+  group('read-heavy tasks', () => {
+    expectStatus(
+        get(ENDPOINTS.tasksByAssignee(data.lobby.id, assignee.id), 'tasks', 'list'),
+        MESSAGES.listTasks);
+  });
+
+  group('read-heavy calendar', () => {
+    expectStatus(
+        getForUser(ENDPOINTS.calendarEvents(data.lobby.id), user.id, 'calendar', 'list-events'),
+        MESSAGES.listEvents);
+    expectStatus(
+        get(ENDPOINTS.calendarConflicts(data.lobby.id, user.id), 'calendar', 'conflicts'),
+        MESSAGES.findConflicts);
+    expectStatus(
+        get(ENDPOINTS.userConflict(user.id, user.id), 'calendar', 'user-conflict'),
+        MESSAGES.findUserConflict);
+  });
+
+  sleep(THINK_TIME_SECONDS);
+};
+
+export default baselineWorkflow;
 
 export const teardown = (data) => {
   if (!data || !data.lobby || !data.users || data.users.length === 0) {
