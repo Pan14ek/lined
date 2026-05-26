@@ -15,6 +15,7 @@ const DEFAULTS = {
 
 const WORKLOADS = {
   baseline: 'baseline',
+  mixed: 'mixed',
   readHeavy: 'read-heavy',
   smoke: 'smoke',
   writeHeavy: 'write-heavy',
@@ -171,6 +172,14 @@ const workloadScenario = () => {
       vus: BASELINE_VUS,
     };
   }
+  if (WORKLOAD === WORKLOADS.mixed) {
+    return {
+      duration: BASELINE_DURATION,
+      exec: 'mixedWorkflow',
+      executor: 'constant-vus',
+      vus: BASELINE_VUS,
+    };
+  }
   return {
     duration: BASELINE_DURATION,
     exec: 'baselineWorkflow',
@@ -316,6 +325,47 @@ export const writeHeavyWorkflow = (data) => {
     expectStatus(
         delForUser(ENDPOINTS.event(event.id), user.id, 'calendar', 'delete-event'),
         MESSAGES.deleteEvent);
+  });
+
+  sleep(THINK_TIME_SECONDS);
+};
+
+export const mixedWorkflow = (data) => {
+  const user = data.users[exec.vu.idInTest % data.users.length];
+  const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
+  const task = data.tasks[exec.scenario.iterationInTest % data.tasks.length];
+  const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
+
+  group('mixed reads', () => {
+    expectStatus(get(ENDPOINTS.user(user.id), 'users', 'get'), MESSAGES.getUser);
+    expectStatus(
+        getForUser(ENDPOINTS.myLobbies, user.id, 'lobbies', 'mine'),
+        MESSAGES.listLobbies);
+    expectStatus(
+        getForUser(ENDPOINTS.calendarEvents(data.lobby.id), user.id, 'calendar', 'list-events'),
+        MESSAGES.listEvents);
+  });
+
+  group('mixed updates', () => {
+    expectStatus(
+        patchJsonForUser(
+            ENDPOINTS.task(task.id),
+            { status: STATUSES.inProgress, title: `Mixed updated ${iterationLabel}` },
+            user.id,
+            'tasks',
+            'update'),
+        MESSAGES.updateTask);
+  });
+
+  group('mixed writes', () => {
+    const createdTask = createTask(
+        user.id,
+        data.lobby.id,
+        assignee.id,
+        `Mixed task ${iterationLabel}`);
+    expectStatus(
+        delForUser(ENDPOINTS.task(createdTask.id), user.id, 'tasks', 'delete'),
+        MESSAGES.deleteTask);
   });
 
   sleep(THINK_TIME_SECONDS);
