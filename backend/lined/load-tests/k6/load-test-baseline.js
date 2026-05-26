@@ -2,313 +2,392 @@ import exec from 'k6/execution';
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 
-const BASE_URL = (__ENV.BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
-const WORKLOAD = parseWorkload(__ENV.WORKLOAD || 'baseline');
+const DEFAULTS = {
+  baseUrl: 'http://localhost:8080',
+  baselineDuration: '2m',
+  baselineVus: '5',
+  seedEventCount: '8',
+  seedTaskCount: '12',
+  thinkTimeSeconds: '1',
+  userCount: '4',
+  workload: 'baseline',
+};
+
+const WORKLOADS = {
+  baseline: 'baseline',
+  smoke: 'smoke',
+};
+
+const STATUSES = {
+  inProgress: 'IN_PROGRESS',
+};
+
+const LOBBY_TYPES = {
+  friends: 'FRIENDS',
+};
+
+const EVENT_WINDOW = {
+  from: '2026-01-01T00:00:00Z',
+  seedDate: '2026-01-02',
+  to: '2026-01-08T00:00:00Z',
+};
+
+const TASK_DUE_DATE = '2026-01-07';
+const TIMEZONE = 'Europe/Kyiv';
+const SYNTHETIC_PASSWORD = 'k6-baseline-password';
 const RUN_ID = __ENV.RUN_ID || String(Date.now());
-const USER_COUNT = parseIntegerEnv('USER_COUNT', '4', 2);
-const BASELINE_VUS = parseIntegerEnv('VUS', '5', 1);
-const BASELINE_DURATION = __ENV.DURATION || '2m';
-const THINK_TIME_SECONDS = parseFloatEnv('THINK_TIME_SECONDS', '1', 0);
-const SEED_TASK_COUNT = parseIntegerEnv('SEED_TASK_COUNT', '12', 2);
-const SEED_EVENT_COUNT = parseIntegerEnv('SEED_EVENT_COUNT', '8', 2);
-const ALLOW_REMOTE_BASE_URL = __ENV.ALLOW_REMOTE_BASE_URL === 'true';
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+const ENDPOINTS = {
+  addLobbyMember: (lobbyId, userId) => `/api/lobbies/${lobbyId}/members?userId=${userId}`,
+  calendarConflicts: (lobbyId, requesterId) => queryPath('/api/calendar/conflicts', {
+    end: EVENT_WINDOW.to,
+    lobbyId,
+    requesterId,
+    start: EVENT_WINDOW.from,
+  }),
+  calendarEvents: (lobbyId) => queryPath('/api/calendar/events', {
+    from: EVENT_WINDOW.from,
+    lobbyId,
+    to: EVENT_WINDOW.to,
+  }),
+  createCalendarEvent: '/api/calendar/events',
+  lobbies: '/api/lobbies',
+  lobby: (lobbyId) => `/api/lobbies/${lobbyId}`,
+  myLobbies: '/api/lobbies/mine',
+  readiness: '/actuator/health/readiness',
+  task: (taskId) => `/api/tasks/${taskId}`,
+  tasks: '/api/tasks',
+  tasksByAssignee: (lobbyId, assigneeId) => queryPath('/api/tasks', {
+    assigneeId,
+    lobbyId,
+    status: STATUSES.inProgress,
+  }),
+  user: (userId) => `/api/users/${userId}`,
+  userConflict: (userId, requesterId) => queryPath('/api/calendar/user-conflict', {
+    end: EVENT_WINDOW.to,
+    requesterId,
+    start: EVENT_WINDOW.from,
+    userId,
+  }),
+  users: '/api/users',
+};
+
+const MESSAGES = {
+  addLobbyMember: 'add lobby member succeeds',
+  createEvent: 'create event succeeds',
+  createLobby: 'create lobby succeeds',
+  createTask: 'create task succeeds',
+  createUser: 'create user succeeds',
+  deleteLobby: 'delete seeded lobby succeeds',
+  findConflicts: 'find conflicts succeeds',
+  findUserConflict: 'find user conflict succeeds',
+  getLobby: 'get lobby succeeds',
+  getUser: 'get user succeeds',
+  listEvents: 'list events succeeds',
+  listLobbies: 'list my lobbies succeeds',
+  listTasks: 'list tasks succeeds',
+  readiness: 'readiness is healthy',
+  updateTask: 'update task succeeds',
+};
+
+const parseIntegerEnv = (name, fallback, minimum) => {
+  const raw = __ENV[name] || fallback;
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${name} must be an integer >= ${minimum}`);
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (parsed < minimum) {
+    throw new Error(`${name} must be an integer >= ${minimum}`);
+  }
+  return parsed;
+};
+
+const parseFloatEnv = (name, fallback, minimum) => {
+  const raw = __ENV[name] || fallback;
+  if (!/^\d+(\.\d+)?$/.test(raw)) {
+    throw new Error(`${name} must be a number >= ${minimum}`);
+  }
+
+  const parsed = Number.parseFloat(raw);
+  if (parsed < minimum) {
+    throw new Error(`${name} must be a number >= ${minimum}`);
+  }
+  return parsed;
+};
+
+const parseWorkload = (raw) => {
+  if (raw !== WORKLOADS.smoke && raw !== WORKLOADS.baseline) {
+    throw new Error('WORKLOAD must be either smoke or baseline');
+  }
+  return raw;
+};
+
+const BASE_URL = (__ENV.BASE_URL || DEFAULTS.baseUrl).replace(/\/$/, '');
+const WORKLOAD = parseWorkload(__ENV.WORKLOAD || DEFAULTS.workload);
+const USER_COUNT = parseIntegerEnv('USER_COUNT', DEFAULTS.userCount, 2);
+const BASELINE_VUS = parseIntegerEnv('VUS', DEFAULTS.baselineVus, 1);
+const BASELINE_DURATION = __ENV.DURATION || DEFAULTS.baselineDuration;
+const THINK_TIME_SECONDS = parseFloatEnv(
+    'THINK_TIME_SECONDS',
+    DEFAULTS.thinkTimeSeconds,
+    0);
+const SEED_TASK_COUNT = parseIntegerEnv('SEED_TASK_COUNT', DEFAULTS.seedTaskCount, 2);
+const SEED_EVENT_COUNT = parseIntegerEnv('SEED_EVENT_COUNT', DEFAULTS.seedEventCount, 2);
+const ALLOW_REMOTE_BASE_URL = __ENV.ALLOW_REMOTE_BASE_URL === 'true';
+
 export const options = {
   scenarios: {
-    lined_workflow: WORKLOAD === 'smoke' ? {
+    lined_workflow: WORKLOAD === WORKLOADS.smoke ? {
       executor: 'shared-iterations',
-      vus: 1,
       iterations: 1,
       maxDuration: '1m',
+      vus: 1,
     } : {
+      duration: BASELINE_DURATION,
       executor: 'constant-vus',
       vus: BASELINE_VUS,
-      duration: BASELINE_DURATION,
     },
   },
   thresholds: {
     checks: ['rate>0.99'],
-    http_req_failed: ['rate<0.01'],
     http_req_duration: ['p(95)<1000', 'p(99)<2000'],
+    http_req_failed: ['rate<0.01'],
   },
 };
 
-export function setup() {
+export const setup = () => {
   assertLocalBaseUrl();
-  expectStatus(
-      http.get(`${BASE_URL}/actuator/health/readiness`, tags('actuator', 'readiness')),
-      'readiness is healthy',
-      [200]);
+  expectStatus(get(ENDPOINTS.readiness, 'actuator', 'readiness'), MESSAGES.readiness);
 
-  const users = [];
-  for (let i = 0; i < USER_COUNT; i++) {
-    users.push(createUser(i));
-  }
-
-  const owner = users[0];
+  const users = range(USER_COUNT).map(createUser);
+  const [owner] = users;
   const lobby = createLobby(owner.id);
-  for (const user of users.slice(1)) {
-    addMember(lobby.id, owner.id, user.id);
-  }
 
-  const tasks = seedTasks(owner.id, lobby.id, users);
-  const events = seedEvents(owner.id, lobby.id);
+  users.slice(1).forEach((user) => addMember(lobby.id, owner.id, user.id));
 
   return {
-    events,
+    events: seedEvents(owner.id, lobby.id),
     lobby,
     runId: RUN_ID,
-    tasks,
+    tasks: seedTasks(owner.id, lobby.id, users),
     users,
   };
-}
+};
 
-export default function (data) {
+export default (data) => {
   const user = data.users[exec.vu.idInTest % data.users.length];
   const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
   const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
   const task = data.tasks[exec.scenario.iterationInTest % data.tasks.length];
 
   group('users', () => {
-    expectStatus(
-        http.get(`${BASE_URL}/api/users/${user.id}`, tags('users', 'get')),
-        'get user succeeds',
-        [200]);
+    expectStatus(get(ENDPOINTS.user(user.id), 'users', 'get'), MESSAGES.getUser);
   });
 
   group('lobbies', () => {
     expectStatus(
-        http.get(`${BASE_URL}/api/lobbies/mine`, withUser(user.id, tags('lobbies', 'mine'))),
-        'list my lobbies succeeds',
-        [200]);
-    expectStatus(
-        http.get(`${BASE_URL}/api/lobbies/${data.lobby.id}`, tags('lobbies', 'get')),
-        'get lobby succeeds',
-        [200]);
+        getForUser(ENDPOINTS.myLobbies, user.id, 'lobbies', 'mine'),
+        MESSAGES.listLobbies);
+    expectStatus(get(ENDPOINTS.lobby(data.lobby.id), 'lobbies', 'get'), MESSAGES.getLobby);
   });
 
   group('tasks', () => {
     expectStatus(
-        http.patch(
-            `${BASE_URL}/api/tasks/${task.id}`,
-            JSON.stringify({ status: 'IN_PROGRESS', title: `Updated ${iterationLabel}` }),
-            withUser(user.id, tags('tasks', 'update'))),
-        'update task succeeds',
-        [200]);
+        patchJsonForUser(
+            ENDPOINTS.task(task.id),
+            { status: STATUSES.inProgress, title: `Updated ${iterationLabel}` },
+            user.id,
+            'tasks',
+            'update'),
+        MESSAGES.updateTask);
     expectStatus(
-        http.get(`${BASE_URL}/api/tasks?lobbyId=${data.lobby.id}&assigneeId=${assignee.id}`
-            + '&status=IN_PROGRESS',
-            tags('tasks', 'list')),
-        'list tasks succeeds',
-        [200]);
+        get(ENDPOINTS.tasksByAssignee(data.lobby.id, assignee.id), 'tasks', 'list'),
+        MESSAGES.listTasks);
   });
 
   group('calendar', () => {
-    const windowStart = encodeURIComponent('2026-01-01T00:00:00Z');
-    const windowEnd = encodeURIComponent('2026-01-08T00:00:00Z');
     expectStatus(
-        http.get(
-            `${BASE_URL}/api/calendar/events?lobbyId=${data.lobby.id}&from=${windowStart}&to=${windowEnd}`,
-            withUser(user.id, tags('calendar', 'list-events'))),
-        'list events succeeds',
-        [200]);
+        getForUser(ENDPOINTS.calendarEvents(data.lobby.id), user.id, 'calendar', 'list-events'),
+        MESSAGES.listEvents);
     expectStatus(
-        http.get(
-            `${BASE_URL}/api/calendar/conflicts?lobbyId=${data.lobby.id}&start=${windowStart}`
-            + `&end=${windowEnd}&requesterId=${user.id}`,
-            tags('calendar', 'conflicts')),
-        'find conflicts succeeds',
-        [200]);
+        get(ENDPOINTS.calendarConflicts(data.lobby.id, user.id), 'calendar', 'conflicts'),
+        MESSAGES.findConflicts);
     expectStatus(
-        http.get(
-            `${BASE_URL}/api/calendar/user-conflict?userId=${user.id}&start=${windowStart}`
-            + `&end=${windowEnd}&requesterId=${user.id}`,
-            tags('calendar', 'user-conflict')),
-        'find user conflict succeeds',
-        [200]);
+        get(ENDPOINTS.userConflict(user.id, user.id), 'calendar', 'user-conflict'),
+        MESSAGES.findUserConflict);
   });
 
   sleep(THINK_TIME_SECONDS);
-}
+};
 
-export function teardown(data) {
+export const teardown = (data) => {
   if (!data || !data.lobby || !data.users || data.users.length === 0) {
     return;
   }
+
   expectStatus(
-      http.del(
-          `${BASE_URL}/api/lobbies/${data.lobby.id}`,
-          null,
-          withUser(data.users[0].id, tags('lobbies', 'delete'))),
-      'delete seeded lobby succeeds',
-      [200]);
+      delForUser(ENDPOINTS.lobby(data.lobby.id), data.users[0].id, 'lobbies', 'delete'),
+      MESSAGES.deleteLobby);
   console.warn(
       `Seeded lobby ${data.lobby.id} was deleted. Synthetic users with username prefix `
       + `k6_${data.runId}_ remain because the backend exposes no user delete endpoint; `
       + 'reset the local experiment database when retained users are no longer needed.');
-}
+};
 
-function assertLocalBaseUrl() {
+const assertLocalBaseUrl = () => {
   const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/.test(BASE_URL);
   if (!isLocal && !ALLOW_REMOTE_BASE_URL) {
     exec.test.abort(
         'BASE_URL must point to localhost, 127.0.0.1, or [::1]. '
         + 'Set ALLOW_REMOTE_BASE_URL=true only for an intentional local Docker or remote target.');
   }
-}
+};
 
-function createUser(index) {
+const createUser = (index) => {
   const payload = {
     email: `k6_${RUN_ID}_${index}@example.test`,
-    password: 'k6-baseline-password',
+    password: SYNTHETIC_PASSWORD,
     username: `k6_${RUN_ID}_${index}`.slice(0, 64),
   };
-  const res = http.post(`${BASE_URL}/api/users`, JSON.stringify(payload), tags('users', 'create'));
-  expectStatus(res, 'create user succeeds', [200]);
+  const res = postJson(ENDPOINTS.users, payload, 'users', 'create');
+  expectStatus(res, MESSAGES.createUser);
   return responseJson(res, 'create user');
-}
+};
 
-function createLobby(ownerId) {
+const createLobby = (ownerId) => {
   const payload = {
-    lobbyType: 'FRIENDS',
+    lobbyType: LOBBY_TYPES.friends,
     name: `k6 baseline ${RUN_ID}`.slice(0, 64),
   };
-  const res = http.post(
-      `${BASE_URL}/api/lobbies`,
-      JSON.stringify(payload),
-      withUser(ownerId, tags('lobbies', 'create')));
-  expectStatus(res, 'create lobby succeeds', [200]);
+  const res = postJsonForUser(ENDPOINTS.lobbies, payload, ownerId, 'lobbies', 'create');
+  expectStatus(res, MESSAGES.createLobby);
   return responseJson(res, 'create lobby');
-}
+};
 
-function addMember(lobbyId, ownerId, memberId) {
-  const res = http.post(
-      `${BASE_URL}/api/lobbies/${lobbyId}/members?userId=${memberId}`,
+const addMember = (lobbyId, ownerId, memberId) => {
+  const res = postForUser(
+      ENDPOINTS.addLobbyMember(lobbyId, memberId),
       null,
-      withUser(ownerId, tags('lobbies', 'add-member')));
-  expectStatus(res, 'add lobby member succeeds', [200]);
-}
+      ownerId,
+      'lobbies',
+      'add-member');
+  expectStatus(res, MESSAGES.addLobbyMember);
+};
 
-function seedTasks(ownerId, lobbyId, users) {
-  const tasks = [];
-  for (let i = 0; i < SEED_TASK_COUNT; i++) {
-    const assignee = users[(i + 1) % users.length];
-    const task = createTask(ownerId, lobbyId, assignee.id, `Seed task ${RUN_ID}-${i}`);
-    tasks.push(task);
-  }
-  return tasks;
-}
+const seedTasks = (ownerId, lobbyId, users) => range(SEED_TASK_COUNT).map((index) => {
+  const assignee = users[(index + 1) % users.length];
+  return createTask(ownerId, lobbyId, assignee.id, `Seed task ${RUN_ID}-${index}`);
+});
 
-function createTask(currentUserId, lobbyId, assigneeId, title) {
+const createTask = (currentUserId, lobbyId, assigneeId, title) => {
   const payload = {
     assigneeId,
-    dueDate: '2026-01-07',
+    dueDate: TASK_DUE_DATE,
     lobbyId,
     title,
   };
-  const res = http.post(
-      `${BASE_URL}/api/tasks`,
-      JSON.stringify(payload),
-      withUser(currentUserId, tags('tasks', 'create')));
-  expectStatus(res, 'create task succeeds', [200]);
+  const res = postJsonForUser(ENDPOINTS.tasks, payload, currentUserId, 'tasks', 'create');
+  expectStatus(res, MESSAGES.createTask);
   return responseJson(res, 'create task');
-}
+};
 
-function seedEvents(ownerId, lobbyId) {
-  const events = [];
-  for (let i = 0; i < SEED_EVENT_COUNT; i++) {
-    events.push(createEvent(ownerId, lobbyId, `Seed event ${RUN_ID}-${i}`, i));
-  }
-  return events;
-}
+const seedEvents = (ownerId, lobbyId) => range(SEED_EVENT_COUNT)
+    .map((index) => createEvent(ownerId, lobbyId, `Seed event ${RUN_ID}-${index}`, index));
 
-function createEvent(currentUserId, lobbyId, title, offsetHours) {
+const createEvent = (currentUserId, lobbyId, title, offsetHours) => {
   const startHour = 9 + (offsetHours % 8);
   const endHour = startHour + 1;
   const payload = {
-    endAt: `2026-01-02T${String(endHour).padStart(2, '0')}:00:00Z`,
+    endAt: eventTime(endHour),
     lobbyId,
     shared: true,
-    startAt: `2026-01-02T${String(startHour).padStart(2, '0')}:00:00Z`,
-    timezone: 'Europe/Kyiv',
+    startAt: eventTime(startHour),
+    timezone: TIMEZONE,
     title,
   };
-  const res = http.post(
-      `${BASE_URL}/api/calendar/events`,
-      JSON.stringify(payload),
-      withUser(currentUserId, tags('calendar', 'create-event')));
-  expectStatus(res, 'create event succeeds', [200]);
+  const res = postJsonForUser(
+      ENDPOINTS.createCalendarEvent,
+      payload,
+      currentUserId,
+      'calendar',
+      'create-event');
+  expectStatus(res, MESSAGES.createEvent);
   return responseJson(res, 'create event');
-}
+};
 
-function responseJson(res, label) {
+const get = (path, domain, endpoint) => http.get(url(path), requestParams(domain, endpoint));
+
+const getForUser = (path, userId, domain, endpoint) => http.get(
+    url(path),
+    requestParams(domain, endpoint, userId));
+
+const postForUser = (path, body, userId, domain, endpoint) => http.post(
+    url(path),
+    body,
+    requestParams(domain, endpoint, userId));
+
+const postJson = (path, payload, domain, endpoint) => http.post(
+    url(path),
+    JSON.stringify(payload),
+    requestParams(domain, endpoint));
+
+const postJsonForUser = (path, payload, userId, domain, endpoint) => http.post(
+    url(path),
+    JSON.stringify(payload),
+    requestParams(domain, endpoint, userId));
+
+const patchJsonForUser = (path, payload, userId, domain, endpoint) => http.patch(
+    url(path),
+    JSON.stringify(payload),
+    requestParams(domain, endpoint, userId));
+
+const delForUser = (path, userId, domain, endpoint) => http.del(
+    url(path),
+    null,
+    requestParams(domain, endpoint, userId));
+
+const requestParams = (domain, endpoint, userId = null) => ({
+  headers: userId === null ? JSON_HEADERS : {
+    ...JSON_HEADERS,
+    'X-User-Id': String(userId),
+  },
+  tags: {
+    domain,
+    endpoint,
+    workload: WORKLOAD,
+  },
+});
+
+const responseJson = (res, label) => {
   if (!res.body) {
     exec.test.abort(`${label} response body was empty`);
   }
   return res.json();
-}
+};
 
-function expectStatus(res, label, acceptedStatuses) {
+const expectStatus = (res, label, acceptedStatuses = [200]) => {
   const ok = check(res, {
     [label]: (response) => acceptedStatuses.includes(response.status),
   });
   if (!ok) {
     exec.test.abort(`${label}: expected ${acceptedStatuses.join(', ')}, got ${res.status}`);
   }
-}
+};
 
-function tags(domain, endpoint) {
-  return {
-    headers: JSON_HEADERS,
-    tags: {
-      domain,
-      endpoint,
-      workload: WORKLOAD,
-    },
-  };
-}
+const eventTime = (hour) => `${EVENT_WINDOW.seedDate}T${String(hour).padStart(2, '0')}:00:00Z`;
 
-function withUser(userId, params) {
-  return {
-    ...params,
-    headers: {
-      ...params.headers,
-      'X-User-Id': String(userId),
-    },
-  };
-}
+const queryPath = (path, params) => {
+  const query = Object.entries(params)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+  return `${path}?${query}`;
+};
 
-function parseIntegerEnv(name, fallback, minimum) {
-  const raw = __ENV[name] || fallback;
-  if (!/^\d+$/.test(raw)) {
-    throw new Error(`${name} must be an integer >= ${minimum}`);
-  }
-  const parsed = Number.parseInt(raw, 10);
-  if (parsed < minimum) {
-    throw new Error(`${name} must be an integer >= ${minimum}`);
-  }
-  return parsed;
-}
+const range = (count) => Array.from({ length: count }, (_, index) => index);
 
-function parseFloatEnv(name, fallback, minimum) {
-  const raw = __ENV[name] || fallback;
-  if (!/^\d+(\.\d+)?$/.test(raw)) {
-    throw new Error(`${name} must be a number >= ${minimum}`);
-  }
-  const parsed = Number.parseFloat(raw);
-  if (parsed < minimum) {
-    throw new Error(`${name} must be a number >= ${minimum}`);
-  }
-  return parsed;
-}
-
-function parseWorkload(raw) {
-  if (raw !== 'smoke' && raw !== 'baseline') {
-    throw new Error('WORKLOAD must be either smoke or baseline');
-  }
-  return raw;
-}
+const url = (path) => `${BASE_URL}${path}`;
