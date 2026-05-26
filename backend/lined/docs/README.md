@@ -14,6 +14,7 @@ changes.
 | kind Baseline       | Local kind deployment flow for PostgreSQL and the backend baseline.                                             | `kind-baseline.md`             | Use before deploying the backend baseline to local Kubernetes with kind.                    | kind cluster setup, image loading, manifest apply, Service port-forward, health checks.  |
 | Runtime Metrics     | Prometheus-compatible Actuator metrics baseline and runtime signal map.                                         | `runtime-metrics-baseline.md`  | Use before collecting backend runtime metrics or designing runtime-aware fitness inputs.    | `/actuator/prometheus`, latency/error/resource signals, Prometheus scrape metadata.      |
 | Load-Test Baseline  | Repeatable k6 workload for users, lobbies, tasks, and calendar event flows.                                    | `load-test-baseline.md`        | Use before running baseline workload traffic against the local kind backend.                | k6 smoke run, local workload profile, synthetic data behavior, runtime metrics checks.   |
+| Notion KB Workflow  | Rules for using Notion as the durable research knowledge base for backend experiment work.                     | `notion-knowledge-base-workflow.md` | Use when research or experiment analysis should be stored in Notion.                        | Notion write-back checklist, verification after write, fallback policy, entry template. |
 | Experiment Plan     | Detailed plan for adapting Lined to Kubernetes and runtime telemetry experiments for the article.               | `experiment-plan.md`           | Use before containerization, kind, Kubernetes, telemetry, load-test, or fitness-model work. | Research scope, experiment platform design, metrics, baselines, expected evidence.       |
 | Experiment Tasks    | One-PR task table for iterative experiment implementation.                                                      | `experiment-tasks.md`          | Use before starting an experiment branch or PR.                                             | Branch naming, PR scope, implementation order, final-work expectations.                  |
 | PR and Commit Guide | Pull request title/body template and commit-splitting rules.                                                    | `pull-requests-and-commits.md` | Use before opening a PR or creating commits.                                                | PR title selection, PR descriptions, fitness expectations, commit hygiene.               |
@@ -23,5 +24,7 @@ changes.
 - Keep backend documentation in this `docs/` directory.
 - Update this index when adding, moving, or renaming backend documentation.
 - Keep experiment work linked to `experiment-tasks.md`.
+- Use `notion-knowledge-base-workflow.md` when backend experiment work changes
+  durable research knowledge that should be stored in Notion.
 - Use `pull-requests-and-commits.md` before opening PRs or splitting commits.
 - Use English for backend agent and documentation files.
