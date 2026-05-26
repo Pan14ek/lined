@@ -123,11 +123,13 @@ calendar conflict endpoints against the bounded event window. It does not keep
 adding tasks or events during the measured loop, because unbounded local data
 growth would distort latency measurements.
 
-Teardown deletes the seeded lobby. PostgreSQL cascades that deletion to the
-seeded lobby memberships, tasks, and events. Synthetic users remain because the
-backend currently exposes no user delete endpoint. For clean repeated
-experiments, reset the local kind database or recreate the kind baseline when
-retained `k6_` users are no longer useful.
+Teardown deletes the seeded events and tasks before deleting the seeded lobby.
+The explicit delete order keeps cleanup independent of whether the local
+database constraints were created from `schema.sql` cascades or from JPA
+`ddl-auto=update`. Synthetic users remain because the backend currently exposes
+no user delete endpoint. For clean repeated experiments, reset the local kind
+database or recreate the kind baseline when retained `k6_` users are no longer
+useful.
 
 ## Configuration
 

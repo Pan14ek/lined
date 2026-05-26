@@ -55,6 +55,7 @@ const ENDPOINTS = {
     to: EVENT_WINDOW.to,
   }),
   createCalendarEvent: '/api/calendar/events',
+  event: (eventId) => `/api/calendar/events/${eventId}`,
   lobbies: '/api/lobbies',
   lobby: (lobbyId) => `/api/lobbies/${lobbyId}`,
   myLobbies: '/api/lobbies/mine',
@@ -82,7 +83,9 @@ const MESSAGES = {
   createLobby: 'create lobby succeeds',
   createTask: 'create task succeeds',
   createUser: 'create user succeeds',
+  deleteEvent: 'delete seeded event succeeds',
   deleteLobby: 'delete seeded lobby succeeds',
+  deleteTask: 'delete seeded task succeeds',
   findConflicts: 'find conflicts succeeds',
   findUserConflict: 'find user conflict succeeds',
   getLobby: 'get lobby succeeds',
@@ -230,11 +233,22 @@ export const teardown = (data) => {
     return;
   }
 
+  data.events.forEach((event) => {
+    expectStatus(
+        delForUser(ENDPOINTS.event(event.id), data.users[0].id, 'calendar', 'delete-event'),
+        MESSAGES.deleteEvent);
+  });
+  data.tasks.forEach((task) => {
+    expectStatus(
+        delForUser(ENDPOINTS.task(task.id), data.users[0].id, 'tasks', 'delete'),
+        MESSAGES.deleteTask);
+  });
   expectStatus(
       delForUser(ENDPOINTS.lobby(data.lobby.id), data.users[0].id, 'lobbies', 'delete'),
       MESSAGES.deleteLobby);
   console.warn(
-      `Seeded lobby ${data.lobby.id} was deleted. Synthetic users with username prefix `
+      `Seeded tasks, events, and lobby ${data.lobby.id} were deleted. `
+      + `Synthetic users with username prefix `
       + `k6_${data.runId}_ remain because the backend exposes no user delete endpoint; `
       + 'reset the local experiment database when retained users are no longer needed.');
 };
