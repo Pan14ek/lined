@@ -24,6 +24,7 @@ Use `docs/README.md` as the backend documentation index.
 | Architecture Guide  | Backend modules, layers, domain boundaries, and known architecture notes. | `docs/architecture.md`              | Before changing backend structure or adding a module.                        | New feature design, refactoring, checking layering, documenting architecture decisions. |
 | Testing Guide       | Backend test conventions, tools, and expectations.                        | `docs/testing.md`                   | Before writing or changing backend tests.                                    | Unit tests, integration tests, service behavior coverage, Mockito patterns.             |
 | API Documentation   | Current backend API reference.                                            | `docs/api.md`                       | When changing endpoints, DTOs, or API behavior.                              | Request/response review, endpoint coverage, Swagger/API alignment.                      |
+| Notion KB Workflow  | Notion write-back, verification, fallback, and entry-template rules.       | `docs/notion-knowledge-base-workflow.md` | When research or experiment analysis changes durable knowledge.              | Notion as knowledge base, artifact analysis, experiment findings, research handoff.     |
 | Experiment Plan     | Scientific experiment context and adaptation strategy.                    | `docs/experiment-plan.md`           | Before experiment-related backend, Kubernetes, telemetry, or load-test work. | Containerization, kind deployment, runtime metrics, fitness-model extension.            |
 | Experiment Tasks    | One-PR task table for iterative experiment work.                          | `docs/experiment-tasks.md`          | Before starting an experiment implementation branch.                         | Branch planning, PR scope control, experiment roadmap tracking.                         |
 | PR and Commit Guide | Pull request title/body and commit-splitting rules.                       | `docs/pull-requests-and-commits.md` | Before opening a PR or creating commits.                                     | PR descriptions, fitness expectations, commit scope, review readiness.                  |
@@ -81,6 +82,9 @@ Use `./gradlew sonarqube` only when `SONAR_TOKEN` is configured.
 
 - Use one PR per task from `docs/experiment-tasks.md`.
 - Use the `experiment/` branch prefix for scientific experiment work.
+- Use `docs/notion-knowledge-base-workflow.md` when experiment analysis,
+  implementation status, artifact analysis, limitations, open questions, or
+  article-ready findings should be preserved in Notion.
 - Use `docs/pull-requests-and-commits.md` when writing PR titles,
   descriptions, and commits.
 - Keep experiment changes reproducible and documented.
