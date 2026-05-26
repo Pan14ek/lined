@@ -17,6 +17,7 @@ const WORKLOADS = {
   baseline: 'baseline',
   readHeavy: 'read-heavy',
   smoke: 'smoke',
+  writeHeavy: 'write-heavy',
 };
 
 const STATUSES = {
@@ -162,6 +163,14 @@ const workloadScenario = () => {
       vus: BASELINE_VUS,
     };
   }
+  if (WORKLOAD === WORKLOADS.writeHeavy) {
+    return {
+      duration: BASELINE_DURATION,
+      exec: 'writeHeavyWorkflow',
+      executor: 'constant-vus',
+      vus: BASELINE_VUS,
+    };
+  }
   return {
     duration: BASELINE_DURATION,
     exec: 'baselineWorkflow',
@@ -277,6 +286,36 @@ export const readHeavyWorkflow = (data) => {
     expectStatus(
         get(ENDPOINTS.userConflict(user.id, user.id), 'calendar', 'user-conflict'),
         MESSAGES.findUserConflict);
+  });
+
+  sleep(THINK_TIME_SECONDS);
+};
+
+export const writeHeavyWorkflow = (data) => {
+  const user = data.users[exec.vu.idInTest % data.users.length];
+  const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
+  const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
+
+  group('write-heavy tasks', () => {
+    const task = createTask(user.id, data.lobby.id, assignee.id, `Write task ${iterationLabel}`);
+    expectStatus(
+        patchJsonForUser(
+            ENDPOINTS.task(task.id),
+            { status: STATUSES.inProgress, title: `Write updated ${iterationLabel}` },
+            user.id,
+            'tasks',
+            'update'),
+        MESSAGES.updateTask);
+    expectStatus(
+        delForUser(ENDPOINTS.task(task.id), user.id, 'tasks', 'delete'),
+        MESSAGES.deleteTask);
+  });
+
+  group('write-heavy calendar', () => {
+    const event = createEvent(user.id, data.lobby.id, `Write event ${iterationLabel}`, 0);
+    expectStatus(
+        delForUser(ENDPOINTS.event(event.id), user.id, 'calendar', 'delete-event'),
+        MESSAGES.deleteEvent);
   });
 
   sleep(THINK_TIME_SECONDS);

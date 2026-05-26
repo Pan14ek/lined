@@ -72,6 +72,16 @@ k6 run \
   load-tests/k6/load-test-baseline.js
 ```
 
+Run a write-heavy workload when you want create, update, and delete traffic
+without retaining per-iteration task or event rows:
+
+```bash
+k6 run \
+  -e WORKLOAD=write-heavy \
+  -e BASE_URL=http://localhost:8080 \
+  load-tests/k6/load-test-baseline.js
+```
+
 The default baseline uses 5 virtual users for 2 minutes. Override it when a
 specific experiment variant needs a different local load profile:
 
@@ -146,7 +156,7 @@ useful.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `BASE_URL` | `http://localhost:8080` | Backend URL reached through local port-forwarding. |
-| `WORKLOAD` | `baseline` | `smoke`, `baseline`, or `read-heavy`. |
+| `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, or `write-heavy`. |
 | `RUN_ID` | current timestamp | Prefix used for synthetic users and seeded data. |
 | `USER_COUNT` | `4` | Synthetic users created during setup; minimum `2`. |
 | `SEED_TASK_COUNT` | `12` | Seeded tasks in the bounded task corpus; minimum `2`. |
