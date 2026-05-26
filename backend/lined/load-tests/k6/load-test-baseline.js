@@ -8,6 +8,8 @@ const DEFAULTS = {
   baselineVus: '5',
   seedEventCount: '8',
   seedTaskCount: '12',
+  stressMaxVus: '20',
+  stressStageDuration: '30s',
   thinkTimeSeconds: '1',
   userCount: '4',
   workload: 'baseline',
@@ -18,6 +20,7 @@ const WORKLOADS = {
   mixed: 'mixed',
   readHeavy: 'read-heavy',
   smoke: 'smoke',
+  stress: 'stress',
   writeHeavy: 'write-heavy',
 };
 
@@ -138,6 +141,8 @@ const WORKLOAD = parseWorkload(__ENV.WORKLOAD || DEFAULTS.workload);
 const USER_COUNT = parseIntegerEnv('USER_COUNT', DEFAULTS.userCount, 2);
 const BASELINE_VUS = parseIntegerEnv('VUS', DEFAULTS.baselineVus, 1);
 const BASELINE_DURATION = __ENV.DURATION || DEFAULTS.baselineDuration;
+const STRESS_MAX_VUS = parseIntegerEnv('STRESS_MAX_VUS', DEFAULTS.stressMaxVus, 2);
+const STRESS_STAGE_DURATION = __ENV.STRESS_STAGE_DURATION || DEFAULTS.stressStageDuration;
 const THINK_TIME_SECONDS = parseFloatEnv(
     'THINK_TIME_SECONDS',
     DEFAULTS.thinkTimeSeconds,
@@ -178,6 +183,17 @@ const workloadScenario = () => {
       exec: 'mixedWorkflow',
       executor: 'constant-vus',
       vus: BASELINE_VUS,
+    };
+  }
+  if (WORKLOAD === WORKLOADS.stress) {
+    return {
+      exec: 'baselineWorkflow',
+      executor: 'ramping-vus',
+      stages: [
+        { duration: STRESS_STAGE_DURATION, target: Math.ceil(STRESS_MAX_VUS / 2) },
+        { duration: STRESS_STAGE_DURATION, target: STRESS_MAX_VUS },
+        { duration: STRESS_STAGE_DURATION, target: 0 },
+      ],
     };
   }
   return {

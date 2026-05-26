@@ -92,6 +92,15 @@ k6 run \
   load-tests/k6/load-test-baseline.js
 ```
 
+Run a stress workload when you want ramping VUs against the baseline workflow:
+
+```bash
+k6 run \
+  -e WORKLOAD=stress \
+  -e BASE_URL=http://localhost:8080 \
+  load-tests/k6/load-test-baseline.js
+```
+
 The default baseline uses 5 virtual users for 2 minutes. Override it when a
 specific experiment variant needs a different local load profile:
 
@@ -166,13 +175,15 @@ useful.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `BASE_URL` | `http://localhost:8080` | Backend URL reached through local port-forwarding. |
-| `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, `write-heavy`, or `mixed`. |
+| `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, `write-heavy`, `mixed`, or `stress`. |
 | `RUN_ID` | current timestamp | Prefix used for synthetic users and seeded data. |
 | `USER_COUNT` | `4` | Synthetic users created during setup; minimum `2`. |
 | `SEED_TASK_COUNT` | `12` | Seeded tasks in the bounded task corpus; minimum `2`. |
 | `SEED_EVENT_COUNT` | `8` | Seeded events in the bounded event corpus; minimum `2`. |
 | `VUS` | `5` | Virtual users for the baseline workload. |
 | `DURATION` | `2m` | Duration for the baseline workload. |
+| `STRESS_MAX_VUS` | `20` | Maximum virtual users for the stress workload; minimum `2`. |
+| `STRESS_STAGE_DURATION` | `30s` | Duration of each stress ramp stage. |
 | `THINK_TIME_SECONDS` | `1` | Sleep between workflow iterations. |
 | `ALLOW_REMOTE_BASE_URL` | `false` | Must be `true` for intentional non-local targets. |
 
