@@ -425,7 +425,7 @@ const parseMissingRuntimeFields = (value: unknown): string[] | undefined => {
     return value.map((item, index) => requireString(item, `missing[${index}]`));
 };
 
-const parseRuntimeMetrics = (content: string): RuntimeMetrics => {
+export const parseRuntimeMetrics = (content: string): RuntimeMetrics => {
     const parsed: unknown = JSON.parse(content);
     if (!isRecord(parsed)) {
         throw new Error("Runtime metrics JSON must contain an object");
@@ -445,7 +445,7 @@ const parseRuntimeMetrics = (content: string): RuntimeMetrics => {
     };
 };
 
-const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined => {
+export const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined => {
     if (!path || path.trim() === "") {
         return undefined;
     }
@@ -730,4 +730,6 @@ const main = async (): Promise<void> => {
     }
 };
 
-void main();
+if (require.main === module) {
+    void main();
+}
