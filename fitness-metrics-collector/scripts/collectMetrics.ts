@@ -15,6 +15,29 @@ type Metrics = {
     sonar_cloud_current_branch_metrics?: SonarMetricsMap;
     current_branch_name?: string;
     sonar_diff?: MetricsDiffMap;
+    runtime_metrics?: RuntimeMetrics;
+};
+
+type RuntimeMetricSummary = {
+    latency_p95_ms?: number;
+    latency_p99_ms?: number;
+    error_rate?: number;
+    throughput_rps?: number;
+    availability?: number;
+    restart_count?: number;
+    cpu_utilization?: number;
+    memory_utilization?: number;
+    hpa_desired_replicas?: number;
+    hpa_current_replicas?: number;
+};
+
+type RuntimeMetrics = {
+    schema_version: 1;
+    scenario: string;
+    workload: string;
+    source: string;
+    summary: RuntimeMetricSummary;
+    missing?: string[];
 };
 
 type SonarScope =
@@ -57,6 +80,7 @@ type Config = {
     spotbugsXmlPath: string;
     spotbugsHtmlPath: string;
     jacocoPath: string;
+    runtimeMetricsJsonPath?: string;
     commitHash?: string;
     cosmosDbConnectionString?: string;
     pullRequestId?: string;
@@ -126,6 +150,7 @@ const getConfig = (): Config => {
         spotbugsXmlPath: process.env.SPOTBUGS_XML ?? DEFAULT_PATHS.SPOTBUGS_XML,
         spotbugsHtmlPath: process.env.SPOTBUGS_HTML ?? DEFAULT_PATHS.SPOTBUGS_HTML,
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
+        runtimeMetricsJsonPath: process.env.RUNTIME_METRICS_JSON,
         branchName: process.env.BRANCH_NAME,
         pullRequestId: process.env.PR_NUMBER,
         commitHash: process.env.GITHUB_SHA,
@@ -306,6 +331,126 @@ const readJacocoLineCoverage = (path: string): number | undefined => {
     const xml = readFile(path);
     const coverage = parseJacocoLineCoverage(xml);
     return Number(coverage.toFixed(2));
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+};
+
+const requireString = (value: unknown, field: string): string => {
+    if (typeof value !== "string" || value.trim() === "") {
+        throw new Error(`Runtime metrics: ${field} must be a non-empty string`);
+    }
+
+    return value;
+};
+
+const optionalNumber = (
+    value: unknown,
+    field: string,
+    min: number,
+    max?: number
+): number | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        throw new Error(`Runtime metrics: ${field} must be a finite number`);
+    }
+
+    if (value < min) {
+        throw new Error(`Runtime metrics: ${field} must be >= ${min}`);
+    }
+
+    if (max !== undefined && value > max) {
+        throw new Error(`Runtime metrics: ${field} must be <= ${max}`);
+    }
+
+    return value;
+};
+
+type RuntimeMetricDefinition = {
+    field: keyof RuntimeMetricSummary;
+    min: number;
+    max?: number;
+};
+
+const RUNTIME_METRIC_DEFINITIONS: readonly RuntimeMetricDefinition[] = [
+    {field: "latency_p95_ms", min: 0},
+    {field: "latency_p99_ms", min: 0},
+    {field: "error_rate", min: 0, max: 1},
+    {field: "throughput_rps", min: 0},
+    {field: "availability", min: 0, max: 1},
+    {field: "restart_count", min: 0},
+    {field: "cpu_utilization", min: 0},
+    {field: "memory_utilization", min: 0},
+    {field: "hpa_desired_replicas", min: 0},
+    {field: "hpa_current_replicas", min: 0},
+];
+
+const parseRuntimeMetricSummary = (
+    rawSummary: unknown
+): RuntimeMetricSummary => {
+    if (!isRecord(rawSummary)) {
+        throw new Error("Runtime metrics: summary must be an object");
+    }
+
+    const summary: RuntimeMetricSummary = {};
+    for (const definition of RUNTIME_METRIC_DEFINITIONS) {
+        const field = definition.field;
+        const value = optionalNumber(
+            rawSummary[field],
+            `summary.${field}`,
+            definition.min,
+            definition.max
+        );
+        if (value !== undefined) {
+            summary[field] = value;
+        }
+    }
+
+    return summary;
+};
+
+const parseMissingRuntimeFields = (value: unknown): string[] | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (!Array.isArray(value)) {
+        throw new Error("Runtime metrics: missing must be an array of strings");
+    }
+
+    return value.map((item, index) => requireString(item, `missing[${index}]`));
+};
+
+const parseRuntimeMetrics = (content: string): RuntimeMetrics => {
+    const parsed: unknown = JSON.parse(content);
+    if (!isRecord(parsed)) {
+        throw new Error("Runtime metrics JSON must contain an object");
+    }
+
+    if (parsed.schema_version !== 1) {
+        throw new Error("Runtime metrics: schema_version must be 1");
+    }
+
+    return {
+        schema_version: 1,
+        scenario: requireString(parsed.scenario, "scenario"),
+        workload: requireString(parsed.workload, "workload"),
+        source: requireString(parsed.source, "source"),
+        summary: parseRuntimeMetricSummary(parsed.summary),
+        missing: parseMissingRuntimeFields(parsed.missing),
+    };
+};
+
+const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined => {
+    if (!path || path.trim() === "") {
+        return undefined;
+    }
+
+    return parseRuntimeMetrics(readFile(path));
 };
 
 const getCurrentScope = (config: Config): SonarScope => {
@@ -514,6 +659,7 @@ const diffSelectedMetrics = (
 ======================= */
 const collectMetrics = async (config: Config): Promise<Metrics> => {
     const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
+    const runtimeMetrics = readRuntimeMetrics(config.runtimeMetricsJsonPath);
 
     const mainMetrics = await fetchSonarCloudMetrics({kind: "branch", name: "main"});
 
@@ -538,6 +684,10 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
 
     if (jacocoCoverage !== undefined) {
         metrics.jacoco_line_coverage = jacocoCoverage;
+    }
+
+    if (runtimeMetrics !== undefined) {
+        metrics.runtime_metrics = runtimeMetrics;
     }
 
     return metrics;

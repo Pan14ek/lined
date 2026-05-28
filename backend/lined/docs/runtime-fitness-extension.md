@@ -35,30 +35,30 @@ Runtime-aware evaluation must use separate fields:
   "fitnessScore": 0.1234,
   "metrics": {
     "checkstyle_violations": 0,
-    "spotbugs_total": 0
-  },
-  "runtime_metrics": {
-    "schema_version": 1,
-    "scenario": "fixed-medium",
-    "workload": "baseline",
-    "source": "local-kind",
-    "summary": {
-      "latency_p95_ms": 250.5,
-      "latency_p99_ms": 550.25,
-      "error_rate": 0.002,
-      "throughput_rps": 42.1,
-      "availability": 1,
-      "restart_count": 0,
-      "cpu_utilization": 0.62,
-      "memory_utilization": 0.71,
-      "hpa_desired_replicas": 2,
-      "hpa_current_replicas": 2
+    "spotbugs_total": 0,
+    "runtime_metrics": {
+      "schema_version": 1,
+      "scenario": "fixed-medium",
+      "workload": "baseline",
+      "source": "local-kind",
+      "summary": {
+        "latency_p95_ms": 250.5,
+        "latency_p99_ms": 550.25,
+        "error_rate": 0.002,
+        "throughput_rps": 42.1,
+        "availability": 1,
+        "restart_count": 0,
+        "cpu_utilization": 0.62,
+        "memory_utilization": 0.71,
+        "hpa_desired_replicas": 2,
+        "hpa_current_replicas": 2
+      }
     }
   }
 }
 ```
 
-A later scoring task can add fields such as `runtimeFitnessScore` or
+A later scoring task can add top-level fields such as `runtimeFitnessScore` or
 `fitnessScores.runtime`. It must not replace the meaning of `fitnessScore`.
 
 ## Runtime Metric Sources
@@ -152,7 +152,8 @@ deploy kind, call Kubernetes, or scrape Actuator endpoints by itself.
 
 ## Compatibility Rules
 
-- Existing Cosmos DB documents remain valid when `runtime_metrics` is absent.
+- Existing Cosmos DB documents remain valid when `metrics.runtime_metrics` is
+  absent.
 - The Python analyzer keeps using top-level `fitnessScore` for structural
   fitness charts unless a later task explicitly adds runtime charts.
 - Runtime-aware scoring must be additive and versioned.
@@ -169,4 +170,4 @@ Before using a runtime summary in an experiment:
 4. Produce a summarized runtime JSON file.
 5. Run the collector with `RUNTIME_METRICS_JSON` set.
 6. Confirm the stored document preserves `fitnessScore` and adds
-   `runtime_metrics` separately.
+   `metrics.runtime_metrics` separately.
