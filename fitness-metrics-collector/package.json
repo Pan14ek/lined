@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "metrics": "npm run build && node dist/scripts/collectMetrics.js"
+    "metrics": "npm run build && node dist/scripts/collectMetrics.js",
+    "test": "npm run build && node --test dist/scripts/*.test.js"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.1"
