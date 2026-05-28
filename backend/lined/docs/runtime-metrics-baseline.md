@@ -86,6 +86,8 @@ prometheus.io/port: "8080"
 These annotations support simple annotation-based Prometheus discovery. A later
 task can add a dedicated Prometheus deployment, ServiceMonitor, or
 OpenTelemetry Collector without changing the backend application endpoint.
+The local Prometheus deployment and query workflow are documented in
+`docs/prometheus-telemetry-pipeline.md`.
 
 ## Runtime Signals
 
