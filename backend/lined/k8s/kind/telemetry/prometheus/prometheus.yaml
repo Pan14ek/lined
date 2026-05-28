@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lined-prometheus
+  labels:
+    app.kubernetes.io/name: lined-prometheus
+    app.kubernetes.io/part-of: lined
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: lined-prometheus
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lined-prometheus
+  labels:
+    app.kubernetes.io/name: lined-prometheus
+    app.kubernetes.io/part-of: lined
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lined-prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lined-prometheus
+        app.kubernetes.io/part-of: lined
+    spec:
+      serviceAccountName: lined-prometheus
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.55.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=6h
+            - --web.listen-address=0.0.0.0:9090
+          ports:
+            - name: http
+              containerPort: 9090
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
+            - name: storage
+              mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: lined-prometheus-config
+        - name: storage
+          emptyDir: {}
