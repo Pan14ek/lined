@@ -81,8 +81,10 @@ Compare at least these approaches:
 4. Add a repeatable load-test baseline.
 5. Collect runtime metrics for one stable deployment.
 6. Add deployment variants: replicas, resource settings, probe settings, HPA.
-7. Compare variants with scalar and multi-objective fitness models.
-8. Document limitations and metric bias.
+7. Attach summarized runtime metrics using the contract in
+   `runtime-fitness-extension.md`.
+8. Compare variants with scalar and multi-objective fitness models.
+9. Document limitations and metric bias.
 
 ## Constraints
 
