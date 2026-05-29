@@ -35,6 +35,25 @@ const k6Summary = {
   },
 };
 
+const k6V2Summary = {
+  metrics: {
+    http_req_duration: {
+      'p(95)': 150.25,
+      'p(99)': 275.5,
+      avg: 20,
+    },
+    http_req_failed: {
+      fails: 0,
+      passes: 100,
+      value: 0,
+    },
+    http_reqs: {
+      count: 100,
+      rate: 25.5,
+    },
+  },
+};
+
 const deployment = {
   spec: {
     template: {
@@ -245,6 +264,23 @@ describe('buildRuntimeSummary', () => {
     assert.equal(summary.summary.hpa_current_replicas, 2);
     assert.equal(summary.summary.hpa_desired_replicas, 3);
     assert.deepEqual(summary.missing, ['availability']);
+  });
+
+  it('reads flat k6 v2 summary exports', () => {
+    const summary = buildRuntimeSummary({
+      k6Summary: k6V2Summary,
+      kubernetes: {
+        metricsServerAvailable: false,
+        restartCount: 0,
+      },
+      scenario: 'fixed-medium',
+      workload: 'smoke',
+    });
+
+    assert.equal(summary.summary.latency_p95_ms, 150.25);
+    assert.equal(summary.summary.latency_p99_ms, 275.5);
+    assert.equal(summary.summary.error_rate, 0);
+    assert.equal(summary.summary.throughput_rps, 25.5);
   });
 });
 

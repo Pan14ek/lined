@@ -128,10 +128,10 @@ The collector-ready summary uses only aggregated fields:
 
 | Summary field | Source |
 |---------------|--------|
-| `latency_p95_ms` | k6 `http_req_duration.values["p(95)"]` |
-| `latency_p99_ms` | k6 `http_req_duration.values["p(99)"]` |
-| `error_rate` | k6 `http_req_failed.values.rate` |
-| `throughput_rps` | k6 `http_reqs.values.rate` |
+| `latency_p95_ms` | k6 `http_req_duration` `p(95)` from nested or flat summary export |
+| `latency_p99_ms` | k6 `http_req_duration` `p(99)` from nested or flat summary export |
+| `error_rate` | k6 `http_req_failed` `rate` or `value` |
+| `throughput_rps` | k6 `http_reqs` `rate` |
 | `restart_count` | summed backend container restart counts |
 | `cpu_utilization` | summed backend CPU usage divided by summed CPU requests |
 | `memory_utilization` | summed backend memory usage divided by summed memory limits |

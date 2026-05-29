@@ -195,7 +195,7 @@ export const buildRuntimeSummary = ({ k6Summary, kubernetes, scenario, workload 
   const summary = {
     latency_p95_ms: requiredMetric(k6Summary, 'http_req_duration', 'p(95)'),
     latency_p99_ms: requiredMetric(k6Summary, 'http_req_duration', 'p(99)'),
-    error_rate: requiredMetric(k6Summary, 'http_req_failed', 'rate'),
+    error_rate: requiredMetric(k6Summary, 'http_req_failed', 'rate', ['value']),
     throughput_rps: requiredMetric(k6Summary, 'http_reqs', 'rate'),
     restart_count: kubernetes.restartCount,
   };
@@ -621,12 +621,30 @@ const writeJson = (file, value) => {
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf-8');
 };
 
-const requiredMetric = (k6Summary, metric, valueName) => {
-  const value = k6Summary.metrics?.[metric]?.values?.[valueName];
+const requiredMetric = (k6Summary, metric, valueName, fallbackValueNames = []) => {
+  const metricValues = k6Summary.metrics?.[metric];
+  const value = readK6MetricValue(metricValues, [valueName, ...fallbackValueNames]);
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`k6 summary missing numeric ${metric}.values["${valueName}"]`);
+    throw new Error(`k6 summary missing numeric ${metric}.${valueName}`);
   }
   return value;
+};
+
+const readK6MetricValue = (metricValues, valueNames) => {
+  if (!metricValues) {
+    return undefined;
+  }
+  for (const valueName of valueNames) {
+    const nested = metricValues.values?.[valueName];
+    if (nested !== undefined) {
+      return nested;
+    }
+    const flat = metricValues[valueName];
+    if (flat !== undefined) {
+      return flat;
+    }
+  }
+  return undefined;
 };
 
 const findBackendContainer = (deployment) => {
