@@ -40,6 +40,7 @@ export const WORKLOADS = Object.freeze([
 ]);
 
 const DEFAULT_BASE_URL = 'http://localhost:8080';
+const DEFAULT_K6_BIN = 'k6';
 const DEFAULT_WORKLOAD = 'baseline';
 const DEFAULT_SCRIPT = 'load-tests/k6/load-test-baseline.js';
 const DEFAULT_OUTPUT_ROOT = 'load-tests/runtime-scenarios/output';
@@ -60,6 +61,7 @@ export const parseArgs = (argv) => {
     allowRemoteBaseUrl: false,
     apply: true,
     baseUrl: DEFAULT_BASE_URL,
+    k6Bin: DEFAULT_K6_BIN,
     k6Env: {},
     outputRoot: DEFAULT_OUTPUT_ROOT,
     script: DEFAULT_SCRIPT,
@@ -82,6 +84,8 @@ export const parseArgs = (argv) => {
       options.outputRoot = readOptionValue(argv, ++index, arg);
     } else if (arg === '--script') {
       options.script = readOptionValue(argv, ++index, arg);
+    } else if (arg === '--k6-bin') {
+      options.k6Bin = readOptionValue(argv, ++index, arg);
     } else if (arg === '--k6-env') {
       addK6Env(options.k6Env, readOptionValue(argv, ++index, arg));
     } else if (arg === '--skip-apply') {
@@ -116,6 +120,7 @@ Options:
   --base-url <url>              Backend URL (default: ${DEFAULT_BASE_URL})
   --output-root <dir>           Output root (default: ${DEFAULT_OUTPUT_ROOT})
   --script <path>               k6 script path (default: ${DEFAULT_SCRIPT})
+  --k6-bin <path>               k6 executable (default: ${DEFAULT_K6_BIN})
   --k6-env KEY=value            Extra k6 env; repeatable for ${Array.from(K6_ENV_KEYS).join(', ')}
   --skip-apply                  Do not apply the selected kustomize scenario
   --skip-hpa-cleanup            Do not delete HPA before fixed-replica scenarios
@@ -124,9 +129,10 @@ Options:
 
 export const runRuntimeScenario = (options, cwd = process.cwd()) => {
   const scenario = SCENARIOS[options.scenario];
+  assertK6Available(options.k6Bin, cwd);
+
   const startedAt = new Date().toISOString();
   const outputDir = outputDirectory(options, startedAt, cwd);
-  fs.mkdirSync(outputDir, { recursive: true });
 
   const hpaCleanup = cleanupHpaIfNeeded(options, scenario, cwd);
   applyScenarioIfNeeded(options, scenario, cwd);
@@ -149,6 +155,7 @@ export const runRuntimeScenario = (options, cwd = process.cwd()) => {
   });
 
   const manifestPath = path.join(outputDir, 'runtime-summary-manifest.json');
+  fs.mkdirSync(outputDir, { recursive: true });
   writeJson(manifestPath, manifest);
 
   if (k6Result.exitCode !== 0) {
@@ -332,6 +339,27 @@ export const ensureLocalBaseUrl = (baseUrl, allowRemoteBaseUrl) => {
   }
 };
 
+export const assertK6Available = (k6Bin, cwd = process.cwd()) => {
+  const result = spawnSync(k6Bin, ['version'], {
+    cwd,
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  if (result.error?.code === 'ENOENT') {
+    throw new Error(
+        `k6 executable not found: ${k6Bin}. `
+        + 'Install k6 and make it available in PATH, or pass --k6-bin /absolute/path/to/k6. '
+        + 'On macOS with Homebrew: brew install k6.'
+    );
+  }
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(`k6 preflight failed with exit code ${result.status}`);
+  }
+};
+
 const readOptionValue = (argv, index, option) => {
   const value = argv[index];
   if (value === undefined || value.startsWith('--')) {
@@ -418,7 +446,7 @@ const runK6 = (options, outputDir, cwd) => {
   }
   args.push(options.script);
 
-  const result = spawnSync('k6', args, { cwd, stdio: 'inherit' });
+  const result = spawnSync(options.k6Bin, args, { cwd, stdio: 'inherit' });
   if (result.error) {
     throw result.error;
   }
@@ -566,6 +594,7 @@ export const buildManifest = ({
   k6: {
     exit_code: k6ExitCode,
     script: options.script,
+    executable: options.k6Bin,
     summary_exported: summaryExported,
     summary_trend_stats: SUMMARY_TREND_STATS,
   },

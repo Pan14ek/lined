@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
   RuntimeScenarioRunError,
+  assertK6Available,
   buildManifest,
   buildRuntimeSummary,
   ensureLocalBaseUrl,
@@ -94,7 +95,19 @@ describe('parseArgs', () => {
 
     assert.equal(options.scenario, 'fixed-medium');
     assert.equal(options.workload, 'smoke');
+    assert.equal(options.k6Bin, 'k6');
     assert.equal(options.k6Env.VUS, '2');
+  });
+
+  it('accepts a custom k6 binary path', () => {
+    const options = parseArgs([
+      '--scenario',
+      'fixed-medium',
+      '--k6-bin',
+      '/opt/homebrew/bin/k6',
+    ]);
+
+    assert.equal(options.k6Bin, '/opt/homebrew/bin/k6');
   });
 
   it('rejects unknown scenarios', () => {
@@ -273,6 +286,7 @@ describe('buildManifest', () => {
         replicas: 1,
       },
       options: {
+        k6Bin: 'k6',
         k6Env: {
           VUS: '2',
         },
@@ -290,7 +304,17 @@ describe('buildManifest', () => {
 
     assert.equal(manifest.kubernetes.hpa_cleanup, true);
     assert.equal(manifest.collector_summary_written, true);
+    assert.equal(manifest.k6.executable, 'k6');
     assert.equal(manifest.k6.summary_exported, true);
     assert.equal(manifest.workload_env.VUS, '2');
+  });
+});
+
+describe('assertK6Available', () => {
+  it('reports a clear install hint when k6 is missing', () => {
+    assert.throws(
+        () => assertK6Available('/definitely/not/k6'),
+        /Install k6/
+    );
   });
 });

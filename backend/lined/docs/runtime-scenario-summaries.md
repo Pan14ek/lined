@@ -36,6 +36,21 @@ kubectl -n lined port-forward svc/lined-backend 8080:8080
 - keep k6 installed locally, or use an equivalent local k6 binary on `PATH`;
 - deploy Metrics Server only when CPU or memory utilization ratios are needed.
 
+On macOS with Homebrew:
+
+```bash
+brew install k6
+```
+
+If `k6` is installed outside `PATH`, pass it explicitly:
+
+```bash
+node load-tests/runtime-scenarios/runtime-summary-cli.mjs \
+  --scenario fixed-medium \
+  --workload smoke \
+  --k6-bin /absolute/path/to/k6
+```
+
 If Metrics Server is unavailable, the CLI still writes a valid summary and
 adds `cpu_utilization` and `memory_utilization` to `missing`.
 
