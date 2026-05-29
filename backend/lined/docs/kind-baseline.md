@@ -138,6 +138,8 @@ curl http://localhost:8080/actuator/metrics/http.server.requests
 
 See `docs/runtime-metrics-baseline.md` for the runtime signal map and the
 Prometheus scrape expectations for this baseline.
+See `docs/prometheus-telemetry-pipeline.md` when you need a local Prometheus
+server to retain samples during scenario runs.
 
 ## Configuration Notes
 
