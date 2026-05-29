@@ -167,7 +167,8 @@ Before using a runtime summary in an experiment:
 1. Run a k6 smoke workload from `docs/load-test-baseline.md`.
 2. Verify Actuator metrics from `docs/runtime-metrics-baseline.md`.
 3. Record the active deployment scenario from `docs/hpa-resource-scenarios.md`.
-4. Produce a summarized runtime JSON file.
+4. Produce a summarized runtime JSON file with
+   `docs/runtime-scenario-summaries.md`.
 5. Run the collector with `RUNTIME_METRICS_JSON` set.
 6. Confirm the stored document preserves `fitnessScore` and adds
    `metrics.runtime_metrics` separately.

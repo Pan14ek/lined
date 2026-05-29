@@ -40,3 +40,6 @@ out/
 .dolt/
 *.db
 .beads-credential-key
+
+# Local runtime experiment artifacts
+load-tests/runtime-scenarios/output/
