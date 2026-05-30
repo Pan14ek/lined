@@ -85,7 +85,7 @@ Cosmos DB.
 | `error_rate` | ratio, `0..1` | lower | k6 `http_req_failed` or request status metrics |
 | `throughput_rps` | requests per second, `>= 0` | higher | k6 `http_reqs.rate` or Prometheus request rate |
 | `availability` | ratio, `0..1` | higher | scrape `up`, health checks, or successful workload window |
-| `restart_count` | count, `>= 0` | lower | Kubernetes pod status |
+| `restart_count` | measurement-window restart delta, `>= 0` | lower | Kubernetes pod status before and after workload |
 | `cpu_utilization` | ratio of request or local capacity, `0..1+` | lower within stable throughput | Kubernetes metrics or summarized Prometheus/process CPU |
 | `memory_utilization` | ratio of limit/request, `0..1+` | lower within stable throughput | Kubernetes metrics or JVM/process summary |
 | `hpa_current_replicas` | count, `>= 0` | contextual | Kubernetes HPA |
@@ -112,6 +112,12 @@ When comparing a scenario to baseline:
 Runtime score formulas must publish their active metric set and weights in the
 stored document or in a versioned scoring document. That keeps article analysis
 reproducible when the metric set changes.
+
+Before a runtime summary is used for scoring, classify it against the initial
+constraint set in `docs/slo-constraint-thresholds.md` and the versioned
+threshold artifact at `load-tests/runtime-scenarios/slo-thresholds-v1.json`.
+Those constraints identify invalid, warning, and unknown evidence without
+changing the top-level structural `fitnessScore`.
 
 ## Optional Collector Input
 
