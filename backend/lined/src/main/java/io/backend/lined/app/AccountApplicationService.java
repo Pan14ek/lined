@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface AccountApplicationService {
 
-  UserDto registerUser(UserCreateDto createDto, boolean assignDefaultRole, boolean startFreePlan);
+  UserDto registerUser(UserCreateDto createDto);
 
   UserDto setRoles(Long userId, Set<String> roles);
 

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.domain.RoleEntity;
-import io.backend.lined.role.domain.RoleRepository;
+import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.api.UserMapper;
@@ -34,11 +34,11 @@ class UserServiceImplTest {
   @Mock
   private UserRepository userRepository;
   @Mock
-  private RoleRepository roleRepository;
-  @Mock
   private UserMapper userMapper;
   @Mock
   private PasswordEncoder passwordEncoder;
+  @Mock
+  private RoleResolver roleResolver;
 
   @InjectMocks
   private UserServiceImpl userService;
@@ -116,14 +116,15 @@ class UserServiceImplTest {
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
     when(userMapper.toEntity(dto)).thenReturn(testUser);
     when(passwordEncoder.encode(anyString())).thenReturn("encoded");
-    when(roleRepository.findByNameIgnoreCase("ADMIN")).thenReturn(Optional.of(role));
+    when(roleResolver.resolve(Set.of("ADMIN"))).thenReturn(Set.of(role));
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.create(dto);
 
     assertThat(result).isNotNull();
-    verify(roleRepository).findByNameIgnoreCase("ADMIN");
+    assertThat(testUser.getRoles()).containsExactly(role);
+    verify(roleResolver).resolve(Set.of("ADMIN"));
   }
 
   @Test
@@ -135,7 +136,8 @@ class UserServiceImplTest {
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
     when(userMapper.toEntity(dto)).thenReturn(testUser);
     when(passwordEncoder.encode(anyString())).thenReturn("encoded");
-    when(roleRepository.findByNameIgnoreCase("UNKNOWN_ROLE")).thenReturn(Optional.empty());
+    when(roleResolver.resolve(Set.of("UNKNOWN_ROLE")))
+        .thenThrow(new NotFoundException("Role not found: UNKNOWN_ROLE"));
 
     assertThatThrownBy(() -> userService.create(dto))
         .isInstanceOf(NotFoundException.class)
