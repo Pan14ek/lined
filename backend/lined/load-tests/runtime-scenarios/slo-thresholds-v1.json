@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "threshold_version": "slo-thresholds-v1",
+  "name": "lined-local-runtime-slo-thresholds",
+  "description": "Initial local experiment constraints for classifying Lined backend runtime summaries. These are not production SLOs, k6 pass/fail thresholds, or runtime fitness weights.",
+  "applies_to": {
+    "environment": "local-kind",
+    "workloads": [
+      "smoke",
+      "baseline",
+      "read-heavy",
+      "write-heavy",
+      "mixed"
+    ],
+    "excluded_workloads": [
+      "negative-smoke",
+      "stress"
+    ],
+    "measurement_window": "workload-window-after-rollout-and-readiness"
+  },
+  "classifications": [
+    "valid",
+    "warning",
+    "invalid",
+    "unknown"
+  ],
+  "thresholds": [
+    {
+      "id": "latency-p95-local",
+      "metric": "latency_p95_ms",
+      "operator": "<=",
+      "value": 1000,
+      "unit": "ms",
+      "severity": "invalid",
+      "scope": "workload-window",
+      "source": "existing-k6-guardrail",
+      "missing_behavior": "unknown",
+      "rationale": "Keeps stable local scenario comparisons inside the existing k6 reproducibility guardrail without treating it as a production SLO."
+    },
+    {
+      "id": "latency-p99-local",
+      "metric": "latency_p99_ms",
+      "operator": "<=",
+      "value": 2000,
+      "unit": "ms",
+      "severity": "invalid",
+      "scope": "workload-window",
+      "source": "existing-k6-guardrail",
+      "missing_behavior": "unknown",
+      "rationale": "Catches tail latency regressions during stable local scenario comparisons."
+    },
+    {
+      "id": "error-rate-local",
+      "metric": "error_rate",
+      "operator": "<=",
+      "value": 0.01,
+      "unit": "ratio",
+      "severity": "invalid",
+      "scope": "workload-window",
+      "source": "existing-k6-guardrail",
+      "missing_behavior": "unknown",
+      "rationale": "Keeps stable scenario runs below the existing local failed-request guardrail."
+    },
+    {
+      "id": "availability-local",
+      "metric": "availability",
+      "operator": ">=",
+      "value": 0.99,
+      "unit": "ratio",
+      "severity": "invalid",
+      "scope": "workload-window",
+      "source": "local-experiment-assumption",
+      "missing_behavior": "unknown",
+      "rationale": "Separates application availability evidence from request-level error evidence."
+    },
+    {
+      "id": "restart-count-delta-local",
+      "metric": "restart_count",
+      "operator": "==",
+      "value": 0,
+      "unit": "count",
+      "severity": "invalid",
+      "scope": "workload-window",
+      "source": "local-experiment-assumption",
+      "missing_behavior": "unknown",
+      "rationale": "A stable comparison run should not include backend container restarts during measurement."
+    },
+    {
+      "id": "readiness-local",
+      "evidence_source": "readiness_probe_or_actuator_health",
+      "operator": "==",
+      "value": true,
+      "unit": "boolean",
+      "severity": "invalid",
+      "scope": "pre-workload-and-workload-window",
+      "source": "local-experiment-assumption",
+      "missing_behavior": "unknown",
+      "rationale": "Workload measurements should target a ready backend rather than rollout or database transition behavior. This is external evidence, not a runtime-summary metric."
+    },
+    {
+      "id": "cpu-pressure-local",
+      "metric": "cpu_utilization",
+      "operator": ">",
+      "value": 0.85,
+      "unit": "ratio",
+      "severity": "warning",
+      "scope": "workload-window",
+      "source": "future-calibration-needed",
+      "missing_behavior": "unknown",
+      "rationale": "High CPU can explain latency or HPA behavior, but it should be interpreted with throughput, errors, and scenario type."
+    },
+    {
+      "id": "memory-pressure-local",
+      "metric": "memory_utilization",
+      "operator": ">",
+      "value": 0.85,
+      "unit": "ratio",
+      "severity": "warning",
+      "scope": "workload-window",
+      "source": "future-calibration-needed",
+      "missing_behavior": "unknown",
+      "rationale": "High memory can explain GC or stability symptoms, but it is contextual unless paired with latency, error, or restart evidence."
+    }
+  ],
+  "context_metrics": [
+    {
+      "metric": "throughput_rps",
+      "reason": "Throughput is needed to interpret resource efficiency, but is not a hard validity constraint in v1."
+    },
+    {
+      "metric": "hpa_current_replicas",
+      "reason": "Current replica count explains autoscaling state and is not inherently good or bad."
+    },
+    {
+      "metric": "hpa_desired_replicas",
+      "reason": "Desired replica count explains HPA response and missing Metrics Server evidence."
+    }
+  ]
+}
