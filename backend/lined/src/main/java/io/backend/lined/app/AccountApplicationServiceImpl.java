@@ -27,7 +27,7 @@ public class AccountApplicationServiceImpl implements AccountApplicationService 
   @Transactional
   public UserDto registerUser(UserCreateDto createDto) {
     UserDto user = userService.create(createDto);
-    roleService.addUserRoles(user.id(), provisioningPolicy.defaultRoles());
+    roleService.setUserRoles(user.id(), provisioningPolicy.defaultRoles());
 
     PlanDto defaultPlan = planService.getByName(provisioningPolicy.defaultPlanName());
     subscriptionService.start(

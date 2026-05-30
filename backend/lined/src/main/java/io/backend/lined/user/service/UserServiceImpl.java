@@ -5,7 +5,6 @@ import static java.lang.String.format;
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
-import io.backend.lined.role.domain.RoleRepository;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
@@ -17,6 +16,7 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -35,7 +35,6 @@ public class UserServiceImpl implements UserService {
   private static final String USERNAME_ALREADY_EXISTS_ERROR_MESSAGE = "Username already exists: %s";
 
   private final UserRepository userRepository;
-  private final RoleRepository roleRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final RoleResolver roleResolver;
@@ -157,8 +156,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserPageDto findUsersByRole(String roleName, int page, int size) {
-    roleRepository.findByNameIgnoreCase(roleName)
-        .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
+    roleResolver.resolve(Set.of(roleName));
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
     Page<UserEntity> result = userRepository.findAllByRoleName(roleName, pageable);
     List<UserSearchResultDto> content = result.getContent()
