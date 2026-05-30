@@ -5,8 +5,8 @@ import static java.lang.String.format;
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
-import io.backend.lined.role.domain.RoleEntity;
 import io.backend.lined.role.domain.RoleRepository;
+import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.api.UserMapper;
@@ -16,10 +16,7 @@ import io.backend.lined.user.api.UserUpdateDto;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -41,6 +38,7 @@ public class UserServiceImpl implements UserService {
   private final RoleRepository roleRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
+  private final RoleResolver roleResolver;
 
   @Override
   public UserDto create(UserCreateDto dto) {
@@ -55,7 +53,7 @@ public class UserServiceImpl implements UserService {
     entity.setPassword(passwordEncoder.encode(dto.password()));
 
     if (dto.roles() != null && !dto.roles().isEmpty()) {
-      entity.setRoles(resolveRoles(dto.roles()));
+      entity.setRoles(roleResolver.resolve(dto.roles()));
     }
 
     try {
@@ -93,7 +91,7 @@ public class UserServiceImpl implements UserService {
     userMapper.updateEntity(entity, dto);
 
     if (dto.roles() != null) {
-      entity.setRoles(resolveRoles(dto.roles()));
+      entity.setRoles(roleResolver.resolve(dto.roles()));
     }
 
     try {
@@ -168,18 +166,6 @@ public class UserServiceImpl implements UserService {
         .map(userMapper::toSearchResultDto)
         .toList();
     return new UserPageDto(content, page, size, result.getTotalElements(), result.getTotalPages());
-  }
-
-  private Set<RoleEntity> resolveRoles(Set<String> roleNames) {
-    Set<RoleEntity> out = new HashSet<>();
-    for (String roleName : roleNames) {
-      Optional<RoleEntity> r = roleRepository.findByNameIgnoreCase(roleName);
-      if (r.isEmpty()) {
-        throw new NotFoundException("Role not found: " + roleName);
-      }
-      out.add(r.get());
-    }
-    return out;
   }
 
   private UserEntity mustUser(Long id) {

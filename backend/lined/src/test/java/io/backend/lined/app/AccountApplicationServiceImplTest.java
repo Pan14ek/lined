@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +36,8 @@ class AccountApplicationServiceImplTest {
   private PlanService planService;
   @Mock
   private SubscriptionService subscriptionService;
+  @Mock
+  private AccountProvisioningPolicy provisioningPolicy;
 
   @InjectMocks
   private AccountApplicationServiceImpl accountService;
@@ -68,12 +69,15 @@ class AccountApplicationServiceImplTest {
   ======================= */
 
   @Test
-  void registerUser_success_withDefaultRoleAndFreePlan() {
+  void registerUser_success_appliesDefaultProvisioningPolicy() {
     when(userService.create(createDto)).thenReturn(userDto);
     when(userService.getById(1L)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
+    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
+    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
     when(planService.getByName("FREE")).thenReturn(freePlan);
 
-    UserDto result = accountService.registerUser(createDto, true, true);
+    UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(userDto);
     verify(roleService).addUserRoles(1L, Set.of("ROLE_USER"));
@@ -81,40 +85,34 @@ class AccountApplicationServiceImplTest {
   }
 
   @Test
-  void registerUser_withoutDefaultRole_doesNotAssignRole() {
+  void registerUser_usesPolicyPlanNameForDefaultSubscription() {
+    PlanDto starterPlan = new PlanDto(20L, "STARTER", BigDecimal.ZERO, 30, now);
+
     when(userService.create(createDto)).thenReturn(userDto);
     when(userService.getById(1L)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
+    when(provisioningPolicy.defaultPlanName()).thenReturn("STARTER");
+    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
+    when(planService.getByName("STARTER")).thenReturn(starterPlan);
+
+    accountService.registerUser(createDto);
+
+    verify(planService).getByName("STARTER");
+    verify(subscriptionService).start(eq(1L), eq(20L), isNull(), isNull(), eq(true));
+  }
+
+  @Test
+  void registerUser_usesPolicyActiveFlagForDefaultSubscription() {
+    when(userService.create(createDto)).thenReturn(userDto);
+    when(userService.getById(1L)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
+    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
+    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(false);
     when(planService.getByName("FREE")).thenReturn(freePlan);
 
-    accountService.registerUser(createDto, false, true);
+    accountService.registerUser(createDto);
 
-    verify(roleService, never()).addUserRoles(any(), any());
-    verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(true));
-  }
-
-  @Test
-  void registerUser_withoutFreePlan_doesNotStartSubscription() {
-    when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(1L)).thenReturn(userDto);
-
-    accountService.registerUser(createDto, true, false);
-
-    verify(roleService).addUserRoles(1L, Set.of("ROLE_USER"));
-    verify(subscriptionService, never()).start(any(), any(), any(), any(), any());
-    verify(planService, never()).getByName(any());
-  }
-
-  @Test
-  void registerUser_withNeitherRoleNorPlan_onlyCreatesUser() {
-    when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(1L)).thenReturn(userDto);
-
-    UserDto result = accountService.registerUser(createDto, false, false);
-
-    assertThat(result).isEqualTo(userDto);
-    verify(roleService, never()).addUserRoles(any(), any());
-    verify(subscriptionService, never()).start(any(), any(), any(), any(), any());
-    verify(planService, never()).getByName(any());
+    verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(false));
   }
 
   @Test
@@ -124,11 +122,14 @@ class AccountApplicationServiceImplTest {
     );
 
     when(userService.create(createDto)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
+    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
+    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
+    when(planService.getByName("FREE")).thenReturn(freePlan);
     when(userService.getById(1L)).thenReturn(refreshedUser);
 
-    UserDto result = accountService.registerUser(createDto, false, false);
+    UserDto result = accountService.registerUser(createDto);
 
-    // Should return the refreshed version from getById, not the one from create
     assertThat(result).isEqualTo(refreshedUser);
   }
 

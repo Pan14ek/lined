@@ -1,5 +1,6 @@
 package io.backend.lined.user.api;
 
+import io.backend.lined.app.AccountApplicationService;
 import io.backend.lined.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
   private final UserService userService;
+  private final AccountApplicationService accountApplicationService;
 
   @Operation(
       summary = "Create user",
@@ -47,7 +49,7 @@ public class UserController {
           )
       )
       @Valid @RequestBody UserCreateDto dto) {
-    return userService.create(dto);
+    return accountApplicationService.registerUser(dto);
   }
 
   @Operation(

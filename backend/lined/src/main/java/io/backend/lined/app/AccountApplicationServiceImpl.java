@@ -21,20 +21,17 @@ public class AccountApplicationServiceImpl implements AccountApplicationService 
   private final RoleService roleService;
   private final PlanService planService;
   private final SubscriptionService subscriptionService;
+  private final AccountProvisioningPolicy provisioningPolicy;
 
   @Override
   @Transactional
-  public UserDto registerUser(UserCreateDto createDto, boolean assignDefaultRole,
-                              boolean startFreePlan) {
+  public UserDto registerUser(UserCreateDto createDto) {
     UserDto user = userService.create(createDto);
-    if (assignDefaultRole) {
-      roleService.addUserRoles(user.id(), Set.of("ROLE_USER"));
-    }
+    roleService.addUserRoles(user.id(), provisioningPolicy.defaultRoles());
 
-    if (startFreePlan) {
-      PlanDto free = planService.getByName("FREE");
-      subscriptionService.start(user.id(), free.id(), null, null, true);
-    }
+    PlanDto defaultPlan = planService.getByName(provisioningPolicy.defaultPlanName());
+    subscriptionService.start(
+        user.id(), defaultPlan.id(), null, null, provisioningPolicy.defaultSubscriptionActive());
 
     return userService.getById(user.id());
   }

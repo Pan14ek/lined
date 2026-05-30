@@ -35,6 +35,8 @@ class RoleServiceImplTest {
   private RoleRepository roleRepository;
   @Mock
   private RoleMapper roleMapper;
+  @Mock
+  private RoleResolver roleResolver;
 
   @InjectMocks
   private RoleServiceImpl roleService;
@@ -127,7 +129,7 @@ class RoleServiceImplTest {
   @Test
   void setUserRoles_success() {
     when(userRepository.findWithRolesById(1L)).thenReturn(Optional.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("ADMIN")).thenReturn(Optional.of(adminRole));
+    when(roleResolver.resolve(Set.of("ADMIN"))).thenReturn(Set.of(adminRole));
 
     Set<String> result = roleService.setUserRoles(1L, Set.of("ADMIN"));
 
@@ -149,7 +151,8 @@ class RoleServiceImplTest {
   @Test
   void setUserRoles_throwsNotFound_whenRoleDoesNotExist() {
     when(userRepository.findWithRolesById(1L)).thenReturn(Optional.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("UNKNOWN")).thenReturn(Optional.empty());
+    when(roleResolver.resolve(Set.of("UNKNOWN")))
+        .thenThrow(new NotFoundException("Role not found: UNKNOWN"));
 
     assertThatThrownBy(() -> roleService.setUserRoles(1L, Set.of("UNKNOWN")))
         .isInstanceOf(NotFoundException.class)
@@ -161,7 +164,7 @@ class RoleServiceImplTest {
     userEntity.setRoles(new HashSet<>(Set.of(adminRole)));
 
     when(userRepository.findWithRolesById(1L)).thenReturn(Optional.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("USER")).thenReturn(Optional.of(userRole));
+    when(roleResolver.resolve(Set.of("USER"))).thenReturn(Set.of(userRole));
 
     Set<String> result = roleService.setUserRoles(1L, Set.of("USER"));
 
@@ -176,7 +179,7 @@ class RoleServiceImplTest {
   @Test
   void addUserRoles_success() {
     when(userRepository.findWithRolesById(1L)).thenReturn(Optional.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("ADMIN")).thenReturn(Optional.of(adminRole));
+    when(roleResolver.resolve(Set.of("ADMIN"))).thenReturn(Set.of(adminRole));
 
     Set<String> result = roleService.addUserRoles(1L, Set.of("ADMIN"));
 

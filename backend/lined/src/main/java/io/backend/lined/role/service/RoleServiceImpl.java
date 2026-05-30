@@ -30,6 +30,7 @@ public class RoleServiceImpl implements RoleService {
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final RoleMapper roleMapper;
+  private final RoleResolver roleResolver;
 
   @Override
   public List<RoleDto> listAll() {
@@ -56,7 +57,7 @@ public class RoleServiceImpl implements RoleService {
     UserEntity user = userRepository.findWithRolesById(userId)
         .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
 
-    Set<RoleEntity> newRoles = resolveRoles(roles);
+    Set<RoleEntity> newRoles = roleResolver.resolve(roles);
 
     user.setRoles(newRoles);
     userRepository.save(user);
@@ -73,7 +74,7 @@ public class RoleServiceImpl implements RoleService {
     UserEntity user = userRepository.findWithRolesById(userId)
         .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
 
-    Set<RoleEntity> add = resolveRoles(roles);
+    Set<RoleEntity> add = roleResolver.resolve(roles);
     user.getRoles().addAll(add);
     userRepository.save(user);
 
@@ -101,23 +102,6 @@ public class RoleServiceImpl implements RoleService {
     UserEntity user = userRepository.findWithRolesById(userId)
         .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
     return toNames(user.getRoles());
-  }
-
-  private Set<RoleEntity> resolveRoles(Set<String> roleNames) {
-    if (roleNames == null || roleNames.isEmpty()) {
-      return new LinkedHashSet<>();
-    }
-    Set<RoleEntity> out = new LinkedHashSet<>();
-    for (String name : roleNames) {
-      if (name == null || name.isBlank()) {
-        continue;
-      }
-
-      RoleEntity role = roleRepository.findByNameIgnoreCase(name)
-          .orElseThrow(() -> new NotFoundException(format("Role not found: %s", name)));
-      out.add(role);
-    }
-    return out;
   }
 
   private Set<String> toNames(Set<RoleEntity> roles) {
