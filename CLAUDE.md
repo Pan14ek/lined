@@ -82,6 +82,16 @@ Required secrets: `SONAR_TOKEN`, `COSMOS_DB_CONNECTION_STRING`
 After any backend change, the pipeline runs Checkstyle + SpotBugs + JaCoCo + SonarCloud.
 A fitness score (−1 to +1) is computed and stored in Azure Cosmos DB.
 
+## Skills
+
+Custom skills live in `.claude/skills/` and are invokable as slash commands.
+
+| Skill | Command | When to use |
+|---|---|---|
+| diagnose | `/diagnose` | Bug reports, performance regressions, anything broken/failing |
+
+> The canonical source for each skill is also kept at `backend/lined/.agents/skills/<name>/SKILL.md` for Codex compatibility.
+
 ## Do Not
 
 - Commit secrets, `.env` files, or credentials

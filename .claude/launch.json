@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mockups",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "4321", "/Users/oleksii_makieiev/Documents/startups/Lined/mockups"],
+      "port": 4321
+    },
+    {
+      "name": "lined-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173,
+      "cwd": "/Users/oleksii_makieiev/Documents/startups/Lined/lined-web"
+    }
+  ]
+}
