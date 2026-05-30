@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.domain.RoleEntity;
-import io.backend.lined.role.domain.RoleRepository;
+import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserMapper;
 import io.backend.lined.user.api.UserPageDto;
 import io.backend.lined.user.api.UserSearchResultDto;
@@ -18,7 +18,6 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,7 @@ class UserServiceImplSearchTest {
   private UserRepository userRepository;
 
   @Mock
-  private RoleRepository roleRepository;
+  private RoleResolver roleResolver;
 
   @Mock
   private UserMapper userMapper;
@@ -165,7 +164,7 @@ class UserServiceImplSearchTest {
     role.setName("ADMIN");
 
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("ADMIN")).thenReturn(Optional.of(role));
+    when(roleResolver.resolve(Set.of("ADMIN"))).thenReturn(Set.of(role));
     when(userRepository.findAllByRoleName(eq("ADMIN"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
@@ -174,13 +173,14 @@ class UserServiceImplSearchTest {
     assertThat(result).isNotNull();
     assertThat(result.content()).hasSize(1);
     assertThat(result.content().get(0).username()).isEqualTo("testuser");
-    verify(roleRepository).findByNameIgnoreCase("ADMIN");
+    verify(roleResolver).resolve(Set.of("ADMIN"));
     verify(userRepository).findAllByRoleName(eq("ADMIN"), any(Pageable.class));
   }
 
   @Test
   void findUsersByRole_throwsNotFound_whenRoleDoesNotExist() {
-    when(roleRepository.findByNameIgnoreCase("UNKNOWN")).thenReturn(Optional.empty());
+    when(roleResolver.resolve(Set.of("UNKNOWN")))
+        .thenThrow(new NotFoundException("Role not found: UNKNOWN"));
 
     assertThatThrownBy(() -> userService.findUsersByRole("UNKNOWN", 0, 20))
         .isInstanceOf(NotFoundException.class)
@@ -195,9 +195,9 @@ class UserServiceImplSearchTest {
     role.setName("SUPERADMIN");
 
     Page<UserEntity> emptyPage = new PageImpl<>(List.of());
-    when(roleRepository.findByNameIgnoreCase("SUPERADMIN")).thenReturn(Optional.of(role));
-    when(userRepository.findAllByRoleName(eq("SUPERADMIN"), any(Pageable.class))).thenReturn(
-        emptyPage);
+    when(roleResolver.resolve(Set.of("SUPERADMIN"))).thenReturn(Set.of(role));
+    when(userRepository.findAllByRoleName(eq("SUPERADMIN"), any(Pageable.class)))
+        .thenReturn(emptyPage);
 
     UserPageDto result = userService.findUsersByRole("SUPERADMIN", 0, 20);
 
@@ -212,14 +212,14 @@ class UserServiceImplSearchTest {
     role.setName("admin");
 
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity));
-    when(roleRepository.findByNameIgnoreCase("admin")).thenReturn(Optional.of(role));
+    when(roleResolver.resolve(Set.of("admin"))).thenReturn(Set.of(role));
     when(userRepository.findAllByRoleName(eq("admin"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
     UserPageDto result = userService.findUsersByRole("admin", 0, 20);
 
     assertThat(result.content()).hasSize(1);
-    verify(roleRepository).findByNameIgnoreCase("admin");
+    verify(roleResolver).resolve(Set.of("admin"));
   }
 
   @Test
@@ -228,7 +228,7 @@ class UserServiceImplSearchTest {
     role.setName("USER");
 
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity), Pageable.ofSize(1), 5);
-    when(roleRepository.findByNameIgnoreCase("USER")).thenReturn(Optional.of(role));
+    when(roleResolver.resolve(Set.of("USER"))).thenReturn(Set.of(role));
     when(userRepository.findAllByRoleName(eq("USER"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 

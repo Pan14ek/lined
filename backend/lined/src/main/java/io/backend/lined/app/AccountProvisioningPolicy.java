@@ -1,23 +1,30 @@
 package io.backend.lined.app;
 
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AccountProvisioningPolicy {
 
-  private static final String DEFAULT_ROLE_NAME = "ROLE_USER";
-  private static final String DEFAULT_PLAN_NAME = "FREE";
+  @Value("${lined.provisioning.default-role:ROLE_USER}")
+  private String defaultRole;
+
+  @Value("${lined.provisioning.default-plan:FREE}")
+  private String defaultPlan;
+
+  @Value("${lined.provisioning.default-subscription-active:true}")
+  private boolean subscriptionActive;
 
   public Set<String> defaultRoles() {
-    return Set.of(DEFAULT_ROLE_NAME);
+    return Set.of(defaultRole);
   }
 
   public String defaultPlanName() {
-    return DEFAULT_PLAN_NAME;
+    return defaultPlan;
   }
 
   public boolean defaultSubscriptionActive() {
-    return true;
+    return subscriptionActive;
   }
 }

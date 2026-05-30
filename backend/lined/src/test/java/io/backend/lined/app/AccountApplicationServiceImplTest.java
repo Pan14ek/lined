@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,7 +81,7 @@ class AccountApplicationServiceImplTest {
     UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(userDto);
-    verify(roleService).addUserRoles(1L, Set.of("ROLE_USER"));
+    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
     verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(true));
   }
 
@@ -97,6 +98,7 @@ class AccountApplicationServiceImplTest {
 
     accountService.registerUser(createDto);
 
+    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
     verify(planService).getByName("STARTER");
     verify(subscriptionService).start(eq(1L), eq(20L), isNull(), isNull(), eq(true));
   }
@@ -112,7 +114,29 @@ class AccountApplicationServiceImplTest {
 
     accountService.registerUser(createDto);
 
+    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
     verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(false));
+  }
+
+  @Test
+  void registerUser_policyRolesReplaceAnyDtoRoles() {
+    UserCreateDto adminDto =
+        new UserCreateDto("adminuser", "admin@example.com", "password", Set.of("ROLE_ADMIN"));
+    UserDto adminUserDto =
+        new UserDto(2L, "adminuser", "admin@example.com", now, Set.of("ROLE_ADMIN"), null, null);
+    Set<String> policyRoles = Set.of("ROLE_USER");
+
+    when(userService.create(adminDto)).thenReturn(adminUserDto);
+    when(userService.getById(2L)).thenReturn(adminUserDto);
+    when(provisioningPolicy.defaultRoles()).thenReturn(policyRoles);
+    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
+    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
+    when(planService.getByName("FREE")).thenReturn(freePlan);
+
+    accountService.registerUser(adminDto);
+
+    verify(roleService).setUserRoles(2L, policyRoles);
+    verify(roleService, never()).addUserRoles(any(), any());
   }
 
   @Test
