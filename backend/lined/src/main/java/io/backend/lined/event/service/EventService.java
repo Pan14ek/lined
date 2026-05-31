@@ -1,5 +1,8 @@
 package io.backend.lined.event.service;
 
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
@@ -21,9 +24,9 @@ public interface EventService {
    * @param dto           the event creation data
    * @param currentUserId the ID of the user creating the event
    * @return the created event as a DTO
-   * @throws IllegalArgumentException if startAt is not before endAt
-   * @throws SecurityException        if the user is not a lobby member
-   * @throws NoSuchElementException   if the lobby or user is not found
+   * @throws BadRequestException if startAt is not before endAt
+   * @throws ForbiddenException  if the user is not a lobby member
+   * @throws NotFoundException   if the lobby or user is not found
    */
   EventDto create(EventCreateDto dto, Long currentUserId);
 
@@ -35,9 +38,9 @@ public interface EventService {
    * @param dto           the update data
    * @param currentUserId the ID of the requesting user
    * @return the updated event as a DTO
-   * @throws IllegalArgumentException if the updated dates are invalid
-   * @throws SecurityException        if the user is not a lobby member
-   * @throws NoSuchElementException   if the event is not found
+   * @throws BadRequestException if the updated dates are invalid
+   * @throws ForbiddenException  if the user is not a lobby member
+   * @throws NotFoundException   if the event is not found
    */
   EventDto update(Long id, EventUpdateDto dto, Long currentUserId);
 
@@ -46,8 +49,8 @@ public interface EventService {
    *
    * @param id            the event ID to delete
    * @param currentUserId the ID of the requesting user
-   * @throws SecurityException      if the user is not a lobby member
-   * @throws NoSuchElementException if the event is not found
+   * @throws ForbiddenException if the user is not a lobby member
+   * @throws NotFoundException  if the event is not found
    */
   void delete(Long id, Long currentUserId);
 
@@ -59,8 +62,8 @@ public interface EventService {
    * @param to            the end of the time window (exclusive)
    * @param currentUserId the ID of the requesting user
    * @return a list of events ordered by start time
-   * @throws IllegalArgumentException if the time window is invalid
-   * @throws SecurityException        if the user is not a lobby member
+   * @throws BadRequestException if the time window is invalid
+   * @throws ForbiddenException  if the user is not a lobby member
    */
   List<EventDto> list(Long lobbyId, OffsetDateTime from, OffsetDateTime to, Long currentUserId);
 
@@ -72,8 +75,8 @@ public interface EventService {
    * @param end         the end of the time window
    * @param requesterId the ID of the requesting user
    * @return a list of conflicting event pairs with overlap bounds
-   * @throws IllegalArgumentException if start is not before end
-   * @throws SecurityException        if the user is not a lobby member
+   * @throws BadRequestException if start is not before end
+   * @throws ForbiddenException  if the user is not a lobby member
    */
   List<EventConflictDto> findConflicts(Long lobbyId, OffsetDateTime start,
                                        OffsetDateTime end, Long requesterId);
@@ -86,7 +89,7 @@ public interface EventService {
    * @param end         the end of the time window
    * @param requesterId the ID of the requesting user
    * @return a conflict result with whether a conflict exists and which event causes it
-   * @throws IllegalArgumentException if start is not before end
+   * @throws BadRequestException if start is not before end
    */
   UserConflictDto hasConflict(Long userId, OffsetDateTime start,
                               OffsetDateTime end, Long requesterId);

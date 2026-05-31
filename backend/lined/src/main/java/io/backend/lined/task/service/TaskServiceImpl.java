@@ -1,6 +1,8 @@
 package io.backend.lined.task.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -15,7 +17,6 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,12 @@ public class TaskServiceImpl implements TaskService {
       spec = spec.and((root, q, cb) -> cb.equal(root.get("assignee").get("id"), assigneeId));
     }
     if (status != null) {
-      var st = TaskStatus.valueOf(status);
+      TaskStatus st;
+      try {
+        st = TaskStatus.valueOf(status);
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid status value: " + status);
+      }
       spec = spec.and((root, q, cb) -> cb.equal(root.get("status"), st));
     }
 
@@ -97,18 +103,18 @@ public class TaskServiceImpl implements TaskService {
   }
 
   private UserEntity mustUser(Long id) {
-    return userRepo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("User %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(userRepo.findById(id),
+        () -> new NotFoundException("User %d not found".formatted(id)));
   }
 
   private LobbyEntity mustLobby(Long id) {
-    return lobbyRepo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(lobbyRepo.findById(id),
+        () -> new NotFoundException("Lobby %d not found".formatted(id)));
   }
 
   private TaskEntity mustTask(Long id) {
     return EntityFinder.findOrThrow(repo.findById(id),
-        () -> new NoSuchElementException("Task %d not found".formatted(id)));
+        () -> new NotFoundException("Task %d not found".formatted(id)));
   }
 
 }
