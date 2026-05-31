@@ -21,6 +21,7 @@ public class LobbyServiceImpl implements LobbyService {
   private final LobbyRepository lobbyRepo;
   private final UserRepository userRepo;
   private final LobbyMapper mapper;
+  private final LobbyAccessPolicy accessPolicy;
 
   @Override
   public LobbyDto create(LobbyCreateDto dto, Long ownerId) {
@@ -55,7 +56,7 @@ public class LobbyServiceImpl implements LobbyService {
   public LobbyDto addMember(Long lobbyId, Long userIdToAdd, Long requesterId) {
     var lobby = mustLobby(lobbyId);
 
-    ensureOwner(lobby, requesterId);
+    accessPolicy.ensureOwner(lobby, requesterId);
 
     var user = userRepo.findById(userIdToAdd)
         .orElseThrow(() -> new NoSuchElementException("User %d not found".formatted(userIdToAdd)));
@@ -68,7 +69,7 @@ public class LobbyServiceImpl implements LobbyService {
   public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId) {
     var lobby = mustLobby(lobbyId);
 
-    ensureOwner(lobby, requesterId);
+    accessPolicy.ensureOwner(lobby, requesterId);
 
     if (lobby.getOwner().getId().equals(userIdToRemove)) {
       throw new IllegalArgumentException("Owner cannot be removed from lobby");
@@ -81,14 +82,8 @@ public class LobbyServiceImpl implements LobbyService {
   @Override
   public void delete(Long lobbyId, Long requesterId) {
     var lobby = mustLobby(lobbyId);
-    ensureOwner(lobby, requesterId);
+    accessPolicy.ensureOwner(lobby, requesterId);
     lobbyRepo.delete(lobby);
-  }
-
-  private void ensureOwner(LobbyEntity lobby, Long requesterId) {
-    if (!lobby.getOwner().getId().equals(requesterId)) {
-      throw new SecurityException("Only lobby owner can perform this action");
-    }
   }
 
   private LobbyEntity mustLobby(Long id) {

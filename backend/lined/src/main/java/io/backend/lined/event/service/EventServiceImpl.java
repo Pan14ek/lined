@@ -10,6 +10,7 @@ import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
+import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
@@ -29,12 +30,13 @@ public class EventServiceImpl implements EventService {
   private final LobbyRepository lobbyRepo;
   private final UserRepository userRepo;
   private final EventMapper mapper;
+  private final LobbyAccessPolicy accessPolicy;
 
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId) {
     var owner = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
-    ensureMember(lobby, currentUserId);
+    accessPolicy.ensureMember(lobby, currentUserId);
 
     if (!dto.startAt().isBefore(dto.endAt())) {
       throw new IllegalArgumentException("startAt must be before endAt");
@@ -56,7 +58,7 @@ public class EventServiceImpl implements EventService {
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId) {
     var e = mustEvent(id);
-    ensureMember(e.getLobby(), currentUserId);
+    accessPolicy.ensureMember(e.getLobby(), currentUserId);
 
     if (dto.title() != null && !dto.title().isBlank()) {
       e.setTitle(dto.title());
@@ -84,7 +86,7 @@ public class EventServiceImpl implements EventService {
   @Override
   public void delete(Long id, Long currentUserId) {
     var e = mustEvent(id);
-    ensureMember(e.getLobby(), currentUserId);
+    accessPolicy.ensureMember(e.getLobby(), currentUserId);
     repo.delete(e);
   }
 
@@ -92,7 +94,7 @@ public class EventServiceImpl implements EventService {
   public List<EventDto> list(Long lobbyId, OffsetDateTime from, OffsetDateTime to,
                              Long currentUserId) {
     var lobby = mustLobby(lobbyId);
-    ensureMember(lobby, currentUserId);
+    accessPolicy.ensureMember(lobby, currentUserId);
 
     if (from == null || to == null || !from.isBefore(to)) {
       throw new IllegalArgumentException("Invalid time window: from < to is required");
@@ -106,7 +108,7 @@ public class EventServiceImpl implements EventService {
                                               OffsetDateTime start, OffsetDateTime end,
                                               Long requesterId) {
     var lobby = mustLobby(lobbyId);
-    ensureMember(lobby, requesterId);
+    accessPolicy.ensureMember(lobby, requesterId);
     if (!start.isBefore(end)) {
       throw new IllegalArgumentException("start must be before end");
     }
@@ -157,11 +159,4 @@ public class EventServiceImpl implements EventService {
         .orElseThrow(() -> new NoSuchElementException("Event %d not found".formatted(id)));
   }
 
-  private void ensureMember(LobbyEntity lobby, Long userId) {
-    var isOwner = lobby.getOwner().getId().equals(userId);
-    var isMember = lobby.getMembers().stream().anyMatch(u -> u.getId().equals(userId));
-    if (!isOwner && !isMember) {
-      throw new SecurityException("User is not a member of the lobby");
-    }
-  }
 }
