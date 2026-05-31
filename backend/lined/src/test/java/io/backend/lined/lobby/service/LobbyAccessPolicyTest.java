@@ -3,6 +3,7 @@ package io.backend.lined.lobby.service;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.user.domain.UserEntity;
@@ -63,9 +64,9 @@ class LobbyAccessPolicyTest {
   }
 
   @Test
-  void ensureMember_throwsSecurity_whenUserIsOutsider() {
+  void ensureMember_throwsForbidden_whenUserIsOutsider() {
     assertThatThrownBy(() -> policy.ensureMember(lobby, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
   }
 
@@ -76,9 +77,9 @@ class LobbyAccessPolicyTest {
   }
 
   @Test
-  void ensureOwner_throwsSecurity_whenUserIsNotOwner() {
+  void ensureOwner_throwsForbidden_whenUserIsNotOwner() {
     assertThatThrownBy(() -> policy.ensureOwner(lobby, 2L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("owner");
   }
 

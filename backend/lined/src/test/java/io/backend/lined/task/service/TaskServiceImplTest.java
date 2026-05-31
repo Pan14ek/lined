@@ -7,6 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -22,7 +25,6 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,41 +102,41 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void create_throwsNoSuchElement_whenCreatorNotFound() {
+  void create_throwsNotFound_whenCreatorNotFound() {
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
 
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.create(dto, 99L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
 
     verify(repo, never()).save(any());
   }
 
   @Test
-  void create_throwsNoSuchElement_whenLobbyNotFound() {
+  void create_throwsNotFound_whenLobbyNotFound() {
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 999L, null, null);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.create(dto, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
 
     verify(repo, never()).save(any());
   }
 
   @Test
-  void create_throwsSecurity_whenUserIsNotLobbyMember() {
+  void create_throwsForbidden_whenUserIsNotLobbyMember() {
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
 
     when(userRepo.findById(99L)).thenReturn(Optional.of(new UserEntity()));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> taskService.create(dto, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
 
     verify(repo, never()).save(any());
@@ -173,24 +175,24 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void update_throwsNoSuchElement_whenTaskNotFound() {
+  void update_throwsNotFound_whenTaskNotFound() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title");
 
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.update(999L, dto, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void update_throwsSecurity_whenUserIsNotLobbyMember() {
+  void update_throwsForbidden_whenUserIsNotLobbyMember() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title");
 
     when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.update(555L, dto, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
   }
 
@@ -209,22 +211,22 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void delete_throwsNoSuchElement_whenTaskNotFound() {
+  void delete_throwsNotFound_whenTaskNotFound() {
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.delete(999L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
 
     verify(repo, never()).delete(any(TaskEntity.class));
   }
 
   @Test
-  void delete_throwsSecurity_whenUserIsNotLobbyMember() {
+  void delete_throwsForbidden_whenUserIsNotLobbyMember() {
     when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.delete(555L, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
 
     verify(repo, never()).delete(any(TaskEntity.class));
@@ -253,6 +255,13 @@ class TaskServiceImplTest {
     List<TaskDto> result = taskService.list(101L, null, null);
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void list_throwsBadRequest_whenStatusIsInvalid() {
+    assertThatThrownBy(() -> taskService.list(null, null, "INVALID_STATUS"))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Invalid status value");
   }
 
 }

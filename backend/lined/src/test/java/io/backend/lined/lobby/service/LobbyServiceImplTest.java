@@ -7,6 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -17,7 +20,6 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,13 +107,13 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void create_throwsNoSuchElement_whenOwnerNotFound() {
+  void create_throwsNotFound_whenOwnerNotFound() {
     LobbyCreateDto dto = new LobbyCreateDto("Our Family", LobbyTypes.FAMILY);
 
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.create(dto, 99L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
 
     verify(lobbyRepo, never()).save(any());
@@ -132,11 +134,11 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void getById_throwsNoSuchElement_whenLobbyNotFound() {
+  void getById_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.getById(999L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
@@ -180,30 +182,30 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void addMember_throwsNoSuchElement_whenLobbyNotFound() {
+  void addMember_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.addMember(999L, 2L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void addMember_throwsNoSuchElement_whenUserNotFound() {
+  void addMember_throwsNotFound_whenUserNotFound() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.addMember(101L, 99L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
   }
 
   @Test
-  void addMember_throwsSecurityException_whenRequesterIsNotOwner() {
+  void addMember_throwsForbidden_whenRequesterIsNotOwner() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.addMember(101L, 2L, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("owner");
   }
 
@@ -225,29 +227,29 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void removeMember_throwsIllegalArgument_whenRemovingOwner() {
+  void removeMember_throwsBadRequest_whenRemovingOwner() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.removeMember(101L, 1L, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Owner cannot be removed");
   }
 
   @Test
-  void removeMember_throwsNoSuchElement_whenLobbyNotFound() {
+  void removeMember_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.removeMember(999L, 2L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void removeMember_throwsSecurityException_whenRequesterIsNotOwner() {
+  void removeMember_throwsForbidden_whenRequesterIsNotOwner() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.removeMember(101L, 2L, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("owner");
   }
 
@@ -265,22 +267,22 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void delete_throwsNoSuchElement_whenLobbyNotFound() {
+  void delete_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> lobbyService.delete(999L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
 
     verify(lobbyRepo, never()).delete(any());
   }
 
   @Test
-  void delete_throwsSecurityException_whenRequesterIsNotOwner() {
+  void delete_throwsForbidden_whenRequesterIsNotOwner() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.delete(101L, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("owner");
 
     verify(lobbyRepo, never()).delete(any());
