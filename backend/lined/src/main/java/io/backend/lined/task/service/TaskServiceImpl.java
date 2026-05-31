@@ -3,6 +3,7 @@ package io.backend.lined.task.service;
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
+import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.task.api.TaskCreateDto;
 import io.backend.lined.task.api.TaskDto;
 import io.backend.lined.task.api.TaskMapper;
@@ -28,6 +29,7 @@ public class TaskServiceImpl implements TaskService {
   private final LobbyRepository lobbyRepo;
   private final UserRepository userRepo;
   private final TaskMapper mapper;
+  private final LobbyAccessPolicy accessPolicy;
 
   @Override
   public TaskDto create(TaskCreateDto dto, Long currentUserId) {
@@ -49,7 +51,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId) {
     var task = mustTask(id);
-    ensureMember(task.getLobby(), currentUserId);
+    accessPolicy.ensureMember(task.getLobby(), currentUserId);
 
     if (dto.title() != null && !dto.title().isBlank()) {
       task.setTitle(dto.title());
@@ -70,7 +72,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public void delete(Long id, Long currentUserId) {
     var task = mustTask(id);
-    ensureMember(task.getLobby(), currentUserId);
+    accessPolicy.ensureMember(task.getLobby(), currentUserId);
     repo.delete(task);
   }
 
@@ -108,11 +110,4 @@ public class TaskServiceImpl implements TaskService {
         () -> new NoSuchElementException("Task %d not found".formatted(id)));
   }
 
-  private void ensureMember(LobbyEntity lobby, Long userId) {
-    var isOwner = lobby.getOwner().getId().equals(userId);
-    var isMember = lobby.getMembers().stream().anyMatch(u -> u.getId().equals(userId));
-    if (!isOwner && !isMember) {
-      throw new SecurityException("User is not a member of the lobby");
-    }
-  }
 }
