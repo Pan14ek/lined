@@ -35,6 +35,7 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto create(TaskCreateDto dto, Long currentUserId) {
     var creator = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
+    accessPolicy.ensureMember(lobby, currentUserId);
 
     var entity = TaskEntity.builder()
         .title(dto.title())

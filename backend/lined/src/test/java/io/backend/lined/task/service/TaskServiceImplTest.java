@@ -126,6 +126,20 @@ class TaskServiceImplTest {
     verify(repo, never()).save(any());
   }
 
+  @Test
+  void create_throwsSecurity_whenUserIsNotLobbyMember() {
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
+
+    when(userRepo.findById(99L)).thenReturn(Optional.of(new UserEntity()));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> taskService.create(dto, 99L))
+        .isInstanceOf(SecurityException.class)
+        .hasMessageContaining("not a member");
+
+    verify(repo, never()).save(any());
+  }
+
   /* =======================
      UPDATE
   ======================= */
