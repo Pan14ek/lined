@@ -1,7 +1,7 @@
 package io.backend.lined.event.service;
 
 import io.backend.lined.common.EntityFinder;
-import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventCreateDto;
@@ -18,8 +18,8 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -33,22 +33,20 @@ public class EventServiceImpl implements EventService {
   private final UserRepository userRepo;
   private final EventMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final EventConflictAnalyzer conflictAnalyzer;
 
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId) {
     var owner = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
     accessPolicy.ensureMember(lobby, currentUserId);
-
-    if (!dto.startAt().isBefore(dto.endAt())) {
-      throw new BadRequestException("startAt must be before endAt");
-    }
+    var window = eventWindow(dto.startAt(), dto.endAt());
 
     var entity = EventEntity.builder()
         .title(dto.title())
         .shared(dto.shared())
-        .startAt(dto.startAt())
-        .endAt(dto.endAt())
+        .startAt(window.start())
+        .endAt(window.end())
         .timezone(dto.timezone())
         .lobby(lobby)
         .owner(owner)
@@ -61,6 +59,9 @@ public class EventServiceImpl implements EventService {
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId) {
     var e = mustEvent(id);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    var window = eventWindow(
+        dto.startAt() == null ? e.getStartAt() : dto.startAt(),
+        dto.endAt() == null ? e.getEndAt() : dto.endAt());
 
     if (dto.title() != null && !dto.title().isBlank()) {
       e.setTitle(dto.title());
@@ -68,18 +69,10 @@ public class EventServiceImpl implements EventService {
     if (dto.shared() != null) {
       e.setShared(dto.shared());
     }
-    if (dto.startAt() != null) {
-      e.setStartAt(dto.startAt());
-    }
-    if (dto.endAt() != null) {
-      e.setEndAt(dto.endAt());
-    }
+    e.setStartAt(window.start());
+    e.setEndAt(window.end());
     if (dto.timezone() != null && !dto.timezone().isBlank()) {
       e.setTimezone(dto.timezone());
-    }
-
-    if (!e.getStartAt().isBefore(e.getEndAt())) {
-      throw new BadRequestException("startAt must be before endAt");
     }
 
     return mapper.toDto(e);
@@ -97,12 +90,11 @@ public class EventServiceImpl implements EventService {
                              Long currentUserId) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureMember(lobby, currentUserId);
+    var window = queryWindow(from, to);
 
-    if (from == null || to == null || !from.isBefore(to)) {
-      throw new BadRequestException("Invalid time window: from < to is required");
-    }
-
-    return repo.findOverlapping(lobbyId, from, to).stream().map(mapper::toDto).toList();
+    return repo.findOverlapping(lobbyId, window.start(), window.end()).stream()
+        .map(mapper::toDto)
+        .toList();
   }
 
   @Override
@@ -111,35 +103,17 @@ public class EventServiceImpl implements EventService {
                                               Long requesterId) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureMember(lobby, requesterId);
-    if (!start.isBefore(end)) {
-      throw new BadRequestException("start must be before end");
-    }
-    var events = repo.findOverlapping(lobbyId, start, end);
-    List<EventConflictDto> conflicts = new ArrayList<>();
-    for (int i = 0; i < events.size(); i++) {
-      for (int j = i + 1; j < events.size(); j++) {
-        var a = events.get(i);
-        var b = events.get(j);
-        var overlapStart = a.getStartAt().isAfter(b.getStartAt())
-            ? a.getStartAt() : b.getStartAt();
-        var overlapEnd = a.getEndAt().isBefore(b.getEndAt())
-            ? a.getEndAt() : b.getEndAt();
-        if (overlapStart.isBefore(overlapEnd)) {
-          conflicts.add(new EventConflictDto(
-              mapper.toDto(a), mapper.toDto(b), overlapStart, overlapEnd));
-        }
-      }
-    }
-    return conflicts;
+    var window = conflictWindow(start, end);
+    var events = repo.findOverlapping(lobbyId, window.start(), window.end());
+    return conflictAnalyzer.findConflicts(events);
   }
 
   @Override
   public UserConflictDto hasConflict(Long userId, OffsetDateTime start,
                                      OffsetDateTime end, Long requesterId) {
-    if (!start.isBefore(end)) {
-      throw new BadRequestException("start must be before end");
-    }
-    var overlapping = repo.findOverlappingByUser(userId, start, end);
+    ensureOwnCalendar(userId, requesterId);
+    var window = conflictWindow(start, end);
+    var overlapping = repo.findOverlappingByUser(userId, window.start(), window.end());
     if (overlapping.isEmpty()) {
       return new UserConflictDto(userId, false, null);
     }
@@ -159,6 +133,24 @@ public class EventServiceImpl implements EventService {
   private EventEntity mustEvent(Long id) {
     return EntityFinder.findOrThrow(repo.findById(id),
         () -> new NotFoundException("Event %d not found".formatted(id)));
+  }
+
+  private CalendarTimeWindow eventWindow(OffsetDateTime start, OffsetDateTime end) {
+    return CalendarTimeWindow.of(start, end, "startAt must be before endAt");
+  }
+
+  private CalendarTimeWindow queryWindow(OffsetDateTime start, OffsetDateTime end) {
+    return CalendarTimeWindow.of(start, end, "Invalid time window: from < to is required");
+  }
+
+  private CalendarTimeWindow conflictWindow(OffsetDateTime start, OffsetDateTime end) {
+    return CalendarTimeWindow.of(start, end, "start must be before end");
+  }
+
+  private void ensureOwnCalendar(Long userId, Long requesterId) {
+    if (!Objects.equals(userId, requesterId)) {
+      throw new ForbiddenException("Requester can only check their own calendar");
+    }
   }
 
 }
