@@ -1,5 +1,6 @@
 package io.backend.lined.event.api;
 
+import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.event.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -94,9 +96,12 @@ public class EventController {
       @RequestParam Long lobbyId,
       @RequestParam OffsetDateTime start,
       @RequestParam OffsetDateTime end,
-      @RequestParam Long requesterId) {
+      @RequestParam Long requesterId,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    ensureRequesterMatchesCurrentUser(requesterId, currentUserId);
     return ResponseEntity.ok(
-        service.findConflicts(lobbyId, start, end, requesterId));
+        service.findConflicts(lobbyId, start, end, currentUserId));
   }
 
   @GetMapping("/user-conflict")
@@ -104,9 +109,18 @@ public class EventController {
       @RequestParam Long userId,
       @RequestParam OffsetDateTime start,
       @RequestParam OffsetDateTime end,
-      @RequestParam Long requesterId) {
+      @RequestParam Long requesterId,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    ensureRequesterMatchesCurrentUser(requesterId, currentUserId);
     return ResponseEntity.ok(
-        service.hasConflict(userId, start, end, requesterId));
+        service.hasConflict(userId, start, end, currentUserId));
+  }
+
+  private void ensureRequesterMatchesCurrentUser(Long requesterId, Long currentUserId) {
+    if (!Objects.equals(requesterId, currentUserId)) {
+      throw new ForbiddenException("Requester id must match current user");
+    }
   }
 
 }

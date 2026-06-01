@@ -31,7 +31,6 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -54,7 +53,6 @@ class EventServiceImplConflictTest {
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
-  @InjectMocks
   private EventServiceImpl eventService;
 
   private UserEntity owner;
@@ -81,6 +79,8 @@ class EventServiceImplConflictTest {
     setupLobby();
     setupEvents();
     setupDtos();
+    eventService = new EventServiceImpl(
+        repo, lobbyRepo, userRepo, mapper, accessPolicy, new EventConflictAnalyzer(mapper));
   }
 
   private void setupDtos() {
@@ -244,6 +244,18 @@ class EventServiceImplConflictTest {
   }
 
   @Test
+  void findConflicts_throwsBadRequest_whenStartIsNull() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() ->
+        eventService.findConflicts(101L, null, windowEnd, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("start must be before end");
+
+    verify(repo, never()).findOverlapping(any(), any(), any());
+  }
+
+  @Test
   void findConflicts_throwsForbidden_whenUserIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
@@ -315,11 +327,31 @@ class EventServiceImplConflictTest {
   }
 
   @Test
+  void hasConflict_throwsBadRequest_whenStartIsNull() {
+    assertThatThrownBy(() ->
+        eventService.hasConflict(1L, null, windowEnd, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("start must be before end");
+
+    verify(repo, never()).findOverlappingByUser(any(), any(), any());
+  }
+
+  @Test
   void hasConflict_throwsBadRequest_whenStartEqualsEnd() {
     assertThatThrownBy(() ->
         eventService.hasConflict(1L, windowStart, windowStart, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("start must be before end");
+  }
+
+  @Test
+  void hasConflict_throwsForbidden_whenRequesterChecksAnotherUser() {
+    assertThatThrownBy(() ->
+        eventService.hasConflict(2L, windowStart, windowEnd, 1L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("Requester can only check their own calendar");
+
+    verify(repo, never()).findOverlappingByUser(any(), any(), any());
   }
 
   @Test

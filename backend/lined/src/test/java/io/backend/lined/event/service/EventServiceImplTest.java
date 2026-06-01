@@ -23,9 +23,9 @@ import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +48,8 @@ class EventServiceImplTest {
   private EventMapper mapper;
   @Spy
   private LobbyAccessPolicy accessPolicy;
+  @Mock
+  private EventConflictAnalyzer conflictAnalyzer;
 
   @InjectMocks
   private EventServiceImpl eventService;
@@ -150,6 +152,21 @@ class EventServiceImplTest {
   }
 
   @Test
+  void create_throwsBadRequest_whenStartAtIsNull() {
+    EventCreateDto dto = new EventCreateDto(
+        "Dinner together", true, null, endAt, "Europe/Kyiv", 101L);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> eventService.create(dto, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("startAt must be before endAt");
+
+    verify(repo, never()).save(any());
+  }
+
+  @Test
   void create_throwsNotFound_whenUserNotFound() {
     EventCreateDto dto = new EventCreateDto(
         "Dinner together", true, startAt, endAt, "Europe/Kyiv", 101L);
@@ -247,6 +264,40 @@ class EventServiceImplTest {
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("startAt must be before endAt");
+  }
+
+  @Test
+  void update_doesNotMutateEntity_whenUpdatedDatesAreInvalid() {
+    EventUpdateDto dto = new EventUpdateDto("Invalid update", false, endAt, startAt, "UTC");
+
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+
+    assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
+        .isInstanceOf(BadRequestException.class);
+
+    assertThat(eventEntity.getTitle()).isEqualTo("Dinner together");
+    assertThat(eventEntity.isShared()).isTrue();
+    assertThat(eventEntity.getStartAt()).isEqualTo(startAt);
+    assertThat(eventEntity.getEndAt()).isEqualTo(endAt);
+    assertThat(eventEntity.getTimezone()).isEqualTo("Europe/Kyiv");
+  }
+
+  @Test
+  void update_throwsBadRequest_whenNewStartAtExceedsExistingEndAt() {
+    EventUpdateDto dto = new EventUpdateDto("Invalid update", false, endAt.plusHours(1),
+        null, "UTC");
+
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+
+    assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("startAt must be before endAt");
+
+    assertThat(eventEntity.getTitle()).isEqualTo("Dinner together");
+    assertThat(eventEntity.isShared()).isTrue();
+    assertThat(eventEntity.getStartAt()).isEqualTo(startAt);
+    assertThat(eventEntity.getEndAt()).isEqualTo(endAt);
+    assertThat(eventEntity.getTimezone()).isEqualTo("Europe/Kyiv");
   }
 
   @Test
