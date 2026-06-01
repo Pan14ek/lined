@@ -21,6 +21,7 @@ public class GlobalExceptionHandler {
       case NOT_FOUND -> "Resource not found";
       case CONFLICT -> "Conflict";
       case BAD_REQUEST -> "Bad request";
+      case FORBIDDEN -> "Forbidden";
       default -> ex.getStatus().getReasonPhrase();
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));

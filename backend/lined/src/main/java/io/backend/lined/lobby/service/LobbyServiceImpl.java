@@ -1,6 +1,8 @@
 package io.backend.lined.lobby.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -9,7 +11,6 @@ import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +26,8 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto create(LobbyCreateDto dto, Long ownerId) {
-    var owner = userRepo.findById(ownerId)
-        .orElseThrow(() -> new NoSuchElementException("Owner %d not found".formatted(ownerId)));
+    var owner = EntityFinder.findOrThrow(userRepo.findById(ownerId),
+        () -> new NotFoundException("Owner %d not found".formatted(ownerId)));
 
     var entity = LobbyEntity.builder()
         .name(dto.name())
@@ -58,8 +59,8 @@ public class LobbyServiceImpl implements LobbyService {
 
     accessPolicy.ensureOwner(lobby, requesterId);
 
-    var user = userRepo.findById(userIdToAdd)
-        .orElseThrow(() -> new NoSuchElementException("User %d not found".formatted(userIdToAdd)));
+    var user = EntityFinder.findOrThrow(userRepo.findById(userIdToAdd),
+        () -> new NotFoundException("User %d not found".formatted(userIdToAdd)));
 
     lobby.getMembers().add(user);
     return mapper.toDto(lobby);
@@ -72,7 +73,7 @@ public class LobbyServiceImpl implements LobbyService {
     accessPolicy.ensureOwner(lobby, requesterId);
 
     if (lobby.getOwner().getId().equals(userIdToRemove)) {
-      throw new IllegalArgumentException("Owner cannot be removed from lobby");
+      throw new BadRequestException("Owner cannot be removed from lobby");
     }
 
     lobby.getMembers().removeIf(u -> u.getId().equals(userIdToRemove));
@@ -89,7 +90,7 @@ public class LobbyServiceImpl implements LobbyService {
   private LobbyEntity mustLobby(Long id) {
     return EntityFinder.findOrThrow(
         lobbyRepo.findById(id),
-        () -> new NoSuchElementException("Lobby %d not found".formatted(id)));
+        () -> new NotFoundException("Lobby %d not found".formatted(id)));
   }
 
 }

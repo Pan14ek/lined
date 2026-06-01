@@ -1,5 +1,8 @@
 package io.backend.lined.event.service;
 
+import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
@@ -17,7 +20,6 @@ import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +41,7 @@ public class EventServiceImpl implements EventService {
     accessPolicy.ensureMember(lobby, currentUserId);
 
     if (!dto.startAt().isBefore(dto.endAt())) {
-      throw new IllegalArgumentException("startAt must be before endAt");
+      throw new BadRequestException("startAt must be before endAt");
     }
 
     var entity = EventEntity.builder()
@@ -77,7 +79,7 @@ public class EventServiceImpl implements EventService {
     }
 
     if (!e.getStartAt().isBefore(e.getEndAt())) {
-      throw new IllegalArgumentException("startAt must be before endAt");
+      throw new BadRequestException("startAt must be before endAt");
     }
 
     return mapper.toDto(e);
@@ -97,7 +99,7 @@ public class EventServiceImpl implements EventService {
     accessPolicy.ensureMember(lobby, currentUserId);
 
     if (from == null || to == null || !from.isBefore(to)) {
-      throw new IllegalArgumentException("Invalid time window: from < to is required");
+      throw new BadRequestException("Invalid time window: from < to is required");
     }
 
     return repo.findOverlapping(lobbyId, from, to).stream().map(mapper::toDto).toList();
@@ -110,7 +112,7 @@ public class EventServiceImpl implements EventService {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureMember(lobby, requesterId);
     if (!start.isBefore(end)) {
-      throw new IllegalArgumentException("start must be before end");
+      throw new BadRequestException("start must be before end");
     }
     var events = repo.findOverlapping(lobbyId, start, end);
     List<EventConflictDto> conflicts = new ArrayList<>();
@@ -135,7 +137,7 @@ public class EventServiceImpl implements EventService {
   public UserConflictDto hasConflict(Long userId, OffsetDateTime start,
                                      OffsetDateTime end, Long requesterId) {
     if (!start.isBefore(end)) {
-      throw new IllegalArgumentException("start must be before end");
+      throw new BadRequestException("start must be before end");
     }
     var overlapping = repo.findOverlappingByUser(userId, start, end);
     if (overlapping.isEmpty()) {
@@ -145,18 +147,18 @@ public class EventServiceImpl implements EventService {
   }
 
   private UserEntity mustUser(Long id) {
-    return userRepo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("User %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(userRepo.findById(id),
+        () -> new NotFoundException("User %d not found".formatted(id)));
   }
 
   private LobbyEntity mustLobby(Long id) {
-    return lobbyRepo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Lobby %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(lobbyRepo.findById(id),
+        () -> new NotFoundException("Lobby %d not found".formatted(id)));
   }
 
   private EventEntity mustEvent(Long id) {
-    return repo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Event %d not found".formatted(id)));
+    return EntityFinder.findOrThrow(repo.findById(id),
+        () -> new NotFoundException("Event %d not found".formatted(id)));
   }
 
 }

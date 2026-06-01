@@ -66,9 +66,6 @@ public class EventEntity {
     if (createdAt == null) {
       createdAt = OffsetDateTime.now();
     }
-    if (startAt != null && endAt != null && !startAt.isBefore(endAt)) {
-      throw new IllegalArgumentException("startAt must be before endAt");
-    }
   }
 
 }

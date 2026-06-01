@@ -7,6 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
@@ -20,10 +23,9 @@ import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,7 +122,7 @@ class EventServiceImplTest {
   }
 
   @Test
-  void create_throwsIllegalArgument_whenStartAtNotBeforeEndAt() {
+  void create_throwsBadRequest_whenStartAtNotBeforeEndAt() {
     EventCreateDto dto = new EventCreateDto(
         "Dinner together", true, endAt, startAt, "Europe/Kyiv", 101L);
 
@@ -128,14 +130,14 @@ class EventServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.create(dto, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("startAt must be before endAt");
 
     verify(repo, never()).save(any());
   }
 
   @Test
-  void create_throwsIllegalArgument_whenStartAtEqualsEndAt() {
+  void create_throwsBadRequest_whenStartAtEqualsEndAt() {
     EventCreateDto dto = new EventCreateDto(
         "Dinner together", true, startAt, startAt, "Europe/Kyiv", 101L);
 
@@ -143,26 +145,26 @@ class EventServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.create(dto, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("startAt must be before endAt");
   }
 
   @Test
-  void create_throwsNoSuchElement_whenUserNotFound() {
+  void create_throwsNotFound_whenUserNotFound() {
     EventCreateDto dto = new EventCreateDto(
         "Dinner together", true, startAt, endAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.create(dto, 99L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
 
     verify(repo, never()).save(any());
   }
 
   @Test
-  void create_throwsNoSuchElement_whenLobbyNotFound() {
+  void create_throwsNotFound_whenLobbyNotFound() {
     EventCreateDto dto = new EventCreateDto(
         "Dinner together", true, startAt, endAt, "Europe/Kyiv", 999L);
 
@@ -170,12 +172,12 @@ class EventServiceImplTest {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.create(dto, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void create_throwsSecurity_whenUserIsNotLobbyMember() {
+  void create_throwsForbidden_whenUserIsNotLobbyMember() {
     UserEntity outsider = new UserEntity();
     outsider.setId(99L);
 
@@ -186,7 +188,7 @@ class EventServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.create(dto, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
   }
 
@@ -237,35 +239,35 @@ class EventServiceImplTest {
   }
 
   @Test
-  void update_throwsIllegalArgument_whenUpdatedDatesAreInvalid() {
+  void update_throwsBadRequest_whenUpdatedDatesAreInvalid() {
     EventUpdateDto dto = new EventUpdateDto(null, null, endAt, startAt, null);
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("startAt must be before endAt");
   }
 
   @Test
-  void update_throwsNoSuchElement_whenEventNotFound() {
+  void update_throwsNotFound_whenEventNotFound() {
     EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null);
 
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.update(999L, dto, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void update_throwsSecurity_whenUserIsNotLobbyMember() {
+  void update_throwsForbidden_whenUserIsNotLobbyMember() {
     EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null);
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
   }
 
@@ -283,22 +285,22 @@ class EventServiceImplTest {
   }
 
   @Test
-  void delete_throwsNoSuchElement_whenEventNotFound() {
+  void delete_throwsNotFound_whenEventNotFound() {
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.delete(999L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
 
     verify(repo, never()).delete(any(EventEntity.class));
   }
 
   @Test
-  void delete_throwsSecurity_whenUserIsNotLobbyMember() {
+  void delete_throwsForbidden_whenUserIsNotLobbyMember() {
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.delete(9001L, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
 
     verify(repo, never()).delete(any(EventEntity.class));
@@ -330,47 +332,47 @@ class EventServiceImplTest {
   }
 
   @Test
-  void list_throwsIllegalArgument_whenFromIsNull() {
+  void list_throwsBadRequest_whenFromIsNull() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.list(101L, null, endAt, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");
   }
 
   @Test
-  void list_throwsIllegalArgument_whenToIsNull() {
+  void list_throwsBadRequest_whenToIsNull() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.list(101L, startAt, null, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");
   }
 
   @Test
-  void list_throwsIllegalArgument_whenFromIsAfterTo() {
+  void list_throwsBadRequest_whenFromIsAfterTo() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.list(101L, endAt, startAt, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");
   }
 
   @Test
-  void list_throwsNoSuchElement_whenLobbyNotFound() {
+  void list_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.list(999L, startAt, endAt, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
   @Test
-  void list_throwsSecurity_whenUserIsNotLobbyMember() {
+  void list_throwsForbidden_whenUserIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.list(101L, startAt, endAt, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
   }
 }

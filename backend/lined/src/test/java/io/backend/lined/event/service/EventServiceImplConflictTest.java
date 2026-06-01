@@ -8,6 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
@@ -23,7 +26,6 @@ import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -230,36 +232,36 @@ class EventServiceImplConflictTest {
   }
 
   @Test
-  void findConflicts_throwsIllegalArgument_whenStartAfterEnd() {
+  void findConflicts_throwsBadRequest_whenStartAfterEnd() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() ->
         eventService.findConflicts(101L, windowEnd, windowStart, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("start must be before end");
 
     verify(repo, never()).findOverlapping(any(), any(), any());
   }
 
   @Test
-  void findConflicts_throwsSecurity_whenUserIsNotLobbyMember() {
+  void findConflicts_throwsForbidden_whenUserIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() ->
         eventService.findConflicts(101L, windowStart, windowEnd, 99L))
-        .isInstanceOf(SecurityException.class)
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
 
     verify(repo, never()).findOverlapping(any(), any(), any());
   }
 
   @Test
-  void findConflicts_throwsNoSuchElement_whenLobbyNotFound() {
+  void findConflicts_throwsNotFound_whenLobbyNotFound() {
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() ->
         eventService.findConflicts(999L, windowStart, windowEnd, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
 
@@ -303,20 +305,20 @@ class EventServiceImplConflictTest {
   }
 
   @Test
-  void hasConflict_throwsIllegalArgument_whenStartAfterEnd() {
+  void hasConflict_throwsBadRequest_whenStartAfterEnd() {
     assertThatThrownBy(() ->
         eventService.hasConflict(1L, windowEnd, windowStart, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("start must be before end");
 
     verify(repo, never()).findOverlappingByUser(any(), any(), any());
   }
 
   @Test
-  void hasConflict_throwsIllegalArgument_whenStartEqualsEnd() {
+  void hasConflict_throwsBadRequest_whenStartEqualsEnd() {
     assertThatThrownBy(() ->
         eventService.hasConflict(1L, windowStart, windowStart, 1L))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("start must be before end");
   }
 
