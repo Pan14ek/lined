@@ -76,6 +76,11 @@ Store summarized values only. Do not store raw Prometheus exposition text,
 full pod YAML, secrets, environment variables, or generated load-test output in
 Cosmos DB.
 
+Use the scenario runner in `docs/runtime-scenario-summaries.md` to produce
+collector-ready local runtime summaries. The runner owns local Kubernetes/k6
+orchestration and sanitized artifact generation; the collector still only
+validates and attaches an explicit summary JSON file.
+
 ## Metric Contract
 
 | Field | Unit/range | Better direction | Source |
@@ -170,10 +175,11 @@ deploy kind, call Kubernetes, or scrape Actuator endpoints by itself.
 
 Before using a runtime summary in an experiment:
 
-1. Run a k6 smoke workload from `docs/load-test-baseline.md`.
-2. Verify Actuator metrics from `docs/runtime-metrics-baseline.md`.
-3. Record the active deployment scenario from `docs/hpa-resource-scenarios.md`.
-4. Produce a summarized runtime JSON file.
+1. Verify the active scenario and workload prerequisites from
+   `docs/runtime-scenario-summaries.md`.
+2. Run the scenario runner for one scenario/workload pair.
+3. Inspect the generated `runtime-summary-manifest.json`.
+4. Use the generated `runtime-summary.json` as the explicit collector input.
 5. Run the collector with `RUNTIME_METRICS_JSON` set.
 6. Confirm the stored document preserves `fitnessScore` and adds
    `metrics.runtime_metrics` separately.
