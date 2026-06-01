@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
-import io.backend.lined.role.domain.RoleEntity;
+import io.backend.lined.role.domain.BuiltInRole;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
@@ -31,6 +31,25 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
+  private static final long USER_ID = 1L;
+  private static final long MISSING_USER_ID = 99L;
+  private static final String USERNAME = "testuser";
+  private static final String USER_EMAIL = "test@example.com";
+  private static final String PASSWORD = "password";
+  private static final String ENCODED_PASSWORD = "encoded_password";
+  private static final String ENCODED_VALUE = "encoded";
+  private static final String NEW_USERNAME = "newuser";
+  private static final String TAKEN_USERNAME = "takenuser";
+  private static final String TAKEN_EMAIL = "taken@example.com";
+  private static final String NEW_EMAIL = "new@example.com";
+  private static final String NEW_PASSWORD = "newpassword";
+  private static final String ENCODED_NEW_PASSWORD = "encoded_new";
+  private static final String ADMIN_ROLE = BuiltInRole.ADMIN.value();
+  private static final String UNKNOWN_ROLE = "UNKNOWN_ROLE";
+  private static final String USER_NOT_FOUND_MESSAGE = "User not found";
+  private static final String USERNAME_EXISTS_MESSAGE = "Username already exists";
+  private static final String EMAIL_EXISTS_MESSAGE = "Email already exists";
+
   @Mock
   private UserRepository userRepository;
   @Mock
@@ -49,12 +68,12 @@ class UserServiceImplTest {
   @BeforeEach
   void setUp() {
     testUser = new UserEntity();
-    testUser.setId(1L);
-    testUser.setUsername("testuser");
-    testUser.setEmail("test@example.com");
-    testUser.setPassword("encoded_password");
+    testUser.setId(USER_ID);
+    testUser.setUsername(USERNAME);
+    testUser.setEmail(USER_EMAIL);
+    testUser.setPassword(ENCODED_PASSWORD);
 
-    expectedDto = new UserDto(1L, "testuser", "test@example.com", null, Set.of(), null, null);
+    expectedDto = new UserDto(USER_ID, USERNAME, USER_EMAIL, null, Set.of(), null, null);
   }
 
   /* =======================
@@ -63,12 +82,12 @@ class UserServiceImplTest {
 
   @Test
   void create_success() {
-    UserCreateDto dto = new UserCreateDto("testuser", "test@example.com", "password", Set.of());
+    UserCreateDto dto = new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of());
 
-    when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(false);
-    when(userRepository.existsByEmailIgnoreCase("test@example.com")).thenReturn(false);
+    when(userRepository.existsByUsernameIgnoreCase(USERNAME)).thenReturn(false);
+    when(userRepository.existsByEmailIgnoreCase(USER_EMAIL)).thenReturn(false);
     when(userMapper.toEntity(dto)).thenReturn(testUser);
-    when(passwordEncoder.encode("password")).thenReturn("encoded_password");
+    when(passwordEncoder.encode(PASSWORD)).thenReturn(ENCODED_PASSWORD);
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
@@ -80,68 +99,66 @@ class UserServiceImplTest {
 
   @Test
   void create_throwsConflict_whenUsernameExists() {
-    UserCreateDto dto = new UserCreateDto("testuser", "test@example.com", "password", Set.of());
+    UserCreateDto dto = new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of());
 
-    when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(true);
+    when(userRepository.existsByUsernameIgnoreCase(USERNAME)).thenReturn(true);
 
     assertThatThrownBy(() -> userService.create(dto))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Username already exists");
+        .hasMessageContaining(USERNAME_EXISTS_MESSAGE);
 
     verify(userRepository, never()).save(any());
   }
 
   @Test
   void create_throwsConflict_whenEmailExists() {
-    UserCreateDto dto = new UserCreateDto("testuser", "test@example.com", "password", Set.of());
+    UserCreateDto dto = new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of());
 
-    when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(false);
-    when(userRepository.existsByEmailIgnoreCase("test@example.com")).thenReturn(true);
+    when(userRepository.existsByUsernameIgnoreCase(USERNAME)).thenReturn(false);
+    when(userRepository.existsByEmailIgnoreCase(USER_EMAIL)).thenReturn(true);
 
     assertThatThrownBy(() -> userService.create(dto))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Email already exists");
+        .hasMessageContaining(EMAIL_EXISTS_MESSAGE);
 
     verify(userRepository, never()).save(any());
   }
 
   @Test
-  void create_withRoles_resolvesRolesCorrectly() {
+  void create_ignoresSuppliedRoles() {
     UserCreateDto dto =
-        new UserCreateDto("testuser", "test@example.com", "password", Set.of("ADMIN"));
-    RoleEntity role = new RoleEntity();
-    role.setName("ADMIN");
+        new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of(ADMIN_ROLE));
 
     when(userRepository.existsByUsernameIgnoreCase(anyString())).thenReturn(false);
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
     when(userMapper.toEntity(dto)).thenReturn(testUser);
-    when(passwordEncoder.encode(anyString())).thenReturn("encoded");
-    when(roleResolver.resolve(Set.of("ADMIN"))).thenReturn(Set.of(role));
+    when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_VALUE);
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
     UserDto result = userService.create(dto);
 
     assertThat(result).isNotNull();
-    assertThat(testUser.getRoles()).containsExactly(role);
-    verify(roleResolver).resolve(Set.of("ADMIN"));
+    assertThat(testUser.getRoles()).isNullOrEmpty();
+    verify(roleResolver, never()).resolve(any());
   }
 
   @Test
-  void create_throwsNotFound_whenRoleDoesNotExist() {
+  void create_doesNotResolveUnknownSuppliedRoles() {
     UserCreateDto dto =
-        new UserCreateDto("testuser", "test@example.com", "password", Set.of("UNKNOWN_ROLE"));
+        new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of(UNKNOWN_ROLE));
 
     when(userRepository.existsByUsernameIgnoreCase(anyString())).thenReturn(false);
     when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
     when(userMapper.toEntity(dto)).thenReturn(testUser);
-    when(passwordEncoder.encode(anyString())).thenReturn("encoded");
-    when(roleResolver.resolve(Set.of("UNKNOWN_ROLE")))
-        .thenThrow(new NotFoundException("Role not found: UNKNOWN_ROLE"));
+    when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_VALUE);
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    assertThatThrownBy(() -> userService.create(dto))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("Role not found");
+    UserDto result = userService.create(dto);
+
+    assertThat(result).isEqualTo(expectedDto);
+    verify(roleResolver, never()).resolve(any());
   }
 
   /* =======================
@@ -150,21 +167,21 @@ class UserServiceImplTest {
 
   @Test
   void getById_success() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.getById(1L);
+    UserDto result = userService.getById(USER_ID);
 
     assertThat(result).isEqualTo(expectedDto);
   }
 
   @Test
   void getById_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.getById(99L))
+    assertThatThrownBy(() -> userService.getById(MISSING_USER_ID))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
   }
 
   /* =======================
@@ -173,52 +190,68 @@ class UserServiceImplTest {
 
   @Test
   void update_success() {
-    UserUpdateDto dto = new UserUpdateDto("newuser", null, null, null);
+    UserUpdateDto dto = new UserUpdateDto(NEW_USERNAME, null, null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+    when(userRepository.existsByUsernameIgnoreCase(NEW_USERNAME)).thenReturn(false);
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.update(1L, dto);
+    UserDto result = userService.update(USER_ID, dto);
 
     assertThat(result).isNotNull();
     verify(userMapper).updateEntity(testUser, dto);
   }
 
   @Test
+  void update_ignoresSuppliedRoles() {
+    UserUpdateDto dto = new UserUpdateDto(null, null, null, Set.of(ADMIN_ROLE));
+
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+    when(userRepository.save(testUser)).thenReturn(testUser);
+    when(userMapper.toDto(testUser)).thenReturn(expectedDto);
+
+    UserDto result = userService.update(USER_ID, dto);
+
+    assertThat(result).isEqualTo(expectedDto);
+    assertThat(testUser.getRoles()).isNullOrEmpty();
+    verify(userMapper).updateEntity(testUser, dto);
+    verify(roleResolver, never()).resolve(any());
+  }
+
+  @Test
   void update_throwsNotFound_whenUserDoesNotExist() {
-    UserUpdateDto dto = new UserUpdateDto("newuser", null, null, null);
+    UserUpdateDto dto = new UserUpdateDto(NEW_USERNAME, null, null, null);
 
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.update(99L, dto))
+    assertThatThrownBy(() -> userService.update(MISSING_USER_ID, dto))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
   }
 
   @Test
   void update_throwsConflict_whenNewUsernameAlreadyTaken() {
-    UserUpdateDto dto = new UserUpdateDto("takenuser", null, null, null);
+    UserUpdateDto dto = new UserUpdateDto(TAKEN_USERNAME, null, null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(userRepository.existsByUsernameIgnoreCase("takenuser")).thenReturn(true);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+    when(userRepository.existsByUsernameIgnoreCase(TAKEN_USERNAME)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.update(1L, dto))
+    assertThatThrownBy(() -> userService.update(USER_ID, dto))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Username already exists");
+        .hasMessageContaining(USERNAME_EXISTS_MESSAGE);
   }
 
   @Test
   void update_throwsConflict_whenNewEmailAlreadyTaken() {
-    UserUpdateDto dto = new UserUpdateDto(null, "taken@example.com", null, null);
+    UserUpdateDto dto = new UserUpdateDto(null, TAKEN_EMAIL, null, null);
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+    when(userRepository.existsByEmailIgnoreCase(TAKEN_EMAIL)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.update(1L, dto))
+    assertThatThrownBy(() -> userService.update(USER_ID, dto))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Email already exists");
+        .hasMessageContaining(EMAIL_EXISTS_MESSAGE);
   }
 
   /* =======================
@@ -227,20 +260,20 @@ class UserServiceImplTest {
 
   @Test
   void delete_success() {
-    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.existsById(USER_ID)).thenReturn(true);
 
-    userService.delete(1L);
+    userService.delete(USER_ID);
 
-    verify(userRepository).deleteById(1L);
+    verify(userRepository).deleteById(USER_ID);
   }
 
   @Test
   void delete_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.existsById(99L)).thenReturn(false);
+    when(userRepository.existsById(MISSING_USER_ID)).thenReturn(false);
 
-    assertThatThrownBy(() -> userService.delete(99L))
+    assertThatThrownBy(() -> userService.delete(MISSING_USER_ID))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
 
     verify(userRepository, never()).deleteById(any());
   }
@@ -251,22 +284,22 @@ class UserServiceImplTest {
 
   @Test
   void changePassword_success() {
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(passwordEncoder.encode("newpassword")).thenReturn("encoded_new");
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_NEW_PASSWORD);
 
-    userService.changePassword(1L, "newpassword");
+    userService.changePassword(USER_ID, NEW_PASSWORD);
 
-    assertThat(testUser.getPassword()).isEqualTo("encoded_new");
+    assertThat(testUser.getPassword()).isEqualTo(ENCODED_NEW_PASSWORD);
     verify(userRepository).save(testUser);
   }
 
   @Test
   void changePassword_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.changePassword(99L, "newpassword"))
+    assertThatThrownBy(() -> userService.changePassword(MISSING_USER_ID, NEW_PASSWORD))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
 
     verify(userRepository, never()).save(any());
   }
@@ -277,36 +310,36 @@ class UserServiceImplTest {
 
   @Test
   void changeEmail_success() {
-    when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.existsByEmailIgnoreCase(NEW_EMAIL)).thenReturn(false);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.changeEmail(1L, "new@example.com");
+    UserDto result = userService.changeEmail(USER_ID, NEW_EMAIL);
 
     assertThat(result).isNotNull();
-    assertThat(testUser.getEmail()).isEqualTo("new@example.com");
+    assertThat(testUser.getEmail()).isEqualTo(NEW_EMAIL);
   }
 
   @Test
   void changeEmail_throwsConflict_whenEmailAlreadyExists() {
-    when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
+    when(userRepository.existsByEmailIgnoreCase(TAKEN_EMAIL)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.changeEmail(1L, "taken@example.com"))
+    assertThatThrownBy(() -> userService.changeEmail(USER_ID, TAKEN_EMAIL))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Email already exists");
+        .hasMessageContaining(EMAIL_EXISTS_MESSAGE);
 
     verify(userRepository, never()).save(any());
   }
 
   @Test
   void changeEmail_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    when(userRepository.existsByEmailIgnoreCase(NEW_EMAIL)).thenReturn(false);
+    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.changeEmail(99L, "new@example.com"))
+    assertThatThrownBy(() -> userService.changeEmail(MISSING_USER_ID, NEW_EMAIL))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
   }
 
   /* =======================
@@ -315,35 +348,35 @@ class UserServiceImplTest {
 
   @Test
   void changeUsername_success() {
-    when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.existsByUsernameIgnoreCase(NEW_USERNAME)).thenReturn(false);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.changeUsername(1L, "newuser");
+    UserDto result = userService.changeUsername(USER_ID, NEW_USERNAME);
 
     assertThat(result).isNotNull();
-    assertThat(testUser.getUsername()).isEqualTo("newuser");
+    assertThat(testUser.getUsername()).isEqualTo(NEW_USERNAME);
   }
 
   @Test
   void changeUsername_throwsConflict_whenUsernameAlreadyExists() {
-    when(userRepository.existsByUsernameIgnoreCase("takenuser")).thenReturn(true);
+    when(userRepository.existsByUsernameIgnoreCase(TAKEN_USERNAME)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.changeUsername(1L, "takenuser"))
+    assertThatThrownBy(() -> userService.changeUsername(USER_ID, TAKEN_USERNAME))
         .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("Username already exists");
+        .hasMessageContaining(USERNAME_EXISTS_MESSAGE);
 
     verify(userRepository, never()).save(any());
   }
 
   @Test
   void changeUsername_throwsNotFound_whenUserDoesNotExist() {
-    when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    when(userRepository.existsByUsernameIgnoreCase(NEW_USERNAME)).thenReturn(false);
+    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.changeUsername(99L, "newuser"))
+    assertThatThrownBy(() -> userService.changeUsername(MISSING_USER_ID, NEW_USERNAME))
         .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("User not found");
+        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
   }
 }

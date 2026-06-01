@@ -26,12 +26,13 @@ public class AccountApplicationServiceImpl implements AccountApplicationService 
   @Override
   @Transactional
   public UserDto registerUser(UserCreateDto createDto) {
+    AccountProvisioningSpec provisioning = provisioningPolicy.defaultRegistration();
     UserDto user = userService.create(createDto);
-    roleService.setUserRoles(user.id(), provisioningPolicy.defaultRoles());
+    roleService.setUserRoles(user.id(), provisioning.roleNames());
 
-    PlanDto defaultPlan = planService.getByName(provisioningPolicy.defaultPlanName());
+    PlanDto defaultPlan = planService.getByName(provisioning.planName());
     subscriptionService.start(
-        user.id(), defaultPlan.id(), null, null, provisioningPolicy.defaultSubscriptionActive());
+        user.id(), defaultPlan.id(), null, null, provisioning.activeSubscription());
 
     return userService.getById(user.id());
   }

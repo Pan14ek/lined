@@ -1,30 +1,19 @@
 package io.backend.lined.app;
 
 import java.util.Set;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class AccountProvisioningPolicy {
 
-  @Value("${lined.provisioning.default-role:ROLE_USER}")
-  private String defaultRole;
+  private final AccountProvisioningProperties properties;
 
-  @Value("${lined.provisioning.default-plan:FREE}")
-  private String defaultPlan;
-
-  @Value("${lined.provisioning.default-subscription-active:true}")
-  private boolean subscriptionActive;
-
-  public Set<String> defaultRoles() {
-    return Set.of(defaultRole);
-  }
-
-  public String defaultPlanName() {
-    return defaultPlan;
-  }
-
-  public boolean defaultSubscriptionActive() {
-    return subscriptionActive;
+  public AccountProvisioningSpec defaultRegistration() {
+    return new AccountProvisioningSpec(
+        Set.of(properties.defaultRole()),
+        properties.defaultPlan(),
+        properties.defaultSubscriptionActive());
   }
 }
