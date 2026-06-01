@@ -9,7 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.plan.api.PlanDto;
+import io.backend.lined.plan.domain.BuiltInPlan;
 import io.backend.lined.plan.service.PlanService;
+import io.backend.lined.role.domain.BuiltInRole;
 import io.backend.lined.role.service.RoleService;
 import io.backend.lined.subscription.api.SubscriptionDto;
 import io.backend.lined.subscription.service.SubscriptionService;
@@ -28,6 +30,26 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class AccountApplicationServiceImplTest {
+
+  private static final long USER_ID = 1L;
+  private static final long ADMIN_USER_ID = 2L;
+  private static final long FREE_PLAN_ID = 10L;
+  private static final long STARTER_PLAN_ID = 20L;
+  private static final long PRO_PLAN_ID = 20L;
+  private static final long SUBSCRIPTION_ID = 100L;
+  private static final int PLAN_DURATION_DAYS = 30;
+  private static final String USERNAME = "testuser";
+  private static final String USER_EMAIL = "test@example.com";
+  private static final String PASSWORD = "password";
+  private static final String ADMIN_USERNAME = "adminuser";
+  private static final String ADMIN_EMAIL = "admin@example.com";
+  private static final String USER_ROLE = BuiltInRole.USER.value();
+  private static final String ADMIN_ROLE = BuiltInRole.ADMIN.value();
+  private static final String MODERATOR_ROLE = "ROLE_MODERATOR";
+  private static final String FREE_PLAN_NAME = BuiltInPlan.FREE.value();
+  private static final String STARTER_PLAN_NAME = "STARTER";
+  private static final String PRO_PLAN_NAME = "PRO_MONTHLY";
+  private static final String PRO_PLAN_PRICE = "9.99";
 
   @Mock
   private UserService userService;
@@ -53,15 +75,15 @@ class AccountApplicationServiceImplTest {
   void setUp() {
     now = OffsetDateTime.now();
 
-    createDto = new UserCreateDto("testuser", "test@example.com", "password", Set.of());
+    createDto = new UserCreateDto(USERNAME, USER_EMAIL, PASSWORD, Set.of());
 
-    userDto = new UserDto(1L, "testuser", "test@example.com", now, Set.of(), null, null);
+    userDto = new UserDto(USER_ID, USERNAME, USER_EMAIL, now, Set.of(), null, null);
 
-    freePlan = new PlanDto(10L, "FREE", BigDecimal.ZERO, 30, now);
+    freePlan = new PlanDto(FREE_PLAN_ID, FREE_PLAN_NAME, BigDecimal.ZERO, PLAN_DURATION_DAYS, now);
 
     subscriptionDto = new SubscriptionDto(
-        100L, 1L, 10L, "FREE",
-        now, now.plusDays(30), true, now
+        SUBSCRIPTION_ID, USER_ID, FREE_PLAN_ID, FREE_PLAN_NAME,
+        now, now.plusDays(PLAN_DURATION_DAYS), true, now
     );
   }
 
@@ -72,85 +94,83 @@ class AccountApplicationServiceImplTest {
   @Test
   void registerUser_success_appliesDefaultProvisioningPolicy() {
     when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(1L)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
-    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
-    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
-    when(planService.getByName("FREE")).thenReturn(freePlan);
+    when(userService.getById(USER_ID)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRegistration())
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(userDto);
-    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
-    verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(true));
+    verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
+    verify(subscriptionService).start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(true));
   }
 
   @Test
   void registerUser_usesPolicyPlanNameForDefaultSubscription() {
-    PlanDto starterPlan = new PlanDto(20L, "STARTER", BigDecimal.ZERO, 30, now);
+    PlanDto starterPlan =
+        new PlanDto(STARTER_PLAN_ID, STARTER_PLAN_NAME, BigDecimal.ZERO, PLAN_DURATION_DAYS, now);
 
     when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(1L)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
-    when(provisioningPolicy.defaultPlanName()).thenReturn("STARTER");
-    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
-    when(planService.getByName("STARTER")).thenReturn(starterPlan);
+    when(userService.getById(USER_ID)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRegistration())
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), STARTER_PLAN_NAME, true));
+    when(planService.getByName(STARTER_PLAN_NAME)).thenReturn(starterPlan);
 
     accountService.registerUser(createDto);
 
-    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
-    verify(planService).getByName("STARTER");
-    verify(subscriptionService).start(eq(1L), eq(20L), isNull(), isNull(), eq(true));
+    verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
+    verify(planService).getByName(STARTER_PLAN_NAME);
+    verify(subscriptionService)
+        .start(eq(USER_ID), eq(STARTER_PLAN_ID), isNull(), isNull(), eq(true));
   }
 
   @Test
   void registerUser_usesPolicyActiveFlagForDefaultSubscription() {
     when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(1L)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
-    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
-    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(false);
-    when(planService.getByName("FREE")).thenReturn(freePlan);
+    when(userService.getById(USER_ID)).thenReturn(userDto);
+    when(provisioningPolicy.defaultRegistration())
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, false));
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     accountService.registerUser(createDto);
 
-    verify(roleService).setUserRoles(1L, Set.of("ROLE_USER"));
-    verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(false));
+    verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
+    verify(subscriptionService).start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(false));
   }
 
   @Test
   void registerUser_policyRolesReplaceAnyDtoRoles() {
     UserCreateDto adminDto =
-        new UserCreateDto("adminuser", "admin@example.com", "password", Set.of("ROLE_ADMIN"));
+        new UserCreateDto(ADMIN_USERNAME, ADMIN_EMAIL, PASSWORD, Set.of(ADMIN_ROLE));
     UserDto adminUserDto =
-        new UserDto(2L, "adminuser", "admin@example.com", now, Set.of("ROLE_ADMIN"), null, null);
-    Set<String> policyRoles = Set.of("ROLE_USER");
+        new UserDto(ADMIN_USER_ID, ADMIN_USERNAME, ADMIN_EMAIL, now, Set.of(ADMIN_ROLE), null, null);
+    Set<String> policyRoles = Set.of(USER_ROLE);
 
     when(userService.create(adminDto)).thenReturn(adminUserDto);
-    when(userService.getById(2L)).thenReturn(adminUserDto);
-    when(provisioningPolicy.defaultRoles()).thenReturn(policyRoles);
-    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
-    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
-    when(planService.getByName("FREE")).thenReturn(freePlan);
+    when(userService.getById(ADMIN_USER_ID)).thenReturn(adminUserDto);
+    when(provisioningPolicy.defaultRegistration())
+        .thenReturn(new AccountProvisioningSpec(policyRoles, FREE_PLAN_NAME, true));
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     accountService.registerUser(adminDto);
 
-    verify(roleService).setUserRoles(2L, policyRoles);
+    verify(roleService).setUserRoles(ADMIN_USER_ID, policyRoles);
     verify(roleService, never()).addUserRoles(any(), any());
   }
 
   @Test
   void registerUser_returnsRefreshedUser_fromGetById() {
     UserDto refreshedUser = new UserDto(
-        1L, "testuser", "test@example.com", now, Set.of("ROLE_USER"), "FREE", now.plusDays(30)
+        USER_ID, USERNAME, USER_EMAIL, now, Set.of(USER_ROLE), FREE_PLAN_NAME,
+        now.plusDays(PLAN_DURATION_DAYS)
     );
 
     when(userService.create(createDto)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRoles()).thenReturn(Set.of("ROLE_USER"));
-    when(provisioningPolicy.defaultPlanName()).thenReturn("FREE");
-    when(provisioningPolicy.defaultSubscriptionActive()).thenReturn(true);
-    when(planService.getByName("FREE")).thenReturn(freePlan);
-    when(userService.getById(1L)).thenReturn(refreshedUser);
+    when(provisioningPolicy.defaultRegistration())
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
+    when(userService.getById(USER_ID)).thenReturn(refreshedUser);
 
     UserDto result = accountService.registerUser(createDto);
 
@@ -163,40 +183,40 @@ class AccountApplicationServiceImplTest {
 
   @Test
   void setRoles_success() {
-    Set<String> roles = Set.of("ROLE_ADMIN", "ROLE_USER");
+    Set<String> roles = Set.of(ADMIN_ROLE, USER_ROLE);
 
-    when(userService.getById(1L)).thenReturn(userDto);
+    when(userService.getById(USER_ID)).thenReturn(userDto);
 
-    UserDto result = accountService.setRoles(1L, roles);
+    UserDto result = accountService.setRoles(USER_ID, roles);
 
     assertThat(result).isEqualTo(userDto);
-    verify(roleService).setUserRoles(1L, roles);
-    verify(userService).getById(1L);
+    verify(roleService).setUserRoles(USER_ID, roles);
+    verify(userService).getById(USER_ID);
   }
 
   @Test
   void setRoles_returnsRefreshedUser_afterRoleChange() {
-    Set<String> roles = Set.of("ROLE_ADMIN");
+    Set<String> roles = Set.of(ADMIN_ROLE);
     UserDto updatedUser = new UserDto(
-        1L, "testuser", "test@example.com", now, Set.of("ROLE_ADMIN"), null, null
+        USER_ID, USERNAME, USER_EMAIL, now, Set.of(ADMIN_ROLE), null, null
     );
 
-    when(userService.getById(1L)).thenReturn(updatedUser);
+    when(userService.getById(USER_ID)).thenReturn(updatedUser);
 
-    UserDto result = accountService.setRoles(1L, roles);
+    UserDto result = accountService.setRoles(USER_ID, roles);
 
-    assertThat(result.roles()).contains("ROLE_ADMIN");
+    assertThat(result.roles()).contains(ADMIN_ROLE);
   }
 
   @Test
   void setRoles_delegatesExactRolesToRoleService() {
-    Set<String> roles = Set.of("ROLE_MODERATOR");
+    Set<String> roles = Set.of(MODERATOR_ROLE);
 
-    when(userService.getById(1L)).thenReturn(userDto);
+    when(userService.getById(USER_ID)).thenReturn(userDto);
 
-    accountService.setRoles(1L, roles);
+    accountService.setRoles(USER_ID, roles);
 
-    verify(roleService).setUserRoles(eq(1L), eq(roles));
+    verify(roleService).setUserRoles(eq(USER_ID), eq(roles));
   }
 
   /* =======================
@@ -205,38 +225,39 @@ class AccountApplicationServiceImplTest {
 
   @Test
   void activatePlan_success() {
-    when(planService.getByName("FREE")).thenReturn(freePlan);
-    when(subscriptionService.start(eq(1L), eq(10L), isNull(), isNull(), eq(true)))
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
+    when(subscriptionService.start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(true)))
         .thenReturn(subscriptionDto);
 
-    SubscriptionDto result = accountService.activatePlan(1L, "FREE");
+    SubscriptionDto result = accountService.activatePlan(USER_ID, FREE_PLAN_NAME);
 
     assertThat(result).isEqualTo(subscriptionDto);
-    verify(planService).getByName("FREE");
-    verify(subscriptionService).start(eq(1L), eq(10L), isNull(), isNull(), eq(true));
+    verify(planService).getByName(FREE_PLAN_NAME);
+    verify(subscriptionService).start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(true));
   }
 
   @Test
   void activatePlan_looksPlanUpByName() {
-    PlanDto proPlan = new PlanDto(20L, "PRO_MONTHLY", new BigDecimal("9.99"), 30, now);
+    PlanDto proPlan = new PlanDto(
+        PRO_PLAN_ID, PRO_PLAN_NAME, new BigDecimal(PRO_PLAN_PRICE), PLAN_DURATION_DAYS, now);
 
-    when(planService.getByName("PRO_MONTHLY")).thenReturn(proPlan);
-    when(subscriptionService.start(eq(1L), eq(20L), isNull(), isNull(), eq(true)))
+    when(planService.getByName(PRO_PLAN_NAME)).thenReturn(proPlan);
+    when(subscriptionService.start(eq(USER_ID), eq(PRO_PLAN_ID), isNull(), isNull(), eq(true)))
         .thenReturn(subscriptionDto);
 
-    accountService.activatePlan(1L, "PRO_MONTHLY");
+    accountService.activatePlan(USER_ID, PRO_PLAN_NAME);
 
-    verify(planService).getByName("PRO_MONTHLY");
-    verify(subscriptionService).start(eq(1L), eq(20L), isNull(), isNull(), eq(true));
+    verify(planService).getByName(PRO_PLAN_NAME);
+    verify(subscriptionService).start(eq(USER_ID), eq(PRO_PLAN_ID), isNull(), isNull(), eq(true));
   }
 
   @Test
   void activatePlan_alwaysStartsActiveSubscription() {
-    when(planService.getByName("FREE")).thenReturn(freePlan);
+    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
     when(subscriptionService.start(any(), any(), any(), any(), eq(true)))
         .thenReturn(subscriptionDto);
 
-    accountService.activatePlan(1L, "FREE");
+    accountService.activatePlan(USER_ID, FREE_PLAN_NAME);
 
     // Verify active=true is always passed
     verify(subscriptionService).start(any(), any(), isNull(), isNull(), eq(true));

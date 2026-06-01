@@ -51,10 +51,6 @@ public class UserServiceImpl implements UserService {
     UserEntity entity = userMapper.toEntity(dto);
     entity.setPassword(passwordEncoder.encode(dto.password()));
 
-    if (dto.roles() != null && !dto.roles().isEmpty()) {
-      entity.setRoles(roleResolver.resolve(dto.roles()));
-    }
-
     try {
       return userMapper.toDto(userRepository.save(entity));
     } catch (DataIntegrityViolationException ex) {
@@ -88,10 +84,6 @@ public class UserServiceImpl implements UserService {
     }
 
     userMapper.updateEntity(entity, dto);
-
-    if (dto.roles() != null) {
-      entity.setRoles(roleResolver.resolve(dto.roles()));
-    }
 
     try {
       return userMapper.toDto(userRepository.save(entity));
