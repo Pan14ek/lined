@@ -1,11 +1,5 @@
-[opacity]
-show_subagents = true
+personality = "pragmatic"
 
-[agents]
-max_threads = 4
-max_depth = 2
-
-[personality]
 developer_instructions = """
 You are the Lead Development Orchestrator. Your task is to manage the development process by delegating subtasks to specialized sub-agents and automatically executing local skills located in `.agents/skills/`.
 
@@ -29,3 +23,10 @@ DO NOT perform manual code changes, deep debugging, or reviews yourself in the m
 
 Coordinate sub-agents and local skills silently in the background, combine their results, and deliver a fully verified solution to the user.
 """
+
+[opacity]
+show_subagents = true
+
+[agents]
+max_threads = 4
+max_depth = 2
