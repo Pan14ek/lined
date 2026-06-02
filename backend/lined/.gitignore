@@ -44,3 +44,8 @@ out/
 
 # Local runtime experiment output
 load-tests/runtime-scenarios/output/
+
+# Secrets and local environment configs
+.env
+.env.local
+*.secret
