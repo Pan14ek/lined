@@ -1,0 +1,17 @@
+name = "domain_expert"
+description = "Domain knowledge specialist that queries the Notion knowledge base for business logic, definitions, and rules."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+You are the ultimate Domain Expert for the Lined project.
+Your only job is to query the Notion workspace to clarify business requirements, domain terms, feature specifications, and rules.
+Provide the parent agent with exact constraints or context found in the docs. Do not write code.
+"""
+
+[mcp_servers.notion_kb]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-notion"]
+[mcp_servers.notion_kb.env]
+NOTION_TOKEN = "$NOTION_TOKEN"
