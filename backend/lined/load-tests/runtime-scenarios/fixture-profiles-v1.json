@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "local-smoke": {
+      "description": "Minimal fixture for local command validation.",
+      "workload": "smoke",
+      "k6_env": {
+        "USER_COUNT": "2",
+        "SEED_TASK_COUNT": "2",
+        "SEED_EVENT_COUNT": "2",
+        "THINK_TIME_SECONDS": "0"
+      }
+    },
+    "comparison-baseline": {
+      "description": "Standard fixture for stable baseline scenario comparison.",
+      "workload": "baseline",
+      "k6_env": {
+        "USER_COUNT": "4",
+        "SEED_TASK_COUNT": "12",
+        "SEED_EVENT_COUNT": "8",
+        "VUS": "5",
+        "DURATION": "2m",
+        "THINK_TIME_SECONDS": "1"
+      }
+    },
+    "comparison-read-heavy": {
+      "description": "Read-oriented fixture over bounded users, lobby, tasks, and events.",
+      "workload": "read-heavy",
+      "k6_env": {
+        "USER_COUNT": "4",
+        "SEED_TASK_COUNT": "12",
+        "SEED_EVENT_COUNT": "8",
+        "VUS": "5",
+        "DURATION": "2m",
+        "THINK_TIME_SECONDS": "1"
+      }
+    },
+    "comparison-write-heavy": {
+      "description": "Write-oriented fixture with bounded setup and per-iteration cleanup.",
+      "workload": "write-heavy",
+      "k6_env": {
+        "USER_COUNT": "4",
+        "SEED_TASK_COUNT": "12",
+        "SEED_EVENT_COUNT": "8",
+        "VUS": "5",
+        "DURATION": "2m",
+        "THINK_TIME_SECONDS": "1"
+      }
+    },
+    "comparison-mixed": {
+      "description": "Mixed read, update, and bounded write fixture for scenario comparison.",
+      "workload": "mixed",
+      "k6_env": {
+        "USER_COUNT": "4",
+        "SEED_TASK_COUNT": "12",
+        "SEED_EVENT_COUNT": "8",
+        "VUS": "5",
+        "DURATION": "2m",
+        "THINK_TIME_SECONDS": "1"
+      }
+    },
+    "comparison-stress": {
+      "description": "Ramping-VU fixture for local stress comparison.",
+      "workload": "stress",
+      "k6_env": {
+        "USER_COUNT": "4",
+        "SEED_TASK_COUNT": "12",
+        "SEED_EVENT_COUNT": "8",
+        "STRESS_MAX_VUS": "20",
+        "STRESS_STAGE_DURATION": "30s",
+        "THINK_TIME_SECONDS": "1"
+      }
+    }
+  }
+}

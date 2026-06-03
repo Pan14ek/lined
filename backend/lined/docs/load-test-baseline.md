@@ -123,6 +123,26 @@ k6 run \
   load-tests/k6/load-test-baseline.js
 ```
 
+## Fixture Profiles
+
+For deployment/runtime comparison runs, prefer the scenario-runner fixture
+profiles in `load-tests/runtime-scenarios/fixture-profiles-v1.json` instead of
+passing ad hoc k6 environment values. The profiles pin the workload and setup
+inputs used by the k6 script, including user count, seeded task and event
+counts, VU or stress settings, duration, and think time.
+
+Run a stable comparison fixture through the scenario runner:
+
+```bash
+node load-tests/runtime-scenarios/scenario-runner-cli.mjs \
+  --scenario fixed-medium \
+  --fixture-profile comparison-baseline \
+  --base-url http://localhost:8080
+```
+
+Use direct `k6 run` commands for one-off local checks. Use fixture profiles for
+experiment evidence that will be compared across deployment scenarios.
+
 ## Run with Docker
 
 If k6 is not installed locally, use the official Grafana k6 image from the
