@@ -78,26 +78,42 @@ const readFixtureArtifact = (cwd, file) => {
 };
 
 const validateProfile = (name, profile) => {
-  if (!isRecord(profile)) {
-    throw new Error(`fixture profile ${name} must be an object`);
+  requireRecord(`fixture profile ${name}`, profile);
+  requireKnownProfileKeys(name, profile);
+  requireWorkload(name, profile.workload);
+  requireK6Env(name, profile.k6_env);
+};
+
+const requireRecord = (label, value) => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
   }
+};
+
+const requireKnownProfileKeys = (name, profile) => {
   const unknownKeys = Object.keys(profile).filter((key) => !PROFILE_KEYS.has(key));
   if (unknownKeys.length > 0) {
     throw new Error(`fixture profile ${name} has unsupported keys: ${unknownKeys.join(', ')}`);
   }
-  if (typeof profile.workload !== 'string' || profile.workload.length === 0) {
+};
+
+const requireWorkload = (name, workload) => {
+  if (typeof workload !== 'string' || workload.length === 0) {
     throw new Error(`fixture profile ${name} must define workload`);
   }
-  if (!isRecord(profile.k6_env)) {
-    throw new Error(`fixture profile ${name} must define k6_env`);
+};
+
+const requireK6Env = (name, k6Env) => {
+  requireRecord(`fixture profile ${name} k6_env`, k6Env);
+  Object.entries(k6Env).forEach(([key, value]) => requireK6EnvEntry(name, key, value));
+};
+
+const requireK6EnvEntry = (name, key, value) => {
+  if (!K6_ENV_KEYS.has(key)) {
+    throw new Error(`fixture profile ${name} has unsupported k6 env ${key}`);
   }
-  for (const [key, value] of Object.entries(profile.k6_env)) {
-    if (!K6_ENV_KEYS.has(key)) {
-      throw new Error(`fixture profile ${name} has unsupported k6 env ${key}`);
-    }
-    if (typeof value !== 'string') {
-      throw new Error(`fixture profile ${name} k6 env ${key} must be a string`);
-    }
+  if (typeof value !== 'string') {
+    throw new Error(`fixture profile ${name} k6 env ${key} must be a string`);
   }
 };
 

@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -101,100 +100,152 @@ const pods = {
   }],
 };
 
+const TEXTS = Object.freeze({
+  env: {
+    stressThinkTime: 'THINK_TIME_SECONDS',
+    token: 'TOKEN',
+    userCount: 'USER_COUNT',
+    vus: 'VUS',
+  },
+  fixture: {
+    baseline: 'comparison-baseline',
+    readHeavy: 'comparison-read-heavy',
+    unknown: 'unknown',
+    unsafe: 'unsafe',
+  },
+  scenario: {
+    fixedMedium: 'fixed-medium',
+    hpaCpu: 'hpa-cpu',
+    unknown: 'unknown',
+  },
+  workload: {
+    baseline: 'baseline',
+    readHeavy: 'read-heavy',
+    smoke: 'smoke',
+    unknown: 'unknown',
+  },
+});
+
+const VALUES = Object.freeze({
+  events: {
+    baselineSeedCount: '8',
+  },
+  tasks: {
+    baselineSeedCount: '12',
+  },
+  thinkTime: {
+    none: '0',
+  },
+  users: {
+    baselineCount: '4',
+  },
+  vus: {
+    baseline: '5',
+    override: '2',
+  },
+});
+
 describe('parseArgs', () => {
-  it('accepts valid scenario, workload, and allowlisted k6 env options', () => {
+  it('accepts valid scenario, workload, and allowlisted k6 env options', (t) => {
+    t.plan(3);
     const options = parseArgs([
       '--scenario',
-      'fixed-medium',
+      TEXTS.scenario.fixedMedium,
       '--workload',
-      'smoke',
+      TEXTS.workload.smoke,
       '--k6-env',
-      'VUS=2',
+      `${TEXTS.env.vus}=${VALUES.vus.override}`,
     ]);
 
-    assert.equal(options.scenario, 'fixed-medium');
-    assert.equal(options.workload, 'smoke');
-    assert.equal(options.k6Env.VUS, '2');
+    t.assert.equal(options.scenario, TEXTS.scenario.fixedMedium);
+    t.assert.equal(options.workload, TEXTS.workload.smoke);
+    t.assert.equal(options.k6Env.VUS, VALUES.vus.override);
   });
 
-  it('applies a fixture profile as workload and k6 env defaults', () => {
+  it('applies a fixture profile as workload and k6 env defaults', (t) => {
+    t.plan(5);
     const options = parseArgs([
       '--scenario',
-      'fixed-medium',
+      TEXTS.scenario.fixedMedium,
       '--fixture-profile',
-      'comparison-baseline',
+      TEXTS.fixture.baseline,
     ]);
 
-    assert.equal(options.fixtureProfileData.name, 'comparison-baseline');
-    assert.equal(options.workload, 'baseline');
-    assert.equal(options.k6Env.USER_COUNT, '4');
-    assert.equal(options.k6Env.SEED_TASK_COUNT, '12');
-    assert.equal(options.k6Env.VUS, '5');
+    t.assert.equal(options.fixtureProfileData.name, TEXTS.fixture.baseline);
+    t.assert.equal(options.workload, TEXTS.workload.baseline);
+    t.assert.equal(options.k6Env.USER_COUNT, VALUES.users.baselineCount);
+    t.assert.equal(options.k6Env.SEED_TASK_COUNT, VALUES.tasks.baselineSeedCount);
+    t.assert.equal(options.k6Env.VUS, VALUES.vus.baseline);
   });
 
-  it('lets explicit workload and k6 env override fixture defaults', () => {
+  it('lets explicit workload and k6 env override fixture defaults', (t) => {
+    t.plan(4);
     const options = parseArgs([
       '--scenario',
-      'fixed-medium',
+      TEXTS.scenario.fixedMedium,
       '--fixture-profile',
-      'comparison-baseline',
+      TEXTS.fixture.baseline,
       '--workload',
-      'read-heavy',
+      TEXTS.workload.readHeavy,
       '--k6-env',
-      'VUS=2',
+      `${TEXTS.env.vus}=${VALUES.vus.override}`,
       '--k6-env',
-      'THINK_TIME_SECONDS=0',
+      `${TEXTS.env.stressThinkTime}=${VALUES.thinkTime.none}`,
     ]);
 
-    assert.equal(options.workload, 'read-heavy');
-    assert.equal(options.k6Env.USER_COUNT, '4');
-    assert.equal(options.k6Env.VUS, '2');
-    assert.equal(options.k6Env.THINK_TIME_SECONDS, '0');
+    t.assert.equal(options.workload, TEXTS.workload.readHeavy);
+    t.assert.equal(options.k6Env.USER_COUNT, VALUES.users.baselineCount);
+    t.assert.equal(options.k6Env.VUS, VALUES.vus.override);
+    t.assert.equal(options.k6Env.THINK_TIME_SECONDS, VALUES.thinkTime.none);
   });
 
-  it('rejects unknown scenarios and workloads', () => {
-    assert.throws(
-      () => parseArgs(['--scenario', 'unknown']),
+  it('rejects unknown scenarios and workloads', (t) => {
+    t.plan(2);
+    t.assert.throws(
+      () => parseArgs(['--scenario', TEXTS.scenario.unknown]),
       /--scenario must be one of/
     );
-    assert.throws(
-      () => parseArgs(['--scenario', 'fixed-medium', '--workload', 'unknown']),
+    t.assert.throws(
+      () => parseArgs(['--scenario', TEXTS.scenario.fixedMedium, '--workload', TEXTS.workload.unknown]),
       /--workload must be one of/
     );
   });
 
-  it('rejects unknown fixture profiles', () => {
-    assert.throws(
-      () => parseArgs(['--scenario', 'fixed-medium', '--fixture-profile', 'unknown']),
+  it('rejects unknown fixture profiles', (t) => {
+    t.plan(1);
+    t.assert.throws(
+      () => parseArgs(['--scenario', TEXTS.scenario.fixedMedium, '--fixture-profile', TEXTS.fixture.unknown]),
       /--fixture-profile must be one of/
     );
   });
 
-  it('rejects unsupported k6 env keys so secrets are not forwarded', () => {
-    assert.throws(
-      () => parseArgs(['--scenario', 'fixed-medium', '--k6-env', 'TOKEN=secret']),
+  it('rejects unsupported k6 env keys so secrets are not forwarded', (t) => {
+    t.plan(1);
+    t.assert.throws(
+      () => parseArgs(['--scenario', TEXTS.scenario.fixedMedium, '--k6-env', `${TEXTS.env.token}=secret`]),
       /Unsupported k6 env TOKEN/
     );
   });
 
-  it('rejects unsupported fixture k6 env keys', () => {
+  it('rejects unsupported fixture k6 env keys', (t) => {
+    t.plan(1);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-fixtures-'));
     const fixtureFile = path.join(directory, 'fixtures.json');
     fs.writeFileSync(fixtureFile, JSON.stringify({
       schema_version: 1,
       profiles: {
-        unsafe: {
-          workload: 'baseline',
+        [TEXTS.fixture.unsafe]: {
+          workload: TEXTS.workload.baseline,
           k6_env: {
-            TOKEN: 'secret',
+            [TEXTS.env.token]: 'secret',
           },
         },
       },
     }), 'utf-8');
 
     try {
-      assert.throws(
-        () => loadFixtureProfile('unsafe', { file: fixtureFile }),
+      t.assert.throws(
+        () => loadFixtureProfile(TEXTS.fixture.unsafe, { file: fixtureFile }),
         /unsupported k6 env TOKEN/
       );
     } finally {
@@ -204,24 +255,27 @@ describe('parseArgs', () => {
 });
 
 describe('ensureLocalBaseUrl', () => {
-  it('accepts local targets by default', () => {
-    assert.doesNotThrow(() => ensureLocalBaseUrl('http://localhost:8080', false));
-    assert.doesNotThrow(() => ensureLocalBaseUrl('http://127.0.0.1:8080', false));
-    assert.doesNotThrow(() => ensureLocalBaseUrl('http://[::1]:8080', false));
+  it('accepts local targets by default', (t) => {
+    t.plan(3);
+    t.assert.doesNotThrow(() => ensureLocalBaseUrl('http://localhost:8080', false));
+    t.assert.doesNotThrow(() => ensureLocalBaseUrl('http://127.0.0.1:8080', false));
+    t.assert.doesNotThrow(() => ensureLocalBaseUrl('http://[::1]:8080', false));
   });
 
-  it('rejects remote targets unless explicitly allowed', () => {
-    assert.throws(
+  it('rejects remote targets unless explicitly allowed', (t) => {
+    t.plan(2);
+    t.assert.throws(
       () => ensureLocalBaseUrl('http://example.com', false),
       /BASE_URL must point to localhost/
     );
-    assert.doesNotThrow(() => ensureLocalBaseUrl('http://example.com', true));
+    t.assert.doesNotThrow(() => ensureLocalBaseUrl('http://example.com', true));
   });
 });
 
 describe('runK6', () => {
-  it('reports a clear install hint when k6 is missing', () => {
-    assert.throws(
+  it('reports a clear install hint when k6 is missing', (t) => {
+    t.plan(1);
+    t.assert.throws(
       () => assertK6Available('missing-k6', {
         commandRunner: () => ({
           error: Object.assign(new Error('spawn missing-k6 ENOENT'), {
@@ -234,7 +288,8 @@ describe('runK6', () => {
     );
   });
 
-  it('builds argv arrays instead of shell command strings', () => {
+  it('builds argv arrays instead of shell command strings', (t) => {
+    t.plan(5);
     const calls = [];
     const commandRunner = (command, args) => {
       calls.push({ args, command });
@@ -255,16 +310,17 @@ describe('runK6', () => {
       { commandRunner }
     );
 
-    assert.equal(calls[0].command, 'k6');
-    assert.ok(Array.isArray(calls[0].args));
-    assert.ok(calls[0].args.includes('--summary-export'));
-    assert.ok(calls[0].args.includes('VUS=2'));
-    assert.ok(calls[0].args.includes('ALLOW_REMOTE_BASE_URL=true'));
+    t.assert.equal(calls[0].command, 'k6');
+    t.assert.ok(Array.isArray(calls[0].args));
+    t.assert.ok(calls[0].args.includes('--summary-export'));
+    t.assert.ok(calls[0].args.includes('VUS=2'));
+    t.assert.ok(calls[0].args.includes('ALLOW_REMOTE_BASE_URL=true'));
   });
 });
 
 describe('Kubernetes state adapter helpers', () => {
-  it('deletes stale HPA for fixed scenarios unless skipped', () => {
+  it('deletes stale HPA for fixed scenarios unless skipped', (t) => {
+    t.plan(2);
     const calls = [];
     const commandRunner = (command, args) => {
       calls.push({ args, command });
@@ -277,8 +333,8 @@ describe('Kubernetes state adapter helpers', () => {
       { commandRunner }
     );
 
-    assert.equal(cleaned, true);
-    assert.deepEqual(calls[0], {
+    t.assert.equal(cleaned, true);
+    t.assert.deepEqual(calls[0], {
       command: 'kubectl',
       args: [
         '-n',
@@ -291,7 +347,8 @@ describe('Kubernetes state adapter helpers', () => {
     });
   });
 
-  it('skips HPA cleanup when requested', () => {
+  it('skips HPA cleanup when requested', (t) => {
+    t.plan(2);
     const calls = [];
     const cleaned = cleanupHpaIfNeeded(
       { skipHpaCleanup: true },
@@ -304,51 +361,55 @@ describe('Kubernetes state adapter helpers', () => {
       }
     );
 
-    assert.equal(cleaned, false);
-    assert.deepEqual(calls, []);
+    t.assert.equal(cleaned, false);
+    t.assert.deepEqual(calls, []);
   });
 
-  it('parses Kubernetes resource quantities and pod top output', () => {
-    assert.equal(parseCpuQuantity('500m'), 500);
-    assert.equal(parseCpuQuantity('1'), 1000);
-    assert.equal(parseCpuQuantity('250u'), 0.25);
-    assert.equal(parseMemoryQuantity('1Gi'), 1024 ** 3);
-    assert.equal(parseMemoryQuantity('512Mi'), 512 * 1024 ** 2);
-    assert.deepEqual(parseTopPods('lined-backend-a 250m 512Mi\n'), [{
+  it('parses Kubernetes resource quantities and pod top output', (t) => {
+    t.plan(6);
+    t.assert.equal(parseCpuQuantity('500m'), 500);
+    t.assert.equal(parseCpuQuantity('1'), 1000);
+    t.assert.equal(parseCpuQuantity('250u'), 0.25);
+    t.assert.equal(parseMemoryQuantity('1Gi'), 1024 ** 3);
+    t.assert.equal(parseMemoryQuantity('512Mi'), 512 * 1024 ** 2);
+    t.assert.deepEqual(parseTopPods('lined-backend-a 250m 512Mi\n'), [{
       cpuMillicores: 250,
       memoryBytes: 512 * 1024 ** 2,
       name: 'lined-backend-a',
     }]);
   });
 
-  it('summarizes Kubernetes utilization and restarts', () => {
+  it('summarizes Kubernetes utilization and restarts', (t) => {
+    t.plan(4);
     const result = summarizeKubernetesState({
       deployment,
       pods,
       topOutput: 'lined-backend-a 250m 512Mi\nlined-backend-b 250m 512Mi\n',
     });
 
-    assert.equal(result.cpuUtilization, 0.5);
-    assert.equal(result.memoryUtilization, 0.5);
-    assert.equal(result.restartCount, 3);
-    assert.equal(result.metricsServerAvailable, true);
+    t.assert.equal(result.cpuUtilization, 0.5);
+    t.assert.equal(result.memoryUtilization, 0.5);
+    t.assert.equal(result.restartCount, 3);
+    t.assert.equal(result.metricsServerAvailable, true);
   });
 
-  it('omits utilization when metrics-server data is missing', () => {
+  it('omits utilization when metrics-server data is missing', (t) => {
+    t.plan(3);
     const result = summarizeKubernetesState({
       deployment,
       pods,
       topOutput: '',
     });
 
-    assert.equal(result.cpuUtilization, undefined);
-    assert.equal(result.memoryUtilization, undefined);
-    assert.equal(result.metricsServerAvailable, false);
+    t.assert.equal(result.cpuUtilization, undefined);
+    t.assert.equal(result.memoryUtilization, undefined);
+    t.assert.equal(result.metricsServerAvailable, false);
   });
 });
 
 describe('buildRuntimeSummary', () => {
-  it('builds a collector-compatible summary and records missing optional metrics', () => {
+  it('builds a collector-compatible summary and records missing optional metrics', (t) => {
+    t.plan(1);
     const summary = buildRuntimeSummary({
       k6Summary: nestedK6Summary,
       kubernetes: {
@@ -359,7 +420,7 @@ describe('buildRuntimeSummary', () => {
       workload: 'smoke',
     });
 
-    assert.deepEqual(summary, {
+    t.assert.deepEqual(summary, {
       schema_version: 1,
       scenario: 'fixed-medium',
       workload: 'smoke',
@@ -379,7 +440,8 @@ describe('buildRuntimeSummary', () => {
     });
   });
 
-  it('reads flat k6 v2 summary exports', () => {
+  it('reads flat k6 v2 summary exports', (t) => {
+    t.plan(4);
     const summary = buildRuntimeSummary({
       k6Summary: flatK6Summary,
       kubernetes: {
@@ -390,13 +452,14 @@ describe('buildRuntimeSummary', () => {
       workload: 'smoke',
     });
 
-    assert.equal(summary.summary.latency_p95_ms, 150.25);
-    assert.equal(summary.summary.latency_p99_ms, 275.5);
-    assert.equal(summary.summary.error_rate, 0);
-    assert.equal(summary.summary.throughput_rps, 25.5);
+    t.assert.equal(summary.summary.latency_p95_ms, 150.25);
+    t.assert.equal(summary.summary.latency_p99_ms, 275.5);
+    t.assert.equal(summary.summary.error_rate, 0);
+    t.assert.equal(summary.summary.throughput_rps, 25.5);
   });
 
-  it('marks missing HPA fields for the HPA scenario when no HPA state is present', () => {
+  it('marks missing HPA fields for the HPA scenario when no HPA state is present', (t) => {
+    t.plan(2);
     const summary = buildRuntimeSummary({
       k6Summary: nestedK6Summary,
       kubernetes: {
@@ -407,11 +470,12 @@ describe('buildRuntimeSummary', () => {
       workload: 'baseline',
     });
 
-    assert.ok(summary.missing.includes('hpa_current_replicas'));
-    assert.ok(summary.missing.includes('hpa_desired_replicas'));
+    t.assert.ok(summary.missing.includes('hpa_current_replicas'));
+    t.assert.ok(summary.missing.includes('hpa_desired_replicas'));
   });
 
-  it('uses measurement-window restart deltas instead of cumulative snapshots', () => {
+  it('uses measurement-window restart deltas instead of cumulative snapshots', (t) => {
+    t.plan(4);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -435,16 +499,17 @@ describe('buildRuntimeSummary', () => {
         })
       );
 
-      assert.equal(result.summary.summary.restart_count, 2);
-      assert.equal(result.manifest.kubernetes.restart_count_before, 4);
-      assert.equal(result.manifest.kubernetes.restart_count_after, 6);
-      assert.equal(result.manifest.kubernetes.restart_count_delta, 2);
+      t.assert.equal(result.summary.summary.restart_count, 2);
+      t.assert.equal(result.manifest.kubernetes.restart_count_before, 4);
+      t.assert.equal(result.manifest.kubernetes.restart_count_after, 6);
+      t.assert.equal(result.manifest.kubernetes.restart_count_delta, 2);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
 
-  it('does not emit a negative restart delta when pod counters reset', () => {
+  it('does not emit a negative restart delta when pod counters reset', (t) => {
+    t.plan(3);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -468,20 +533,21 @@ describe('buildRuntimeSummary', () => {
         })
       );
 
-      assert.equal(result.summary.summary.restart_count, 0);
-      assert.equal(result.manifest.kubernetes.restart_count_before, 4);
-      assert.equal(result.manifest.kubernetes.restart_count_after, 1);
+      t.assert.equal(result.summary.summary.restart_count, 0);
+      t.assert.equal(result.manifest.kubernetes.restart_count_before, 4);
+      t.assert.equal(result.manifest.kubernetes.restart_count_after, 1);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
 
-  it('fails without writing a collector summary when k6 omits summary export', () => {
+  it('fails without writing a collector summary when k6 omits summary export', (t) => {
+    t.plan(5);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
       let thrown;
-      assert.throws(
+      t.assert.throws(
         () => runScenario(
           {
             allowRemoteBaseUrl: false,
@@ -512,10 +578,10 @@ describe('buildRuntimeSummary', () => {
         fs.readFileSync(path.join(runDir, 'runtime-summary-manifest.json'), 'utf-8')
       );
 
-      assert.equal(thrown instanceof Error, true);
-      assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary-manifest.json')), true);
-      assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
-      assert.equal(manifest.collector_summary_written, false);
+      t.assert.equal(thrown instanceof Error, true);
+      t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary-manifest.json')), true);
+      t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
+      t.assert.equal(manifest.collector_summary_written, false);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
@@ -523,7 +589,8 @@ describe('buildRuntimeSummary', () => {
 });
 
 describe('manifest and runScenario', () => {
-  it('records sanitized provenance in the manifest', () => {
+  it('records sanitized provenance in the manifest', (t) => {
+    t.plan(6);
     const manifest = buildManifest({
       appliedScenario: true,
       finishedAt: '2026-06-01T10:00:10.000Z',
@@ -567,10 +634,10 @@ describe('manifest and runScenario', () => {
       summaryWritten: true,
     });
 
-    assert.equal(manifest.kubernetes.applied_scenario, true);
-    assert.equal(manifest.kubernetes.hpa_cleanup, true);
-    assert.equal(manifest.collector_summary_written, true);
-    assert.deepEqual(manifest.fixture_profile, {
+    t.assert.equal(manifest.kubernetes.applied_scenario, true);
+    t.assert.equal(manifest.kubernetes.hpa_cleanup, true);
+    t.assert.equal(manifest.collector_summary_written, true);
+    t.assert.deepEqual(manifest.fixture_profile, {
       name: 'comparison-baseline',
       schema_version: 1,
       workload: 'baseline',
@@ -579,11 +646,12 @@ describe('manifest and runScenario', () => {
         VUS: '2',
       },
     });
-    assert.equal(manifest.workload_env.VUS, '2');
-    assert.equal(manifest.git.branch, 'bug/scenario-runner-seam');
+    t.assert.equal(manifest.workload_env.VUS, '2');
+    t.assert.equal(manifest.git.branch, 'bug/scenario-runner-seam');
   });
 
-  it('writes a summary and manifest for successful runs', () => {
+  it('writes a summary and manifest for successful runs', (t) => {
+    t.plan(5);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -606,17 +674,18 @@ describe('manifest and runScenario', () => {
         })
       );
 
-      assert.equal(fs.existsSync(result.summaryPath), true);
-      assert.equal(fs.existsSync(result.manifestPath), true);
-      assert.equal(result.summary.summary.latency_p95_ms, 250.5);
-      assert.equal(result.summary.fixture_profile, undefined);
-      assert.equal(result.manifest.collector_summary_written, true);
+      t.assert.equal(fs.existsSync(result.summaryPath), true);
+      t.assert.equal(fs.existsSync(result.manifestPath), true);
+      t.assert.equal(result.summary.summary.latency_p95_ms, 250.5);
+      t.assert.equal(result.summary.fixture_profile, undefined);
+      t.assert.equal(result.manifest.collector_summary_written, true);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
 
-  it('applies fixture profiles when runScenario is called directly', () => {
+  it('applies fixture profiles when runScenario is called directly', (t) => {
+    t.plan(5);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -625,16 +694,16 @@ describe('manifest and runScenario', () => {
           allowRemoteBaseUrl: false,
           apply: false,
           baseUrl: 'http://localhost:8080',
-          fixtureProfile: 'comparison-read-heavy',
+          fixtureProfile: TEXTS.fixture.readHeavy,
           k6Bin: 'k6',
           k6Env: {
-            VUS: '2',
+            VUS: VALUES.vus.override,
           },
           outputRoot: directory,
-          scenario: 'fixed-medium',
+          scenario: TEXTS.scenario.fixedMedium,
           script: 'load-tests/k6/load-test-baseline.js',
           skipHpaCleanup: false,
-          workload: 'baseline',
+          workload: TEXTS.workload.baseline,
         },
         fakeAdapters({
           k6ExitCode: 0,
@@ -642,17 +711,18 @@ describe('manifest and runScenario', () => {
         })
       );
 
-      assert.equal(result.summary.workload, 'read-heavy');
-      assert.equal(result.manifest.fixture_profile.name, 'comparison-read-heavy');
-      assert.equal(result.manifest.workload_env.WORKLOAD, 'read-heavy');
-      assert.equal(result.manifest.workload_env.USER_COUNT, '4');
-      assert.equal(result.manifest.workload_env.VUS, '2');
+      t.assert.equal(result.summary.workload, TEXTS.workload.readHeavy);
+      t.assert.equal(result.manifest.fixture_profile.name, TEXTS.fixture.readHeavy);
+      t.assert.equal(result.manifest.workload_env.WORKLOAD, TEXTS.workload.readHeavy);
+      t.assert.equal(result.manifest.workload_env.USER_COUNT, VALUES.users.baselineCount);
+      t.assert.equal(result.manifest.workload_env.VUS, VALUES.vus.override);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
 
-  it('lets direct runScenario workload overrides win over fixture defaults', () => {
+  it('lets direct runScenario workload overrides win over fixture defaults', (t) => {
+    t.plan(4);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -661,14 +731,14 @@ describe('manifest and runScenario', () => {
           allowRemoteBaseUrl: false,
           apply: false,
           baseUrl: 'http://localhost:8080',
-          fixtureProfile: 'comparison-baseline',
+          fixtureProfile: TEXTS.fixture.baseline,
           k6Bin: 'k6',
           k6Env: {},
           outputRoot: directory,
-          scenario: 'fixed-medium',
+          scenario: TEXTS.scenario.fixedMedium,
           script: 'load-tests/k6/load-test-baseline.js',
           skipHpaCleanup: false,
-          workload: 'read-heavy',
+          workload: TEXTS.workload.readHeavy,
         },
         fakeAdapters({
           k6ExitCode: 0,
@@ -676,20 +746,21 @@ describe('manifest and runScenario', () => {
         })
       );
 
-      assert.equal(result.summary.workload, 'read-heavy');
-      assert.equal(result.manifest.fixture_profile.name, 'comparison-baseline');
-      assert.equal(result.manifest.workload_env.WORKLOAD, 'read-heavy');
-      assert.equal(result.manifest.workload_env.USER_COUNT, '4');
+      t.assert.equal(result.summary.workload, TEXTS.workload.readHeavy);
+      t.assert.equal(result.manifest.fixture_profile.name, TEXTS.fixture.baseline);
+      t.assert.equal(result.manifest.workload_env.WORKLOAD, TEXTS.workload.readHeavy);
+      t.assert.equal(result.manifest.workload_env.USER_COUNT, VALUES.users.baselineCount);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
 
-  it('writes only a manifest when k6 fails', () => {
+  it('writes only a manifest when k6 fails', (t) => {
+    t.plan(4);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
-      assert.throws(
+      t.assert.throws(
         () => runScenario(
           {
             allowRemoteBaseUrl: false,
@@ -712,10 +783,10 @@ describe('manifest and runScenario', () => {
       );
 
       const runDirs = fs.readdirSync(directory);
-      assert.equal(runDirs.length, 1);
+      t.assert.equal(runDirs.length, 1);
       const runDir = path.join(directory, runDirs[0]);
-      assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary-manifest.json')), true);
-      assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
+      t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary-manifest.json')), true);
+      t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }

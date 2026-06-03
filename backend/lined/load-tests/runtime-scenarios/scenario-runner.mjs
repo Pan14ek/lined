@@ -55,6 +55,34 @@ const DEFAULT_K6_BIN = 'k6';
 const DEFAULT_OUTPUT_ROOT = 'load-tests/runtime-scenarios/output';
 const DEFAULT_SCRIPT = 'load-tests/k6/load-test-baseline.js';
 const DEFAULT_WORKLOAD = 'baseline';
+const HELP_OPTIONS = new Set(['--help', '-h']);
+
+const OPTION_HANDLERS = Object.freeze({
+  '--scenario': readOptionInto('scenario'),
+  '--workload': (state, option) => {
+    state.options.workload = readNextOptionValue(state, option);
+    state.workloadExplicit = true;
+  },
+  '--base-url': readOptionInto('baseUrl'),
+  '--fixture-profile': readOptionInto('fixtureProfile'),
+  '--fixture-profile-file': readOptionInto('fixtureProfileFile'),
+  '--output-root': readOptionInto('outputRoot'),
+  '--script': readOptionInto('script'),
+  '--k6-bin': readOptionInto('k6Bin'),
+  '--k6-env': (state, option) => addK6Env(
+    state.explicitK6Env,
+    readNextOptionValue(state, option)
+  ),
+  '--skip-apply': (state) => {
+    state.options.apply = false;
+  },
+  '--skip-hpa-cleanup': (state) => {
+    state.options.skipHpaCleanup = true;
+  },
+  '--allow-remote-base-url': (state) => {
+    state.options.allowRemoteBaseUrl = true;
+  },
+});
 
 export class ScenarioRunError extends Error {
   constructor(message, result) {
@@ -79,50 +107,31 @@ export const defaultOptions = () => ({
 });
 
 export const parseArgs = (argv) => {
-  const options = defaultOptions();
-  const explicitK6Env = {};
-  let workloadExplicit = false;
+  const state = {
+    argv,
+    explicitK6Env: {},
+    index: 0,
+    options: defaultOptions(),
+    workloadExplicit: false,
+  };
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === '--help' || arg === '-h') {
-      return { ...options, help: true };
+  for (; state.index < argv.length; state.index += 1) {
+    const arg = argv[state.index];
+    if (HELP_OPTIONS.has(arg)) {
+      return { ...state.options, help: true };
     }
-    if (arg === '--scenario') {
-      options.scenario = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--workload') {
-      options.workload = readOptionValue(argv, ++index, arg);
-      workloadExplicit = true;
-    } else if (arg === '--base-url') {
-      options.baseUrl = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--fixture-profile') {
-      options.fixtureProfile = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--fixture-profile-file') {
-      options.fixtureProfileFile = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--output-root') {
-      options.outputRoot = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--script') {
-      options.script = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--k6-bin') {
-      options.k6Bin = readOptionValue(argv, ++index, arg);
-    } else if (arg === '--k6-env') {
-      addK6Env(explicitK6Env, readOptionValue(argv, ++index, arg));
-    } else if (arg === '--skip-apply') {
-      options.apply = false;
-    } else if (arg === '--skip-hpa-cleanup') {
-      options.skipHpaCleanup = true;
-    } else if (arg === '--allow-remote-base-url') {
-      options.allowRemoteBaseUrl = true;
-    } else {
+    const handler = OPTION_HANDLERS[arg];
+    if (!handler) {
       throw new Error(`Unknown option: ${arg}`);
     }
+    handler(state, arg);
   }
 
-  options.k6Env = { ...explicitK6Env };
-  const resolvedOptions = applyFixtureProfileDefaults(options, {
-    explicitK6Env,
-    fixtureFile: options.fixtureProfileFile,
-    workloadExplicit,
+  state.options.k6Env = { ...state.explicitK6Env };
+  const resolvedOptions = applyFixtureProfileDefaults(state.options, {
+    explicitK6Env: state.explicitK6Env,
+    fixtureFile: state.options.fixtureProfileFile,
+    workloadExplicit: state.workloadExplicit,
   });
   validateOptions(resolvedOptions);
   return resolvedOptions;
@@ -292,6 +301,17 @@ const readOptionValue = (argv, index, option) => {
   }
   return value;
 };
+
+function readOptionInto(property) {
+  return (state, option) => {
+    state.options[property] = readNextOptionValue(state, option);
+  };
+}
+
+function readNextOptionValue(state, option) {
+  state.index += 1;
+  return readOptionValue(state.argv, state.index, option);
+}
 
 const addK6Env = (k6Env, assignment) => {
   const separator = assignment.indexOf('=');
