@@ -7,9 +7,9 @@ import {CosmosClient} from "@azure/cosmos";
 type FitnessScore = number | null;
 
 type Metrics = {
-    checkstyle_violations: number;
-    spotbugs_total: number;
-    spotbugs_total_classes: number;
+    checkstyle_violations?: number;
+    spotbugs_total?: number;
+    spotbugs_total_classes?: number;
     jacoco_line_coverage?: number;
     sonar_cloud_main_branch_metrics?: SonarMetricsMap;
     sonar_cloud_current_branch_metrics?: SonarMetricsMap;
@@ -17,6 +17,8 @@ type Metrics = {
     sonar_diff?: MetricsDiffMap;
     runtime_metrics?: RuntimeMetrics;
 };
+
+type RuntimeFitnessScore = number | null;
 
 type RuntimeMetricSummary = {
     latency_p95_ms?: number;
@@ -38,6 +40,88 @@ type RuntimeMetrics = {
     source: string;
     summary: RuntimeMetricSummary;
     missing?: string[];
+};
+
+type RuntimeFitnessMetric = keyof Pick<
+    RuntimeMetricSummary,
+    | "latency_p95_ms"
+    | "latency_p99_ms"
+    | "error_rate"
+    | "throughput_rps"
+    | "availability"
+    | "restart_count"
+    | "cpu_utilization"
+    | "memory_utilization"
+>;
+
+type RuntimeScoreMetricResult = {
+    baseline: number;
+    current: number;
+    normalizedDelta: number;
+    weight: number;
+};
+
+type RuntimeSloClassification = "valid" | "warning" | "invalid" | "unknown";
+
+type RuntimeSloConstraintResult = {
+    id: string;
+    metric?: string;
+    evidenceSource?: string;
+    classification: RuntimeSloClassification;
+    severity: "invalid" | "warning";
+    missing: boolean;
+};
+
+type RuntimeSloResult = {
+    thresholdVersion: string;
+    constraints: RuntimeSloConstraintResult[];
+    hasInvalidHardConstraint: boolean;
+    hasUnknownHardConstraint: boolean;
+    eligibleForStableComparison: boolean;
+};
+
+type RuntimeFitnessMetadata = {
+    current: {
+        scenario: string;
+        workload: string;
+        source: string;
+    };
+    baseline?: {
+        scenario: string;
+        workload: string;
+        source: string;
+    };
+    activeMetricWeights: Partial<Record<RuntimeFitnessMetric, number>>;
+    missingMetrics: string[];
+    normalizedDeltas: Partial<Record<RuntimeFitnessMetric, RuntimeScoreMetricResult>>;
+    sloClassification?: RuntimeSloResult;
+    eligibleForStableComparison: boolean;
+    reason?: string;
+};
+
+type RuntimeFitnessResult = {
+    runtimeFitnessScore: RuntimeFitnessScore;
+    runtimeFitnessScoreVersion: typeof RUNTIME_FITNESS_SCORE_VERSION;
+    runtimeFitness?: RuntimeFitnessMetadata;
+};
+
+type MetricsDocument = {
+    id: string;
+    timestamp: string;
+    branch: string;
+    commitHash?: string;
+    pullRequestId?: string;
+    metrics: Metrics;
+    fitnessScore: FitnessScore;
+    runtimeFitnessScore: RuntimeFitnessScore;
+    runtimeFitnessScoreVersion: typeof RUNTIME_FITNESS_SCORE_VERSION;
+    runtimeFitness?: RuntimeFitnessMetadata;
+};
+
+type MetricsStore = {
+    findStructuralBaseline(isMainBranch: boolean): Promise<Metrics | undefined>;
+    findRuntimeBaseline(scenario: string, workload: string): Promise<RuntimeMetrics | undefined>;
+    save(document: MetricsDocument): Promise<void>;
 };
 
 type SonarScope =
@@ -81,6 +165,11 @@ type Config = {
     spotbugsHtmlPath: string;
     jacocoPath: string;
     runtimeMetricsJsonPath?: string;
+    runtimeBaselineMetricsJsonPath?: string;
+    runtimeBaselineScenario: string;
+    runtimeOnly: boolean;
+    sloThresholdsJsonPath: string;
+    metricsOutputJsonPath?: string;
     commitHash?: string;
     cosmosDbConnectionString?: string;
     pullRequestId?: string;
@@ -95,7 +184,10 @@ const DEFAULT_PATHS = {
     SPOTBUGS_XML: "../backend/lined/build/reports/spotbugs/spotbugsMain.xml",
     SPOTBUGS_HTML: "../backend/lined/build/reports/spotbugs/spotbugsMain.html",
     JACOCO: "../backend/lined/build/reports/jacoco/test/jacocoTestReport.xml",
+    SLO_THRESHOLDS: "../backend/lined/load-tests/runtime-scenarios/slo-thresholds-v1.json",
 } as const;
+
+const RUNTIME_FITNESS_SCORE_VERSION = "runtime-aware-v1";
 
 const REGEX_PATTERNS = {
     CHECKSTYLE_ERROR: /<error\b/g,
@@ -121,6 +213,10 @@ const readFile = (path: string): string => {
         throw new Error(`File not found: ${path}`);
     }
     return fs.readFileSync(path, "utf-8");
+};
+
+const isEnabled = (value: string | undefined): boolean => {
+    return value === "true" || value === "1" || value === "yes";
 };
 
 const extractNumber = (content: string, pattern: RegExp, errorMsg: string): number => {
@@ -151,6 +247,11 @@ const getConfig = (): Config => {
         spotbugsHtmlPath: process.env.SPOTBUGS_HTML ?? DEFAULT_PATHS.SPOTBUGS_HTML,
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
         runtimeMetricsJsonPath: process.env.RUNTIME_METRICS_JSON,
+        runtimeBaselineMetricsJsonPath: process.env.RUNTIME_BASELINE_METRICS_JSON,
+        runtimeBaselineScenario: process.env.RUNTIME_BASELINE_SCENARIO ?? "fixed-medium",
+        runtimeOnly: isEnabled(process.env.RUNTIME_ONLY),
+        sloThresholdsJsonPath: process.env.SLO_THRESHOLDS_JSON ?? DEFAULT_PATHS.SLO_THRESHOLDS,
+        metricsOutputJsonPath: process.env.METRICS_OUTPUT_JSON,
         branchName: process.env.BRANCH_NAME,
         pullRequestId: process.env.PR_NUMBER,
         commitHash: process.env.GITHUB_SHA,
@@ -177,8 +278,8 @@ const normalize = (main: number, current: number, higherIsBetter: boolean): numb
 };
 
 const computeFitnessFunction = async (
+    store: MetricsStore,
     config: Config,
-    container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>,
     current: Metrics
 ): Promise<FitnessScore> => {
     const isMainBranch = config.branchName === "main";
@@ -196,24 +297,18 @@ const computeFitnessFunction = async (
     const mainDuplication = toNumber(mainSonar["duplicated_lines_density"]) ?? 0;
     const currentDuplication = toNumber(currentSonar["duplicated_lines_density"]) ?? 0;
 
-    // SpotBugs + Checkstyle — try Cosmos DB, fall back to 0
-    const query = isMainBranch
-        ? "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 1 LIMIT 1"
-        : "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
-
-    const {resources} = await container.items.query(query).fetchAll();
-    const snapshot = resources[0] as { metrics: Metrics } | undefined;
+    const snapshot = await store.findStructuralBaseline(isMainBranch);
 
     if (!snapshot) {
         console.log("[fitness] No main baseline in DB — using 0 for SpotBugs/Checkstyle baseline");
     }
 
-    const mainSpotbugs = snapshot?.metrics.spotbugs_total ?? 0;
-    const mainCheckstyle = snapshot?.metrics.checkstyle_violations ?? 0;
-    const mainCoverage = snapshot?.metrics.jacoco_line_coverage ?? 0;
+    const mainSpotbugs = snapshot?.spotbugs_total ?? 0;
+    const mainCheckstyle = snapshot?.checkstyle_violations ?? 0;
+    const mainCoverage = snapshot?.jacoco_line_coverage ?? 0;
 
-    const currentSpotbugs = current.spotbugs_total;
-    const currentCheckstyle = current.checkstyle_violations;
+    const currentSpotbugs = current.spotbugs_total ?? 0;
+    const currentCheckstyle = current.checkstyle_violations ?? 0;
     const currentCoverage = current.jacoco_line_coverage ?? 0;
 
     const F =
@@ -227,41 +322,399 @@ const computeFitnessFunction = async (
     return Number(F.toFixed(4));
 };
 
+const hasStructuralMetrics = (metrics: Metrics): boolean => {
+    return metrics.checkstyle_violations !== undefined &&
+        metrics.spotbugs_total !== undefined &&
+        metrics.spotbugs_total_classes !== undefined;
+};
+
+type ThresholdRule = {
+    id: string;
+    metric?: string;
+    evidence_source?: string;
+    operator: "<=" | ">=" | "==" | ">";
+    value: number | boolean;
+    severity: "invalid" | "warning";
+};
+
+type SloThresholdDocument = {
+    threshold_version: string;
+    thresholds: ThresholdRule[];
+};
+
+const requireNumberOrBoolean = (value: unknown, field: string): number | boolean => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === "boolean") {
+        return value;
+    }
+
+    throw new Error(`SLO thresholds: ${field} must be a finite number or boolean`);
+};
+
+const parseThresholdRule = (value: unknown, index: number): ThresholdRule => {
+    if (!isRecord(value)) {
+        throw new Error(`SLO thresholds: thresholds[${index}] must be an object`);
+    }
+
+    const operator = requireString(value.operator, `thresholds[${index}].operator`);
+    if (!["<=", ">=", "==", ">"].includes(operator)) {
+        throw new Error(`SLO thresholds: thresholds[${index}].operator is unsupported`);
+    }
+
+    const severity = requireString(value.severity, `thresholds[${index}].severity`);
+    if (severity !== "invalid" && severity !== "warning") {
+        throw new Error(`SLO thresholds: thresholds[${index}].severity is unsupported`);
+    }
+
+    const metric = value.metric === undefined
+        ? undefined
+        : requireString(value.metric, `thresholds[${index}].metric`);
+    const evidenceSource = value.evidence_source === undefined
+        ? undefined
+        : requireString(value.evidence_source, `thresholds[${index}].evidence_source`);
+
+    return {
+        id: requireString(value.id, `thresholds[${index}].id`),
+        metric,
+        evidence_source: evidenceSource,
+        operator: operator as ThresholdRule["operator"],
+        value: requireNumberOrBoolean(value.value, `thresholds[${index}].value`),
+        severity,
+    };
+};
+
+export const parseSloThresholds = (content: string): SloThresholdDocument => {
+    const parsed: unknown = JSON.parse(content);
+    if (!isRecord(parsed)) {
+        throw new Error("SLO thresholds JSON must contain an object");
+    }
+
+    if (!Array.isArray(parsed.thresholds)) {
+        throw new Error("SLO thresholds: thresholds must be an array");
+    }
+
+    return {
+        threshold_version: requireString(parsed.threshold_version, "threshold_version"),
+        thresholds: parsed.thresholds.map(parseThresholdRule),
+    };
+};
+
+const readSloThresholds = (path: string): SloThresholdDocument => {
+    return parseSloThresholds(readFile(path));
+};
+
+const compareThreshold = (
+    current: number | boolean,
+    operator: ThresholdRule["operator"],
+    expected: number | boolean
+): boolean => {
+    if (typeof current === "boolean" || typeof expected === "boolean") {
+        return operator === "==" && current === expected;
+    }
+
+    if (operator === "<=") return current <= expected;
+    if (operator === ">=") return current >= expected;
+    if (operator === ">") return current > expected;
+    return current === expected;
+};
+
+export const classifyRuntimeMetrics = (
+    runtimeMetrics: RuntimeMetrics,
+    thresholds: SloThresholdDocument
+): RuntimeSloResult => {
+    const constraints: RuntimeSloConstraintResult[] = thresholds.thresholds.map((threshold) => {
+        const field = threshold.metric as keyof RuntimeMetricSummary | undefined;
+        const current = field === undefined ? undefined : runtimeMetrics.summary[field];
+        const missing = current === undefined;
+        const matched = !missing && compareThreshold(current, threshold.operator, threshold.value);
+        const classification: RuntimeSloClassification = missing
+            ? "unknown"
+            : threshold.severity === "warning"
+                ? matched ? "warning" : "valid"
+                : matched ? "valid" : "invalid";
+
+        return {
+            id: threshold.id,
+            metric: threshold.metric,
+            evidenceSource: threshold.evidence_source,
+            classification,
+            severity: threshold.severity,
+            missing,
+        };
+    });
+
+    const hasInvalidHardConstraint = constraints.some((constraint) =>
+        constraint.severity === "invalid" && constraint.classification === "invalid"
+    );
+    const hasUnknownHardConstraint = constraints.some((constraint) =>
+        constraint.severity === "invalid" && constraint.classification === "unknown"
+    );
+
+    return {
+        thresholdVersion: thresholds.threshold_version,
+        constraints,
+        hasInvalidHardConstraint,
+        hasUnknownHardConstraint,
+        eligibleForStableComparison: !hasInvalidHardConstraint && !hasUnknownHardConstraint,
+    };
+};
+
+type RuntimeScoreDefinition = {
+    field: RuntimeFitnessMetric;
+    weight: number;
+    higherIsBetter: boolean;
+};
+
+const RUNTIME_SCORE_DEFINITIONS: readonly RuntimeScoreDefinition[] = [
+    {field: "latency_p95_ms", weight: 0.2, higherIsBetter: false},
+    {field: "latency_p99_ms", weight: 0.15, higherIsBetter: false},
+    {field: "error_rate", weight: 0.2, higherIsBetter: false},
+    {field: "throughput_rps", weight: 0.15, higherIsBetter: true},
+    {field: "availability", weight: 0.15, higherIsBetter: true},
+    {field: "restart_count", weight: 0.1, higherIsBetter: false},
+    {field: "cpu_utilization", weight: 0.025, higherIsBetter: false},
+    {field: "memory_utilization", weight: 0.025, higherIsBetter: false},
+];
+
+const identityOf = (runtimeMetrics: RuntimeMetrics): RuntimeFitnessMetadata["current"] => ({
+    scenario: runtimeMetrics.scenario,
+    workload: runtimeMetrics.workload,
+    source: runtimeMetrics.source,
+});
+
+const collectMissingRuntimeScoreMetrics = (
+    current: RuntimeMetrics,
+    baseline?: RuntimeMetrics
+): string[] => {
+    const missing = new Set<string>(current.missing ?? []);
+
+    for (const definition of RUNTIME_SCORE_DEFINITIONS) {
+        if (current.summary[definition.field] === undefined) {
+            missing.add(`current.summary.${definition.field}`);
+        }
+        if (baseline && baseline.summary[definition.field] === undefined) {
+            missing.add(`baseline.summary.${definition.field}`);
+        }
+    }
+
+    return [...missing].sort();
+};
+
+export const computeRuntimeFitness = (
+    current?: RuntimeMetrics,
+    baseline?: RuntimeMetrics,
+    sloClassification?: RuntimeSloResult
+): RuntimeFitnessResult => {
+    if (!current) {
+        return {
+            runtimeFitnessScore: null,
+            runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
+        };
+    }
+
+    const metadataBase = {
+        current: identityOf(current),
+        baseline: baseline ? identityOf(baseline) : undefined,
+        activeMetricWeights: {},
+        missingMetrics: collectMissingRuntimeScoreMetrics(current, baseline),
+        normalizedDeltas: {},
+        sloClassification,
+        eligibleForStableComparison: Boolean(
+            baseline && sloClassification?.eligibleForStableComparison
+        ),
+    };
+
+    if (!baseline) {
+        return {
+            runtimeFitnessScore: null,
+            runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
+            runtimeFitness: {
+                ...metadataBase,
+                reason: "runtime baseline metrics are not available",
+            },
+        };
+    }
+
+    const activeDefinitions = RUNTIME_SCORE_DEFINITIONS.filter((definition) =>
+        current.summary[definition.field] !== undefined &&
+        baseline.summary[definition.field] !== undefined
+    );
+
+    const totalWeight = activeDefinitions.reduce((sum, definition) => sum + definition.weight, 0);
+    if (totalWeight === 0) {
+        return {
+            runtimeFitnessScore: null,
+            runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
+            runtimeFitness: {
+                ...metadataBase,
+                reason: "no comparable runtime metrics are available",
+            },
+        };
+    }
+
+    let score = 0;
+    const activeMetricWeights: Partial<Record<RuntimeFitnessMetric, number>> = {};
+    const normalizedDeltas: Partial<Record<RuntimeFitnessMetric, RuntimeScoreMetricResult>> = {};
+
+    for (const definition of activeDefinitions) {
+        const currentValue = current.summary[definition.field] as number;
+        const baselineValue = baseline.summary[definition.field] as number;
+        const activeWeight = definition.weight / totalWeight;
+        const normalizedDelta = normalize(
+            baselineValue,
+            currentValue,
+            definition.higherIsBetter
+        );
+
+        const roundedWeight = Number(activeWeight.toFixed(6));
+        activeMetricWeights[definition.field] = roundedWeight;
+        normalizedDeltas[definition.field] = {
+            baseline: baselineValue,
+            current: currentValue,
+            normalizedDelta,
+            weight: roundedWeight,
+        };
+        score += activeWeight * normalizedDelta;
+    }
+
+    return {
+        runtimeFitnessScore: Number(score.toFixed(4)),
+        runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
+        runtimeFitness: {
+            ...metadataBase,
+            activeMetricWeights,
+            normalizedDeltas,
+        },
+    };
+};
+
+const resolveRuntimeBaseline = async (
+    config: Config,
+    store: MetricsStore | undefined,
+    currentRuntimeMetrics?: RuntimeMetrics
+): Promise<RuntimeMetrics | undefined> => {
+    const explicitBaseline = readRuntimeMetrics(config.runtimeBaselineMetricsJsonPath);
+    if (explicitBaseline) {
+        return explicitBaseline;
+    }
+
+    if (!store || !currentRuntimeMetrics) {
+        return undefined;
+    }
+
+    return store.findRuntimeBaseline(
+        config.runtimeBaselineScenario,
+        currentRuntimeMetrics.workload
+    );
+};
+
 /* =======================
    SAVE DATA IN COSMOS DB
 ======================= */
 const sanitizeBranchName = (name: string): string =>
     name.replaceAll(/[/\\#?]/g, '-');
 
-const saveMetrics = async (
-    config: Config,
-    container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>,
-    data: Metrics,
-    fitnessScore: FitnessScore): Promise<void> => {
+class CosmosMetricsStore implements MetricsStore {
+    private readonly container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>;
+
+    constructor(connectionString: string) {
+        const client = new CosmosClient(connectionString);
+        this.container = client.database("metrics").container("pipeline-runs");
+    }
+
+    async findStructuralBaseline(isMainBranch: boolean): Promise<Metrics | undefined> {
+        const query = isMainBranch
+            ? "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 1 LIMIT 1"
+            : "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
+        const {resources} = await this.container.items.query(query).fetchAll();
+        const snapshot = resources[0] as { metrics: Metrics } | undefined;
+        return snapshot?.metrics;
+    }
+
+    async findRuntimeBaseline(
+        scenario: string,
+        workload: string
+    ): Promise<RuntimeMetrics | undefined> {
+        const query =
+            "SELECT * FROM c WHERE c.branch = 'main' " +
+            "AND c.metrics.runtime_metrics.scenario = @scenario " +
+            "AND c.metrics.runtime_metrics.workload = @workload " +
+            "ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
+        const {resources} = await this.container.items.query({
+            query,
+            parameters: [
+                {name: "@scenario", value: scenario},
+                {name: "@workload", value: workload},
+            ],
+        }).fetchAll();
+        const snapshot = resources[0] as { metrics: Metrics } | undefined;
+        return snapshot?.metrics.runtime_metrics;
+    }
+
+    async save(document: MetricsDocument): Promise<void> {
+        const {resource} = await this.container.item(document.id, document.branch).read();
+
+        if (resource) {
+            console.log(`[metrics] already saved for commit ${document.commitHash}, skipping`);
+            return;
+        }
+
+        await this.container.items.create(document);
+    }
+}
+
+const createMetricsStore = (config: Config): MetricsStore | undefined => {
     if (!config.cosmosDbConnectionString) {
-        console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
-        return;
+        return undefined;
     }
 
-    const partitionKey = sanitizeBranchName(config.branchName ?? "unknown");
-    const id = `${partitionKey}-${config.commitHash}`;
+    return new CosmosMetricsStore(config.cosmosDbConnectionString);
+};
 
-    const {resource} = await container.item(id, partitionKey).read();
+const LOCAL_BASELINE_STORE: MetricsStore = {
+    async findStructuralBaseline(): Promise<Metrics | undefined> {
+        return undefined;
+    },
+    async findRuntimeBaseline(): Promise<RuntimeMetrics | undefined> {
+        return undefined;
+    },
+    async save(): Promise<void> {
+        return undefined;
+    },
+};
 
-    if (resource) {
-        console.log(`[metrics] already saved for commit ${config.commitHash}, skipping`);
-        return;
-    }
+const buildMetricsDocument = (
+    config: Config,
+    data: Metrics,
+    fitnessScore: FitnessScore,
+    runtimeFitnessResult: RuntimeFitnessResult
+): MetricsDocument => {
+    const branch = sanitizeBranchName(config.branchName ?? "unknown");
+    const id = `${branch}-${config.commitHash ?? "unknown"}`;
 
-    await container.items.create({
+    return {
         id,
         timestamp: new Date().toISOString(),
-        branch: partitionKey,
-        commitHash: process.env.GITHUB_SHA,
+        branch,
+        commitHash: config.commitHash,
         pullRequestId: config.pullRequestId,
         metrics: data,
-        fitnessScore
-    });
+        fitnessScore,
+        runtimeFitnessScore: runtimeFitnessResult.runtimeFitnessScore,
+        runtimeFitnessScoreVersion: runtimeFitnessResult.runtimeFitnessScoreVersion,
+        runtimeFitness: runtimeFitnessResult.runtimeFitness,
+    };
+};
+
+export const writeMetricsOutput = (path: string | undefined, document: MetricsDocument): void => {
+    if (!path || path.trim() === "") {
+        return;
+    }
+
+    fs.writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`, "utf-8");
 }
 
 /* =======================
@@ -465,7 +918,8 @@ const validateMetrics = (metrics: Metrics): Result => {
     return {
         metrics,
         checkstyle_valid: true,
-        spotbugs_valid: metrics.spotbugs_total_classes > 0,
+        spotbugs_valid: metrics.spotbugs_total_classes === undefined ||
+            metrics.spotbugs_total_classes > 0,
     };
 };
 
@@ -693,14 +1147,28 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
     return metrics;
 };
 
+const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
+    const runtimeMetrics = readRuntimeMetrics(config.runtimeMetricsJsonPath);
+    if (!runtimeMetrics) {
+        throw new Error("RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON");
+    }
+
+    return {
+        runtime_metrics: runtimeMetrics,
+    };
+};
+
 /* =======================
    MAIN
 ======================= */
 const main = async (): Promise<void> => {
     try {
         const config: Config = getConfig();
-        const metrics: Metrics = await collectMetrics(config);
+        const metrics: Metrics = config.runtimeOnly
+            ? collectRuntimeOnlyMetrics(config)
+            : await collectMetrics(config);
         const result: Result = validateMetrics(metrics);
+        const store = createMetricsStore(config);
 
         console.log(JSON.stringify(result, null, 2));
 
@@ -712,18 +1180,35 @@ const main = async (): Promise<void> => {
             process.exit(EXIT_CODES.SPOTBUGS_INVALID);
         }
 
-        if (!config.cosmosDbConnectionString) {
+        const runtimeBaseline = await resolveRuntimeBaseline(
+            config,
+            store,
+            metrics.runtime_metrics
+        );
+        const sloClassification = metrics.runtime_metrics
+            ? classifyRuntimeMetrics(metrics.runtime_metrics, readSloThresholds(config.sloThresholdsJsonPath))
+            : undefined;
+        const runtimeFitnessResult = computeRuntimeFitness(
+            metrics.runtime_metrics,
+            runtimeBaseline,
+            sloClassification
+        );
+
+        const fitnessScore = hasStructuralMetrics(metrics)
+            ? await computeFitnessFunction(store ?? LOCAL_BASELINE_STORE, config, metrics)
+            : null;
+        const document = buildMetricsDocument(config, metrics, fitnessScore, runtimeFitnessResult);
+
+        console.log(`[fitness] F = ${fitnessScore}`);
+        console.log(`[fitness] runtime F = ${runtimeFitnessResult.runtimeFitnessScore}`);
+        writeMetricsOutput(config.metricsOutputJsonPath, document);
+
+        if (!store) {
             console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
             return;
         }
 
-        const client = new CosmosClient(config.cosmosDbConnectionString);
-        const container = client.database("metrics").container("pipeline-runs");
-
-        const fitnessScore = await computeFitnessFunction(config, container, metrics);
-
-        console.log(`[fitness] F = ${fitnessScore}`);
-        await saveMetrics(config, container, metrics, fitnessScore);
+        await store.save(document);
     } catch (error) {
         console.error("Fatal error:", error instanceof Error ? error.message : error);
         process.exit(1);
