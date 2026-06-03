@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lined Backend Task Workflow"
+  short_description: "Implement Lined backend task rows with local agent review"
+  default_prompt: "Use $lined-backend-task-workflow to implement a task from docs/experiment-tasks.md with Context7 checks, .codex/agents selection, and a critic review loop."
