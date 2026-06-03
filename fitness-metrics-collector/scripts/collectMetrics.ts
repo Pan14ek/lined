@@ -342,6 +342,9 @@ type SloThresholdDocument = {
     thresholds: ThresholdRule[];
 };
 
+const SUPPORTED_THRESHOLD_OPERATORS = ["<=", ">=", "==", ">"] as const;
+const SUPPORTED_THRESHOLD_SEVERITIES = ["invalid", "warning"] as const;
+
 const requireNumberOrBoolean = (value: unknown, field: string): number | boolean => {
     if (typeof value === "number" && Number.isFinite(value)) {
         return value;
@@ -354,35 +357,47 @@ const requireNumberOrBoolean = (value: unknown, field: string): number | boolean
     throw new Error(`SLO thresholds: ${field} must be a finite number or boolean`);
 };
 
+const requireThresholdOperator = (value: unknown, field: string): ThresholdRule["operator"] => {
+    const operator = requireString(value, field);
+    if (!SUPPORTED_THRESHOLD_OPERATORS.includes(operator as ThresholdRule["operator"])) {
+        throw new Error(`SLO thresholds: ${field} is unsupported`);
+    }
+
+    return operator as ThresholdRule["operator"];
+};
+
+const requireThresholdSeverity = (value: unknown, field: string): ThresholdRule["severity"] => {
+    const severity = requireString(value, field);
+    if (!SUPPORTED_THRESHOLD_SEVERITIES.includes(severity as ThresholdRule["severity"])) {
+        throw new Error(`SLO thresholds: ${field} is unsupported`);
+    }
+
+    return severity as ThresholdRule["severity"];
+};
+
+const optionalString = (value: unknown, field: string): string | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    return requireString(value, field);
+};
+
 const parseThresholdRule = (value: unknown, index: number): ThresholdRule => {
     if (!isRecord(value)) {
         throw new Error(`SLO thresholds: thresholds[${index}] must be an object`);
     }
 
-    const operator = requireString(value.operator, `thresholds[${index}].operator`);
-    if (!["<=", ">=", "==", ">"].includes(operator)) {
-        throw new Error(`SLO thresholds: thresholds[${index}].operator is unsupported`);
-    }
-
-    const severity = requireString(value.severity, `thresholds[${index}].severity`);
-    if (severity !== "invalid" && severity !== "warning") {
-        throw new Error(`SLO thresholds: thresholds[${index}].severity is unsupported`);
-    }
-
-    const metric = value.metric === undefined
-        ? undefined
-        : requireString(value.metric, `thresholds[${index}].metric`);
-    const evidenceSource = value.evidence_source === undefined
-        ? undefined
-        : requireString(value.evidence_source, `thresholds[${index}].evidence_source`);
-
     return {
         id: requireString(value.id, `thresholds[${index}].id`),
-        metric,
-        evidence_source: evidenceSource,
-        operator: operator as ThresholdRule["operator"],
+        metric: optionalString(value.metric, `thresholds[${index}].metric`),
+        evidence_source: optionalString(
+            value.evidence_source,
+            `thresholds[${index}].evidence_source`
+        ),
+        operator: requireThresholdOperator(value.operator, `thresholds[${index}].operator`),
         value: requireNumberOrBoolean(value.value, `thresholds[${index}].value`),
-        severity,
+        severity: requireThresholdSeverity(value.severity, `thresholds[${index}].severity`),
     };
 };
 
@@ -421,37 +436,61 @@ const compareThreshold = (
     return current === expected;
 };
 
+const classifyThresholdMatch = (
+    threshold: ThresholdRule,
+    missing: boolean,
+    matched: boolean
+): RuntimeSloClassification => {
+    if (missing) {
+        return "unknown";
+    }
+
+    if (threshold.severity === "warning") {
+        return matched ? "warning" : "valid";
+    }
+
+    return matched ? "valid" : "invalid";
+};
+
+const classifyThreshold = (
+    runtimeMetrics: RuntimeMetrics,
+    threshold: ThresholdRule
+): RuntimeSloConstraintResult => {
+    const field = threshold.metric as keyof RuntimeMetricSummary | undefined;
+    const current = field === undefined ? undefined : runtimeMetrics.summary[field];
+    const missing = current === undefined;
+    const matched = !missing && compareThreshold(
+        current,
+        threshold.operator,
+        threshold.value
+    );
+
+    return {
+        id: threshold.id,
+        metric: threshold.metric,
+        evidenceSource: threshold.evidence_source,
+        classification: classifyThresholdMatch(threshold, missing, matched),
+        severity: threshold.severity,
+        missing,
+    };
+};
+
+const hasHardConstraint = (
+    constraints: RuntimeSloConstraintResult[],
+    classification: RuntimeSloClassification
+): boolean => constraints.some((constraint) =>
+    constraint.severity === "invalid" && constraint.classification === classification
+);
+
 export const classifyRuntimeMetrics = (
     runtimeMetrics: RuntimeMetrics,
     thresholds: SloThresholdDocument
 ): RuntimeSloResult => {
-    const constraints: RuntimeSloConstraintResult[] = thresholds.thresholds.map((threshold) => {
-        const field = threshold.metric as keyof RuntimeMetricSummary | undefined;
-        const current = field === undefined ? undefined : runtimeMetrics.summary[field];
-        const missing = current === undefined;
-        const matched = !missing && compareThreshold(current, threshold.operator, threshold.value);
-        const classification: RuntimeSloClassification = missing
-            ? "unknown"
-            : threshold.severity === "warning"
-                ? matched ? "warning" : "valid"
-                : matched ? "valid" : "invalid";
-
-        return {
-            id: threshold.id,
-            metric: threshold.metric,
-            evidenceSource: threshold.evidence_source,
-            classification,
-            severity: threshold.severity,
-            missing,
-        };
-    });
-
-    const hasInvalidHardConstraint = constraints.some((constraint) =>
-        constraint.severity === "invalid" && constraint.classification === "invalid"
+    const constraints = thresholds.thresholds.map((threshold) =>
+        classifyThreshold(runtimeMetrics, threshold)
     );
-    const hasUnknownHardConstraint = constraints.some((constraint) =>
-        constraint.severity === "invalid" && constraint.classification === "unknown"
-    );
+    const hasInvalidHardConstraint = hasHardConstraint(constraints, "invalid");
+    const hasUnknownHardConstraint = hasHardConstraint(constraints, "unknown");
 
     return {
         thresholdVersion: thresholds.threshold_version,
@@ -503,6 +542,91 @@ const collectMissingRuntimeScoreMetrics = (
     return [...missing].sort();
 };
 
+const buildRuntimeFitnessMetadata = (
+    current: RuntimeMetrics,
+    baseline: RuntimeMetrics | undefined,
+    sloClassification: RuntimeSloResult | undefined
+): RuntimeFitnessMetadata => {
+    return {
+        current: identityOf(current),
+        baseline: baseline ? identityOf(baseline) : undefined,
+        activeMetricWeights: {},
+        missingMetrics: collectMissingRuntimeScoreMetrics(current, baseline),
+        normalizedDeltas: {},
+        sloClassification,
+        eligibleForStableComparison: Boolean(
+            baseline && sloClassification?.eligibleForStableComparison
+        ),
+    };
+};
+
+const comparableRuntimeScoreDefinitions = (
+    current: RuntimeMetrics,
+    baseline: RuntimeMetrics
+): readonly RuntimeScoreDefinition[] => RUNTIME_SCORE_DEFINITIONS.filter((definition) =>
+    current.summary[definition.field] !== undefined &&
+    baseline.summary[definition.field] !== undefined
+);
+
+const addRuntimeScoreMetric = (
+    current: RuntimeMetrics,
+    baseline: RuntimeMetrics,
+    definition: RuntimeScoreDefinition,
+    totalWeight: number,
+    activeMetricWeights: Partial<Record<RuntimeFitnessMetric, number>>,
+    normalizedDeltas: Partial<Record<RuntimeFitnessMetric, RuntimeScoreMetricResult>>
+): number => {
+    const currentValue = current.summary[definition.field] as number;
+    const baselineValue = baseline.summary[definition.field] as number;
+    const activeWeight = definition.weight / totalWeight;
+    const normalizedDelta = normalize(
+        baselineValue,
+        currentValue,
+        definition.higherIsBetter
+    );
+    const roundedWeight = Number(activeWeight.toFixed(6));
+
+    activeMetricWeights[definition.field] = roundedWeight;
+    normalizedDeltas[definition.field] = {
+        baseline: baselineValue,
+        current: currentValue,
+        normalizedDelta,
+        weight: roundedWeight,
+    };
+
+    return activeWeight * normalizedDelta;
+};
+
+const computeRuntimeScoreDetails = (
+    current: RuntimeMetrics,
+    baseline: RuntimeMetrics,
+    activeDefinitions: readonly RuntimeScoreDefinition[]
+): Pick<RuntimeFitnessMetadata, "activeMetricWeights" | "normalizedDeltas"> & {
+    score: number;
+} => {
+    const activeMetricWeights: Partial<Record<RuntimeFitnessMetric, number>> = {};
+    const normalizedDeltas: Partial<Record<RuntimeFitnessMetric, RuntimeScoreMetricResult>> = {};
+    const totalWeight = activeDefinitions.reduce((sum, definition) => sum + definition.weight, 0);
+    let score = 0;
+
+    for (const definition of activeDefinitions) {
+        score += addRuntimeScoreMetric(
+            current,
+            baseline,
+            definition,
+            totalWeight,
+            activeMetricWeights,
+            normalizedDeltas
+        );
+    }
+
+    return {
+        score,
+        activeMetricWeights,
+        normalizedDeltas,
+    };
+};
+
 export const computeRuntimeFitness = (
     current?: RuntimeMetrics,
     baseline?: RuntimeMetrics,
@@ -515,17 +639,7 @@ export const computeRuntimeFitness = (
         };
     }
 
-    const metadataBase = {
-        current: identityOf(current),
-        baseline: baseline ? identityOf(baseline) : undefined,
-        activeMetricWeights: {},
-        missingMetrics: collectMissingRuntimeScoreMetrics(current, baseline),
-        normalizedDeltas: {},
-        sloClassification,
-        eligibleForStableComparison: Boolean(
-            baseline && sloClassification?.eligibleForStableComparison
-        ),
-    };
+    const metadataBase = buildRuntimeFitnessMetadata(current, baseline, sloClassification);
 
     if (!baseline) {
         return {
@@ -538,13 +652,8 @@ export const computeRuntimeFitness = (
         };
     }
 
-    const activeDefinitions = RUNTIME_SCORE_DEFINITIONS.filter((definition) =>
-        current.summary[definition.field] !== undefined &&
-        baseline.summary[definition.field] !== undefined
-    );
-
-    const totalWeight = activeDefinitions.reduce((sum, definition) => sum + definition.weight, 0);
-    if (totalWeight === 0) {
+    const activeDefinitions = comparableRuntimeScoreDefinitions(current, baseline);
+    if (activeDefinitions.length === 0) {
         return {
             runtimeFitnessScore: null,
             runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
@@ -555,38 +664,15 @@ export const computeRuntimeFitness = (
         };
     }
 
-    let score = 0;
-    const activeMetricWeights: Partial<Record<RuntimeFitnessMetric, number>> = {};
-    const normalizedDeltas: Partial<Record<RuntimeFitnessMetric, RuntimeScoreMetricResult>> = {};
-
-    for (const definition of activeDefinitions) {
-        const currentValue = current.summary[definition.field] as number;
-        const baselineValue = baseline.summary[definition.field] as number;
-        const activeWeight = definition.weight / totalWeight;
-        const normalizedDelta = normalize(
-            baselineValue,
-            currentValue,
-            definition.higherIsBetter
-        );
-
-        const roundedWeight = Number(activeWeight.toFixed(6));
-        activeMetricWeights[definition.field] = roundedWeight;
-        normalizedDeltas[definition.field] = {
-            baseline: baselineValue,
-            current: currentValue,
-            normalizedDelta,
-            weight: roundedWeight,
-        };
-        score += activeWeight * normalizedDelta;
-    }
+    const scoreDetails = computeRuntimeScoreDetails(current, baseline, activeDefinitions);
 
     return {
-        runtimeFitnessScore: Number(score.toFixed(4)),
+        runtimeFitnessScore: Number(scoreDetails.score.toFixed(4)),
         runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
         runtimeFitness: {
             ...metadataBase,
-            activeMetricWeights,
-            normalizedDeltas,
+            activeMetricWeights: scoreDetails.activeMetricWeights,
+            normalizedDeltas: scoreDetails.normalizedDeltas,
         },
     };
 };
