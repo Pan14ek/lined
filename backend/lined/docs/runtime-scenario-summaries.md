@@ -59,6 +59,23 @@ smoke, baseline, read-heavy, write-heavy, mixed, stress, negative-smoke
 Use `smoke` for command validation and one of the longer non-negative profiles
 for scenario comparison.
 
+Fixture profiles are versioned workload/context presets from
+`load-tests/runtime-scenarios/fixture-profiles-v1.json`:
+
+| Fixture profile | Workload | Purpose |
+|-----------------|----------|---------|
+| `local-smoke` | `smoke` | Minimal local command validation. |
+| `comparison-baseline` | `baseline` | Stable default runtime comparison fixture. |
+| `comparison-read-heavy` | `read-heavy` | Read-oriented comparison over bounded setup data. |
+| `comparison-write-heavy` | `write-heavy` | Write-oriented comparison with per-iteration cleanup. |
+| `comparison-mixed` | `mixed` | Mixed reads, updates, and bounded writes. |
+| `comparison-stress` | `stress` | Ramping-VU local stress comparison. |
+
+Profiles make the workload setup explicit by pinning allowed k6 inputs such as
+`USER_COUNT`, `SEED_TASK_COUNT`, `SEED_EVENT_COUNT`, `VUS`, `DURATION`,
+`STRESS_MAX_VUS`, `STRESS_STAGE_DURATION`, and `THINK_TIME_SECONDS`.
+They do not change backend behavior or deployment manifests.
+
 ## Run One Scenario
 
 Run the fixed-medium scenario with the smoke workload:
@@ -70,14 +87,30 @@ node load-tests/runtime-scenarios/scenario-runner-cli.mjs \
   --base-url http://localhost:8080
 ```
 
-Run the same scenario with the default baseline workload:
+Run the same scenario with the stable baseline fixture:
 
 ```bash
 node load-tests/runtime-scenarios/scenario-runner-cli.mjs \
   --scenario fixed-medium \
-  --workload baseline \
+  --fixture-profile comparison-baseline \
   --base-url http://localhost:8080
 ```
+
+The fixture profile supplies default workload and k6 environment inputs.
+Explicit CLI options still win:
+
+```bash
+node load-tests/runtime-scenarios/scenario-runner-cli.mjs \
+  --scenario fixed-medium \
+  --fixture-profile comparison-baseline \
+  --workload read-heavy \
+  --k6-env VUS=2 \
+  --base-url http://localhost:8080
+```
+
+Use overrides only when the run intentionally differs from the named fixture;
+the manifest records both the selected profile and the effective workload
+environment.
 
 The runner applies the selected scenario, waits for the backend rollout, runs
 k6 with summary export, collects summarized Kubernetes state, and writes:
@@ -119,6 +152,7 @@ side effect.
 The runner keeps inputs narrow:
 
 - scenario and workload names are hardcoded allowlists;
+- fixture profile names and profile k6 environment keys are allowlisted;
 - extra k6 environment variables are allowlisted;
 - `BASE_URL` must point to `localhost`, `127.0.0.1`, or `[::1]` unless
   `--allow-remote-base-url` is provided;
@@ -179,8 +213,9 @@ the metric is omitted and listed in `missing`.
 
 `runtime-summary-manifest.json` is not collector input. It records sanitized
 provenance such as scenario path, workload variables, git commit, CLI version,
-start/end timestamps, whether the scenario was applied, HPA cleanup status,
-raw pre/post restart snapshots, the restart delta, and k6 exit code.
+fixture profile metadata, start/end timestamps, whether the scenario was
+applied, HPA cleanup status, raw pre/post restart snapshots, the restart delta,
+and k6 exit code.
 
 ## Validate Locally
 
