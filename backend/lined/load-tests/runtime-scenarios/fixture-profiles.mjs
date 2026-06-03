@@ -23,14 +23,14 @@ export const fixtureProfileNames = ({ cwd = process.cwd(), file = FIXTURE_PROFIL
 
 export const loadFixtureProfile = (
   name,
-  { cwd = process.cwd(), file = FIXTURE_PROFILES_PATH } = {}
+  { allowedWorkloads, cwd = process.cwd(), file = FIXTURE_PROFILES_PATH } = {}
 ) => {
   const artifact = readFixtureArtifact(cwd, file);
   const profile = artifact.profiles[name];
   if (!profile) {
     throw new Error(`--fixture-profile must be one of: ${Object.keys(artifact.profiles).sort().join(', ')}`);
   }
-  validateProfile(name, profile);
+  validateProfile(name, profile, allowedWorkloads);
   return {
     description: profile.description,
     k6Env: { ...profile.k6_env },
@@ -46,6 +46,7 @@ export const applyFixtureProfileDefaults = (
     cwd = process.cwd(),
     explicitK6Env = {},
     fixtureFile = FIXTURE_PROFILES_PATH,
+    allowedWorkloads,
     workloadExplicit = false,
   } = {}
 ) => {
@@ -53,7 +54,11 @@ export const applyFixtureProfileDefaults = (
     return options;
   }
 
-  const profile = loadFixtureProfile(options.fixtureProfile, { cwd, file: fixtureFile });
+  const profile = loadFixtureProfile(options.fixtureProfile, {
+    allowedWorkloads,
+    cwd,
+    file: fixtureFile,
+  });
   const merged = {
     ...options,
     fixtureProfileData: profile,
@@ -77,10 +82,10 @@ const readFixtureArtifact = (cwd, file) => {
   return parsed;
 };
 
-const validateProfile = (name, profile) => {
+const validateProfile = (name, profile, allowedWorkloads) => {
   requireRecord(`fixture profile ${name}`, profile);
   requireKnownProfileKeys(name, profile);
-  requireWorkload(name, profile.workload);
+  requireWorkload(name, profile.workload, allowedWorkloads);
   requireK6Env(name, profile.k6_env);
 };
 
@@ -97,9 +102,15 @@ const requireKnownProfileKeys = (name, profile) => {
   }
 };
 
-const requireWorkload = (name, workload) => {
+const requireWorkload = (name, workload, allowedWorkloads) => {
   if (typeof workload !== 'string' || workload.length === 0) {
     throw new Error(`fixture profile ${name} must define workload`);
+  }
+  if (allowedWorkloads && !allowedWorkloads.has(workload)) {
+    throw new Error(
+      `fixture profile ${name} has unsupported workload ${workload}; `
+      + `allowed: ${Array.from(allowedWorkloads).join(', ')}`
+    );
   }
 };
 

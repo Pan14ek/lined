@@ -6,6 +6,8 @@ import { runCommand } from './command-runner.mjs';
 import { parseK6Summary } from './runtime-summary.mjs';
 
 export const SUMMARY_TREND_STATS = 'p(95),p(99),avg,min,max';
+export const K6_PREFLIGHT_TIMEOUT_MS = 30_000;
+export const K6_RUN_TIMEOUT_MS = 600_000;
 
 export const assertK6Available = (
   k6Bin,
@@ -15,6 +17,7 @@ export const assertK6Available = (
     allowFailure: true,
     capture: true,
     cwd,
+    timeoutMs: K6_PREFLIGHT_TIMEOUT_MS,
   });
 
   if (result.error?.code === 'ENOENT') {
@@ -26,6 +29,9 @@ export const assertK6Available = (
   }
   if (result.error) {
     throw result.error;
+  }
+  if (result.signal) {
+    throw new Error(`k6 preflight was killed by signal ${result.signal}`);
   }
   if (result.status !== 0) {
     throw new Error(`k6 preflight failed with exit code ${result.status}`);
@@ -61,12 +67,14 @@ export const runK6 = (
   const result = commandRunner(options.k6Bin, args, {
     allowFailure: true,
     cwd,
+    timeoutMs: K6_RUN_TIMEOUT_MS,
   });
 
   try {
     return {
       args,
-      exitCode: result.status,
+      exitCode: result.signal ? null : result.status,
+      signal: result.signal ?? undefined,
       summary: fs.existsSync(summaryPath)
         ? parseK6Summary(fs.readFileSync(summaryPath, 'utf-8'))
         : undefined,

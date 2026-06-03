@@ -129,6 +129,7 @@ export const parseArgs = (argv) => {
 
   state.options.k6Env = { ...state.explicitK6Env };
   const resolvedOptions = applyFixtureProfileDefaults(state.options, {
+    allowedWorkloads: new Set(WORKLOADS),
     explicitK6Env: state.explicitK6Env,
     fixtureFile: state.options.fixtureProfileFile,
     workloadExplicit: state.workloadExplicit,
@@ -189,6 +190,7 @@ export const runScenario = (
     hpaCleanup,
     k6: {
       exitCode: k6Result.exitCode,
+      signal: k6Result.signal,
       summaryTrendStats: SUMMARY_TREND_STATS,
     },
     kubernetes,
@@ -202,6 +204,17 @@ export const runScenario = (
   const manifestPath = path.join(outputDir, 'runtime-summary-manifest.json');
   fs.mkdirSync(outputDir, { recursive: true });
   writeJson(manifestPath, manifest);
+
+  if (k6Result.signal) {
+    throw new ScenarioRunError(
+      `k6 was killed by signal ${k6Result.signal}; `
+      + `wrote manifest ${manifestPath} but did not write collector summary`,
+      {
+        manifest,
+        manifestPath,
+      }
+    );
+  }
 
   if (k6Result.exitCode !== 0) {
     throw new ScenarioRunError(
@@ -246,12 +259,16 @@ const resolveFixtureOptions = (options) => {
       k6Env: options.k6Env ?? {},
     },
     {
+      allowedWorkloads: new Set(WORKLOADS),
       explicitK6Env: options.k6Env ?? {},
       fixtureFile: options.fixtureProfileFile ?? FIXTURE_PROFILES_PATH,
-      workloadExplicit: options.workload !== undefined && options.workload !== DEFAULT_WORKLOAD,
+      workloadExplicit: isProgrammaticWorkloadExplicit(options),
     }
   );
 };
+
+const isProgrammaticWorkloadExplicit = (options) => options.workloadExplicit === true
+  || (options.workload !== undefined && options.workload !== DEFAULT_WORKLOAD);
 
 export const ensureLocalBaseUrl = (baseUrl, allowRemoteBaseUrl) => {
   if (allowRemoteBaseUrl) {

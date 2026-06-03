@@ -3,6 +3,9 @@ import { runCommand } from './command-runner.mjs';
 export const NAMESPACE = 'lined';
 export const BACKEND_DEPLOYMENT = 'lined-backend';
 export const BACKEND_LABEL = 'app.kubernetes.io/name=lined-backend';
+export const KUBECTL_TIMEOUT_MS = 60_000;
+export const KUBECTL_TOP_TIMEOUT_MS = 30_000;
+export const KUBECTL_ROLLOUT_TIMEOUT_MS = 600_000;
 
 export const cleanupHpaIfNeeded = (
   options,
@@ -20,7 +23,7 @@ export const cleanupHpaIfNeeded = (
     'hpa',
     BACKEND_DEPLOYMENT,
     '--ignore-not-found',
-  ], { cwd });
+  ], { cwd, timeoutMs: KUBECTL_TIMEOUT_MS });
 
   return true;
 };
@@ -34,7 +37,10 @@ export const applyScenarioIfNeeded = (
     return false;
   }
 
-  commandRunner('kubectl', ['apply', '-k', scenario.path], { cwd });
+  commandRunner('kubectl', ['apply', '-k', scenario.path], {
+    cwd,
+    timeoutMs: KUBECTL_TIMEOUT_MS,
+  });
   return true;
 };
 
@@ -47,7 +53,7 @@ export const waitForRollout = (
     'rollout',
     'status',
     `deployment/${BACKEND_DEPLOYMENT}`,
-  ], { cwd });
+  ], { cwd, timeoutMs: KUBECTL_ROLLOUT_TIMEOUT_MS });
 };
 
 export const collectKubernetesState = (
@@ -62,7 +68,7 @@ export const collectKubernetesState = (
     BACKEND_DEPLOYMENT,
     '-o',
     'json',
-  ], cwd);
+  ], cwd, KUBECTL_TIMEOUT_MS);
   const pods = readKubectlJson(commandRunner, [
     '-n',
     NAMESPACE,
@@ -72,7 +78,7 @@ export const collectKubernetesState = (
     BACKEND_LABEL,
     '-o',
     'json',
-  ], cwd);
+  ], cwd, KUBECTL_TIMEOUT_MS);
   const hpa = readOptionalKubectlJson(commandRunner, [
     '-n',
     NAMESPACE,
@@ -81,7 +87,7 @@ export const collectKubernetesState = (
     BACKEND_DEPLOYMENT,
     '-o',
     'json',
-  ], cwd);
+  ], cwd, KUBECTL_TIMEOUT_MS);
   const top = readOptionalKubectlText(commandRunner, [
     '-n',
     NAMESPACE,
@@ -90,7 +96,7 @@ export const collectKubernetesState = (
     '-l',
     BACKEND_LABEL,
     '--no-headers',
-  ], cwd);
+  ], cwd, KUBECTL_TOP_TIMEOUT_MS);
 
   return {
     ...summarizeKubernetesState({
@@ -186,7 +192,11 @@ export const parseTopPods = (content = '') => content
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name, cpu, memory] = line.split(/\s+/);
+      const parts = line.split(/\s+/);
+      if (parts.length < 3) {
+        throw new Error(`Malformed kubectl top pods line: ${line}`);
+      }
+      const [name, cpu, memory] = parts;
       return {
         cpuMillicores: parseCpuQuantity(cpu),
         memoryBytes: parseMemoryQuantity(memory),
@@ -194,20 +204,22 @@ export const parseTopPods = (content = '') => content
       };
     });
 
-const readKubectlJson = (commandRunner, args, cwd) => JSON.parse(commandRunner(
+const readKubectlJson = (commandRunner, args, cwd, timeoutMs) => JSON.parse(commandRunner(
   'kubectl',
   args,
   {
     capture: true,
     cwd,
+    timeoutMs,
   }
 ).stdout);
 
-const readOptionalKubectlJson = (commandRunner, args, cwd) => {
+const readOptionalKubectlJson = (commandRunner, args, cwd, timeoutMs) => {
   const result = commandRunner('kubectl', args, {
     allowFailure: true,
     capture: true,
     cwd,
+    timeoutMs,
   });
   const output = String(result.stdout ?? '');
   if (result.error || result.status !== 0 || output.trim() === '') {
@@ -216,11 +228,12 @@ const readOptionalKubectlJson = (commandRunner, args, cwd) => {
   return JSON.parse(output);
 };
 
-const readOptionalKubectlText = (commandRunner, args, cwd) => {
+const readOptionalKubectlText = (commandRunner, args, cwd, timeoutMs) => {
   const result = commandRunner('kubectl', args, {
     allowFailure: true,
     capture: true,
     cwd,
+    timeoutMs,
   });
   return result.error || result.status !== 0 ? '' : String(result.stdout ?? '');
 };
@@ -263,7 +276,11 @@ const sumPodUsage = (usage, field) => {
 };
 
 const ratioOrUndefined = (numerator, denominator) => {
-  if (numerator === undefined || denominator === undefined || denominator <= 0) {
+  if (
+    !Number.isFinite(numerator)
+    || !Number.isFinite(denominator)
+    || denominator <= 0
+  ) {
     return undefined;
   }
   return Number((numerator / denominator).toFixed(6));

@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
+import { runCommand } from './command-runner.mjs';
 import { assertK6Available, runK6 } from './k6-adapter.mjs';
 import {
   cleanupHpaIfNeeded,
@@ -120,6 +121,7 @@ const TEXTS = Object.freeze({
   },
   workload: {
     baseline: 'baseline',
+    typo: 'basline',
     readHeavy: 'read-heavy',
     smoke: 'smoke',
     unknown: 'unknown',
@@ -252,6 +254,50 @@ describe('parseArgs', () => {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
+
+  it('rejects unsupported fixture workloads before option validation', (t) => {
+    t.plan(1);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-fixtures-'));
+    const fixtureFile = path.join(directory, 'fixtures.json');
+    fs.writeFileSync(fixtureFile, JSON.stringify({
+      schema_version: 1,
+      profiles: {
+        [TEXTS.fixture.unsafe]: {
+          workload: TEXTS.workload.typo,
+          k6_env: {},
+        },
+      },
+    }), 'utf-8');
+
+    try {
+      t.assert.throws(
+        () => parseArgs([
+          '--scenario',
+          TEXTS.scenario.fixedMedium,
+          '--fixture-profile',
+          TEXTS.fixture.unsafe,
+          '--fixture-profile-file',
+          fixtureFile,
+        ]),
+        /fixture profile unsafe has unsupported workload basline/
+      );
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+});
+
+describe('runCommand', () => {
+  it('fails with a timeout-specific message', (t) => {
+    t.plan(1);
+    t.assert.throws(
+      () => runCommand(process.execPath, ['-e', 'setTimeout(() => {}, 1000)'], {
+        capture: true,
+        timeoutMs: 10,
+      }),
+      /timed out after 10ms/
+    );
+  });
 });
 
 describe('ensureLocalBaseUrl', () => {
@@ -289,10 +335,10 @@ describe('runK6', () => {
   });
 
   it('builds argv arrays instead of shell command strings', (t) => {
-    t.plan(5);
+    t.plan(6);
     const calls = [];
-    const commandRunner = (command, args) => {
-      calls.push({ args, command });
+    const commandRunner = (command, args, options) => {
+      calls.push({ args, command, options });
       return { status: 0 };
     };
 
@@ -315,6 +361,30 @@ describe('runK6', () => {
     t.assert.ok(calls[0].args.includes('--summary-export'));
     t.assert.ok(calls[0].args.includes('VUS=2'));
     t.assert.ok(calls[0].args.includes('ALLOW_REMOTE_BASE_URL=true'));
+    t.assert.equal(typeof calls[0].options.timeoutMs, 'number');
+  });
+
+  it('reports a signal separately from exit code', (t) => {
+    t.plan(2);
+    const result = runK6(
+      {
+        allowRemoteBaseUrl: false,
+        baseUrl: 'http://localhost:8080',
+        k6Bin: 'k6',
+        k6Env: {},
+        script: 'load-tests/k6/load-test-baseline.js',
+        workload: 'smoke',
+      },
+      {
+        commandRunner: () => ({
+          signal: 'SIGTERM',
+          status: null,
+        }),
+      }
+    );
+
+    t.assert.equal(result.exitCode, null);
+    t.assert.equal(result.signal, 'SIGTERM');
   });
 });
 
@@ -377,6 +447,14 @@ describe('Kubernetes state adapter helpers', () => {
       memoryBytes: 512 * 1024 ** 2,
       name: 'lined-backend-a',
     }]);
+  });
+
+  it('rejects malformed pod top output', (t) => {
+    t.plan(1);
+    t.assert.throws(
+      () => parseTopPods('lined-backend-a 250m\n'),
+      /Malformed kubectl top pods line/
+    );
   });
 
   it('summarizes Kubernetes utilization and restarts', (t) => {
@@ -601,6 +679,7 @@ describe('manifest and runScenario', () => {
       hpaCleanup: true,
       k6: {
         exitCode: 0,
+        signal: undefined,
         summaryTrendStats: 'p(95),p(99),avg,min,max',
       },
       kubernetes: {
@@ -755,6 +834,79 @@ describe('manifest and runScenario', () => {
     }
   });
 
+  it('lets direct runScenario default workload overrides win when marked explicit', (t) => {
+    t.plan(4);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
+
+    try {
+      const result = runScenario(
+        {
+          allowRemoteBaseUrl: false,
+          apply: false,
+          baseUrl: 'http://localhost:8080',
+          fixtureProfile: TEXTS.fixture.readHeavy,
+          k6Bin: 'k6',
+          k6Env: {},
+          outputRoot: directory,
+          scenario: TEXTS.scenario.fixedMedium,
+          script: 'load-tests/k6/load-test-baseline.js',
+          skipHpaCleanup: false,
+          workload: TEXTS.workload.baseline,
+          workloadExplicit: true,
+        },
+        fakeAdapters({
+          k6ExitCode: 0,
+          k6Summary: nestedK6Summary,
+        })
+      );
+
+      t.assert.equal(result.summary.workload, TEXTS.workload.baseline);
+      t.assert.equal(result.manifest.fixture_profile.name, TEXTS.fixture.readHeavy);
+      t.assert.equal(result.manifest.workload_env.WORKLOAD, TEXTS.workload.baseline);
+      t.assert.equal(result.manifest.workload_env.USER_COUNT, VALUES.users.baselineCount);
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('uses signal-specific errors when k6 is killed', (t) => {
+    t.plan(2);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
+
+    try {
+      t.assert.throws(
+        () => runScenario(
+          {
+            allowRemoteBaseUrl: false,
+            apply: false,
+            baseUrl: 'http://localhost:8080',
+            k6Bin: 'k6',
+            k6Env: {},
+            outputRoot: directory,
+            scenario: 'fixed-medium',
+            script: 'load-tests/k6/load-test-baseline.js',
+            skipHpaCleanup: false,
+            workload: 'smoke',
+          },
+          fakeAdapters({
+            k6ExitCode: null,
+            k6Signal: 'SIGTERM',
+            k6Summary: nestedK6Summary,
+          })
+        ),
+        /k6 was killed by signal SIGTERM/
+      );
+
+      const runDir = path.join(directory, fs.readdirSync(directory)[0]);
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(runDir, 'runtime-summary-manifest.json'), 'utf-8')
+      );
+      t.assert.equal(manifest.k6.signal, 'SIGTERM');
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   it('writes only a manifest when k6 fails', (t) => {
     t.plan(4);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
@@ -793,7 +945,12 @@ describe('manifest and runScenario', () => {
   });
 });
 
-const fakeAdapters = ({ k6ExitCode, k6Summary, restartCounts = [0, 0] }) => ({
+const fakeAdapters = ({
+  k6ExitCode,
+  k6Signal,
+  k6Summary,
+  restartCounts = [0, 0],
+}) => ({
   clock: fakeClock(),
   gitReader: () => ({
     branch: 'bug/scenario-runner-seam',
@@ -803,6 +960,7 @@ const fakeAdapters = ({ k6ExitCode, k6Summary, restartCounts = [0, 0] }) => ({
     assertAvailable: () => {},
     run: () => ({
       exitCode: k6ExitCode,
+      signal: k6Signal,
       summary: k6Summary,
     }),
   },

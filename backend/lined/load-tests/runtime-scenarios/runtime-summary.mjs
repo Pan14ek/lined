@@ -94,6 +94,7 @@ export const buildManifest = ({
     exit_code: k6.exitCode,
     executable: options.k6Bin,
     script: options.script,
+    signal: k6.signal,
     summary_exported: summaryExported,
     summary_trend_stats: k6.summaryTrendStats,
   },
