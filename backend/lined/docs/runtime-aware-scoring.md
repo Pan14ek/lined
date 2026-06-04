@@ -158,7 +158,7 @@ future runtime summary contract adds a summarized readiness source.
 ## Local Example
 
 ```bash
-cd /Users/oleksii_makieiev/Documents/startups/Lined/fitness-metrics-collector
+cd fitness-metrics-collector
 npm run build
 RUNTIME_ONLY=true \
 RUNTIME_METRICS_JSON=/absolute/path/current/runtime-summary.json \

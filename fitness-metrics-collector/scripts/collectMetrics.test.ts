@@ -4,13 +4,16 @@ import path from "node:path";
 import {describe, it, type TestContext} from "node:test";
 
 import {
-    classifyRuntimeMetrics,
-    computeRuntimeFitness,
+    collectRuntimeOnlyMetrics,
     parseRuntimeMetrics,
-    parseSloThresholds,
     readRuntimeMetrics,
     writeMetricsOutput,
 } from "./collectMetrics";
+import {
+    classifyRuntimeMetrics,
+    computeRuntimeFitness,
+    parseSloThresholds,
+} from "./runtimeScoring";
 
 const RUNTIME_SCHEMA_VERSION = 1;
 const UNSUPPORTED_RUNTIME_SCHEMA_VERSION = 2;
@@ -69,6 +72,7 @@ const EXPECTED_WRITTEN_RUNTIME_SCORE = 0.25;
 const STRUCTURAL_METRIC_ZERO = 0;
 const STRUCTURAL_SPOTBUGS_CLASS_COUNT = 1;
 const EXPECTED_CONSTRAINT_CLASSIFICATIONS = ["invalid", "valid", "warning", "unknown"];
+const INVALID_OUTPUT_PATH = "/path/that/does/not/exist/metrics.json";
 
 const ERROR_ONLY_CURRENT_RATE = 0.002;
 const ERROR_ONLY_BASELINE_RATE = 0.004;
@@ -556,5 +560,42 @@ describe("writeMetricsOutput", () => {
         } finally {
             fs.rmSync(directory, {recursive: true, force: true});
         }
+    });
+
+    it("throws when the output path cannot be written", (t: TestContext) => {
+        t.plan(1);
+
+        t.assert.throws(
+            () => writeMetricsOutput(INVALID_OUTPUT_PATH, {
+                id: LOCAL_METRICS_DOCUMENT_ID,
+                timestamp: ISO_TIMESTAMP,
+                branch: LOCAL_BRANCH,
+                commitHash: LOCAL_COMMIT,
+                metrics: {},
+                fitnessScore: null,
+                runtimeFitnessScore: null,
+                runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
+            }),
+            /ENOENT/
+        );
+    });
+});
+
+describe("collectRuntimeOnlyMetrics", () => {
+    it("requires a runtime metrics JSON path", (t: TestContext) => {
+        t.plan(1);
+
+        t.assert.throws(
+            () => collectRuntimeOnlyMetrics({
+                checkstylePath: "",
+                spotbugsXmlPath: "",
+                spotbugsHtmlPath: "",
+                jacocoPath: "",
+                runtimeBaselineScenario: SCENARIO_FIXED_MEDIUM,
+                runtimeOnly: true,
+                sloThresholdsJsonPath: "",
+            }),
+            /RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON/
+        );
     });
 });

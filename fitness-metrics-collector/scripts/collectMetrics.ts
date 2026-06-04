@@ -11,12 +11,6 @@ import {
     type RuntimeMetricSummary,
 } from "./runtimeScoring";
 
-export {
-    classifyRuntimeMetrics,
-    computeRuntimeFitness,
-    parseSloThresholds,
-} from "./runtimeScoring";
-
 /* =======================
    TYPES
 ======================= */
@@ -253,6 +247,15 @@ const hasStructuralMetrics = (metrics: Metrics): boolean => {
     return metrics.checkstyle_violations !== undefined &&
         metrics.spotbugs_total !== undefined &&
         metrics.spotbugs_total_classes !== undefined;
+};
+
+const requireStructuralMetrics = (metrics: Metrics): void => {
+    if (!hasStructuralMetrics(metrics)) {
+        throw new Error(
+            "Structural fitness scoring requires checkstyle_violations, " +
+            "spotbugs_total, and spotbugs_total_classes"
+        );
+    }
 };
 
 const readSloThresholds = (path: string) => parseSloThresholds(readFile(path));
@@ -813,7 +816,7 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
     return metrics;
 };
 
-const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
+export const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
     const runtimeMetrics = readRuntimeMetrics(config.runtimeMetricsJsonPath);
     if (!runtimeMetrics) {
         throw new Error("RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON");
@@ -860,9 +863,13 @@ const main = async (): Promise<void> => {
             sloClassification
         );
 
-        const fitnessScore = hasStructuralMetrics(metrics)
-            ? await computeFitnessFunction(store ?? LOCAL_BASELINE_STORE, config, metrics)
-            : null;
+        if (!config.runtimeOnly) {
+            requireStructuralMetrics(metrics);
+        }
+
+        const fitnessScore = config.runtimeOnly
+            ? null
+            : await computeFitnessFunction(store ?? LOCAL_BASELINE_STORE, config, metrics);
         const document = buildMetricsDocument(config, metrics, fitnessScore, runtimeFitnessResult);
 
         console.log(`[fitness] F = ${fitnessScore}`);

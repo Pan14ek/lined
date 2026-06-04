@@ -237,6 +237,8 @@ const classifyThreshold = (
     threshold: ThresholdRule
 ): RuntimeSloConstraintResult => {
     const field = threshold.metric as keyof RuntimeMetricSummary | undefined;
+    // Evidence-source rules, such as readiness, intentionally stay unknown until
+    // the runtime summary schema exposes a matching summarized metric field.
     const current = field === undefined ? undefined : runtimeMetrics.summary[field];
     const missing = current === undefined;
     const matched = !missing && compareThreshold(
