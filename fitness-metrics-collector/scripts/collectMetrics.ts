@@ -1,6 +1,14 @@
 import fs from "node:fs";
 import {CosmosClient} from "@azure/cosmos";
 import {
+    computeAdaptiveFitness,
+    parseAdaptiveFitnessContext,
+    type AdaptiveFitnessContext,
+    type AdaptiveFitnessMetadata,
+    type AdaptiveFitnessResult,
+    ADAPTIVE_FITNESS_SCORE_VERSION,
+} from "./adaptiveScoring";
+import {
     classifyRuntimeMetrics,
     computeRuntimeFitness,
     parseSloThresholds,
@@ -39,6 +47,9 @@ type MetricsDocument = {
     runtimeFitnessScore: FitnessScore;
     runtimeFitnessScoreVersion: typeof RUNTIME_FITNESS_SCORE_VERSION;
     runtimeFitness?: RuntimeFitnessMetadata;
+    adaptiveFitnessScore: FitnessScore;
+    adaptiveFitnessScoreVersion: typeof ADAPTIVE_FITNESS_SCORE_VERSION;
+    adaptiveFitness?: AdaptiveFitnessMetadata;
 };
 
 type MetricsStore = {
@@ -91,6 +102,7 @@ type Config = {
     runtimeBaselineMetricsJsonPath?: string;
     runtimeBaselineScenario: string;
     runtimeOnly: boolean;
+    adaptiveFitnessContext: AdaptiveFitnessContext;
     sloThresholdsJsonPath: string;
     metricsOutputJsonPath?: string;
     commitHash?: string;
@@ -171,6 +183,7 @@ const getConfig = (): Config => {
         runtimeBaselineMetricsJsonPath: process.env.RUNTIME_BASELINE_METRICS_JSON,
         runtimeBaselineScenario: process.env.RUNTIME_BASELINE_SCENARIO ?? "fixed-medium",
         runtimeOnly: isEnabled(process.env.RUNTIME_ONLY),
+        adaptiveFitnessContext: parseAdaptiveFitnessContext(process.env.ADAPTIVE_FITNESS_CONTEXT),
         sloThresholdsJsonPath: process.env.SLO_THRESHOLDS_JSON ?? DEFAULT_PATHS.SLO_THRESHOLDS,
         metricsOutputJsonPath: process.env.METRICS_OUTPUT_JSON,
         branchName: process.env.BRANCH_NAME,
@@ -359,7 +372,8 @@ const buildMetricsDocument = (
     config: Config,
     data: Metrics,
     fitnessScore: FitnessScore,
-    runtimeFitnessResult: RuntimeFitnessResult
+    runtimeFitnessResult: RuntimeFitnessResult,
+    adaptiveFitnessResult: AdaptiveFitnessResult
 ): MetricsDocument => {
     const branch = sanitizeBranchName(config.branchName ?? "unknown");
     const id = `${branch}-${config.commitHash ?? "unknown"}`;
@@ -375,6 +389,9 @@ const buildMetricsDocument = (
         runtimeFitnessScore: runtimeFitnessResult.runtimeFitnessScore,
         runtimeFitnessScoreVersion: runtimeFitnessResult.runtimeFitnessScoreVersion,
         runtimeFitness: runtimeFitnessResult.runtimeFitness,
+        adaptiveFitnessScore: adaptiveFitnessResult.adaptiveFitnessScore,
+        adaptiveFitnessScoreVersion: adaptiveFitnessResult.adaptiveFitnessScoreVersion,
+        adaptiveFitness: adaptiveFitnessResult.adaptiveFitness,
     };
 };
 
@@ -870,10 +887,23 @@ const main = async (): Promise<void> => {
         const fitnessScore = config.runtimeOnly
             ? null
             : await computeFitnessFunction(store ?? LOCAL_BASELINE_STORE, config, metrics);
-        const document = buildMetricsDocument(config, metrics, fitnessScore, runtimeFitnessResult);
+        const adaptiveFitnessResult = computeAdaptiveFitness(
+            fitnessScore,
+            metrics.runtime_metrics,
+            runtimeFitnessResult.runtimeFitness,
+            config.adaptiveFitnessContext
+        );
+        const document = buildMetricsDocument(
+            config,
+            metrics,
+            fitnessScore,
+            runtimeFitnessResult,
+            adaptiveFitnessResult
+        );
 
         console.log(`[fitness] F = ${fitnessScore}`);
         console.log(`[fitness] runtime F = ${runtimeFitnessResult.runtimeFitnessScore}`);
+        console.log(`[fitness] adaptive F = ${adaptiveFitnessResult.adaptiveFitnessScore}`);
         writeMetricsOutput(config.metricsOutputJsonPath, document);
 
         if (!store) {

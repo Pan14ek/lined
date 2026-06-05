@@ -10,6 +10,10 @@ import {
     writeMetricsOutput,
 } from "./collectMetrics";
 import {
+    computeAdaptiveFitness,
+    parseAdaptiveFitnessContext,
+} from "./adaptiveScoring";
+import {
     classifyRuntimeMetrics,
     computeRuntimeFitness,
     parseSloThresholds,
@@ -18,6 +22,7 @@ import {
 const RUNTIME_SCHEMA_VERSION = 1;
 const UNSUPPORTED_RUNTIME_SCHEMA_VERSION = 2;
 const RUNTIME_SCORE_VERSION = "runtime-aware-v1";
+const ADAPTIVE_SCORE_VERSION = "adaptive-weighted-v1";
 const THRESHOLD_VERSION = "slo-thresholds-v1";
 
 const SCENARIO_FIXED_MEDIUM = "fixed-medium";
@@ -63,6 +68,10 @@ const CURRENT_CPU_UTILIZATION = 0.63;
 const CURRENT_MEMORY_UTILIZATION = 0.72;
 
 const EXPECTED_RUNTIME_SCORE = 0.2915;
+const EXPECTED_ADAPTIVE_BALANCED_SCORE = 0.325;
+const EXPECTED_ADAPTIVE_WORKLOAD_SCORE = 0.2758;
+const EXPECTED_ADAPTIVE_SLO_SCORE = 0.3072;
+const EXPECTED_ADAPTIVE_RESOURCE_PRESSURE_SCORE = 0.2143;
 const EXPECTED_LATENCY_P95_WEIGHT = 0.2;
 const EXPECTED_LATENCY_P95_DELTA = 0.2;
 const EXPECTED_ERROR_ONLY_SCORE = 0.5;
@@ -81,6 +90,7 @@ const ZERO_BASELINE_CURRENT_ERROR_RATE = 0.1;
 const CLASSIFICATION_INVALID_LATENCY_P95_MS = 1200;
 const CLASSIFICATION_VALID_ERROR_RATE = 0;
 const CLASSIFICATION_WARNING_CPU_UTILIZATION = 0.9;
+const STRUCTURAL_FITNESS_SCORE = 0.42;
 
 const THRESHOLD_LATENCY_P95_LIMIT_MS = 1000;
 const THRESHOLD_ERROR_RATE_LIMIT = 0.01;
@@ -311,12 +321,46 @@ const CLASSIFICATION_RUNTIME_PAYLOAD: RuntimePayload = {
     },
 };
 
+const INVALID_LATENCY_CURRENT_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: SCENARIO_REPLICAS_2,
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        latency_p95_ms: CLASSIFICATION_INVALID_LATENCY_P95_MS,
+    },
+};
+
+const INVALID_LATENCY_BASELINE_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: SCENARIO_FIXED_MEDIUM,
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        latency_p95_ms: CLASSIFICATION_INVALID_LATENCY_P95_MS,
+    },
+};
+
+const RESOURCE_PRESSURE_CURRENT_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: SCENARIO_REPLICAS_2,
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        cpu_utilization: CLASSIFICATION_WARNING_CPU_UTILIZATION,
+    },
+};
+
 const runtimeJson = (payload: unknown): string => JSON.stringify(payload);
 
 const validRuntimeMetricsJson = runtimeJson(FULL_RUNTIME_PAYLOAD);
 const runtimeBaselineMetrics = parseRuntimeMetrics(runtimeJson(RUNTIME_BASELINE_PAYLOAD));
 const runtimeCurrentMetrics = parseRuntimeMetrics(runtimeJson(RUNTIME_CURRENT_PAYLOAD));
 const sloThresholdsJson = runtimeJson(SLO_THRESHOLDS_PAYLOAD);
+const runtimeFitnessMetadata = computeRuntimeFitness(
+    runtimeCurrentMetrics,
+    runtimeBaselineMetrics
+).runtimeFitness;
 
 describe("parseRuntimeMetrics", () => {
     it("parses a valid summarized runtime metrics document", (t: TestContext) => {
@@ -510,6 +554,311 @@ describe("computeRuntimeFitness", () => {
     });
 });
 
+describe("computeAdaptiveFitness", () => {
+    it("uses the balanced profile when auto context has no stronger signal", (
+        t: TestContext
+    ) => {
+        t.plan(4);
+
+        const result = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitnessMetadata,
+            "auto"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitnessScoreVersion, ADAPTIVE_SCORE_VERSION);
+        t.assert.strictEqual(result.adaptiveFitnessScore, EXPECTED_ADAPTIVE_BALANCED_SCORE);
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "balanced");
+        t.assert.strictEqual(
+            result.adaptiveFitness?.activeSignalWeights.structural_quality,
+            0.35
+        );
+    });
+
+    it("computes adaptive output for structural-only collector runs", (
+        t: TestContext
+    ) => {
+        t.plan(4);
+
+        const result = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            undefined,
+            undefined,
+            "auto"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitnessScore, STRUCTURAL_FITNESS_SCORE);
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "balanced");
+        t.assert.strictEqual(result.adaptiveFitness?.activeSignalWeights.structural_quality, 1);
+        t.assert.ok(result.adaptiveFitness?.missingSignals.includes("latency_p95_ms"));
+    });
+
+    it("honors explicit workload, slo, and resource-pressure contexts", (
+        t: TestContext
+    ) => {
+        t.plan(6);
+
+        const workload = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitnessMetadata,
+            "workload"
+        );
+        const slo = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitnessMetadata,
+            "slo"
+        );
+        const resourcePressure = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitnessMetadata,
+            "resource-pressure"
+        );
+
+        t.assert.strictEqual(workload.adaptiveFitness?.selectedContext, "workload");
+        t.assert.strictEqual(workload.adaptiveFitnessScore, EXPECTED_ADAPTIVE_WORKLOAD_SCORE);
+        t.assert.strictEqual(slo.adaptiveFitness?.selectedContext, "slo");
+        t.assert.strictEqual(slo.adaptiveFitnessScore, EXPECTED_ADAPTIVE_SLO_SCORE);
+        t.assert.strictEqual(resourcePressure.adaptiveFitness?.selectedContext, "resource-pressure");
+        t.assert.strictEqual(
+            resourcePressure.adaptiveFitnessScore,
+            EXPECTED_ADAPTIVE_RESOURCE_PRESSURE_SCORE
+        );
+    });
+
+    it("selects slo context when auto sees an invalid hard constraint", (
+        t: TestContext
+    ) => {
+        t.plan(1);
+
+        const runtimeFitness = computeRuntimeFitness(
+            runtimeCurrentMetrics,
+            runtimeBaselineMetrics,
+            {
+                thresholdVersion: THRESHOLD_VERSION,
+                constraints: [],
+                hasInvalidHardConstraint: true,
+                hasUnknownHardConstraint: false,
+                eligibleForStableComparison: false,
+            }
+        ).runtimeFitness;
+
+        const result = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitness,
+            "auto"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "slo");
+    });
+
+    it("selects resource-pressure context for warning utilization constraints", (
+        t: TestContext
+    ) => {
+        t.plan(1);
+
+        const runtimeFitness = computeRuntimeFitness(
+            runtimeCurrentMetrics,
+            runtimeBaselineMetrics,
+            {
+                thresholdVersion: THRESHOLD_VERSION,
+                constraints: [
+                    {
+                        id: "cpu-pressure-local",
+                        metric: "cpu_utilization",
+                        classification: "warning",
+                        severity: "warning",
+                        missing: false,
+                    },
+                ],
+                hasInvalidHardConstraint: false,
+                hasUnknownHardConstraint: false,
+                eligibleForStableComparison: true,
+            }
+        ).runtimeFitness;
+
+        const result = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            runtimeCurrentMetrics,
+            runtimeFitness,
+            "auto"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "resource-pressure");
+    });
+
+    it("selects workload context for non-baseline workloads", (t: TestContext) => {
+        t.plan(1);
+
+        const current = parseRuntimeMetrics(runtimeJson({
+            ...RUNTIME_CURRENT_PAYLOAD,
+            workload: "spike",
+        }));
+        const result = computeAdaptiveFitness(
+            STRUCTURAL_FITNESS_SCORE,
+            current,
+            runtimeFitnessMetadata,
+            "auto"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "workload");
+    });
+
+    it("penalizes measured SLO pressure even when baseline has the same violation", (
+        t: TestContext
+    ) => {
+        t.plan(3);
+
+        const current = parseRuntimeMetrics(runtimeJson(INVALID_LATENCY_CURRENT_PAYLOAD));
+        const baseline = parseRuntimeMetrics(runtimeJson(INVALID_LATENCY_BASELINE_PAYLOAD));
+        const runtimeFitness = computeRuntimeFitness(
+            current,
+            baseline,
+            {
+                thresholdVersion: THRESHOLD_VERSION,
+                constraints: [
+                    {
+                        id: "latency-p95-local",
+                        metric: "latency_p95_ms",
+                        classification: "invalid",
+                        severity: "invalid",
+                        missing: false,
+                    },
+                ],
+                hasInvalidHardConstraint: true,
+                hasUnknownHardConstraint: false,
+                eligibleForStableComparison: false,
+            }
+        ).runtimeFitness;
+
+        const result = computeAdaptiveFitness(null, current, runtimeFitness, "auto");
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "slo");
+        t.assert.strictEqual(result.adaptiveFitness?.signalValues.latency_p95_ms?.value, -1);
+        t.assert.strictEqual(result.adaptiveFitnessScore, -1);
+    });
+
+    it("can score resource-pressure evidence without a runtime baseline", (
+        t: TestContext
+    ) => {
+        t.plan(3);
+
+        const current = parseRuntimeMetrics(runtimeJson(RESOURCE_PRESSURE_CURRENT_PAYLOAD));
+        const runtimeFitness = computeRuntimeFitness(
+            current,
+            undefined,
+            {
+                thresholdVersion: THRESHOLD_VERSION,
+                constraints: [
+                    {
+                        id: "cpu-pressure-local",
+                        metric: "cpu_utilization",
+                        classification: "warning",
+                        severity: "warning",
+                        missing: false,
+                    },
+                ],
+                hasInvalidHardConstraint: false,
+                hasUnknownHardConstraint: false,
+                eligibleForStableComparison: true,
+            }
+        ).runtimeFitness;
+
+        const result = computeAdaptiveFitness(null, current, runtimeFitness, "auto");
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "resource-pressure");
+        t.assert.strictEqual(result.adaptiveFitness?.signalValues.cpu_utilization?.value, -0.5);
+        t.assert.strictEqual(result.adaptiveFitnessScore, -0.5);
+    });
+
+    it("prefers invalid pressure floors over warning floors for the same metric", (
+        t: TestContext
+    ) => {
+        t.plan(2);
+
+        const current = parseRuntimeMetrics(runtimeJson(INVALID_LATENCY_CURRENT_PAYLOAD));
+        const runtimeFitness = computeRuntimeFitness(
+            current,
+            undefined,
+            {
+                thresholdVersion: THRESHOLD_VERSION,
+                constraints: [
+                    {
+                        id: "latency-p95-warning",
+                        metric: "latency_p95_ms",
+                        classification: "warning",
+                        severity: "warning",
+                        missing: false,
+                    },
+                    {
+                        id: "latency-p95-invalid",
+                        metric: "latency_p95_ms",
+                        classification: "invalid",
+                        severity: "invalid",
+                        missing: false,
+                    },
+                ],
+                hasInvalidHardConstraint: true,
+                hasUnknownHardConstraint: false,
+                eligibleForStableComparison: false,
+            }
+        ).runtimeFitness;
+
+        const result = computeAdaptiveFitness(null, current, runtimeFitness, "auto");
+
+        t.assert.strictEqual(result.adaptiveFitness?.signalValues.latency_p95_ms?.value, -1);
+        t.assert.strictEqual(result.adaptiveFitnessScore, -1);
+    });
+
+    it("renormalizes active weights when structural score is missing", (
+        t: TestContext
+    ) => {
+        t.plan(3);
+
+        const result = computeAdaptiveFitness(
+            null,
+            runtimeCurrentMetrics,
+            runtimeFitnessMetadata,
+            "balanced"
+        );
+
+        t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "balanced");
+        t.assert.strictEqual(result.adaptiveFitness?.activeSignalWeights.structural_quality, undefined);
+        t.assert.ok(result.adaptiveFitness?.missingSignals.includes("structural_quality"));
+    });
+
+    it("returns null when no structural or runtime signals are available", (
+        t: TestContext
+    ) => {
+        t.plan(2);
+
+        const result = computeAdaptiveFitness(null, undefined, undefined, "auto");
+
+        t.assert.strictEqual(result.adaptiveFitnessScore, null);
+        t.assert.strictEqual(
+            result.adaptiveFitness?.reason,
+            "no structural or runtime signals are available"
+        );
+    });
+});
+
+describe("parseAdaptiveFitnessContext", () => {
+    it("defaults to auto and rejects unsupported contexts", (t: TestContext) => {
+        t.plan(3);
+
+        t.assert.strictEqual(parseAdaptiveFitnessContext(undefined), "auto");
+        t.assert.strictEqual(parseAdaptiveFitnessContext("slo"), "slo");
+        t.assert.throws(
+            () => parseAdaptiveFitnessContext("latency"),
+            /ADAPTIVE_FITNESS_CONTEXT/
+        );
+    });
+});
+
 describe("classifyRuntimeMetrics", () => {
     it("classifies valid, warning, invalid, and unknown runtime evidence", (t: TestContext) => {
         t.plan(5);
@@ -532,7 +881,7 @@ describe("classifyRuntimeMetrics", () => {
 
 describe("writeMetricsOutput", () => {
     it("writes a local final metrics document without a database", (t: TestContext) => {
-        t.plan(3);
+        t.plan(5);
 
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-output-"));
         const file = path.join(directory, "metrics.json");
@@ -551,12 +900,16 @@ describe("writeMetricsOutput", () => {
                 fitnessScore: EXPECTED_WRITTEN_STRUCTURAL_SCORE,
                 runtimeFitnessScore: EXPECTED_WRITTEN_RUNTIME_SCORE,
                 runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
+                adaptiveFitnessScore: EXPECTED_ADAPTIVE_BALANCED_SCORE,
+                adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
             });
 
             const written = JSON.parse(fs.readFileSync(file, "utf-8"));
             t.assert.strictEqual(written.fitnessScore, EXPECTED_WRITTEN_STRUCTURAL_SCORE);
             t.assert.strictEqual(written.runtimeFitnessScore, EXPECTED_WRITTEN_RUNTIME_SCORE);
             t.assert.strictEqual(written.runtimeFitnessScoreVersion, RUNTIME_SCORE_VERSION);
+            t.assert.strictEqual(written.adaptiveFitnessScore, EXPECTED_ADAPTIVE_BALANCED_SCORE);
+            t.assert.strictEqual(written.adaptiveFitnessScoreVersion, ADAPTIVE_SCORE_VERSION);
         } finally {
             fs.rmSync(directory, {recursive: true, force: true});
         }
@@ -575,6 +928,8 @@ describe("writeMetricsOutput", () => {
                 fitnessScore: null,
                 runtimeFitnessScore: null,
                 runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
+                adaptiveFitnessScore: null,
+                adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
             }),
             /ENOENT/
         );
@@ -593,6 +948,7 @@ describe("collectRuntimeOnlyMetrics", () => {
                 jacocoPath: "",
                 runtimeBaselineScenario: SCENARIO_FIXED_MEDIUM,
                 runtimeOnly: true,
+                adaptiveFitnessContext: "auto",
                 sloThresholdsJsonPath: "",
             }),
             /RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON/
