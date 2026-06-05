@@ -18,6 +18,12 @@ import {
     type RuntimeMetrics,
     type RuntimeMetricSummary,
 } from "./runtimeScoring";
+import {
+    computeParetoOptimization,
+    PARETO_OPTIMIZATION_VERSION,
+    type ParetoOptimizationMetadata,
+    type ParetoOptimizationResult,
+} from "./paretoOptimization";
 
 /* =======================
    TYPES
@@ -50,6 +56,8 @@ type MetricsDocument = {
     adaptiveFitnessScore: FitnessScore;
     adaptiveFitnessScoreVersion: typeof ADAPTIVE_FITNESS_SCORE_VERSION;
     adaptiveFitness?: AdaptiveFitnessMetadata;
+    paretoOptimizationVersion: typeof PARETO_OPTIMIZATION_VERSION;
+    paretoOptimization?: ParetoOptimizationMetadata;
 };
 
 type MetricsStore = {
@@ -100,6 +108,7 @@ type Config = {
     jacocoPath: string;
     runtimeMetricsJsonPath?: string;
     runtimeBaselineMetricsJsonPath?: string;
+    paretoRuntimeMetricsJsonPaths: string[];
     runtimeBaselineScenario: string;
     runtimeOnly: boolean;
     adaptiveFitnessContext: AdaptiveFitnessContext;
@@ -173,6 +182,17 @@ const countMatches = (content: string, pattern: RegExp): number => {
     return count;
 };
 
+const parsePathList = (value: string | undefined): string[] => {
+    if (value === undefined || value.trim() === "") {
+        return [];
+    }
+
+    return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item !== "");
+};
+
 const getConfig = (): Config => {
     return {
         checkstylePath: process.env.CHECKSTYLE_XML ?? DEFAULT_PATHS.CHECKSTYLE,
@@ -181,6 +201,7 @@ const getConfig = (): Config => {
         jacocoPath: process.env.JACOCO_XML ?? DEFAULT_PATHS.JACOCO,
         runtimeMetricsJsonPath: process.env.RUNTIME_METRICS_JSON,
         runtimeBaselineMetricsJsonPath: process.env.RUNTIME_BASELINE_METRICS_JSON,
+        paretoRuntimeMetricsJsonPaths: parsePathList(process.env.PARETO_RUNTIME_METRICS_JSONS),
         runtimeBaselineScenario: process.env.RUNTIME_BASELINE_SCENARIO ?? "fixed-medium",
         runtimeOnly: isEnabled(process.env.RUNTIME_ONLY),
         adaptiveFitnessContext: parseAdaptiveFitnessContext(process.env.ADAPTIVE_FITNESS_CONTEXT),
@@ -373,7 +394,8 @@ const buildMetricsDocument = (
     data: Metrics,
     fitnessScore: FitnessScore,
     runtimeFitnessResult: RuntimeFitnessResult,
-    adaptiveFitnessResult: AdaptiveFitnessResult
+    adaptiveFitnessResult: AdaptiveFitnessResult,
+    paretoOptimizationResult: ParetoOptimizationResult
 ): MetricsDocument => {
     const branch = sanitizeBranchName(config.branchName ?? "unknown");
     const id = `${branch}-${config.commitHash ?? "unknown"}`;
@@ -392,6 +414,8 @@ const buildMetricsDocument = (
         adaptiveFitnessScore: adaptiveFitnessResult.adaptiveFitnessScore,
         adaptiveFitnessScoreVersion: adaptiveFitnessResult.adaptiveFitnessScoreVersion,
         adaptiveFitness: adaptiveFitnessResult.adaptiveFitness,
+        paretoOptimizationVersion: paretoOptimizationResult.paretoOptimizationVersion,
+        paretoOptimization: paretoOptimizationResult.paretoOptimization,
     };
 };
 
@@ -591,6 +615,9 @@ export const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined =>
 
     return parseRuntimeMetrics(readFile(path));
 };
+
+export const readRuntimeMetricSet = (paths: readonly string[]): RuntimeMetrics[] =>
+    paths.map((path) => parseRuntimeMetrics(readFile(path)));
 
 const getCurrentScope = (config: Config): SonarScope => {
     const pr = config.pullRequestId;
@@ -893,17 +920,25 @@ const main = async (): Promise<void> => {
             runtimeFitnessResult.runtimeFitness,
             config.adaptiveFitnessContext
         );
+        const paretoOptimizationResult = computeParetoOptimization(
+            readRuntimeMetricSet(config.paretoRuntimeMetricsJsonPaths)
+        );
         const document = buildMetricsDocument(
             config,
             metrics,
             fitnessScore,
             runtimeFitnessResult,
-            adaptiveFitnessResult
+            adaptiveFitnessResult,
+            paretoOptimizationResult
         );
 
         console.log(`[fitness] F = ${fitnessScore}`);
         console.log(`[fitness] runtime F = ${runtimeFitnessResult.runtimeFitnessScore}`);
         console.log(`[fitness] adaptive F = ${adaptiveFitnessResult.adaptiveFitnessScore}`);
+        console.log(
+            `[fitness] pareto candidates = ` +
+            `${paretoOptimizationResult.paretoOptimization?.candidates.length ?? 0}`
+        );
         writeMetricsOutput(config.metricsOutputJsonPath, document);
 
         if (!store) {

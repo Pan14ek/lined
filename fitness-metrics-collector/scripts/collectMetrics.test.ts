@@ -6,6 +6,7 @@ import {describe, it, type TestContext} from "node:test";
 import {
     collectRuntimeOnlyMetrics,
     parseRuntimeMetrics,
+    readRuntimeMetricSet,
     readRuntimeMetrics,
     writeMetricsOutput,
 } from "./collectMetrics";
@@ -18,11 +19,15 @@ import {
     computeRuntimeFitness,
     parseSloThresholds,
 } from "./runtimeScoring";
+import {
+    computeParetoOptimization,
+} from "./paretoOptimization";
 
 const RUNTIME_SCHEMA_VERSION = 1;
 const UNSUPPORTED_RUNTIME_SCHEMA_VERSION = 2;
 const RUNTIME_SCORE_VERSION = "runtime-aware-v1";
 const ADAPTIVE_SCORE_VERSION = "adaptive-weighted-v1";
+const PARETO_OPTIMIZATION_VERSION = "pareto-baseline-v1";
 const THRESHOLD_VERSION = "slo-thresholds-v1";
 
 const SCENARIO_FIXED_MEDIUM = "fixed-medium";
@@ -78,6 +83,7 @@ const EXPECTED_ERROR_ONLY_SCORE = 0.5;
 const EXPECTED_ZERO_BASELINE_SCORE = -0.1429;
 const EXPECTED_WRITTEN_STRUCTURAL_SCORE = 0.42;
 const EXPECTED_WRITTEN_RUNTIME_SCORE = 0.25;
+const EXPECTED_PARETO_FIRST_FRONT_SIZE = 2;
 const STRUCTURAL_METRIC_ZERO = 0;
 const STRUCTURAL_SPOTBUGS_CLASS_COUNT = 1;
 const EXPECTED_CONSTRAINT_CLASSIFICATIONS = ["invalid", "valid", "warning", "unknown"];
@@ -351,6 +357,28 @@ const RESOURCE_PRESSURE_CURRENT_PAYLOAD: RuntimePayload = {
     },
 };
 
+const RESOURCE_EFFICIENT_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: SCENARIO_FIXED_SMALL,
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        latency_p95_ms: 360,
+        latency_p99_ms: 720,
+        error_rate: 0.006,
+        throughput_rps: 35,
+        availability: 0.98,
+        restart_count: 2,
+        cpu_utilization: 0.5,
+        memory_utilization: 0.55,
+    },
+};
+
+const MIXED_WORKLOAD_PAYLOAD: RuntimePayload = {
+    ...RUNTIME_CURRENT_PAYLOAD,
+    workload: WORKLOAD_SMOKE,
+};
+
 const runtimeJson = (payload: unknown): string => JSON.stringify(payload);
 
 const validRuntimeMetricsJson = runtimeJson(FULL_RUNTIME_PAYLOAD);
@@ -459,6 +487,31 @@ describe("readRuntimeMetrics", () => {
             t.assert.strictEqual(result?.schema_version, RUNTIME_SCHEMA_VERSION);
             t.assert.strictEqual(result?.scenario, SCENARIO_FIXED_MEDIUM);
             t.assert.strictEqual(result?.summary.latency_p95_ms, SUMMARY_LATENCY_P95_MS);
+        } finally {
+            fs.rmSync(directory, {recursive: true, force: true});
+        }
+    });
+});
+
+describe("readRuntimeMetricSet", () => {
+    it("reads multiple runtime summaries for Pareto comparison", (t: TestContext) => {
+        t.plan(2);
+
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-runtime-set-"));
+        const baselineFile = path.join(directory, "baseline.json");
+        const currentFile = path.join(directory, "current.json");
+
+        try {
+            fs.writeFileSync(baselineFile, runtimeJson(RUNTIME_BASELINE_PAYLOAD), "utf-8");
+            fs.writeFileSync(currentFile, runtimeJson(RUNTIME_CURRENT_PAYLOAD), "utf-8");
+
+            const result = readRuntimeMetricSet([baselineFile, currentFile]);
+
+            t.assert.strictEqual(result.length, 2);
+            t.assert.deepStrictEqual(
+                result.map((runtime) => runtime.scenario),
+                [SCENARIO_FIXED_MEDIUM, SCENARIO_REPLICAS_2]
+            );
         } finally {
             fs.rmSync(directory, {recursive: true, force: true});
         }
@@ -859,6 +912,92 @@ describe("parseAdaptiveFitnessContext", () => {
     });
 });
 
+describe("computeParetoOptimization", () => {
+    it("ranks non-dominated runtime scenario trade-offs ahead of dominated variants", (
+        t: TestContext
+    ) => {
+        t.plan(8);
+
+        const result = computeParetoOptimization([
+            runtimeBaselineMetrics,
+            runtimeCurrentMetrics,
+            parseRuntimeMetrics(runtimeJson(RESOURCE_EFFICIENT_PAYLOAD)),
+        ]);
+
+        t.assert.strictEqual(result.paretoOptimizationVersion, PARETO_OPTIMIZATION_VERSION);
+        t.assert.strictEqual(
+            result.paretoOptimization?.fronts[0].length,
+            EXPECTED_PARETO_FIRST_FRONT_SIZE
+        );
+        t.assert.deepStrictEqual(result.paretoOptimization?.selectedCandidateIds, [
+            `${SCENARIO_FIXED_SMALL}:${WORKLOAD_BASELINE}:${SOURCE_LOCAL_KIND}`,
+            `${SCENARIO_REPLICAS_2}:${WORKLOAD_BASELINE}:${SOURCE_LOCAL_KIND}`,
+        ]);
+        t.assert.strictEqual(
+            result.paretoOptimization?.candidates.find((candidate) =>
+                candidate.scenario === SCENARIO_FIXED_MEDIUM
+            )?.rank,
+            2
+        );
+        t.assert.deepStrictEqual(
+            result.paretoOptimization?.candidates.find((candidate) =>
+                candidate.scenario === SCENARIO_REPLICAS_2
+            )?.dominates,
+            [`${SCENARIO_FIXED_MEDIUM}:${WORKLOAD_BASELINE}:${SOURCE_LOCAL_KIND}`]
+        );
+        t.assert.ok(result.paretoOptimization?.activeObjectives.includes("latency_p95_ms"));
+        t.assert.ok(result.paretoOptimization?.activeObjectives.includes("memory_utilization"));
+        t.assert.strictEqual(result.paretoOptimization?.reason, undefined);
+    });
+
+    it("records why Pareto ranking is unavailable for a single candidate", (
+        t: TestContext
+    ) => {
+        t.plan(3);
+
+        const result = computeParetoOptimization([runtimeCurrentMetrics]);
+
+        t.assert.strictEqual(result.paretoOptimization?.fronts.length, 0);
+        t.assert.strictEqual(result.paretoOptimization?.selectedCandidateIds.length, 0);
+        t.assert.strictEqual(
+            result.paretoOptimization?.reason,
+            "at least two runtime scenario summaries are required"
+        );
+    });
+
+    it("does not rank duplicate candidate identities", (t: TestContext) => {
+        t.plan(3);
+
+        const result = computeParetoOptimization([
+            runtimeCurrentMetrics,
+            runtimeCurrentMetrics,
+        ]);
+
+        t.assert.deepStrictEqual(result.paretoOptimization?.fronts, []);
+        t.assert.strictEqual(result.paretoOptimization?.selectedCandidateIds.length, 0);
+        t.assert.strictEqual(
+            result.paretoOptimization?.reason,
+            "runtime scenario summaries must have unique scenario/workload/source identities"
+        );
+    });
+
+    it("does not rank mixed workload or source contexts", (t: TestContext) => {
+        t.plan(3);
+
+        const result = computeParetoOptimization([
+            runtimeBaselineMetrics,
+            parseRuntimeMetrics(runtimeJson(MIXED_WORKLOAD_PAYLOAD)),
+        ]);
+
+        t.assert.deepStrictEqual(result.paretoOptimization?.fronts, []);
+        t.assert.strictEqual(result.paretoOptimization?.selectedCandidateIds.length, 0);
+        t.assert.strictEqual(
+            result.paretoOptimization?.reason,
+            "runtime scenario summaries must share the same workload and source"
+        );
+    });
+});
+
 describe("classifyRuntimeMetrics", () => {
     it("classifies valid, warning, invalid, and unknown runtime evidence", (t: TestContext) => {
         t.plan(5);
@@ -881,7 +1020,7 @@ describe("classifyRuntimeMetrics", () => {
 
 describe("writeMetricsOutput", () => {
     it("writes a local final metrics document without a database", (t: TestContext) => {
-        t.plan(5);
+        t.plan(6);
 
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-output-"));
         const file = path.join(directory, "metrics.json");
@@ -902,6 +1041,7 @@ describe("writeMetricsOutput", () => {
                 runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
                 adaptiveFitnessScore: EXPECTED_ADAPTIVE_BALANCED_SCORE,
                 adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
+                paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
             });
 
             const written = JSON.parse(fs.readFileSync(file, "utf-8"));
@@ -910,6 +1050,7 @@ describe("writeMetricsOutput", () => {
             t.assert.strictEqual(written.runtimeFitnessScoreVersion, RUNTIME_SCORE_VERSION);
             t.assert.strictEqual(written.adaptiveFitnessScore, EXPECTED_ADAPTIVE_BALANCED_SCORE);
             t.assert.strictEqual(written.adaptiveFitnessScoreVersion, ADAPTIVE_SCORE_VERSION);
+            t.assert.strictEqual(written.paretoOptimizationVersion, PARETO_OPTIMIZATION_VERSION);
         } finally {
             fs.rmSync(directory, {recursive: true, force: true});
         }
@@ -930,6 +1071,7 @@ describe("writeMetricsOutput", () => {
                 runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
                 adaptiveFitnessScore: null,
                 adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
+                paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
             }),
             /ENOENT/
         );
@@ -947,6 +1089,7 @@ describe("collectRuntimeOnlyMetrics", () => {
                 spotbugsHtmlPath: "",
                 jacocoPath: "",
                 runtimeBaselineScenario: SCENARIO_FIXED_MEDIUM,
+                paretoRuntimeMetricsJsonPaths: [],
                 runtimeOnly: true,
                 adaptiveFitnessContext: "auto",
                 sloThresholdsJsonPath: "",
