@@ -268,19 +268,6 @@ const assignCrowdingDistance = (
     }
 };
 
-const distanceValue = (candidate: ParetoCandidate): number =>
-    candidate.crowdingDistance === "Infinity"
-        ? Number.POSITIVE_INFINITY
-        : candidate.crowdingDistance ?? 0;
-
-const firstFrontCandidates = (candidates: readonly ParetoCandidate[]): string[] =>
-    candidates
-        .filter((candidate) => candidate.rank === 1)
-        .sort((left, right) =>
-            distanceValue(right) - distanceValue(left) || left.id.localeCompare(right.id)
-        )
-        .map((candidate) => candidate.id);
-
 export const computeParetoOptimization = (
     runtimes: readonly RuntimeMetrics[]
 ): ParetoOptimizationResult => {
@@ -313,7 +300,7 @@ export const computeParetoOptimization = (
             ),
             candidates,
             fronts,
-            selectedCandidateIds: firstFrontCandidates(candidates),
+            selectedCandidateIds: fronts[0] ?? [],
         },
     };
 };
