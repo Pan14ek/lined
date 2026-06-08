@@ -65,57 +65,45 @@ export type DecisionUsefulnessResult = {
     decisionUsefulness: DecisionUsefulnessMetadata;
 };
 
-type RuntimeScoreWeight = {
-    objective: ParetoObjective;
-    weight: number;
+type ObjectiveComparison = Pick<
+    DecisionUsefulnessCandidateRow,
+    "betterThanScalarTop" | "worseThanScalarTop" | "equalToScalarTop"
+>;
+
+const RUNTIME_SCORE_WEIGHTS: Partial<Record<ParetoObjective, number>> = {
+    latency_p95_ms: 0.2,
+    latency_p99_ms: 0.15,
+    error_rate: 0.2,
+    throughput_rps: 0.15,
+    availability: 0.15,
+    restart_count: 0.1,
+    cpu_utilization: 0.025,
+    memory_utilization: 0.025,
 };
 
-const RUNTIME_SCORE_WEIGHTS: readonly RuntimeScoreWeight[] = [
-    {objective: "latency_p95_ms", weight: 0.2},
-    {objective: "latency_p99_ms", weight: 0.15},
-    {objective: "error_rate", weight: 0.2},
-    {objective: "throughput_rps", weight: 0.15},
-    {objective: "availability", weight: 0.15},
-    {objective: "restart_count", weight: 0.1},
-    {objective: "cpu_utilization", weight: 0.025},
-    {objective: "memory_utilization", weight: 0.025},
+const REASON_CODE_PATTERNS: readonly [string, ReasonCode][] = [
+    ["at least two", "missing-pareto-input"],
+    ["unique scenario/workload/source", "duplicate-candidate-identities"],
+    ["share the same workload and source", "mixed-workload-or-source"],
+    ["no objective", "no-comparable-objectives"],
 ];
 
-const reasonCode = (reason: string | undefined): ReasonCode => {
-    if (reason === undefined) {
-        return "invalid-pareto-set";
-    }
+/** Maps Pareto unavailable text to the stable decision-usefulness reason code. */
+const reasonCode = (reason: string | undefined): ReasonCode =>
+    REASON_CODE_PATTERNS.find(([pattern]) => reason?.includes(pattern))?.[1] ??
+    "invalid-pareto-set";
 
-    if (reason.includes("at least two")) {
-        return "missing-pareto-input";
-    }
-
-    if (reason.includes("unique scenario/workload/source")) {
-        return "duplicate-candidate-identities";
-    }
-
-    if (reason.includes("share the same workload and source")) {
-        return "mixed-workload-or-source";
-    }
-
-    if (reason.includes("no objective")) {
-        return "no-comparable-objectives";
-    }
-
-    return "invalid-pareto-set";
-};
-
-const emptyMetadata = (
+/** Builds a complete unavailable report while preserving any Pareto context that exists. */
+const unavailableMetadata = (
     paretoStatus: AvailabilityStatus,
     comparatorStatus: AvailabilityStatus,
-    classification: UsefulnessClassification,
     reasonCodes: ReasonCode[],
     paretoOptimization: ParetoOptimizationMetadata | undefined,
     actionabilitySummary: string
 ): DecisionUsefulnessMetadata => ({
     paretoStatus,
     comparatorStatus,
-    usefulnessClassification: classification,
+    usefulnessClassification: "unavailable",
     comparator: DECISION_USEFULNESS_COMPARATOR,
     reasonCodes,
     candidateCount: paretoOptimization?.candidates.length ?? 0,
@@ -129,14 +117,17 @@ const emptyMetadata = (
     actionabilitySummary,
 });
 
+/** Returns the fixed runtime-v1 reporting weight for one objective. */
 const weightFor = (objective: ParetoObjective): number | undefined =>
-    RUNTIME_SCORE_WEIGHTS.find((candidate) => candidate.objective === objective)?.weight;
+    RUNTIME_SCORE_WEIGHTS[objective];
 
+/** Reads an already-validated objective value from a Pareto candidate. */
 const objectiveValue = (
     candidate: ParetoCandidate,
     objective: ParetoObjective
 ): number => candidate.objectives[objective] as number;
 
+/** Normalizes an objective to [0, 1], where 1 is best for the objective direction. */
 const normalizedObjectiveValue = (
     candidate: ParetoCandidate,
     candidates: readonly ParetoCandidate[],
@@ -154,24 +145,44 @@ const normalizedObjectiveValue = (
         return 1;
     }
 
-    if (paretoOptimization.objectives[objective] === "maximize") {
-        return (current - minimum) / (maximum - minimum);
-    }
-
-    return (maximum - current) / (maximum - minimum);
+    return paretoOptimization.objectives[objective] === "maximize"
+        ? (current - minimum) / (maximum - minimum)
+        : (maximum - current) / (maximum - minimum);
 };
 
+/** Sorts fixed scalar rows without consulting Pareto rank or crowding distance. */
 const compareRankingRows = (
     left: FixedScalarRankingRow,
     right: FixedScalarRankingRow
-): number => {
-    if (right.score !== left.score) {
-        return right.score - left.score;
-    }
+): number =>
+    right.score === left.score
+        ? left.candidateId.localeCompare(right.candidateId)
+        : right.score - left.score;
 
-    return left.candidateId.localeCompare(right.candidateId);
+/** Computes the fixed scalar reporting score for a candidate over comparator objectives. */
+const scalarScore = (
+    candidate: ParetoCandidate,
+    paretoOptimization: ParetoOptimizationMetadata,
+    comparatorObjectives: readonly ParetoObjective[],
+    totalWeight: number
+): number => {
+    const weightedScore = comparatorObjectives.reduce(
+        (total, objective) =>
+            total +
+            normalizedObjectiveValue(
+                candidate,
+                paretoOptimization.candidates,
+                paretoOptimization,
+                objective
+            ) *
+            (weightFor(objective) as number),
+        0
+    );
+
+    return Number((weightedScore / totalWeight).toFixed(6));
 };
 
+/** Ranks all comparable candidates by the fixed runtime-v1 reporting comparator. */
 const buildFixedScalarRanking = (
     paretoOptimization: ParetoOptimizationMetadata,
     comparatorObjectives: readonly ParetoObjective[]
@@ -180,27 +191,18 @@ const buildFixedScalarRanking = (
         (total, objective) => total + (weightFor(objective) as number),
         0
     );
-    return paretoOptimization.candidates
-        .map((candidate) => {
-            const score = comparatorObjectives.reduce(
-                (total, objective) =>
-                    total +
-                    normalizedObjectiveValue(
-                        candidate,
-                        paretoOptimization.candidates,
-                        paretoOptimization,
-                        objective
-                    ) *
-                    (weightFor(objective) as number),
-                0
-            ) / totalWeight;
 
-            return {
-                candidateId: candidate.id,
-                rank: 0,
-                score: Number(score.toFixed(6)),
-            };
-        })
+    return paretoOptimization.candidates
+        .map((candidate) => ({
+            candidateId: candidate.id,
+            rank: 0,
+            score: scalarScore(
+                candidate,
+                paretoOptimization,
+                comparatorObjectives,
+                totalWeight
+            ),
+        }))
         .sort(compareRankingRows)
         .map((row, index) => ({
             ...row,
@@ -208,18 +210,18 @@ const buildFixedScalarRanking = (
         }));
 };
 
+/** Compares one candidate's objectives with the fixed scalar top candidate. */
 const compareToScalarTop = (
     candidate: ParetoCandidate,
     scalarTop: ParetoCandidate,
     paretoOptimization: ParetoOptimizationMetadata,
     comparatorObjectives: readonly ParetoObjective[]
-): Pick<
-    DecisionUsefulnessCandidateRow,
-    "betterThanScalarTop" | "worseThanScalarTop" | "equalToScalarTop"
-> => {
-    const betterThanScalarTop: ParetoObjective[] = [];
-    const worseThanScalarTop: ParetoObjective[] = [];
-    const equalToScalarTop: ParetoObjective[] = [];
+): ObjectiveComparison => {
+    const comparison: ObjectiveComparison = {
+        betterThanScalarTop: [],
+        worseThanScalarTop: [],
+        equalToScalarTop: [],
+    };
 
     for (const objective of comparatorObjectives) {
         const candidateValue = objectiveValue(candidate, objective);
@@ -227,34 +229,29 @@ const compareToScalarTop = (
         const direction = paretoOptimization.objectives[objective];
 
         if (candidateValue === scalarValue) {
-            equalToScalarTop.push(objective);
+            comparison.equalToScalarTop.push(objective);
         } else if (
             (direction === "maximize" && candidateValue > scalarValue) ||
             (direction === "minimize" && candidateValue < scalarValue)
         ) {
-            betterThanScalarTop.push(objective);
+            comparison.betterThanScalarTop.push(objective);
         } else {
-            worseThanScalarTop.push(objective);
+            comparison.worseThanScalarTop.push(objective);
         }
     }
 
-    return {
-        betterThanScalarTop,
-        worseThanScalarTop,
-        equalToScalarTop,
-    };
+    return comparison;
 };
 
+/** Formats objective names for the human-readable candidate rationale. */
 const objectiveList = (objectives: readonly ParetoObjective[]): string =>
     objectives.length === 0 ? "no comparable objectives" : objectives.join(", ");
 
+/** Explains one candidate's trade-off against the fixed scalar top candidate. */
 const rationale = (
     candidateId: string,
     scalarTopCandidateId: string,
-    comparison: Pick<
-        DecisionUsefulnessCandidateRow,
-        "betterThanScalarTop" | "worseThanScalarTop" | "equalToScalarTop"
-    >
+    comparison: ObjectiveComparison
 ): string => {
     if (candidateId === scalarTopCandidateId) {
         return "Fixed scalar top candidate; use as the single-score reference point.";
@@ -271,6 +268,7 @@ const rationale = (
         `${objectiveList(comparison.worseThanScalarTop)} compared with fixed scalar top.`;
 };
 
+/** Creates per-candidate rows with scalar rank, Pareto selection, and trade-off rationale. */
 const buildCandidateRows = (
     paretoOptimization: ParetoOptimizationMetadata,
     ranking: readonly FixedScalarRankingRow[],
@@ -304,9 +302,11 @@ const buildCandidateRows = (
         .sort((left, right) => left.candidateId.localeCompare(right.candidateId));
 };
 
+/** Returns whether a row has both an improvement and a sacrifice versus scalar top. */
 const hasConcreteTradeoff = (row: DecisionUsefulnessCandidateRow): boolean =>
     row.betterThanScalarTop.length > 0 && row.worseThanScalarTop.length > 0;
 
+/** Classifies the extra decision value Pareto provides over the scalar top. */
 const classifyUsefulness = (
     selectedIds: readonly string[],
     scalarTopCandidateId: string,
@@ -324,13 +324,12 @@ const classifyUsefulness = (
         return "single-best-only";
     }
 
-    if (alternatives.some(hasConcreteTradeoff)) {
-        return "multiple-tradeoff-alternatives";
-    }
-
-    return "none";
+    return alternatives.some(hasConcreteTradeoff)
+        ? "multiple-tradeoff-alternatives"
+        : "none";
 };
 
+/** Summarizes the decision-usefulness classification for logs and reports. */
 const summary = (
     classification: UsefulnessClassification,
     alternativeIds: readonly string[],
@@ -352,6 +351,7 @@ const summary = (
     return "Pareto does not expose an actionable trade-off alternative for this candidate set.";
 };
 
+/** Computes the additive decision-usefulness report from the Pareto output. */
 export const computeDecisionUsefulness = (
     paretoOptimizationResult: ParetoOptimizationResult
 ): DecisionUsefulnessResult => {
@@ -360,8 +360,7 @@ export const computeDecisionUsefulness = (
     if (paretoOptimization === undefined) {
         return {
             decisionUsefulnessVersion: DECISION_USEFULNESS_VERSION,
-            decisionUsefulness: emptyMetadata(
-                "unavailable",
+            decisionUsefulness: unavailableMetadata(
                 "unavailable",
                 "unavailable",
                 ["missing-pareto-input"],
@@ -375,8 +374,7 @@ export const computeDecisionUsefulness = (
         const code = reasonCode(paretoOptimization.reason);
         return {
             decisionUsefulnessVersion: DECISION_USEFULNESS_VERSION,
-            decisionUsefulness: emptyMetadata(
-                "unavailable",
+            decisionUsefulness: unavailableMetadata(
                 "unavailable",
                 "unavailable",
                 [code],
@@ -396,9 +394,8 @@ export const computeDecisionUsefulness = (
     if (comparatorObjectives.length === 0) {
         return {
             decisionUsefulnessVersion: DECISION_USEFULNESS_VERSION,
-            decisionUsefulness: emptyMetadata(
+            decisionUsefulness: unavailableMetadata(
                 "available",
-                "unavailable",
                 "unavailable",
                 ["missing-comparator-weights"],
                 paretoOptimization,
@@ -411,9 +408,8 @@ export const computeDecisionUsefulness = (
     if (fixedScalarRanking.length === 0) {
         return {
             decisionUsefulnessVersion: DECISION_USEFULNESS_VERSION,
-            decisionUsefulness: emptyMetadata(
+            decisionUsefulness: unavailableMetadata(
                 "available",
-                "unavailable",
                 "unavailable",
                 ["unavailable-scalar-ranking"],
                 paretoOptimization,
