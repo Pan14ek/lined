@@ -15,8 +15,8 @@ const OBJECTIVES = {
     memory_utilization: "minimize",
 } as const;
 
-type ParetoObjective = keyof typeof OBJECTIVES;
-type ParetoObjectiveDirection = (typeof OBJECTIVES)[ParetoObjective];
+export type ParetoObjective = keyof typeof OBJECTIVES;
+export type ParetoObjectiveDirection = (typeof OBJECTIVES)[ParetoObjective];
 
 export type ParetoCandidate = {
     id: string;

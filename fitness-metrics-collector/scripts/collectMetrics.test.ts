@@ -21,13 +21,21 @@ import {
 } from "./runtimeScoring";
 import {
     computeParetoOptimization,
+    type ParetoOptimizationResult,
 } from "./paretoOptimization";
+import {
+    computeDecisionUsefulness,
+    DECISION_USEFULNESS_COMPARATOR,
+    DECISION_USEFULNESS_VERSION,
+    type DecisionUsefulnessMetadata,
+} from "./decisionUsefulnessReporting";
 
 const RUNTIME_SCHEMA_VERSION = 1;
 const UNSUPPORTED_RUNTIME_SCHEMA_VERSION = 2;
 const RUNTIME_SCORE_VERSION = "runtime-aware-v1";
 const ADAPTIVE_SCORE_VERSION = "adaptive-weighted-v1";
 const PARETO_OPTIMIZATION_VERSION = "pareto-baseline-v1";
+const DECISION_VERSION = "decision-usefulness-v1";
 const THRESHOLD_VERSION = "slo-thresholds-v1";
 
 const SCENARIO_FIXED_MEDIUM = "fixed-medium";
@@ -84,6 +92,7 @@ const EXPECTED_ZERO_BASELINE_SCORE = -0.1429;
 const EXPECTED_WRITTEN_STRUCTURAL_SCORE = 0.42;
 const EXPECTED_WRITTEN_RUNTIME_SCORE = 0.25;
 const EXPECTED_PARETO_FIRST_FRONT_SIZE = 2;
+const EXPECTED_SCALAR_TOP_SCORE = 0.916667;
 const STRUCTURAL_METRIC_ZERO = 0;
 const STRUCTURAL_SPOTBUGS_CLASS_COUNT = 1;
 const EXPECTED_CONSTRAINT_CLASSIFICATIONS = ["invalid", "valid", "warning", "unknown"];
@@ -379,6 +388,34 @@ const MIXED_WORKLOAD_PAYLOAD: RuntimePayload = {
     workload: WORKLOAD_SMOKE,
 };
 
+const FAST_BUT_EXPENSIVE_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: "fast-expensive",
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        latency_p95_ms: 180,
+        error_rate: 0.001,
+        throughput_rps: 50,
+        cpu_utilization: 0.95,
+        memory_utilization: 0.95,
+    },
+};
+
+const SLOW_BUT_EFFICIENT_PAYLOAD: RuntimePayload = {
+    schema_version: RUNTIME_SCHEMA_VERSION,
+    scenario: "slow-efficient",
+    workload: WORKLOAD_BASELINE,
+    source: SOURCE_LOCAL_KIND,
+    summary: {
+        latency_p95_ms: 500,
+        error_rate: 0.005,
+        throughput_rps: 30,
+        cpu_utilization: 0.1,
+        memory_utilization: 0.1,
+    },
+};
+
 const runtimeJson = (payload: unknown): string => JSON.stringify(payload);
 
 const validRuntimeMetricsJson = runtimeJson(FULL_RUNTIME_PAYLOAD);
@@ -389,6 +426,9 @@ const runtimeFitnessMetadata = computeRuntimeFitness(
     runtimeCurrentMetrics,
     runtimeBaselineMetrics
 ).runtimeFitness;
+
+const minimalDecisionUsefulness = (): DecisionUsefulnessMetadata =>
+    computeDecisionUsefulness(computeParetoOptimization([])).decisionUsefulness;
 
 describe("parseRuntimeMetrics", () => {
     it("parses a valid summarized runtime metrics document", (t: TestContext) => {
@@ -998,6 +1038,223 @@ describe("computeParetoOptimization", () => {
     });
 });
 
+describe("computeDecisionUsefulness", () => {
+    it("reports Pareto trade-off alternatives against a fixed scalar comparator", (
+        t: TestContext
+    ) => {
+        t.plan(9);
+
+        const pareto = computeParetoOptimization([
+            parseRuntimeMetrics(runtimeJson(FAST_BUT_EXPENSIVE_PAYLOAD)),
+            parseRuntimeMetrics(runtimeJson(SLOW_BUT_EFFICIENT_PAYLOAD)),
+            runtimeBaselineMetrics,
+        ]);
+        const result = computeDecisionUsefulness(pareto);
+
+        t.assert.strictEqual(result.decisionUsefulnessVersion, DECISION_USEFULNESS_VERSION);
+        t.assert.strictEqual(result.decisionUsefulness.paretoStatus, "available");
+        t.assert.strictEqual(result.decisionUsefulness.comparator, DECISION_USEFULNESS_COMPARATOR);
+        t.assert.strictEqual(
+            result.decisionUsefulness.usefulnessClassification,
+            "multiple-tradeoff-alternatives"
+        );
+        t.assert.strictEqual(
+            result.decisionUsefulness.fixedScalarTopCandidateId,
+            "fast-expensive:baseline:local-kind"
+        );
+        t.assert.strictEqual(
+            result.decisionUsefulness.fixedScalarRanking[0].score,
+            EXPECTED_SCALAR_TOP_SCORE
+        );
+        t.assert.deepStrictEqual(result.decisionUsefulness.tradeoffAlternativeIds, [
+            "fixed-medium:baseline:local-kind",
+            "slow-efficient:baseline:local-kind",
+        ]);
+        t.assert.deepStrictEqual(
+            result.decisionUsefulness.candidates.find((candidate) =>
+                candidate.candidateId === "slow-efficient:baseline:local-kind"
+            )?.betterThanScalarTop,
+            ["cpu_utilization", "memory_utilization"]
+        );
+        t.assert.match(
+            result.decisionUsefulness.actionabilitySummary,
+            /Pareto exposes 2 trade-off alternative/
+        );
+    });
+
+    it("reports when Pareto only confirms the fixed scalar top", (t: TestContext) => {
+        t.plan(3);
+
+        const pareto = computeParetoOptimization([
+            runtimeBaselineMetrics,
+            runtimeCurrentMetrics,
+        ]);
+        const result = computeDecisionUsefulness(pareto);
+
+        t.assert.strictEqual(
+            result.decisionUsefulness.fixedScalarTopCandidateId,
+            `${SCENARIO_REPLICAS_2}:${WORKLOAD_BASELINE}:${SOURCE_LOCAL_KIND}`
+        );
+        t.assert.deepStrictEqual(result.decisionUsefulness.tradeoffAlternativeIds, []);
+        t.assert.strictEqual(
+            result.decisionUsefulness.usefulnessClassification,
+            "single-best-only"
+        );
+    });
+
+    it("keeps unavailable reason codes distinct for missing or invalid Pareto input", (
+        t: TestContext
+    ) => {
+        t.plan(6);
+
+        const noInput = computeDecisionUsefulness(computeParetoOptimization([]));
+        const singleCandidate = computeDecisionUsefulness(
+            computeParetoOptimization([runtimeCurrentMetrics])
+        );
+        const duplicateCandidate = computeDecisionUsefulness(
+            computeParetoOptimization([runtimeCurrentMetrics, runtimeCurrentMetrics])
+        );
+        const mixedContext = computeDecisionUsefulness(
+            computeParetoOptimization([
+                runtimeBaselineMetrics,
+                parseRuntimeMetrics(runtimeJson(MIXED_WORKLOAD_PAYLOAD)),
+            ])
+        );
+
+        t.assert.strictEqual(noInput.decisionUsefulness.paretoStatus, "unavailable");
+        t.assert.deepStrictEqual(noInput.decisionUsefulness.reasonCodes, [
+            "missing-pareto-input",
+        ]);
+        t.assert.deepStrictEqual(singleCandidate.decisionUsefulness.reasonCodes, [
+            "missing-pareto-input",
+        ]);
+        t.assert.deepStrictEqual(duplicateCandidate.decisionUsefulness.reasonCodes, [
+            "duplicate-candidate-identities",
+        ]);
+        t.assert.deepStrictEqual(mixedContext.decisionUsefulness.reasonCodes, [
+            "mixed-workload-or-source",
+        ]);
+        t.assert.strictEqual(
+            mixedContext.decisionUsefulness.usefulnessClassification,
+            "unavailable"
+        );
+    });
+
+    it("records omitted objectives when fixed comparator weights are unavailable", (
+        t: TestContext
+    ) => {
+        t.plan(5);
+
+        const futureObjectiveResult = {
+            paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
+            paretoOptimization: {
+                objectiveVersion: PARETO_OPTIMIZATION_VERSION,
+                objectives: {
+                    future_metric: "maximize",
+                },
+                activeObjectives: ["future_metric"],
+                omittedObjectives: [],
+                candidates: [
+                    {
+                        id: "left:baseline:local-kind",
+                        scenario: "left",
+                        workload: WORKLOAD_BASELINE,
+                        source: SOURCE_LOCAL_KIND,
+                        objectives: {future_metric: 1},
+                        missingObjectives: [],
+                        rank: 1,
+                        front: 0,
+                        crowdingDistance: "Infinity",
+                        dominates: [],
+                        dominatedBy: [],
+                    },
+                    {
+                        id: "right:baseline:local-kind",
+                        scenario: "right",
+                        workload: WORKLOAD_BASELINE,
+                        source: SOURCE_LOCAL_KIND,
+                        objectives: {future_metric: 2},
+                        missingObjectives: [],
+                        rank: 1,
+                        front: 0,
+                        crowdingDistance: "Infinity",
+                        dominates: [],
+                        dominatedBy: [],
+                    },
+                ],
+                fronts: [["left:baseline:local-kind", "right:baseline:local-kind"]],
+                selectedCandidateIds: ["left:baseline:local-kind", "right:baseline:local-kind"],
+            },
+        } as unknown as ParetoOptimizationResult;
+
+        const result = computeDecisionUsefulness(futureObjectiveResult);
+
+        t.assert.strictEqual(result.decisionUsefulness.paretoStatus, "available");
+        t.assert.strictEqual(result.decisionUsefulness.comparatorStatus, "unavailable");
+        t.assert.deepStrictEqual(result.decisionUsefulness.reasonCodes, [
+            "missing-comparator-weights",
+        ]);
+        t.assert.deepStrictEqual(result.decisionUsefulness.comparatorOmittedObjectives, [
+            "future_metric",
+        ]);
+        t.assert.deepStrictEqual(result.decisionUsefulness.fixedScalarRanking, []);
+    });
+
+    it("uses deterministic fixed-scalar tie ordering", (t: TestContext) => {
+        t.plan(3);
+
+        const tiedParetoRanks = {
+            paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
+            paretoOptimization: {
+                objectiveVersion: PARETO_OPTIMIZATION_VERSION,
+                objectives: {
+                    latency_p95_ms: "minimize",
+                },
+                activeObjectives: ["latency_p95_ms"],
+                omittedObjectives: [],
+                candidates: [
+                    {
+                        id: "zeta:baseline:local-kind",
+                        scenario: "zeta",
+                        workload: WORKLOAD_BASELINE,
+                        source: SOURCE_LOCAL_KIND,
+                        objectives: {latency_p95_ms: 100},
+                        missingObjectives: [],
+                        rank: 1,
+                        front: 0,
+                        crowdingDistance: "Infinity",
+                        dominates: [],
+                        dominatedBy: [],
+                    },
+                    {
+                        id: "alpha:baseline:local-kind",
+                        scenario: "alpha",
+                        workload: WORKLOAD_BASELINE,
+                        source: SOURCE_LOCAL_KIND,
+                        objectives: {latency_p95_ms: 100},
+                        missingObjectives: [],
+                        rank: 2,
+                        front: 1,
+                        crowdingDistance: 0,
+                        dominates: [],
+                        dominatedBy: ["zeta:baseline:local-kind"],
+                    },
+                ],
+                fronts: [["zeta:baseline:local-kind"], ["alpha:baseline:local-kind"]],
+                selectedCandidateIds: ["zeta:baseline:local-kind"],
+            },
+        } as unknown as ParetoOptimizationResult;
+        const result = computeDecisionUsefulness(tiedParetoRanks);
+
+        t.assert.deepStrictEqual(
+            result.decisionUsefulness.fixedScalarRanking.map((row) => row.candidateId),
+            ["alpha:baseline:local-kind", "zeta:baseline:local-kind"]
+        );
+        t.assert.strictEqual(result.decisionUsefulness.fixedScalarRanking[0].rank, 1);
+        t.assert.strictEqual(result.decisionUsefulness.fixedScalarRanking[1].rank, 2);
+    });
+});
+
 describe("classifyRuntimeMetrics", () => {
     it("classifies valid, warning, invalid, and unknown runtime evidence", (t: TestContext) => {
         t.plan(5);
@@ -1020,7 +1277,7 @@ describe("classifyRuntimeMetrics", () => {
 
 describe("writeMetricsOutput", () => {
     it("writes a local final metrics document without a database", (t: TestContext) => {
-        t.plan(6);
+        t.plan(8);
 
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-output-"));
         const file = path.join(directory, "metrics.json");
@@ -1042,6 +1299,8 @@ describe("writeMetricsOutput", () => {
                 adaptiveFitnessScore: EXPECTED_ADAPTIVE_BALANCED_SCORE,
                 adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
                 paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
+                decisionUsefulnessVersion: DECISION_VERSION,
+                decisionUsefulness: minimalDecisionUsefulness(),
             });
 
             const written = JSON.parse(fs.readFileSync(file, "utf-8"));
@@ -1051,6 +1310,11 @@ describe("writeMetricsOutput", () => {
             t.assert.strictEqual(written.adaptiveFitnessScore, EXPECTED_ADAPTIVE_BALANCED_SCORE);
             t.assert.strictEqual(written.adaptiveFitnessScoreVersion, ADAPTIVE_SCORE_VERSION);
             t.assert.strictEqual(written.paretoOptimizationVersion, PARETO_OPTIMIZATION_VERSION);
+            t.assert.strictEqual(written.decisionUsefulnessVersion, DECISION_VERSION);
+            t.assert.strictEqual(
+                written.decisionUsefulness.usefulnessClassification,
+                "unavailable"
+            );
         } finally {
             fs.rmSync(directory, {recursive: true, force: true});
         }
@@ -1072,6 +1336,8 @@ describe("writeMetricsOutput", () => {
                 adaptiveFitnessScore: null,
                 adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
                 paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
+                decisionUsefulnessVersion: DECISION_VERSION,
+                decisionUsefulness: minimalDecisionUsefulness(),
             }),
             /ENOENT/
         );

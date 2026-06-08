@@ -24,6 +24,12 @@ import {
     type ParetoOptimizationMetadata,
     type ParetoOptimizationResult,
 } from "./paretoOptimization";
+import {
+    computeDecisionUsefulness,
+    DECISION_USEFULNESS_VERSION,
+    type DecisionUsefulnessMetadata,
+    type DecisionUsefulnessResult,
+} from "./decisionUsefulnessReporting";
 
 /* =======================
    TYPES
@@ -58,6 +64,8 @@ type MetricsDocument = {
     adaptiveFitness?: AdaptiveFitnessMetadata;
     paretoOptimizationVersion: typeof PARETO_OPTIMIZATION_VERSION;
     paretoOptimization?: ParetoOptimizationMetadata;
+    decisionUsefulnessVersion: typeof DECISION_USEFULNESS_VERSION;
+    decisionUsefulness: DecisionUsefulnessMetadata;
 };
 
 type MetricsStore = {
@@ -395,7 +403,8 @@ const buildMetricsDocument = (
     fitnessScore: FitnessScore,
     runtimeFitnessResult: RuntimeFitnessResult,
     adaptiveFitnessResult: AdaptiveFitnessResult,
-    paretoOptimizationResult: ParetoOptimizationResult
+    paretoOptimizationResult: ParetoOptimizationResult,
+    decisionUsefulnessResult: DecisionUsefulnessResult
 ): MetricsDocument => {
     const branch = sanitizeBranchName(config.branchName ?? "unknown");
     const id = `${branch}-${config.commitHash ?? "unknown"}`;
@@ -416,6 +425,8 @@ const buildMetricsDocument = (
         adaptiveFitness: adaptiveFitnessResult.adaptiveFitness,
         paretoOptimizationVersion: paretoOptimizationResult.paretoOptimizationVersion,
         paretoOptimization: paretoOptimizationResult.paretoOptimization,
+        decisionUsefulnessVersion: decisionUsefulnessResult.decisionUsefulnessVersion,
+        decisionUsefulness: decisionUsefulnessResult.decisionUsefulness,
     };
 };
 
@@ -923,13 +934,15 @@ const main = async (): Promise<void> => {
         const paretoOptimizationResult = computeParetoOptimization(
             readRuntimeMetricSet(config.paretoRuntimeMetricsJsonPaths)
         );
+        const decisionUsefulnessResult = computeDecisionUsefulness(paretoOptimizationResult);
         const document = buildMetricsDocument(
             config,
             metrics,
             fitnessScore,
             runtimeFitnessResult,
             adaptiveFitnessResult,
-            paretoOptimizationResult
+            paretoOptimizationResult,
+            decisionUsefulnessResult
         );
 
         console.log(`[fitness] F = ${fitnessScore}`);
@@ -938,6 +951,10 @@ const main = async (): Promise<void> => {
         console.log(
             `[fitness] pareto candidates = ` +
             `${paretoOptimizationResult.paretoOptimization?.candidates.length ?? 0}`
+        );
+        console.log(
+            `[fitness] decision usefulness = ` +
+            `${decisionUsefulnessResult.decisionUsefulness.usefulnessClassification}`
         );
         writeMetricsOutput(config.metricsOutputJsonPath, document);
 
