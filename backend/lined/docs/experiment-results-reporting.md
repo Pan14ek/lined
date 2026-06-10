@@ -49,6 +49,24 @@ as excluded evidence because `runtime-summary-manifest.json` is not collector
 input. A manifest with `collector_summary_written: false` is reported as a
 failed or incomplete run instead of being summarized as clean evidence.
 
+## How To Use And Test
+
+Use this workflow after scenario runs and collector scoring have already
+produced evidence artifacts. First, gather the collector metrics documents that
+contain the score lanes you want to report and the `runtime-summary.json`
+files for the deployment scenarios being compared. Include matching
+`runtime-summary-manifest.json` files when fixture-profile provenance or failed
+run context should be visible in the report. Then run
+`experiment-results-report-cli.mjs` with repeated `--metrics-json`,
+`--runtime-summary`, and optional `--runtime-manifest` arguments, pointing
+`--output-dir` at a disposable report directory. Review `results-summary.md`
+for the article-facing Results, Discussion, and Limitations text; inspect
+`results-report.json` and `evidence.csv` to confirm each included or excluded
+artifact has the expected scenario, workload, source, fixture profile, and
+exclusion reason. Validate code changes with the Node test suite and syntax
+checks listed in the Validation section before using the output as paper
+evidence.
+
 ## Canonical Comparison Set
 
 The canonical article comparison set is:
