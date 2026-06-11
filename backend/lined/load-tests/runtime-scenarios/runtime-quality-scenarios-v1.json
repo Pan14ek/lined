@@ -14,8 +14,10 @@
     "iso_25010_attribute",
     "kpi",
     "slo_or_constraint_role",
+    "slo_or_constraint_roles",
     "evidence_source",
     "evidence_kind",
+    "provenance_source",
     "supported_runtime_summary_fields",
     "related_workload_profiles",
     "related_deployment_scenarios"
@@ -45,6 +47,14 @@
     "load-tests/runtime-scenarios/fixture-profiles-v1.json",
     "load-tests/runtime-scenarios/slo-thresholds-v1.json"
   ],
+  "slo_or_constraint_role_values": [
+    "hard-constraint",
+    "warning",
+    "objective",
+    "context-signal",
+    "validation-evidence",
+    "exploratory"
+  ],
   "scenarios": [
     {
       "id": "stable-baseline-latency",
@@ -57,15 +67,21 @@
       "iso_25010_attribute": "Performance efficiency",
       "kpi": "baseline latency and request reliability",
       "slo_or_constraint_role": "hard-constraint-and-objective",
-      "evidence_source": "k6 summary export, runtime-summary.json, readiness check, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "hard-constraint",
+        "objective",
+        "context-signal",
+        "validation-evidence"
+      ],
+      "evidence_source": "k6 summary export, runtime-summary.json, and readiness check",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "latency_p95_ms",
         "latency_p99_ms",
         "error_rate",
         "throughput_rps",
-        "restart_count",
-        "availability"
+        "restart_count"
       ],
       "related_workload_profiles": [
         "baseline"
@@ -85,8 +101,14 @@
       "iso_25010_attribute": "Resource utilization",
       "kpi": "resource pressure under stable workload",
       "slo_or_constraint_role": "warning-with-hard-validity-constraints",
-      "evidence_source": "Kubernetes metrics, backend Deployment resources, k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "warning",
+        "hard-constraint",
+        "validation-evidence"
+      ],
+      "evidence_source": "Kubernetes metrics, backend Deployment resources, k6 summary export, and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "cpu_utilization",
         "memory_utilization",
@@ -115,8 +137,14 @@
       "iso_25010_attribute": "Scalability",
       "kpi": "horizontal replica capacity",
       "slo_or_constraint_role": "objective-with-hard-validity-constraints",
-      "evidence_source": "k6 summary export, Kubernetes pod state, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "objective",
+        "hard-constraint",
+        "validation-evidence"
+      ],
+      "evidence_source": "k6 summary export, Kubernetes pod state, and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "throughput_rps",
         "latency_p95_ms",
@@ -136,16 +164,23 @@
     {
       "id": "hpa-cpu-scaling-response",
       "environment": "local-kind",
-      "stimulus": "The backend runs under a CPU-based HorizontalPodAutoscaler while workload traffic creates scaling pressure.",
+      "stimulus": "The backend runs under a CPU-based HorizontalPodAutoscaler while workload traffic may create scaling pressure.",
       "stimulus_source": "k6 comparison-baseline, comparison-mixed, or comparison-stress fixture profile plus hpa-cpu kustomize overlay and Metrics Server evidence",
       "affected_artifact": "Backend Deployment, HorizontalPodAutoscaler, and workload-facing REST behavior",
-      "expected_response": "HPA status records current and desired replicas when metrics are available; autoscaling context is interpreted with latency, error, CPU, readiness, and restart evidence.",
+      "expected_response": "HPA status records current and desired replicas when metrics are available; autoscaling context is meaningful only when CPU evidence shows pressure near the HPA target and is interpreted with latency, error, readiness, and restart evidence.",
       "response_measure": "hpa_current_replicas, hpa_desired_replicas, cpu_utilization, latency_p95_ms, latency_p99_ms, error_rate, restart_count, and readiness evidence",
       "iso_25010_attribute": "Scalability",
       "kpi": "autoscaling response under CPU pressure",
       "slo_or_constraint_role": "context-signal-with-hard-validity-constraints",
-      "evidence_source": "Kubernetes HPA status, Kubernetes metrics, k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "context-signal",
+        "warning",
+        "hard-constraint",
+        "validation-evidence"
+      ],
+      "evidence_source": "Kubernetes HPA status, Kubernetes metrics, k6 summary export, and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "hpa_current_replicas",
         "hpa_desired_replicas",
@@ -176,8 +211,14 @@
       "iso_25010_attribute": "Performance efficiency",
       "kpi": "read-heavy responsiveness",
       "slo_or_constraint_role": "objective-with-hard-validity-constraints",
-      "evidence_source": "k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "objective",
+        "hard-constraint",
+        "validation-evidence"
+      ],
+      "evidence_source": "k6 summary export and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "latency_p95_ms",
         "latency_p99_ms",
@@ -205,8 +246,14 @@
       "iso_25010_attribute": "Reliability",
       "kpi": "write-heavy stability",
       "slo_or_constraint_role": "hard-constraint-and-context-signal",
-      "evidence_source": "k6 summary export, Kubernetes pod state, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "hard-constraint",
+        "context-signal",
+        "validation-evidence"
+      ],
+      "evidence_source": "k6 summary export, Kubernetes pod state, and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "error_rate",
         "restart_count",
@@ -234,8 +281,16 @@
       "iso_25010_attribute": "Performance efficiency",
       "kpi": "mixed workflow balance",
       "slo_or_constraint_role": "objective-with-hard-validity-constraints-and-resource-warnings",
-      "evidence_source": "k6 summary export, Kubernetes metrics, runtime-summary.json, runtime-summary-manifest.json",
+      "slo_or_constraint_roles": [
+        "objective",
+        "hard-constraint",
+        "warning",
+        "context-signal",
+        "validation-evidence"
+      ],
+      "evidence_source": "k6 summary export, Kubernetes metrics, and runtime-summary.json",
       "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "latency_p95_ms",
         "latency_p99_ms",
@@ -266,8 +321,14 @@
       "iso_25010_attribute": "Reliability",
       "kpi": "stress pressure exploration",
       "slo_or_constraint_role": "exploratory-context-signal",
-      "evidence_source": "k6 summary export, Kubernetes state, runtime-summary-manifest.json, optional runtime-summary.json when intentionally accepted",
-      "evidence_kind": "manifest-provenance",
+      "slo_or_constraint_roles": [
+        "exploratory",
+        "context-signal",
+        "warning"
+      ],
+      "evidence_source": "k6 summary export, Kubernetes state, and optional runtime-summary.json when intentionally accepted",
+      "evidence_kind": "live-telemetry",
+      "provenance_source": "runtime-summary-manifest.json",
       "supported_runtime_summary_fields": [
         "latency_p95_ms",
         "latency_p99_ms",
