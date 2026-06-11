@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "catalog_version": "runtime-quality-scenarios-v1",
+  "name": "lined-local-runtime-quality-scenario-catalog",
+  "description": "Architecture-driver scenario catalog for Lined local kind runtime quality experiments. The catalog maps workload and deployment stimuli to ISO/IEC 25010 quality attributes, KPIs, SLO or constraint roles, and evidence sources. It is metadata for traceability, not a scoring formula.",
+  "required_fields": [
+    "id",
+    "environment",
+    "stimulus",
+    "stimulus_source",
+    "affected_artifact",
+    "expected_response",
+    "response_measure",
+    "iso_25010_attribute",
+    "kpi",
+    "slo_or_constraint_role",
+    "evidence_source",
+    "evidence_kind",
+    "supported_runtime_summary_fields",
+    "related_workload_profiles",
+    "related_deployment_scenarios"
+  ],
+  "evidence_kinds": [
+    {
+      "id": "live-telemetry",
+      "description": "Aggregated evidence collected from local kind runs, k6 summary output, Kubernetes state, Actuator health, or Prometheus-derived summaries.",
+      "collector_input": "Allowed only when represented as the sanitized runtime-summary.json contract."
+    },
+    {
+      "id": "manifest-provenance",
+      "description": "Sanitized metadata about how evidence was produced, including scenario path, workload, commit, timestamps, and command outcome.",
+      "collector_input": "Not collector input. Use for audit, reproducibility, and exclusion reasoning."
+    },
+    {
+      "id": "surrogate-or-simulated",
+      "description": "Future non-live evidence produced by a model, simulator, digital twin, approximation, or manually constructed surrogate.",
+      "collector_input": "Not interchangeable with live telemetry. Requires model version, assumptions, uncertainty note, and source provenance before use."
+    }
+  ],
+  "source_artifacts": [
+    "docs/runtime-scenario-summaries.md",
+    "docs/hpa-resource-scenarios.md",
+    "docs/slo-constraint-thresholds.md",
+    "docs/runtime-fitness-extension.md",
+    "load-tests/runtime-scenarios/fixture-profiles-v1.json",
+    "load-tests/runtime-scenarios/slo-thresholds-v1.json"
+  ],
+  "scenarios": [
+    {
+      "id": "stable-baseline-latency",
+      "environment": "local-kind",
+      "stimulus": "Stable baseline traffic is applied to the fixed-medium backend deployment after rollout and readiness.",
+      "stimulus_source": "k6 comparison-baseline fixture profile",
+      "affected_artifact": "Spring Boot backend Deployment and users/lobbies/tasks/events REST workflows",
+      "expected_response": "The backend remains ready, avoids request failure spikes, keeps p95 and p99 latency inside local experiment thresholds, and records comparable throughput.",
+      "response_measure": "latency_p95_ms <= 1000 ms, latency_p99_ms <= 2000 ms, error_rate <= 0.01, restart_count == 0, throughput_rps recorded",
+      "iso_25010_attribute": "Performance efficiency",
+      "kpi": "baseline latency and request reliability",
+      "slo_or_constraint_role": "hard-constraint-and-objective",
+      "evidence_source": "k6 summary export, runtime-summary.json, readiness check, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "restart_count",
+        "availability"
+      ],
+      "related_workload_profiles": [
+        "baseline"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-medium"
+      ]
+    },
+    {
+      "id": "small-resource-pressure",
+      "environment": "local-kind",
+      "stimulus": "The backend runs with the fixed-small resource envelope while stable workload traffic is applied.",
+      "stimulus_source": "k6 comparison-baseline or comparison-mixed fixture profile plus fixed-small kustomize overlay",
+      "affected_artifact": "Backend container resource envelope and workload-facing REST behavior",
+      "expected_response": "Resource pressure is visible without confusing warnings with hard validity failures; latency, errors, readiness, and restarts still determine stable comparison eligibility.",
+      "response_measure": "cpu_utilization > 0.85 or memory_utilization > 0.85 as warning; latency_p95_ms, latency_p99_ms, error_rate, readiness, and restart_count as hard constraints",
+      "iso_25010_attribute": "Resource utilization",
+      "kpi": "resource pressure under stable workload",
+      "slo_or_constraint_role": "warning-with-hard-validity-constraints",
+      "evidence_source": "Kubernetes metrics, backend Deployment resources, k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "cpu_utilization",
+        "memory_utilization",
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "restart_count"
+      ],
+      "related_workload_profiles": [
+        "baseline",
+        "mixed"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-small"
+      ]
+    },
+    {
+      "id": "replica-horizontal-capacity",
+      "environment": "local-kind",
+      "stimulus": "The backend runs as two fixed replicas while comparable workload traffic is applied.",
+      "stimulus_source": "k6 comparison-baseline, comparison-read-heavy, or comparison-mixed fixture profile plus replicas-2 kustomize overlay",
+      "affected_artifact": "Backend Deployment replica topology and workload-facing REST behavior",
+      "expected_response": "The two-replica deployment remains ready and stable while preserving latency and error constraints and recording throughput for comparison with fixed-medium.",
+      "response_measure": "throughput_rps, latency_p95_ms, latency_p99_ms, error_rate, restart_count, and readiness evidence",
+      "iso_25010_attribute": "Scalability",
+      "kpi": "horizontal replica capacity",
+      "slo_or_constraint_role": "objective-with-hard-validity-constraints",
+      "evidence_source": "k6 summary export, Kubernetes pod state, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "throughput_rps",
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "restart_count"
+      ],
+      "related_workload_profiles": [
+        "baseline",
+        "read-heavy",
+        "mixed"
+      ],
+      "related_deployment_scenarios": [
+        "replicas-2"
+      ]
+    },
+    {
+      "id": "hpa-cpu-scaling-response",
+      "environment": "local-kind",
+      "stimulus": "The backend runs under a CPU-based HorizontalPodAutoscaler while workload traffic creates scaling pressure.",
+      "stimulus_source": "k6 comparison-baseline, comparison-mixed, or comparison-stress fixture profile plus hpa-cpu kustomize overlay and Metrics Server evidence",
+      "affected_artifact": "Backend Deployment, HorizontalPodAutoscaler, and workload-facing REST behavior",
+      "expected_response": "HPA status records current and desired replicas when metrics are available; autoscaling context is interpreted with latency, error, CPU, readiness, and restart evidence.",
+      "response_measure": "hpa_current_replicas, hpa_desired_replicas, cpu_utilization, latency_p95_ms, latency_p99_ms, error_rate, restart_count, and readiness evidence",
+      "iso_25010_attribute": "Scalability",
+      "kpi": "autoscaling response under CPU pressure",
+      "slo_or_constraint_role": "context-signal-with-hard-validity-constraints",
+      "evidence_source": "Kubernetes HPA status, Kubernetes metrics, k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "hpa_current_replicas",
+        "hpa_desired_replicas",
+        "cpu_utilization",
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "restart_count"
+      ],
+      "related_workload_profiles": [
+        "baseline",
+        "mixed",
+        "stress"
+      ],
+      "related_deployment_scenarios": [
+        "hpa-cpu"
+      ]
+    },
+    {
+      "id": "read-heavy-query-responsiveness",
+      "environment": "local-kind",
+      "stimulus": "Read-oriented traffic exercises bounded users, lobby, tasks, and events data.",
+      "stimulus_source": "k6 comparison-read-heavy fixture profile",
+      "affected_artifact": "Read paths for users, lobbies, tasks, and calendar events",
+      "expected_response": "Read-heavy workload remains within latency and error constraints while recording throughput for comparison across deployment scenarios.",
+      "response_measure": "latency_p95_ms, latency_p99_ms, error_rate, throughput_rps, restart_count, and readiness evidence",
+      "iso_25010_attribute": "Performance efficiency",
+      "kpi": "read-heavy responsiveness",
+      "slo_or_constraint_role": "objective-with-hard-validity-constraints",
+      "evidence_source": "k6 summary export, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "restart_count"
+      ],
+      "related_workload_profiles": [
+        "read-heavy"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-medium",
+        "replicas-2",
+        "hpa-cpu"
+      ]
+    },
+    {
+      "id": "write-heavy-stability",
+      "environment": "local-kind",
+      "stimulus": "Write-oriented traffic creates bounded tasks and events with per-iteration cleanup.",
+      "stimulus_source": "k6 comparison-write-heavy fixture profile",
+      "affected_artifact": "Write paths for task and calendar event workflows plus database-backed backend behavior",
+      "expected_response": "The backend avoids request failure spikes and container restarts while recording latency and throughput under bounded writes.",
+      "response_measure": "error_rate <= 0.01, restart_count == 0, latency_p95_ms, latency_p99_ms, throughput_rps, and readiness evidence",
+      "iso_25010_attribute": "Reliability",
+      "kpi": "write-heavy stability",
+      "slo_or_constraint_role": "hard-constraint-and-context-signal",
+      "evidence_source": "k6 summary export, Kubernetes pod state, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "error_rate",
+        "restart_count",
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "throughput_rps"
+      ],
+      "related_workload_profiles": [
+        "write-heavy"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-medium",
+        "fixed-small",
+        "replicas-2"
+      ]
+    },
+    {
+      "id": "mixed-workflow-balance",
+      "environment": "local-kind",
+      "stimulus": "Mixed traffic combines reads, updates, and bounded writes across the Lined backend workflows.",
+      "stimulus_source": "k6 comparison-mixed fixture profile",
+      "affected_artifact": "Combined users, lobbies, tasks, and calendar event REST workflows",
+      "expected_response": "The backend keeps mixed workflow behavior stable enough for deployment scenario comparison while recording objective and context signals.",
+      "response_measure": "latency_p95_ms, latency_p99_ms, error_rate, throughput_rps, restart_count, cpu_utilization, memory_utilization, and readiness evidence",
+      "iso_25010_attribute": "Performance efficiency",
+      "kpi": "mixed workflow balance",
+      "slo_or_constraint_role": "objective-with-hard-validity-constraints-and-resource-warnings",
+      "evidence_source": "k6 summary export, Kubernetes metrics, runtime-summary.json, runtime-summary-manifest.json",
+      "evidence_kind": "live-telemetry",
+      "supported_runtime_summary_fields": [
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "restart_count",
+        "cpu_utilization",
+        "memory_utilization"
+      ],
+      "related_workload_profiles": [
+        "mixed"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-small",
+        "fixed-medium",
+        "replicas-2",
+        "hpa-cpu"
+      ]
+    },
+    {
+      "id": "local-stress-exploration",
+      "environment": "local-kind",
+      "stimulus": "Ramping virtual users create local stress pressure for exploratory capacity observation.",
+      "stimulus_source": "k6 comparison-stress fixture profile",
+      "affected_artifact": "Backend deployment capacity envelope, HPA behavior when active, and workload-facing REST behavior",
+      "expected_response": "The run records pressure symptoms and provenance without being treated as stable comparison evidence by default.",
+      "response_measure": "latency_p95_ms, latency_p99_ms, error_rate, throughput_rps, cpu_utilization, memory_utilization, hpa_current_replicas, hpa_desired_replicas, restart_count, and manifest outcome",
+      "iso_25010_attribute": "Reliability",
+      "kpi": "stress pressure exploration",
+      "slo_or_constraint_role": "exploratory-context-signal",
+      "evidence_source": "k6 summary export, Kubernetes state, runtime-summary-manifest.json, optional runtime-summary.json when intentionally accepted",
+      "evidence_kind": "manifest-provenance",
+      "supported_runtime_summary_fields": [
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "error_rate",
+        "throughput_rps",
+        "cpu_utilization",
+        "memory_utilization",
+        "hpa_current_replicas",
+        "hpa_desired_replicas",
+        "restart_count"
+      ],
+      "related_workload_profiles": [
+        "stress"
+      ],
+      "related_deployment_scenarios": [
+        "fixed-small",
+        "fixed-medium",
+        "replicas-2",
+        "hpa-cpu"
+      ]
+    }
+  ]
+}
