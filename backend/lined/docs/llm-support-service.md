@@ -24,6 +24,32 @@ The service must not:
 - store secrets, raw telemetry dumps, pod manifests, or unbounded logs in model
   prompts or outputs.
 
+## Prototype Helper
+
+`experiment/llm-support-service-prototype` adds a locally runnable advisory
+helper at `load-tests/runtime-scenarios/llm-support-service-cli.mjs`.
+
+The prototype is intentionally bounded:
+
+- it accepts only sanitized requirements markdown, `runtime-summary.json`
+  artifacts, and `slo-thresholds-v1.json`;
+- it can optionally read the runtime quality scenario catalog to keep
+  objective/constraint/context terminology aligned with the repository docs;
+- it writes a versioned advisory artifact named
+  `candidate-rule-suggestions.json`;
+- it remains non-blocking and advisory even when an LLM provider is used.
+
+The helper supports two provider modes:
+
+| Provider | Purpose | Network requirement |
+|----------|---------|---------------------|
+| `mock` | Deterministic offline synthesis for local testing and fixture-based review. | None |
+| `openai` | Structured-output advisory generation through the OpenAI Responses API. | `OPENAI_API_KEY` and outbound network access |
+
+Use `mock` for repeatable offline verification. Use `openai` only when the
+input artifacts are ready for human review and you want candidate-rule drafts
+instead of deterministic heuristics.
+
 ## Integration Position
 
 Use the service before and after the formal experiment loop.
@@ -117,6 +143,104 @@ Use versioned, reviewable outputs:
 Outputs should be stored as experiment artifacts, not silently applied to the
 scoring model. A later implementation can add an explicit approval step that
 copies validated rules into a versioned fitness configuration.
+
+The prototype output shape is:
+
+```json
+{
+  "schema_version": 1,
+  "prototype_version": "llm-support-service-prototype-v1",
+  "provider": "mock",
+  "model": "deterministic-mock-v1",
+  "generated_at": "2026-06-12T20:00:00.000Z",
+  "source_artifacts": [
+    {
+      "artifactType": "runtime-summary",
+      "identity": "fixed-medium:baseline:local-kind",
+      "path": "/absolute/path/runtime-summary.json"
+    }
+  ],
+  "candidate_rules": [
+    {
+      "name": "Latency P95 Local",
+      "classification": "objective-with-constraint",
+      "metric": "latency_p95_ms",
+      "direction": "minimize",
+      "constraint": "latency_p95_ms <= 1000",
+      "rationale": "Keeps stable local scenario comparisons inside the existing k6 reproducibility guardrail without treating it as a production SLO.",
+      "evidence": "existing-k6-guardrail",
+      "scenarioScope": [
+        "fixed-medium",
+        "replicas-2"
+      ],
+      "requires_human_approval": true
+    }
+  ],
+  "tradeoff_explanations": [],
+  "review_notes": [
+    "All candidate rules are advisory only and require human approval before promotion."
+  ]
+}
+```
+
+The JSON contract keeps source artifacts, candidate rules, and review notes
+explicit so later approval workflow tasks can classify and promote suggestions
+without re-reading raw prompts.
+
+## How To Use And Test
+
+Prepare bounded inputs:
+
+1. One or more markdown excerpts that capture requirements, ADR notes, or
+   quality-attribute expectations.
+2. One or more collector-ready `runtime-summary.json` artifacts.
+3. `load-tests/runtime-scenarios/slo-thresholds-v1.json`.
+4. Optionally `load-tests/runtime-scenarios/runtime-quality-scenarios-v1.json`
+   when you want the helper to align objective/constraint/context terminology
+   with the runtime scenario catalog.
+
+Run the deterministic offline helper:
+
+```bash
+node load-tests/runtime-scenarios/llm-support-service-cli.mjs \
+  --provider mock \
+  --requirements-md docs/llm-support-service.md \
+  --runtime-summary /absolute/path/fixed-medium/runtime-summary.json \
+  --runtime-summary /absolute/path/replicas-2/runtime-summary.json \
+  --slo-json load-tests/runtime-scenarios/slo-thresholds-v1.json \
+  --scenario-catalog-json load-tests/runtime-scenarios/runtime-quality-scenarios-v1.json \
+  --output-dir /absolute/path/llm-support-output
+```
+
+Run the OpenAI-backed helper:
+
+```bash
+OPENAI_API_KEY=... \
+node load-tests/runtime-scenarios/llm-support-service-cli.mjs \
+  --provider openai \
+  --model gpt-5.5 \
+  --requirements-md docs/llm-support-service.md \
+  --runtime-summary /absolute/path/fixed-medium/runtime-summary.json \
+  --slo-json load-tests/runtime-scenarios/slo-thresholds-v1.json \
+  --output-dir /absolute/path/llm-support-output
+```
+
+The helper writes:
+
+- `candidate-rule-suggestions.json` with versioned advisory output;
+- no backend code, schema, or metrics collector state changes;
+- no automatic promotion into runtime-aware scoring configuration.
+
+Verify locally with:
+
+```bash
+node --check load-tests/runtime-scenarios/llm-support-service.mjs
+node --check load-tests/runtime-scenarios/llm-support-service-cli.mjs
+node --test load-tests/runtime-scenarios/*.test.mjs
+```
+
+Review the generated candidate rules against the input artifacts before they
+are cited in reporting or copied into a later approval workflow.
 
 ## Validation Rules
 
