@@ -139,6 +139,10 @@ Use `results-summary.md` as the starting point for paper drafting, but keep
 the CSV and JSON files with the article evidence so reviewers can trace every
 claim back to explicit input artifacts.
 
+`results-report.json` is also the evidence boundary consumed by
+`docs/llm-tradeoff-explanations.md` when generating reviewed explanation
+drafts for Pareto and decision-usefulness comparisons.
+
 ## Article Use
 
 The Results section is limited to supplied evidence: score rows, runtime
