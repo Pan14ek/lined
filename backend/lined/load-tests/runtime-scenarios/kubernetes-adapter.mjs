@@ -121,11 +121,13 @@ export const summarizeKubernetesState = ({ deployment, hpa, pods, topOutput }) =
   const memoryUsage = sumPodUsage(usage, 'memoryBytes');
 
   return {
+    configuration: summarizeConfiguration(deployment, backendContainer, hpa),
     cpuUtilization: ratioOrUndefined(
       cpuUsage,
       cpuRequest === undefined ? undefined : cpuRequest * podCount
     ),
     hpa: summarizeHpa(hpa),
+    image: backendContainer?.image,
     memoryUtilization: ratioOrUndefined(
       memoryUsage,
       memoryLimit === undefined ? undefined : memoryLimit * podCount
@@ -258,6 +260,77 @@ const summarizeHpa = (hpa) => {
   return {
     currentReplicas,
     desiredReplicas,
+  };
+};
+
+const summarizeConfiguration = (deployment, backendContainer, hpa) => ({
+  backend: {
+    image: backendContainer?.image,
+    probes: {
+      liveness: summarizeProbe(backendContainer?.livenessProbe),
+      readiness: summarizeProbe(backendContainer?.readinessProbe),
+    },
+    resources: summarizeResources(backendContainer?.resources),
+  },
+  hpa: summarizeHpaSpec(hpa),
+  replicas: deployment?.spec?.replicas,
+});
+
+const summarizeProbe = (probe) => {
+  if (!probe) {
+    return undefined;
+  }
+  return {
+    failureThreshold: probe.failureThreshold,
+    httpGet: probe.httpGet ? {
+      path: probe.httpGet.path,
+      port: probe.httpGet.port,
+      scheme: probe.httpGet.scheme,
+    } : undefined,
+    initialDelaySeconds: probe.initialDelaySeconds,
+    periodSeconds: probe.periodSeconds,
+    successThreshold: probe.successThreshold,
+    timeoutSeconds: probe.timeoutSeconds,
+  };
+};
+
+const summarizeResources = (resources) => {
+  if (!resources) {
+    return undefined;
+  }
+  return {
+    limits: resources.limits ? {
+      cpu: resources.limits.cpu,
+      memory: resources.limits.memory,
+    } : undefined,
+    requests: resources.requests ? {
+      cpu: resources.requests.cpu,
+      memory: resources.requests.memory,
+    } : undefined,
+  };
+};
+
+const summarizeHpaSpec = (hpa) => {
+  if (!hpa?.spec) {
+    return undefined;
+  }
+  return {
+    maxReplicas: hpa.spec.maxReplicas,
+    metrics: Array.isArray(hpa.spec.metrics)
+      ? hpa.spec.metrics.map((metric) => ({
+        resource: metric.resource ? {
+          name: metric.resource.name,
+          target: metric.resource.target ? {
+            averageUtilization: metric.resource.target.averageUtilization,
+            averageValue: metric.resource.target.averageValue,
+            type: metric.resource.target.type,
+            value: metric.resource.target.value,
+          } : undefined,
+        } : undefined,
+        type: metric.type,
+      }))
+      : undefined,
+    minReplicas: hpa.spec.minReplicas,
   };
 };
 

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import {CosmosClient} from "@azure/cosmos";
 import {
     computeAdaptiveFitness,
@@ -66,11 +67,60 @@ type MetricsDocument = {
     paretoOptimization?: ParetoOptimizationMetadata;
     decisionUsefulnessVersion: typeof DECISION_USEFULNESS_VERSION;
     decisionUsefulness: DecisionUsefulnessMetadata;
+    runtimeProvenance?: RuntimeProvenanceMetadata;
+};
+
+type RuntimeArtifactProvenanceStatus =
+    | "manifest-linked"
+    | "manifest-incomplete"
+    | "manifest-missing"
+    | "manifest-malformed"
+    | "identity-mismatch"
+    | "store-baseline-linked"
+    | "store-baseline-partial";
+
+type RuntimeArtifactProvenance = {
+    status: RuntimeArtifactProvenanceStatus;
+    manifestPath?: string;
+    documentId?: string;
+    timestamp?: string;
+    commitHash?: string;
+    imageTag?: string;
+    configurationHash?: string;
+    telemetryWindow?: {
+        startedAt?: string;
+        finishedAt?: string;
+    };
+    runtimeEvidenceVector?: RuntimeMetricSummary;
+    missing?: string[];
+};
+
+type RuntimeProvenanceMetadata = {
+    current?: RuntimeArtifactProvenance;
+    baseline?: RuntimeArtifactProvenance;
+    paretoCandidates?: Record<string, RuntimeArtifactProvenance>;
+    scoring?: {
+        thresholdVersion: string;
+    };
+};
+
+type RuntimeArtifact = {
+    runtimeMetrics: RuntimeMetrics;
+    provenance?: RuntimeArtifactProvenance;
+};
+
+type RuntimeBaselineRecord = {
+    runtimeMetrics: RuntimeMetrics;
+    provenance: RuntimeArtifactProvenance;
 };
 
 type MetricsStore = {
     findStructuralBaseline(isMainBranch: boolean): Promise<Metrics | undefined>;
-    findRuntimeBaseline(scenario: string, workload: string): Promise<RuntimeMetrics | undefined>;
+    findRuntimeBaseline(
+        scenario: string,
+        workload: string,
+        source: string
+    ): Promise<RuntimeBaselineRecord | undefined>;
     save(document: MetricsDocument): Promise<void>;
 };
 
@@ -306,10 +356,15 @@ const resolveRuntimeBaseline = async (
     config: Config,
     store: MetricsStore | undefined,
     currentRuntimeMetrics?: RuntimeMetrics
-): Promise<RuntimeMetrics | undefined> => {
-    const explicitBaseline = readRuntimeMetrics(config.runtimeBaselineMetricsJsonPath);
+): Promise<RuntimeBaselineRecord | undefined> => {
+    const explicitBaseline = readRuntimeArtifact(config.runtimeBaselineMetricsJsonPath);
     if (explicitBaseline) {
-        return explicitBaseline;
+        return {
+            provenance: explicitBaseline.provenance ?? {
+                status: "manifest-missing",
+            },
+            runtimeMetrics: explicitBaseline.runtimeMetrics,
+        };
     }
 
     if (!store || !currentRuntimeMetrics) {
@@ -318,7 +373,8 @@ const resolveRuntimeBaseline = async (
 
     return store.findRuntimeBaseline(
         config.runtimeBaselineScenario,
-        currentRuntimeMetrics.workload
+        currentRuntimeMetrics.workload,
+        currentRuntimeMetrics.source
     );
 };
 
@@ -347,22 +403,38 @@ class CosmosMetricsStore implements MetricsStore {
 
     async findRuntimeBaseline(
         scenario: string,
-        workload: string
-    ): Promise<RuntimeMetrics | undefined> {
+        workload: string,
+        source: string
+    ): Promise<RuntimeBaselineRecord | undefined> {
         const query =
             "SELECT * FROM c WHERE c.branch = 'main' " +
             "AND c.metrics.runtime_metrics.scenario = @scenario " +
             "AND c.metrics.runtime_metrics.workload = @workload " +
+            "AND c.metrics.runtime_metrics.source = @source " +
             "ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
         const {resources} = await this.container.items.query({
             query,
             parameters: [
                 {name: "@scenario", value: scenario},
                 {name: "@workload", value: workload},
+                {name: "@source", value: source},
             ],
         }).fetchAll();
-        const snapshot = resources[0] as { metrics: Metrics } | undefined;
-        return snapshot?.metrics.runtime_metrics;
+        const snapshot = resources[0] as MetricsDocument | undefined;
+        if (!snapshot?.metrics.runtime_metrics) {
+            return undefined;
+        }
+        return {
+            provenance: {
+                commitHash: snapshot.commitHash,
+                documentId: snapshot.id,
+                status: snapshot.id && snapshot.timestamp && snapshot.commitHash
+                    ? "store-baseline-linked"
+                    : "store-baseline-partial",
+                timestamp: snapshot.timestamp,
+            },
+            runtimeMetrics: snapshot.metrics.runtime_metrics,
+        };
     }
 
     async save(document: MetricsDocument): Promise<void> {
@@ -389,7 +461,7 @@ const LOCAL_BASELINE_STORE: MetricsStore = {
     async findStructuralBaseline(): Promise<Metrics | undefined> {
         return undefined;
     },
-    async findRuntimeBaseline(): Promise<RuntimeMetrics | undefined> {
+    async findRuntimeBaseline(): Promise<RuntimeBaselineRecord | undefined> {
         return undefined;
     },
     async save(): Promise<void> {
@@ -402,6 +474,7 @@ const buildMetricsDocument = (
     data: Metrics,
     fitnessScore: FitnessScore,
     runtimeFitnessResult: RuntimeFitnessResult,
+    runtimeProvenance: RuntimeProvenanceMetadata | undefined,
     adaptiveFitnessResult: AdaptiveFitnessResult,
     paretoOptimizationResult: ParetoOptimizationResult,
     decisionUsefulnessResult: DecisionUsefulnessResult
@@ -420,6 +493,7 @@ const buildMetricsDocument = (
         runtimeFitnessScore: runtimeFitnessResult.runtimeFitnessScore,
         runtimeFitnessScoreVersion: runtimeFitnessResult.runtimeFitnessScoreVersion,
         runtimeFitness: runtimeFitnessResult.runtimeFitness,
+        runtimeProvenance,
         adaptiveFitnessScore: adaptiveFitnessResult.adaptiveFitnessScore,
         adaptiveFitnessScoreVersion: adaptiveFitnessResult.adaptiveFitnessScoreVersion,
         adaptiveFitness: adaptiveFitnessResult.adaptiveFitness,
@@ -630,6 +704,134 @@ export const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined =>
 export const readRuntimeMetricSet = (paths: readonly string[]): RuntimeMetrics[] =>
     paths.map((path) => parseRuntimeMetrics(readFile(path)));
 
+const readRuntimeArtifact = (runtimeMetricsPath?: string): RuntimeArtifact | undefined => {
+    if (!runtimeMetricsPath || runtimeMetricsPath.trim() === "") {
+        return undefined;
+    }
+    const runtimeMetrics = parseRuntimeMetrics(readFile(runtimeMetricsPath));
+    return {
+        provenance: readAdjacentManifest(runtimeMetricsPath, runtimeMetrics),
+        runtimeMetrics,
+    };
+};
+
+const readRuntimeArtifactSet = (paths: readonly string[]): RuntimeArtifact[] =>
+    paths.map((runtimeMetricsPath) => {
+        const runtimeMetrics = parseRuntimeMetrics(readFile(runtimeMetricsPath));
+        return {
+            provenance: readAdjacentManifest(runtimeMetricsPath, runtimeMetrics),
+            runtimeMetrics,
+        };
+    });
+
+const readAdjacentManifest = (
+    runtimeMetricsPath: string,
+    runtimeMetrics: RuntimeMetrics
+): RuntimeArtifactProvenance => {
+    const manifestPath = path.join(path.dirname(runtimeMetricsPath), "runtime-summary-manifest.json");
+    if (!fileExists(manifestPath)) {
+        return {
+            manifestPath,
+            status: "manifest-missing",
+        };
+    }
+
+    try {
+        const manifest = JSON.parse(readFile(manifestPath)) as Record<string, unknown>;
+        if (!manifestIdentityMatches(manifest, runtimeMetrics)) {
+            return {
+                manifestPath,
+                status: "identity-mismatch",
+            };
+        }
+        const manifestProvenance = isRecord(manifest.provenance) ? manifest.provenance : undefined;
+        const runtimeEvidence = manifestProvenance && isRecord(manifestProvenance.runtime_evidence_vector)
+            ? manifestProvenance.runtime_evidence_vector
+            : undefined;
+        const runtimeEvidenceVector = runtimeEvidence && isRecord(runtimeEvidence.summary)
+            ? parseRuntimeMetricSummary(runtimeEvidence.summary)
+            : undefined;
+        const missing = runtimeEvidence
+            ? parseMissingRuntimeFields(runtimeEvidence.missing)
+            : undefined;
+        const telemetryWindow = manifestProvenance && isRecord(manifestProvenance.telemetry_window)
+            ? manifestProvenance.telemetry_window
+            : undefined;
+        return {
+            commitHash: readStringField(manifest.git, "commit"),
+            configurationHash: readStringField(manifestProvenance, "configuration_hash"),
+            imageTag: readStringField(manifest.kubernetes, "image"),
+            manifestPath,
+            missing,
+            runtimeEvidenceVector,
+            status: manifest.collector_summary_written === true
+                ? "manifest-linked"
+                : "manifest-incomplete",
+            telemetryWindow: {
+                finishedAt: readStringField(telemetryWindow, "finished_at"),
+                startedAt: readStringField(telemetryWindow, "started_at"),
+            },
+        };
+    } catch {
+        return {
+            manifestPath,
+            status: "manifest-malformed",
+        };
+    }
+};
+
+const manifestIdentityMatches = (
+    manifest: Record<string, unknown>,
+    runtimeMetrics: RuntimeMetrics
+): boolean =>
+    manifest.scenario === runtimeMetrics.scenario &&
+    manifest.workload === runtimeMetrics.workload &&
+    manifest.source === runtimeMetrics.source;
+
+const readStringField = (value: unknown, field: string): string | undefined => {
+    if (!isRecord(value)) {
+        return undefined;
+    }
+    const candidate = value[field];
+    return typeof candidate === "string" && candidate.trim() !== "" ? candidate : undefined;
+};
+
+const buildRuntimeProvenance = ({
+    baseline,
+    current,
+    paretoArtifacts,
+    scoringThresholdVersion,
+}: {
+    current?: RuntimeArtifactProvenance;
+    baseline?: RuntimeArtifactProvenance;
+    paretoArtifacts: RuntimeArtifact[];
+    scoringThresholdVersion?: string;
+}): RuntimeProvenanceMetadata | undefined => {
+    const paretoCandidates = paretoArtifacts.reduce<Record<string, RuntimeArtifactProvenance>>(
+        (acc, artifact) => {
+            if (artifact.provenance) {
+                acc[candidateId(artifact.runtimeMetrics)] = artifact.provenance;
+            }
+            return acc;
+        },
+        {}
+    );
+    if (!current && !baseline && Object.keys(paretoCandidates).length === 0 && !scoringThresholdVersion) {
+        return undefined;
+    }
+    return {
+        baseline,
+        current,
+        paretoCandidates: Object.keys(paretoCandidates).length > 0 ? paretoCandidates : undefined,
+        scoring: scoringThresholdVersion ? {
+            thresholdVersion: scoringThresholdVersion,
+        } : undefined,
+    };
+};
+
+const candidateId = (runtimeMetrics: RuntimeMetrics): string =>
+    `${runtimeMetrics.scenario}:${runtimeMetrics.workload}:${runtimeMetrics.source}`;
+
 const getCurrentScope = (config: Config): SonarScope => {
     const pr = config.pullRequestId;
     if (pr && pr.trim() !== "") return {kind: "pullRequest", id: pr.trim()};
@@ -837,7 +1039,8 @@ const diffSelectedMetrics = (
 ======================= */
 const collectMetrics = async (config: Config): Promise<Metrics> => {
     const jacocoCoverage = readJacocoLineCoverage(config.jacocoPath);
-    const runtimeMetrics = readRuntimeMetrics(config.runtimeMetricsJsonPath);
+    const runtimeArtifact = readRuntimeArtifact(config.runtimeMetricsJsonPath);
+    const runtimeMetrics = runtimeArtifact?.runtimeMetrics;
 
     const mainMetrics = await fetchSonarCloudMetrics({kind: "branch", name: "main"});
 
@@ -872,7 +1075,7 @@ const collectMetrics = async (config: Config): Promise<Metrics> => {
 };
 
 export const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
-    const runtimeMetrics = readRuntimeMetrics(config.runtimeMetricsJsonPath);
+    const runtimeMetrics = readRuntimeArtifact(config.runtimeMetricsJsonPath)?.runtimeMetrics;
     if (!runtimeMetrics) {
         throw new Error("RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON");
     }
@@ -888,6 +1091,7 @@ export const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
 const main = async (): Promise<void> => {
     try {
         const config: Config = getConfig();
+        const currentRuntimeArtifact = readRuntimeArtifact(config.runtimeMetricsJsonPath);
         const metrics: Metrics = config.runtimeOnly
             ? collectRuntimeOnlyMetrics(config)
             : await collectMetrics(config);
@@ -909,12 +1113,13 @@ const main = async (): Promise<void> => {
             store,
             metrics.runtime_metrics
         );
+        const runtimeBaselineMetrics = runtimeBaseline?.runtimeMetrics;
         const sloClassification = metrics.runtime_metrics
             ? classifyRuntimeMetrics(metrics.runtime_metrics, readSloThresholds(config.sloThresholdsJsonPath))
             : undefined;
         const runtimeFitnessResult = computeRuntimeFitness(
             metrics.runtime_metrics,
-            runtimeBaseline,
+            runtimeBaselineMetrics,
             sloClassification
         );
 
@@ -931,15 +1136,23 @@ const main = async (): Promise<void> => {
             runtimeFitnessResult.runtimeFitness,
             config.adaptiveFitnessContext
         );
+        const paretoArtifacts = readRuntimeArtifactSet(config.paretoRuntimeMetricsJsonPaths);
         const paretoOptimizationResult = computeParetoOptimization(
-            readRuntimeMetricSet(config.paretoRuntimeMetricsJsonPaths)
+            paretoArtifacts.map((artifact) => artifact.runtimeMetrics)
         );
         const decisionUsefulnessResult = computeDecisionUsefulness(paretoOptimizationResult);
+        const runtimeProvenance = buildRuntimeProvenance({
+            current: currentRuntimeArtifact?.provenance,
+            baseline: runtimeBaseline?.provenance,
+            paretoArtifacts,
+            scoringThresholdVersion: sloClassification?.thresholdVersion,
+        });
         const document = buildMetricsDocument(
             config,
             metrics,
             fitnessScore,
             runtimeFitnessResult,
+            runtimeProvenance,
             adaptiveFitnessResult,
             paretoOptimizationResult,
             decisionUsefulnessResult

@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 export const CLI_VERSION = 1;
 export const SOURCE = 'local-kind';
 
@@ -62,11 +64,13 @@ export const buildManifest = ({
   git,
   hpaCleanup,
   k6,
+  runtimeSummary,
+  summaryExported,
+  summaryFailure,
   kubernetes,
   options,
   scenario,
   startedAt,
-  summaryExported,
   summaryWritten,
 }) => ({
   schema_version: 1,
@@ -99,10 +103,33 @@ export const buildManifest = ({
     summary_trend_stats: k6.summaryTrendStats,
   },
   collector_summary_written: summaryWritten,
+  provenance: {
+    configuration_hash: buildConfigurationHash({
+      fixtureProfile: options.fixtureProfileData,
+      kubernetes,
+      scenario,
+      workloadEnv: {
+        WORKLOAD: options.workload,
+        ...options.k6Env,
+      },
+    }),
+    evidence_status: summaryWritten ? 'collector-ready' : 'incomplete',
+    runtime_evidence_vector: runtimeSummary ? {
+      missing: runtimeSummary.missing,
+      summary: runtimeSummary.summary,
+    } : undefined,
+    summary_failure: summaryFailure,
+    telemetry_window: {
+      finished_at: finishedAt,
+      started_at: startedAt,
+    },
+  },
   kubernetes: {
     applied_scenario: appliedScenario,
+    configuration: kubernetes.configuration,
     deployment: 'lined-backend',
     hpa_cleanup: hpaCleanup,
+    image: kubernetes.image,
     metrics_server_available: kubernetes.metricsServerAvailable,
     namespace: 'lined',
     replicas: kubernetes.replicas,
@@ -149,3 +176,43 @@ const restartDelta = (before, after) => {
 };
 
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const buildConfigurationHash = ({ fixtureProfile, kubernetes, scenario, workloadEnv }) => {
+  const canonicalInput = {
+    fixture_profile: fixtureProfile ? {
+      name: fixtureProfile.name,
+      schema_version: fixtureProfile.schemaVersion,
+      workload: fixtureProfile.workload,
+    } : undefined,
+    kubernetes: kubernetes.configuration,
+    scenario: {
+      name: scenario.path.split('/').at(-1),
+      path: scenario.path,
+    },
+    workload_env: workloadEnv,
+  };
+  return crypto
+    .createHash('sha256')
+    .update(stableStringify(canonicalInput))
+    .digest('hex');
+};
+
+const stableStringify = (value) => JSON.stringify(sortValue(value));
+
+const sortValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(sortValue);
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+  return Object.keys(value)
+    .sort()
+    .reduce((acc, key) => {
+      const entry = value[key];
+      if (entry !== undefined) {
+        acc[key] = sortValue(entry);
+      }
+      return acc;
+    }, {});
+};
