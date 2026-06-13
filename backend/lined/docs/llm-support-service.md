@@ -268,6 +268,10 @@ explicit checklist report for source evidence, telemetry linkage, threshold
 rationale, and expert approval before using a reviewed rule as promotion-ready
 evidence.
 
+Use `docs/llm-tradeoff-explanations.md` when you need reviewed explanation
+drafts grounded in `results-report.json`, Pareto candidate rows, and
+decision-usefulness evidence rather than raw scenario summaries.
+
 ## Implementation Tasks
 
 | Branch name | Name | Detailed description | Expected result |
