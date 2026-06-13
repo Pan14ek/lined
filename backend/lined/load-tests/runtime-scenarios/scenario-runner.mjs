@@ -183,7 +183,9 @@ export const runScenario = (
   const afterWorkload = kubernetesAdapter.collectState(runOptions.scenario);
   const kubernetes = buildWindowKubernetesState(beforeWorkload, afterWorkload);
   const finishedAt = clock();
-  const manifest = buildManifest({
+  const manifestPath = path.join(outputDir, 'runtime-summary-manifest.json');
+  fs.mkdirSync(outputDir, { recursive: true });
+  const manifestBase = {
     appliedScenario,
     finishedAt,
     git: gitReader(),
@@ -198,14 +200,15 @@ export const runScenario = (
     scenario,
     startedAt,
     summaryExported: k6Result.summary !== undefined,
-    summaryWritten: k6Result.exitCode === 0 && k6Result.summary !== undefined,
-  });
-
-  const manifestPath = path.join(outputDir, 'runtime-summary-manifest.json');
-  fs.mkdirSync(outputDir, { recursive: true });
-  writeJson(manifestPath, manifest);
+  };
 
   if (k6Result.signal) {
+    const manifest = buildManifest({
+      ...manifestBase,
+      summaryFailure: `k6 was killed by signal ${k6Result.signal}`,
+      summaryWritten: false,
+    });
+    writeJson(manifestPath, manifest);
     throw new ScenarioRunError(
       `k6 was killed by signal ${k6Result.signal}; `
       + `wrote manifest ${manifestPath} but did not write collector summary`,
@@ -217,6 +220,12 @@ export const runScenario = (
   }
 
   if (k6Result.exitCode !== 0) {
+    const manifest = buildManifest({
+      ...manifestBase,
+      summaryFailure: `k6 exited with ${k6Result.exitCode}`,
+      summaryWritten: false,
+    });
+    writeJson(manifestPath, manifest);
     throw new ScenarioRunError(
       `k6 failed with exit code ${k6Result.exitCode}; `
       + `wrote manifest ${manifestPath} but did not write collector summary`,
@@ -228,17 +237,42 @@ export const runScenario = (
   }
 
   if (k6Result.summary === undefined) {
+    const manifest = buildManifest({
+      ...manifestBase,
+      summaryFailure: 'k6 completed without a summary export',
+      summaryWritten: false,
+    });
+    writeJson(manifestPath, manifest);
     throw new Error('k6 completed without a summary export; collector summary was not written');
   }
 
-  const summary = buildRuntimeSummary({
-    k6Summary: k6Result.summary,
-    kubernetes,
-    scenario: runOptions.scenario,
-    workload: runOptions.workload,
-  });
   const summaryPath = path.join(outputDir, 'runtime-summary.json');
-  writeJson(summaryPath, summary);
+  let summary;
+  try {
+    summary = buildRuntimeSummary({
+      k6Summary: k6Result.summary,
+      kubernetes,
+      scenario: runOptions.scenario,
+      workload: runOptions.workload,
+    });
+    writeJson(summaryPath, summary);
+  } catch (error) {
+    const summaryFailure = error instanceof Error ? error.message : String(error);
+    const manifest = buildManifest({
+      ...manifestBase,
+      summaryFailure,
+      summaryWritten: false,
+    });
+    writeJson(manifestPath, manifest);
+    throw error;
+  }
+
+  const manifest = buildManifest({
+    ...manifestBase,
+    runtimeSummary: summary,
+    summaryWritten: true,
+  });
+  writeJson(manifestPath, manifest);
 
   return {
     manifest,

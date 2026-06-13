@@ -1277,7 +1277,7 @@ describe("classifyRuntimeMetrics", () => {
 
 describe("writeMetricsOutput", () => {
     it("writes a local final metrics document without a database", (t: TestContext) => {
-        t.plan(8);
+        t.plan(10);
 
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-output-"));
         const file = path.join(directory, "metrics.json");
@@ -1296,6 +1296,16 @@ describe("writeMetricsOutput", () => {
                 fitnessScore: EXPECTED_WRITTEN_STRUCTURAL_SCORE,
                 runtimeFitnessScore: EXPECTED_WRITTEN_RUNTIME_SCORE,
                 runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
+                runtimeProvenance: {
+                    current: {
+                        commitHash: LOCAL_COMMIT,
+                        configurationHash: "cfg-123",
+                        status: "manifest-linked",
+                    },
+                    scoring: {
+                        thresholdVersion: THRESHOLD_VERSION,
+                    },
+                },
                 adaptiveFitnessScore: EXPECTED_ADAPTIVE_BALANCED_SCORE,
                 adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
                 paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
@@ -1307,6 +1317,11 @@ describe("writeMetricsOutput", () => {
             t.assert.strictEqual(written.fitnessScore, EXPECTED_WRITTEN_STRUCTURAL_SCORE);
             t.assert.strictEqual(written.runtimeFitnessScore, EXPECTED_WRITTEN_RUNTIME_SCORE);
             t.assert.strictEqual(written.runtimeFitnessScoreVersion, RUNTIME_SCORE_VERSION);
+            t.assert.strictEqual(written.runtimeProvenance.current.status, "manifest-linked");
+            t.assert.strictEqual(
+                written.runtimeProvenance.scoring.thresholdVersion,
+                THRESHOLD_VERSION
+            );
             t.assert.strictEqual(written.adaptiveFitnessScore, EXPECTED_ADAPTIVE_BALANCED_SCORE);
             t.assert.strictEqual(written.adaptiveFitnessScoreVersion, ADAPTIVE_SCORE_VERSION);
             t.assert.strictEqual(written.paretoOptimizationVersion, PARETO_OPTIMIZATION_VERSION);

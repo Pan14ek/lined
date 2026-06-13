@@ -211,11 +211,30 @@ the metric is omitted and listed in `missing`.
 }
 ```
 
-`runtime-summary-manifest.json` is not collector input. It records sanitized
-provenance such as scenario path, workload variables, git commit, CLI version,
-fixture profile metadata, start/end timestamps, whether the scenario was
-applied, HPA cleanup status, raw pre/post restart snapshots, the restart delta,
-and k6 exit code.
+`runtime-summary-manifest.json` is not collector score input. It remains a
+sidecar provenance artifact with the existing manifest identity and status
+fields:
+
+- top-level `scenario`, `workload`, and `source`;
+- `collector_summary_written`;
+- `fixture_profile`;
+- nested `git`, `workload_env`, and `kubernetes` sections.
+
+The manifest now also carries additive provenance for audit and paper evidence,
+including:
+
+- deployed backend image under `kubernetes.image`;
+- sanitized deployment configuration under `kubernetes.configuration`;
+- a deterministic `provenance.configuration_hash` derived from stable
+  deployment and workload-context inputs only;
+- `provenance.telemetry_window`;
+- `provenance.runtime_evidence_vector` when the collector-ready summary was
+  actually built and written.
+
+When k6 fails, omits summary export, or summary building/writing fails, the
+manifest is still written but `collector_summary_written` stays `false` and the
+runtime evidence vector is omitted instead of pretending that clean collector
+input exists.
 
 ## Validate Locally
 

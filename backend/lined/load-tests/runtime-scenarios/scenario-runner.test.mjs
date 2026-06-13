@@ -668,7 +668,7 @@ describe('buildRuntimeSummary', () => {
 
 describe('manifest and runScenario', () => {
   it('records sanitized provenance in the manifest', (t) => {
-    t.plan(6);
+    t.plan(9);
     const manifest = buildManifest({
       appliedScenario: true,
       finishedAt: '2026-06-01T10:00:10.000Z',
@@ -682,7 +682,19 @@ describe('manifest and runScenario', () => {
         signal: undefined,
         summaryTrendStats: 'p(95),p(99),avg,min,max',
       },
+      runtimeSummary: {
+        missing: ['availability'],
+        summary: {
+          latency_p95_ms: 250.5,
+        },
+      },
       kubernetes: {
+        configuration: {
+          backend: {
+            image: 'lined-backend:local',
+          },
+        },
+        image: 'lined-backend:local',
         metricsServerAvailable: false,
         replicas: 1,
       },
@@ -727,10 +739,18 @@ describe('manifest and runScenario', () => {
     });
     t.assert.equal(manifest.workload_env.VUS, '2');
     t.assert.equal(manifest.git.branch, 'bug/scenario-runner-seam');
+    t.assert.equal(manifest.kubernetes.image, 'lined-backend:local');
+    t.assert.equal(typeof manifest.provenance.configuration_hash, 'string');
+    t.assert.deepEqual(manifest.provenance.runtime_evidence_vector, {
+      missing: ['availability'],
+      summary: {
+        latency_p95_ms: 250.5,
+      },
+    });
   });
 
   it('writes a summary and manifest for successful runs', (t) => {
-    t.plan(5);
+    t.plan(7);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -758,6 +778,14 @@ describe('manifest and runScenario', () => {
       t.assert.equal(result.summary.summary.latency_p95_ms, 250.5);
       t.assert.equal(result.summary.fixture_profile, undefined);
       t.assert.equal(result.manifest.collector_summary_written, true);
+      t.assert.deepEqual(
+        result.manifest.provenance.runtime_evidence_vector.summary,
+        result.summary.summary
+      );
+      t.assert.deepEqual(
+        result.manifest.provenance.runtime_evidence_vector.missing,
+        result.summary.missing
+      );
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
@@ -908,7 +936,7 @@ describe('manifest and runScenario', () => {
   });
 
   it('writes only a manifest when k6 fails', (t) => {
-    t.plan(4);
+    t.plan(5);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
 
     try {
@@ -939,6 +967,57 @@ describe('manifest and runScenario', () => {
       const runDir = path.join(directory, runDirs[0]);
       t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary-manifest.json')), true);
       t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(runDir, 'runtime-summary-manifest.json'), 'utf-8')
+      );
+      t.assert.equal(manifest.provenance.runtime_evidence_vector, undefined);
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('keeps collector_summary_written false when summary building fails after k6 succeeds', (t) => {
+    t.plan(4);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-'));
+
+    try {
+      t.assert.throws(
+        () => runScenario(
+          {
+            allowRemoteBaseUrl: false,
+            apply: false,
+            baseUrl: 'http://localhost:8080',
+            k6Bin: 'k6',
+            k6Env: {},
+            outputRoot: directory,
+            scenario: 'fixed-medium',
+            script: 'load-tests/k6/load-test-baseline.js',
+            skipHpaCleanup: false,
+            workload: 'smoke',
+          },
+          fakeAdapters({
+            k6ExitCode: 0,
+            k6Summary: {
+              metrics: {
+                http_req_duration: {
+                  values: {
+                    'p(95)': 250.5,
+                  },
+                },
+              },
+            },
+          })
+        ),
+        /http_req_duration\.p\(99\)/
+      );
+
+      const runDir = path.join(directory, fs.readdirSync(directory)[0]);
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(runDir, 'runtime-summary-manifest.json'), 'utf-8')
+      );
+      t.assert.equal(manifest.collector_summary_written, false);
+      t.assert.equal(fs.existsSync(path.join(runDir, 'runtime-summary.json')), false);
+      t.assert.match(manifest.provenance.summary_failure, /http_req_duration\.p\(99\)/);
     } finally {
       fs.rmSync(directory, { force: true, recursive: true });
     }
@@ -970,6 +1049,15 @@ const fakeAdapters = ({
     collectState: () => {
       const restartCount = restartCounts.shift() ?? restartCounts.at(-1) ?? 0;
       return {
+        configuration: {
+          backend: {
+            image: 'lined-backend:local',
+            probes: {},
+            resources: {},
+          },
+          replicas: 1,
+        },
+        image: 'lined-backend:local',
         metricsServerAvailable: false,
         replicas: 1,
         restartCount,

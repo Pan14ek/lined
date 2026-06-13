@@ -161,6 +161,18 @@ Recommended file shape:
 The collector should validate only the summarized shape. It should not run k6,
 deploy kind, call Kubernetes, or scrape Actuator endpoints by itself.
 
+When the explicit runtime summary lives beside a
+`runtime-summary-manifest.json` sidecar from
+`docs/runtime-scenario-summaries.md`, the collector may auto-discover that
+manifest and copy additive provenance into the emitted metrics document. This
+does not change scoring inputs or formulas. It only enriches the output with
+run provenance such as image tag, configuration hash, telemetry window, and
+persisted-baseline identity when available.
+
+If the sidecar is missing, malformed, incomplete, duplicated, or identity-
+mismatched, the collector must degrade to explicit provenance status metadata
+without changing numeric scores or requiring a new CLI flag.
+
 ## Compatibility Rules
 
 - Existing Cosmos DB documents remain valid when `metrics.runtime_metrics` is
@@ -183,3 +195,6 @@ Before using a runtime summary in an experiment:
 5. Run the collector with `RUNTIME_METRICS_JSON` set.
 6. Confirm the stored document preserves `fitnessScore` and adds
    `metrics.runtime_metrics` separately.
+7. When a sidecar manifest is present, confirm the emitted metrics document
+   records provenance separately from runtime score fields and preserves the
+   flat `runtimeFitness.current` / `runtimeFitness.baseline` identities.
