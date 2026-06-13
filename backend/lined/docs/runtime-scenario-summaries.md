@@ -3,10 +3,10 @@
 This guide describes the scenario-runner seam for local runtime evidence in
 the Lined backend experiment.
 
-The runner accepts one deployment scenario, one k6 workload, and one output
-root. It then coordinates the existing Kubernetes scenario manifests, k6
-workload, Kubernetes state collection, and sanitized collector-ready runtime
-summary output.
+The runner accepts either one deployment scenario or one supported scenario
+set, one k6 workload, and one output root. It then coordinates the existing
+Kubernetes scenario manifests, k6 workload, Kubernetes state collection, and
+sanitized collector-ready runtime summary output.
 
 ## Scope
 
@@ -14,8 +14,11 @@ This workflow provides:
 
 - a local scenario runner under `load-tests/runtime-scenarios/`;
 - a single command path for existing kind scenario overlays;
+- a batch command path for comparable full-set collection across all supported
+  deployment scenarios;
 - sanitized `runtime-summary.json` files for the metrics collector;
-- sanitized `runtime-summary-manifest.json` files for provenance.
+- sanitized `runtime-summary-manifest.json` files for provenance;
+- a set-level provenance and discovery index for batch runs.
 
 This workflow does not add runtime-aware scoring, SLO classification, Cosmos
 DB writes, cluster creation, image build/load steps, Secret management,
@@ -137,6 +140,68 @@ stable manual pattern is:
 
 This avoids losing the port-forward if `kubectl apply` replaces pods.
 
+## Run One Comparable Scenario Set
+
+Run a stable fixture across every supported deployment scenario:
+
+```bash
+node load-tests/runtime-scenarios/scenario-runner-cli.mjs \
+  --scenario-set all-supported \
+  --fixture-profile comparison-baseline \
+  --base-url http://localhost:8080
+```
+
+The batch mode keeps the effective workload and source identical across the
+set, then runs:
+
+- `fixed-small`
+- `fixed-medium`
+- `replicas-2`
+- `hpa-cpu`
+
+It writes one set root:
+
+```text
+load-tests/runtime-scenarios/output/sets/<fixture-or-workload>-<timestamp>/
+  runtime-summary-set-index.json
+  fixed-small-<workload>-<timestamp>/
+    runtime-summary.json
+    runtime-summary-manifest.json
+  fixed-medium-<workload>-<timestamp>/
+    runtime-summary.json
+    runtime-summary-manifest.json
+  replicas-2-<workload>-<timestamp>/
+    runtime-summary.json
+    runtime-summary-manifest.json
+  hpa-cpu-<workload>-<timestamp>/
+    runtime-summary.json
+    runtime-summary-manifest.json
+```
+
+`runtime-summary-set-index.json` is provenance and discovery only. It is not
+collector input. It records:
+
+- the scenario-set id;
+- the effective workload and optional fixture profile;
+- repo-relative paths to per-scenario artifacts;
+- which scenarios are collector-ready;
+- which scenarios failed or remained incomplete;
+- matching runtime-quality scenario metadata from
+  `load-tests/runtime-scenarios/runtime-quality-scenarios-v1.json`.
+
+The batch command exits `0` only when every scenario produced a collector-ready
+`runtime-summary.json`. If any scenario fails or remains incomplete, the batch
+command exits non-zero after still writing `runtime-summary-set-index.json`.
+
+If orchestration fails before a per-scenario manifest exists, the set index
+records the scenario as `failed-before-manifest` and leaves `manifest_path`
+empty for that entry. The batch still continues to later scenarios so one early
+local failure does not hide the rest of the comparable set.
+
+When a fixture profile is selected and the workload is explicitly overridden,
+the set index records both the fixture profile workload and the effective
+workload so provenance stays unambiguous.
+
 ## HPA Cleanup Rule
 
 Before running a fixed-replica scenario, the runner deletes
@@ -160,6 +225,15 @@ The runner keeps inputs narrow:
 
 Do not copy raw pod specs, raw Prometheus text, Secrets, environment
 variables, or full k6 output into runtime artifacts.
+
+## Quality-Driver Mapping
+
+Batch scenario-set runs add explicit traceability to
+`load-tests/runtime-scenarios/runtime-quality-scenarios-v1.json`. Each
+scenario entry records the matching quality-scenario ids, KPI/SLO roles, and
+supported runtime-summary fields for the selected workload. This keeps the set
+comparable as quality-driver evidence instead of only as `k6 profile +
+kustomize overlay`.
 
 ## Metric Mapping
 
@@ -236,6 +310,11 @@ manifest is still written but `collector_summary_written` stays `false` and the
 runtime evidence vector is omitted instead of pretending that clean collector
 input exists.
 
+`runtime-summary-set-index.json` is also not collector score input. It is a
+set-level discovery record for full scenario-set runs and should only be used
+to locate per-scenario `runtime-summary.json` and
+`runtime-summary-manifest.json` files.
+
 ## Validate Locally
 
 Run the unit tests:
@@ -266,6 +345,16 @@ node -e "const { readRuntimeMetrics } = require('./dist/scripts/collectMetrics.j
 Only persist a runtime summary when the run is intentional experiment evidence.
 Normal CI runs without `RUNTIME_METRICS_JSON` continue to use the structural
 fitness score only.
+
+For article-ready reporting, the downstream canonical comparison subset
+remains:
+
+- `fixed-medium`
+- `replicas-2`
+- `hpa-cpu`
+
+The full `all-supported` batch collection still includes `fixed-small` so
+resource-pressure evidence can be gathered and audited consistently.
 
 ## Cleanup
 

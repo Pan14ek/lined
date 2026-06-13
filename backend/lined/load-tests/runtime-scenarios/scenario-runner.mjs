@@ -20,6 +20,7 @@ import {
   applyFixtureProfileDefaults,
   fixtureProfileNames,
 } from './fixture-profiles.mjs';
+import { matchRuntimeQualityScenarios } from './runtime-quality-catalog.mjs';
 
 export const SCENARIOS = Object.freeze({
   'fixed-small': {
@@ -49,16 +50,21 @@ export const WORKLOADS = Object.freeze([
   'stress',
   'negative-smoke',
 ]);
+export const SCENARIO_SETS = Object.freeze({
+  'all-supported': Object.freeze(Object.keys(SCENARIOS)),
+});
 
 const DEFAULT_BASE_URL = 'http://localhost:8080';
 const DEFAULT_K6_BIN = 'k6';
 const DEFAULT_OUTPUT_ROOT = 'load-tests/runtime-scenarios/output';
 const DEFAULT_SCRIPT = 'load-tests/k6/load-test-baseline.js';
 const DEFAULT_WORKLOAD = 'baseline';
+const DEFAULT_SCENARIO_SET = 'all-supported';
 const HELP_OPTIONS = new Set(['--help', '-h']);
 
 const OPTION_HANDLERS = Object.freeze({
   '--scenario': readOptionInto('scenario'),
+  '--scenario-set': readOptionInto('scenarioSet'),
   '--workload': (state, option) => {
     state.options.workload = readNextOptionValue(state, option);
     state.workloadExplicit = true;
@@ -88,6 +94,14 @@ export class ScenarioRunError extends Error {
   constructor(message, result) {
     super(message);
     this.name = 'ScenarioRunError';
+    this.result = result;
+  }
+}
+
+export class ScenarioSetRunError extends Error {
+  constructor(message, result) {
+    super(message);
+    this.name = 'ScenarioSetRunError';
     this.result = result;
   }
 }
@@ -134,15 +148,21 @@ export const parseArgs = (argv) => {
     fixtureFile: state.options.fixtureProfileFile,
     workloadExplicit: state.workloadExplicit,
   });
-  validateOptions(resolvedOptions);
+  if (resolvedOptions.scenarioSet) {
+    validateSetOptions(resolvedOptions);
+  } else {
+    validateOptions(resolvedOptions);
+  }
   return resolvedOptions;
 };
 
 export const printHelp = () => `Usage:
   node load-tests/runtime-scenarios/scenario-runner-cli.mjs --scenario <name> [options]
+  node load-tests/runtime-scenarios/scenario-runner-cli.mjs --scenario-set <name> [options]
 
 Options:
   --scenario <name>             ${Object.keys(SCENARIOS).join(', ')}
+  --scenario-set <name>         ${Object.keys(SCENARIO_SETS).join(', ')} (default batch set: ${DEFAULT_SCENARIO_SET})
   --workload <name>             ${WORKLOADS.join(', ')} (default: ${DEFAULT_WORKLOAD})
   --fixture-profile <name>      ${fixtureProfileNames().join(', ')}
   --fixture-profile-file <path> Fixture profile artifact (default: ${FIXTURE_PROFILES_PATH})
@@ -243,7 +263,13 @@ export const runScenario = (
       summaryWritten: false,
     });
     writeJson(manifestPath, manifest);
-    throw new Error('k6 completed without a summary export; collector summary was not written');
+    throw new ScenarioRunError(
+      'k6 completed without a summary export; collector summary was not written',
+      {
+        manifest,
+        manifestPath,
+      }
+    );
   }
 
   const summaryPath = path.join(outputDir, 'runtime-summary.json');
@@ -264,7 +290,10 @@ export const runScenario = (
       summaryWritten: false,
     });
     writeJson(manifestPath, manifest);
-    throw error;
+    throw new ScenarioRunError(summaryFailure, {
+      manifest,
+      manifestPath,
+    });
   }
 
   const manifest = buildManifest({
@@ -280,6 +309,55 @@ export const runScenario = (
     summary,
     summaryPath,
   };
+};
+
+export const runScenarioSet = (
+  options,
+  {
+    clock = () => new Date().toISOString(),
+    cwd = process.cwd(),
+    scenarioRunner = runScenario,
+  } = {}
+) => {
+  const runOptions = resolveFixtureOptions(options);
+  validateSetOptions(runOptions);
+  const startedAt = clock();
+  const scenarios = resolveScenarioSet(runOptions.scenarioSet);
+  const setRoot = outputSetRoot(runOptions, startedAt, cwd);
+  fs.mkdirSync(setRoot, { recursive: true });
+
+  const entries = scenarios.map((scenarioName) => runScenarioSetEntry(
+    scenarioName,
+    runOptions,
+    { clock, cwd, scenarioRunner, setRoot }
+  ));
+  const finishedAt = clock();
+  const index = buildScenarioSetIndex({
+    cwd,
+    entries,
+    finishedAt,
+    options: runOptions,
+    setRoot,
+    startedAt,
+  });
+  const indexPath = path.join(setRoot, 'runtime-summary-set-index.json');
+  writeJson(indexPath, index);
+
+  const result = {
+    failed: index.failed_scenarios.length > 0,
+    index,
+    indexPath,
+    setRoot,
+  };
+  if (result.failed) {
+    throw new ScenarioSetRunError(
+      `scenario set ${runOptions.scenarioSet} completed with `
+      + `${index.failed_scenarios.length} incomplete scenario(s); `
+      + `wrote set index ${indexPath}`,
+      result
+    );
+  }
+  return result;
 };
 
 const resolveFixtureOptions = (options) => {
@@ -378,6 +456,9 @@ const addK6Env = (k6Env, assignment) => {
 };
 
 const validateOptions = (options) => {
+  if (options.scenarioSet) {
+    throw new Error('--scenario-set is only supported by runScenarioSet');
+  }
   if (!options.scenario || SCENARIOS[options.scenario] === undefined) {
     throw new Error(`--scenario must be one of: ${Object.keys(SCENARIOS).join(', ')}`);
   }
@@ -391,6 +472,170 @@ const outputDirectory = (options, startedAt, cwd) => {
   const safeTimestamp = startedAt.replaceAll(/[:.]/g, '-');
   const outputName = `${options.scenario}-${options.workload}-${safeTimestamp}`;
   return path.resolve(cwd, options.outputRoot, outputName);
+};
+
+const validateSetOptions = (options) => {
+  if (options.scenario) {
+    throw new Error('Use either --scenario or --scenario-set, not both');
+  }
+  if (!options.scenarioSet) {
+    throw new Error(`--scenario-set must be one of: ${Object.keys(SCENARIO_SETS).join(', ')}`);
+  }
+  resolveScenarioSet(options.scenarioSet);
+  if (!WORKLOADS.includes(options.workload)) {
+    throw new Error(`--workload must be one of: ${WORKLOADS.join(', ')}`);
+  }
+  ensureLocalBaseUrl(options.baseUrl, options.allowRemoteBaseUrl);
+};
+
+const resolveScenarioSet = (scenarioSet) => {
+  const scenarios = SCENARIO_SETS[scenarioSet];
+  if (!scenarios) {
+    throw new Error(`--scenario-set must be one of: ${Object.keys(SCENARIO_SETS).join(', ')}`);
+  }
+  return scenarios;
+};
+
+const outputSetRoot = (options, startedAt, cwd) => {
+  const safeTimestamp = startedAt.replaceAll(/[:.]/g, '-');
+  const label = options.fixtureProfileData
+    ? `${options.fixtureProfileData.name}-${options.workload}`
+    : options.workload;
+  return path.resolve(cwd, options.outputRoot, 'sets', `${label}-${safeTimestamp}`);
+};
+
+const runScenarioSetEntry = (
+  scenarioName,
+  options,
+  { clock, cwd, scenarioRunner, setRoot }
+) => {
+  const scenarioOptions = {
+    ...options,
+    outputRoot: setRoot,
+    scenario: scenarioName,
+    scenarioSet: undefined,
+  };
+
+  try {
+    const result = scenarioRunner(scenarioOptions, { clock, cwd });
+    return buildScenarioSetEntry({
+      manifestPath: result.manifestPath,
+      options,
+      repoCwd: cwd,
+      scenarioName,
+      setRoot,
+      status: 'collector-ready',
+      summaryPath: result.summaryPath,
+    });
+  } catch (error) {
+    if (error instanceof ScenarioRunError) {
+      return buildScenarioSetEntry({
+        error,
+        manifestPath: error.result?.manifestPath,
+        options,
+        repoCwd: cwd,
+        scenarioName,
+        setRoot,
+        status: 'incomplete',
+        summaryPath: undefined,
+      });
+    }
+    return buildScenarioSetEntry({
+      error,
+      manifestPath: undefined,
+      options,
+      repoCwd: cwd,
+      scenarioName,
+      setRoot,
+      status: 'failed-before-manifest',
+      summaryPath: undefined,
+    });
+  }
+};
+
+const buildScenarioSetEntry = ({
+  error,
+  manifestPath,
+  options,
+  repoCwd,
+  scenarioName,
+  setRoot,
+  status,
+  summaryPath,
+}) => {
+  const relativeManifestPath = toRelativePath(manifestPath, repoCwd);
+  const relativeSummaryPath = toRelativePath(summaryPath, repoCwd);
+  return {
+    error: error instanceof Error ? error.message : undefined,
+    manifest_path: relativeManifestPath,
+    quality_scenarios: matchRuntimeQualityScenarios(
+      {
+        scenario: scenarioName,
+        workload: options.workload,
+      },
+      { cwd: repoCwd }
+    ),
+    scenario: scenarioName,
+    status,
+    summary_path: relativeSummaryPath,
+  };
+};
+
+const buildScenarioSetIndex = ({
+  cwd,
+  entries,
+  finishedAt,
+  options,
+  setRoot,
+  startedAt,
+}) => ({
+  schema_version: 1,
+  artifact: 'runtime-scenario-summary-set',
+  scenario_set: options.scenarioSet,
+  source: 'local-kind',
+  fixture_profile: options.fixtureProfileData ? {
+    name: options.fixtureProfileData.name,
+    schema_version: options.fixtureProfileData.schemaVersion,
+    workload: options.fixtureProfileData.workload,
+  } : undefined,
+  workload: options.workload,
+  started_at: startedAt,
+  finished_at: finishedAt,
+  collector_ready_scenarios: entries
+    .filter((entry) => entry.status === 'collector-ready')
+    .map((entry) => ({
+      manifest_path: entry.manifest_path,
+      scenario: entry.scenario,
+      summary_path: entry.summary_path,
+    })),
+  failed_scenarios: entries
+    .filter((entry) => entry.status !== 'collector-ready')
+    .map((entry) => ({
+      error: entry.error,
+      manifest_path: entry.manifest_path,
+      scenario: entry.scenario,
+      status: entry.status,
+    })),
+  scenarios: entries.map((entry) => ({
+    manifest_path: entry.manifest_path,
+    quality_scenarios: entry.quality_scenarios,
+    scenario: entry.scenario,
+    status: entry.status,
+    summary_path: entry.summary_path,
+  })),
+  workload_identity: {
+    effective_workload: options.workload,
+    fixture_profile_name: options.fixtureProfileData?.name,
+    fixture_profile_workload: options.fixtureProfileData?.workload,
+  },
+  output_root: toRelativePath(setRoot, cwd),
+});
+
+const toRelativePath = (targetPath, cwd) => {
+  if (!targetPath) {
+    return undefined;
+  }
+  return path.relative(cwd, targetPath) || '.';
 };
 
 const readOptionalGit = (commandRunner, args, cwd) => {

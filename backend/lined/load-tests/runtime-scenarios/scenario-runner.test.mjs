@@ -14,9 +14,11 @@ import {
 } from './kubernetes-adapter.mjs';
 import {
   ScenarioRunError,
+  ScenarioSetRunError,
   ensureLocalBaseUrl,
   parseArgs,
   runScenario,
+  runScenarioSet,
 } from './scenario-runner.mjs';
 import { buildManifest, buildRuntimeSummary } from './runtime-summary.mjs';
 import { loadFixtureProfile } from './fixture-profiles.mjs';
@@ -210,6 +212,33 @@ describe('parseArgs', () => {
     t.assert.throws(
       () => parseArgs(['--scenario', TEXTS.scenario.fixedMedium, '--workload', TEXTS.workload.unknown]),
       /--workload must be one of/
+    );
+  });
+
+  it('accepts scenario-set runs without a single scenario', (t) => {
+    t.plan(3);
+    const options = parseArgs([
+      '--scenario-set',
+      'all-supported',
+      '--fixture-profile',
+      TEXTS.fixture.baseline,
+    ]);
+
+    t.assert.equal(options.scenarioSet, 'all-supported');
+    t.assert.equal(options.workload, TEXTS.workload.baseline);
+    t.assert.equal(options.fixtureProfileData.name, TEXTS.fixture.baseline);
+  });
+
+  it('rejects mixing --scenario with --scenario-set', (t) => {
+    t.plan(1);
+    t.assert.throws(
+      () => parseArgs([
+        '--scenario',
+        TEXTS.scenario.fixedMedium,
+        '--scenario-set',
+        'all-supported',
+      ]),
+      /Use either --scenario or --scenario-set/
     );
   });
 
@@ -1022,7 +1051,201 @@ describe('manifest and runScenario', () => {
       fs.rmSync(directory, { force: true, recursive: true });
     }
   });
+
+  it('writes a scenario-set index with relative artifact paths and quality mappings', (t) => {
+    t.plan(10);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-set-'));
+    const times = [
+      '2026-06-01T10:00:00.000Z',
+      '2026-06-01T10:01:00.000Z',
+    ];
+
+    try {
+      const result = runScenarioSet(
+        {
+          allowRemoteBaseUrl: false,
+          baseUrl: 'http://localhost:8080',
+          fixtureProfile: TEXTS.fixture.baseline,
+          k6Bin: 'k6',
+          k6Env: {},
+          outputRoot: directory,
+          scenarioSet: 'all-supported',
+          script: 'load-tests/k6/load-test-baseline.js',
+          skipHpaCleanup: false,
+          workload: TEXTS.workload.baseline,
+        },
+        {
+          clock: () => times.shift() ?? '2026-06-01T10:01:00.000Z',
+          cwd: process.cwd(),
+          scenarioRunner: (options) => writeScenarioArtifacts(directory, options.scenario),
+        }
+      );
+
+      t.assert.equal(result.failed, false);
+      t.assert.equal(result.index.collector_ready_scenarios.length, 4);
+      t.assert.equal(result.index.failed_scenarios.length, 0);
+      t.assert.equal(result.index.scenario_set, 'all-supported');
+      t.assert.equal(result.index.workload_identity.fixture_profile_name, TEXTS.fixture.baseline);
+      t.assert.equal(result.index.workload_identity.fixture_profile_workload, TEXTS.workload.baseline);
+      t.assert.equal(result.index.output_root.startsWith(path.join(directory, 'sets')), false);
+      t.assert.ok(result.index.scenarios.every((entry) => !path.isAbsolute(entry.summary_path)));
+      t.assert.ok(findScenarioEntry(result.index, 'fixed-small').quality_scenarios
+        .some((entry) => entry.id === 'small-resource-pressure'));
+      t.assert.ok(findScenarioEntry(result.index, 'hpa-cpu').quality_scenarios
+        .some((entry) => entry.id === 'hpa-cpu-scaling-response'));
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('writes a scenario-set index and fails the batch when any scenario is incomplete', (t) => {
+    t.plan(8);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-set-'));
+    const times = [
+      '2026-06-01T10:00:00.000Z',
+      '2026-06-01T10:01:00.000Z',
+    ];
+    let thrown;
+
+    try {
+      t.assert.throws(
+        () => runScenarioSet(
+          {
+            allowRemoteBaseUrl: false,
+            baseUrl: 'http://localhost:8080',
+            k6Bin: 'k6',
+            k6Env: {},
+            outputRoot: directory,
+            scenarioSet: 'all-supported',
+            script: 'load-tests/k6/load-test-baseline.js',
+            skipHpaCleanup: false,
+            workload: TEXTS.workload.baseline,
+          },
+          {
+            clock: () => times.shift() ?? '2026-06-01T10:01:00.000Z',
+            cwd: process.cwd(),
+            scenarioRunner: (options) => {
+              if (options.scenario === 'fixed-medium') {
+                return writeScenarioArtifacts(directory, options.scenario);
+              }
+              if (options.scenario === 'replicas-2') {
+                const manifestPath = writeScenarioManifestOnly(directory, options.scenario);
+                throw new ScenarioRunError('k6 failed with exit code 1', {
+                  manifestPath,
+                });
+              }
+              throw new Error(`apply failed for ${options.scenario}`);
+            },
+          }
+        ),
+        (error) => {
+          thrown = error;
+          return error instanceof ScenarioSetRunError;
+        }
+      );
+
+      const index = JSON.parse(fs.readFileSync(thrown.result.indexPath, 'utf-8'));
+      t.assert.equal(index.collector_ready_scenarios.length, 1);
+      t.assert.equal(index.failed_scenarios.length, 3);
+      t.assert.equal(findScenarioEntry(index, 'fixed-medium').status, 'collector-ready');
+      t.assert.equal(findScenarioEntry(index, 'replicas-2').status, 'incomplete');
+      t.assert.equal(findScenarioEntry(index, 'replicas-2').summary_path, undefined);
+      t.assert.equal(findScenarioEntry(index, 'fixed-small').status, 'failed-before-manifest');
+      t.assert.equal(findScenarioEntry(index, 'fixed-small').manifest_path, undefined);
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('keeps manifest paths for batch failures that write only a manifest', (t) => {
+    t.plan(4);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lined-runner-set-'));
+    const times = [
+      '2026-06-01T10:00:00.000Z',
+      '2026-06-01T10:01:00.000Z',
+      '2026-06-01T10:02:00.000Z',
+      '2026-06-01T10:03:00.000Z',
+      '2026-06-01T10:04:00.000Z',
+      '2026-06-01T10:05:00.000Z',
+    ];
+    let thrown;
+
+    try {
+      t.assert.throws(
+        () => runScenarioSet(
+          {
+            allowRemoteBaseUrl: false,
+            baseUrl: 'http://localhost:8080',
+            k6Bin: 'k6',
+            k6Env: {},
+            outputRoot: directory,
+            scenarioSet: 'all-supported',
+            script: 'load-tests/k6/load-test-baseline.js',
+            skipHpaCleanup: false,
+            workload: TEXTS.workload.smoke,
+          },
+          {
+            clock: () => times.shift() ?? '2026-06-01T10:05:00.000Z',
+            cwd: process.cwd(),
+            scenarioRunner: (options) => {
+              if (options.scenario === TEXTS.scenario.fixedMedium) {
+                return runScenario(options, fakeAdapters({
+                  k6ExitCode: 0,
+                  k6Summary: undefined,
+                }));
+              }
+              return writeScenarioArtifacts(directory, options.scenario, TEXTS.workload.smoke, 'baseline');
+            },
+          }
+        ),
+        (error) => {
+          thrown = error;
+          return error instanceof ScenarioSetRunError;
+        }
+      );
+
+      const fixedMedium = findScenarioEntry(
+        JSON.parse(fs.readFileSync(thrown.result.indexPath, 'utf-8')),
+        TEXTS.scenario.fixedMedium
+      );
+      t.assert.equal(fixedMedium.status, 'incomplete');
+      t.assert.ok(fixedMedium.manifest_path?.endsWith('runtime-summary-manifest.json'));
+      t.assert.equal(fixedMedium.summary_path, undefined);
+    } finally {
+      fs.rmSync(directory, { force: true, recursive: true });
+    }
+  });
 });
+
+const findScenarioEntry = (index, scenario) => index.scenarios.find((entry) => entry.scenario === scenario);
+
+const writeScenarioArtifacts = (
+  directory,
+  scenario,
+  workload = TEXTS.workload.baseline,
+  label = 'comparison-baseline'
+) => {
+  const root = path.join(directory, 'sets', `${label}-${workload}-2026-06-01T10-00-00-000Z`);
+  const runDir = path.join(root, `${scenario}-${workload}-2026-06-01T10-00-00-000Z`);
+  fs.mkdirSync(runDir, { recursive: true });
+  const summaryPath = path.join(runDir, 'runtime-summary.json');
+  const manifestPath = path.join(runDir, 'runtime-summary-manifest.json');
+  fs.writeFileSync(summaryPath, '{}\n', 'utf-8');
+  fs.writeFileSync(manifestPath, '{}\n', 'utf-8');
+  return {
+    manifestPath,
+    summaryPath,
+  };
+};
+
+const writeScenarioManifestOnly = (directory, scenario) => {
+  const root = path.join(directory, 'sets', 'baseline-2026-06-01T10-00-00-000Z');
+  const runDir = path.join(root, `${scenario}-baseline-2026-06-01T10-00-00-000Z`);
+  fs.mkdirSync(runDir, { recursive: true });
+  const manifestPath = path.join(runDir, 'runtime-summary-manifest.json');
+  fs.writeFileSync(manifestPath, '{}\n', 'utf-8');
+  return manifestPath;
+};
 
 const fakeAdapters = ({
   k6ExitCode,
