@@ -263,6 +263,11 @@ Before an LLM-suggested rule becomes part of the experiment:
 Use `docs/llm-rule-review-workflow.md` when you need the executable review and
 promotion workflow that applies these checks to each candidate rule.
 
+Use `docs/llm-rule-validation-checklist.md` after review when you need an
+explicit checklist report for source evidence, telemetry linkage, threshold
+rationale, and expert approval before using a reviewed rule as promotion-ready
+evidence.
+
 ## Implementation Tasks
 
 | Branch name | Name | Detailed description | Expected result |
@@ -270,6 +275,7 @@ promotion workflow that applies these checks to each candidate rule.
 | `experiment/llm-support-service-plan` | LLM support service plan | Add the service architecture, boundaries, input/output contracts, deployment options, and implementation sequence for a separate advisory LLM service. | The backend docs explain how LLM assistance fits the experiment without becoming the architecture evaluator. |
 | `experiment/llm-support-service-prototype` | LLM support service prototype | Add a locally runnable service or function-shaped prototype that accepts sanitized requirements/SLO/runtime-summary inputs and returns candidate rule suggestions. | Researchers can manually invoke a non-blocking LLM helper and inspect versioned advisory output. |
 | `experiment/llm-rule-review-workflow` | LLM rule review workflow | Add an explicit approval workflow for converting LLM-suggested candidate rules into versioned fitness configuration entries. | Candidate rules are reviewed, classified, and traceable before affecting runtime-aware scoring. |
+| `experiment/llm-rule-validation-checklist` | LLM rule validation checklist | Add an explicit evidence checklist over reviewed rules for source artifacts, telemetry linkage, classification, threshold rationale, and expert approval. | Reviewed rules stay advisory and evidence-checked before they are treated as promotion-ready or article-ready. |
 | `experiment/llm-tradeoff-explanations` | LLM trade-off explanations | Use experiment result artifacts to generate explanation drafts for scenario comparisons and Pareto trade-offs. | Result reporting can include reviewed explanation text while numeric evaluation remains telemetry-driven. |
 
 ## Recommended Order
@@ -281,10 +287,11 @@ Implement this after the experiment has real evidence artifacts:
 3. `experiment/runtime-aware-scoring`
 4. `experiment/llm-support-service-prototype`
 5. `experiment/llm-rule-review-workflow`
-6. `experiment/adaptive-weighted-fitness`
-7. `experiment/pareto-optimization-baseline`
-8. `experiment/llm-tradeoff-explanations`
-9. `experiment/experiment-results-reporting`
+6. `experiment/llm-rule-validation-checklist`
+7. `experiment/adaptive-weighted-fitness`
+8. `experiment/pareto-optimization-baseline`
+9. `experiment/llm-tradeoff-explanations`
+10. `experiment/experiment-results-reporting`
 
 The plan task can exist earlier because it defines boundaries and prevents
 scope drift.

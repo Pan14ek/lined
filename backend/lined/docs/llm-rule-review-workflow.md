@@ -139,6 +139,10 @@ The output directory contains:
 `promoted-fitness-config-v1.json` is an emitted artifact only. In this task,
 no collector or scoring path reads it automatically.
 
+Run `docs/llm-rule-validation-checklist.md` after this workflow when you need
+an explicit evidence checklist over the reviewed artifact before treating a
+reviewed rule as promotion-ready or article-ready.
+
 ## How To Use And Test
 
 Generate the raw advisory artifact first with `llm-support-service-cli.mjs`.
