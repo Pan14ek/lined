@@ -187,6 +187,11 @@ The JSON contract keeps source artifacts, candidate rules, and review notes
 explicit so later approval workflow tasks can classify and promote suggestions
 without re-reading raw prompts.
 
+The advisory artifact remains raw output in this task family.
+`candidate-rule-suggestions.json` is not the place to store reviewed or
+promoted state. `docs/llm-rule-review-workflow.md` defines the separate review
+and promotion artifacts used after human validation.
+
 ## How To Use And Test
 
 Prepare bounded inputs:
@@ -254,6 +259,9 @@ Before an LLM-suggested rule becomes part of the experiment:
    clearly marked as initial assumptions.
 4. Confirm the rule does not duplicate or contradict an existing rule.
 5. Record the reviewer decision and the source artifacts used.
+
+Use `docs/llm-rule-review-workflow.md` when you need the executable review and
+promotion workflow that applies these checks to each candidate rule.
 
 ## Implementation Tasks
 
