@@ -143,6 +143,10 @@ Run `docs/llm-rule-validation-checklist.md` after this workflow when you need
 an explicit evidence checklist over the reviewed artifact before treating a
 reviewed rule as promotion-ready or article-ready.
 
+Run `docs/llm-guardrail-evaluation.md` after the checklist when you need the
+final repo-local guardrail step before treating promoted rules as safe
+promotion-ready evidence inside the repository workflow.
+
 ## How To Use And Test
 
 Generate the raw advisory artifact first with `llm-support-service-cli.mjs`.

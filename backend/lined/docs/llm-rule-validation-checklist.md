@@ -89,6 +89,9 @@ output directory. Inspect `llm-rule-validation-report.json` to see which rules
 fully passed, which remained provisional, and which failed the evidence
 requirements. Use the report as the operator-facing checklist before a reviewed
 rule is cited in article claims or carried forward into later guardrail work.
+Run `docs/llm-guardrail-evaluation.md` after this checklist when you need the
+final repo-local guardrail enforcement step before treating reviewed rules as
+promotion-ready or reviewed explanations as article-claim-ready.
 
 ## Article Use
 
