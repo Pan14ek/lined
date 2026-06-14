@@ -141,7 +141,9 @@ claim back to explicit input artifacts.
 
 `results-report.json` is also the evidence boundary consumed by
 `docs/llm-tradeoff-explanations.md` when generating reviewed explanation
-drafts for Pareto and decision-usefulness comparisons.
+drafts for Pareto and decision-usefulness comparisons. Downstream guardrail
+evaluation must keep article claims inside that same boundary instead of
+widening them with unreviewed sources.
 
 ## Article Use
 

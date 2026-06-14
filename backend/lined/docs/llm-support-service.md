@@ -268,6 +268,11 @@ explicit checklist report for source evidence, telemetry linkage, threshold
 rationale, and expert approval before using a reviewed rule as promotion-ready
 evidence.
 
+Use `docs/llm-guardrail-evaluation.md` after the reviewed-rule and explanation
+artifacts exist when you need the final repo-local enforcement step before
+treating reviewed rules as promotion-ready or reviewed explanations as
+article-claim-ready.
+
 Use `docs/llm-tradeoff-explanations.md` when you need reviewed explanation
 drafts grounded in `results-report.json`, Pareto candidate rows, and
 decision-usefulness evidence rather than raw scenario summaries.
