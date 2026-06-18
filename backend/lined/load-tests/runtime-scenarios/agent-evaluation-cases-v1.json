@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "workflow_version": "agent-evaluation-harness-v1",
+  "refreshed_at": "2026-06-14T20:00:00.000Z",
+  "stale_after_days": 30,
+  "cases": [
+    {
+      "id": "rule-suggestions-fixed-medium-baseline",
+      "title": "Rule suggestions stay advisory and evidence-linked",
+      "output_type": "rule-suggestions",
+      "sources": [
+        {
+          "source_id": "repo-llm-support-service",
+          "kind": "repo-doc",
+          "path": "docs/llm-support-service.md",
+          "title": "LLM Support Service Plan"
+        },
+        {
+          "source_id": "notion-research-workflow",
+          "kind": "notion-snapshot",
+          "path": "load-tests/runtime-scenarios/fixtures/agent-evaluation/notion-research-workflow-excerpt.md",
+          "title": "Research Workflow for Agents"
+        },
+        {
+          "source_id": "runtime-summary-fixed-medium",
+          "kind": "runtime-summary",
+          "path": "load-tests/runtime-scenarios/fixtures/agent-evaluation/runtime-summary-fixed-medium-baseline.json",
+          "title": "Fixed-medium baseline runtime summary fixture"
+        }
+      ],
+      "expectations": {
+        "required_loaded_source_ids": [
+          "repo-llm-support-service",
+          "notion-research-workflow",
+          "runtime-summary-fixed-medium"
+        ],
+        "required_rule_metrics": [
+          "latency_p95_ms",
+          "error_rate"
+        ],
+        "required_rule_classifications": [
+          "objective-with-constraint",
+          "hard-constraint"
+        ],
+        "required_rule_scenarios": [
+          "fixed-medium"
+        ],
+        "required_rule_source_ids": [
+          "repo-llm-support-service",
+          "runtime-summary-fixed-medium"
+        ],
+        "required_rule_contracts": [
+          {
+            "metric": "latency_p95_ms",
+            "classification": "objective-with-constraint",
+            "required_scenarios": [
+              "fixed-medium"
+            ],
+            "required_source_ids": [
+              "repo-llm-support-service",
+              "runtime-summary-fixed-medium"
+            ]
+          },
+          {
+            "metric": "error_rate",
+            "classification": "hard-constraint",
+            "required_scenarios": [
+              "fixed-medium"
+            ],
+            "required_source_ids": [
+              "runtime-summary-fixed-medium"
+            ]
+          }
+        ],
+        "required_summary_phrases": [
+          "advisory",
+          "human review"
+        ]
+      }
+    },
+    {
+      "id": "research-summary-runtime-evidence",
+      "title": "Research summary keeps limitations and uncertainty explicit",
+      "output_type": "research-summary",
+      "sources": [
+        {
+          "source_id": "repo-runtime-quality-catalog",
+          "kind": "repo-doc",
+          "path": "docs/runtime-quality-scenario-catalog.md",
+          "title": "Runtime Quality Scenario Catalog"
+        },
+        {
+          "source_id": "notion-experiment-design",
+          "kind": "notion-snapshot",
+          "path": "load-tests/runtime-scenarios/fixtures/agent-evaluation/notion-experiment-design-excerpt.md",
+          "title": "Experiment Design and Fitness Model"
+        },
+        {
+          "source_id": "runtime-summary-fixed-medium",
+          "kind": "runtime-summary",
+          "path": "load-tests/runtime-scenarios/fixtures/agent-evaluation/runtime-summary-fixed-medium-baseline.json",
+          "title": "Fixed-medium baseline runtime summary fixture"
+        }
+      ],
+      "expectations": {
+        "required_loaded_source_ids": [
+          "repo-runtime-quality-catalog",
+          "notion-experiment-design",
+          "runtime-summary-fixed-medium"
+        ],
+        "required_summary_phrases": [
+          "fixed-medium",
+          "latency",
+          "error rate"
+        ],
+        "required_claim_phrases": [
+          "performance efficiency",
+          "collector-ready runtime summary"
+        ],
+        "required_limitation_phrases": [
+          "local kind",
+          "not production"
+        ],
+        "required_next_action_phrases": [
+          "refresh the Notion snapshot",
+          "reviewer validation"
+        ],
+        "required_uncertainty_phrases": [
+          "may be stale",
+          "snapshot"
+        ],
+        "required_referenced_source_ids": [
+          "notion-experiment-design",
+          "runtime-summary-fixed-medium"
+        ]
+      }
+    }
+  ]
+}
