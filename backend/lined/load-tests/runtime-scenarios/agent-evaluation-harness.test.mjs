@@ -260,6 +260,32 @@ describe('buildAgentEvaluationReport', () => {
     t.assert.equal(report.findings.find((finding) => finding.id === 'rule-per-candidate-contract').status, 'fail');
   });
 
+  it('fails when a submission adds an extra candidate rule with missing per-item contract fields', (t) => {
+    const submission = ruleSuggestionSubmission();
+    submission.output.candidate_rules.push({
+      name: 'Incomplete Extra Rule',
+      classification: '',
+      metric: '',
+      direction: 'minimize',
+      constraint: 'latency_p95_ms <= 800',
+      rationale: 'Should not pass when the added rule omits the required per-item fields.',
+      scenario_scope: ['fixed-medium'],
+      source_ids: ['runtime-summary-fixed-medium'],
+      requires_human_approval: true,
+    });
+
+    const report = buildAgentEvaluationReport({
+      casesArtifact: readJson(CASES_PATH),
+      casesArtifactPath: CASES_PATH,
+      submissionArtifact: submission,
+      submissionArtifactPath: '/tmp/submission.json',
+      now: new Date('2026-06-14T20:15:00.000Z'),
+    });
+
+    t.assert.equal(report.summary.overall_status, 'fail');
+    t.assert.equal(report.findings.find((finding) => finding.id === 'rule-per-candidate-contract').status, 'fail');
+  });
+
   it('fails when candidate rules keep allowed values but break the expected per-rule tuples', (t) => {
     const submission = ruleSuggestionSubmission();
     const firstClassification = submission.output.candidate_rules[0].classification;
