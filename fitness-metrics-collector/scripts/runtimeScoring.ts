@@ -1,65 +1,27 @@
+import {
+    SCORABLE_RUNTIME_METRICS,
+    classifyRuntimeEvidenceForScoring,
+    classifyRuntimeMetrics,
+    parseSloThresholds,
+    type RuntimeEvidenceClassification,
+    type RuntimeMetrics,
+    type RuntimeMetricSummary,
+    type RuntimeScoreMetricField,
+    type RuntimeSloResult,
+    type SloThresholdDocument,
+} from "./runtimeEvidence";
+
 export const RUNTIME_FITNESS_SCORE_VERSION = "runtime-aware-v1";
-
-export type RuntimeMetricSummary = {
-    latency_p95_ms?: number;
-    latency_p99_ms?: number;
-    error_rate?: number;
-    throughput_rps?: number;
-    availability?: number;
-    restart_count?: number;
-    cpu_utilization?: number;
-    memory_utilization?: number;
-    hpa_desired_replicas?: number;
-    hpa_current_replicas?: number;
-};
-
-export type RuntimeMetrics = {
-    schema_version: 1;
-    scenario: string;
-    workload: string;
-    source: string;
-    summary: RuntimeMetricSummary;
-    missing?: string[];
-};
 
 type RuntimeFitnessScore = number | null;
 
-type RuntimeFitnessMetric = keyof Pick<
-    RuntimeMetricSummary,
-    | "latency_p95_ms"
-    | "latency_p99_ms"
-    | "error_rate"
-    | "throughput_rps"
-    | "availability"
-    | "restart_count"
-    | "cpu_utilization"
-    | "memory_utilization"
->;
+type RuntimeFitnessMetric = RuntimeScoreMetricField;
 
 type RuntimeScoreMetricResult = {
     baseline: number;
     current: number;
     normalizedDelta: number;
     weight: number;
-};
-
-type RuntimeSloClassification = "valid" | "warning" | "invalid" | "unknown";
-
-type RuntimeSloConstraintResult = {
-    id: string;
-    metric?: string;
-    evidenceSource?: string;
-    classification: RuntimeSloClassification;
-    severity: "invalid" | "warning";
-    missing: boolean;
-};
-
-export type RuntimeSloResult = {
-    thresholdVersion: string;
-    constraints: RuntimeSloConstraintResult[];
-    hasInvalidHardConstraint: boolean;
-    hasUnknownHardConstraint: boolean;
-    eligibleForStableComparison: boolean;
 };
 
 export type RuntimeFitnessMetadata = {
@@ -87,28 +49,11 @@ export type RuntimeFitnessResult = {
     runtimeFitness?: RuntimeFitnessMetadata;
 };
 
-type ThresholdRule = {
-    id: string;
-    metric?: string;
-    evidence_source?: string;
-    operator: "<=" | ">=" | "==" | ">";
-    value: number | boolean;
-    severity: "invalid" | "warning";
-};
-
-export type SloThresholdDocument = {
-    threshold_version: string;
-    thresholds: ThresholdRule[];
-};
-
 type RuntimeScoreDefinition = {
     field: RuntimeFitnessMetric;
     weight: number;
     higherIsBetter: boolean;
 };
-
-const SUPPORTED_THRESHOLD_OPERATORS = ["<=", ">=", "==", ">"] as const;
-const SUPPORTED_THRESHOLD_SEVERITIES = ["invalid", "warning"] as const;
 
 const RUNTIME_SCORE_DEFINITIONS: readonly RuntimeScoreDefinition[] = [
     {field: "latency_p95_ms", weight: 0.2, higherIsBetter: false},
@@ -121,207 +66,24 @@ const RUNTIME_SCORE_DEFINITIONS: readonly RuntimeScoreDefinition[] = [
     {field: "memory_utilization", weight: 0.025, higherIsBetter: false},
 ];
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-};
-
-const requireString = (value: unknown, field: string): string => {
-    if (typeof value !== "string" || value.trim() === "") {
-        throw new Error(`SLO thresholds: ${field} must be a non-empty string`);
-    }
-
-    return value;
-};
-
-const optionalString = (value: unknown, field: string): string | undefined => {
-    return value === undefined ? undefined : requireString(value, field);
-};
-
-const requireNumberOrBoolean = (value: unknown, field: string): number | boolean => {
-    if (typeof value === "number" && Number.isFinite(value)) {
-        return value;
-    }
-
-    if (typeof value === "boolean") {
-        return value;
-    }
-
-    throw new Error(`SLO thresholds: ${field} must be a finite number or boolean`);
-};
-
-const requireThresholdOperator = (value: unknown, field: string): ThresholdRule["operator"] => {
-    const operator = requireString(value, field);
-    if (!SUPPORTED_THRESHOLD_OPERATORS.includes(operator as ThresholdRule["operator"])) {
-        throw new Error(`SLO thresholds: ${field} is unsupported`);
-    }
-
-    return operator as ThresholdRule["operator"];
-};
-
-const requireThresholdSeverity = (value: unknown, field: string): ThresholdRule["severity"] => {
-    const severity = requireString(value, field);
-    if (!SUPPORTED_THRESHOLD_SEVERITIES.includes(severity as ThresholdRule["severity"])) {
-        throw new Error(`SLO thresholds: ${field} is unsupported`);
-    }
-
-    return severity as ThresholdRule["severity"];
-};
-
-const parseThresholdRule = (value: unknown, index: number): ThresholdRule => {
-    if (!isRecord(value)) {
-        throw new Error(`SLO thresholds: thresholds[${index}] must be an object`);
-    }
-
-    return {
-        id: requireString(value.id, `thresholds[${index}].id`),
-        metric: optionalString(value.metric, `thresholds[${index}].metric`),
-        evidence_source: optionalString(
-            value.evidence_source,
-            `thresholds[${index}].evidence_source`
-        ),
-        operator: requireThresholdOperator(value.operator, `thresholds[${index}].operator`),
-        value: requireNumberOrBoolean(value.value, `thresholds[${index}].value`),
-        severity: requireThresholdSeverity(value.severity, `thresholds[${index}].severity`),
-    };
-};
-
-export const parseSloThresholds = (content: string): SloThresholdDocument => {
-    const parsed: unknown = JSON.parse(content);
-    if (!isRecord(parsed)) {
-        throw new Error("SLO thresholds JSON must contain an object");
-    }
-
-    if (!Array.isArray(parsed.thresholds)) {
-        throw new Error("SLO thresholds: thresholds must be an array");
-    }
-
-    return {
-        threshold_version: requireString(parsed.threshold_version, "threshold_version"),
-        thresholds: parsed.thresholds.map(parseThresholdRule),
-    };
-};
-
-const compareThreshold = (
-    current: number | boolean,
-    operator: ThresholdRule["operator"],
-    expected: number | boolean
-): boolean => {
-    if (typeof current === "boolean" || typeof expected === "boolean") {
-        return operator === "==" && current === expected;
-    }
-
-    if (operator === "<=") return current <= expected;
-    if (operator === ">=") return current >= expected;
-    if (operator === ">") return current > expected;
-    return current === expected;
-};
-
-const classifyThresholdMatch = (
-    threshold: ThresholdRule,
-    missing: boolean,
-    matched: boolean
-): RuntimeSloClassification => {
-    if (missing) {
-        return "unknown";
-    }
-
-    if (threshold.severity === "warning") {
-        return matched ? "warning" : "valid";
-    }
-
-    return matched ? "valid" : "invalid";
-};
-
-const classifyThreshold = (
-    runtimeMetrics: RuntimeMetrics,
-    threshold: ThresholdRule
-): RuntimeSloConstraintResult => {
-    const field = threshold.metric as keyof RuntimeMetricSummary | undefined;
-    // Evidence-source rules, such as readiness, intentionally stay unknown until
-    // the runtime summary schema exposes a matching summarized metric field.
-    const current = field === undefined ? undefined : runtimeMetrics.summary[field];
-    const missing = current === undefined;
-    const matched = !missing && compareThreshold(
-        current,
-        threshold.operator,
-        threshold.value
-    );
-
-    return {
-        id: threshold.id,
-        metric: threshold.metric,
-        evidenceSource: threshold.evidence_source,
-        classification: classifyThresholdMatch(threshold, missing, matched),
-        severity: threshold.severity,
-        missing,
-    };
-};
-
-const hasHardConstraint = (
-    constraints: RuntimeSloConstraintResult[],
-    classification: RuntimeSloClassification
-): boolean => constraints.some((constraint) =>
-    constraint.severity === "invalid" && constraint.classification === classification
-);
-
-export const classifyRuntimeMetrics = (
-    runtimeMetrics: RuntimeMetrics,
-    thresholds: SloThresholdDocument
-): RuntimeSloResult => {
-    const constraints = thresholds.thresholds.map((threshold) =>
-        classifyThreshold(runtimeMetrics, threshold)
-    );
-    const hasInvalidHardConstraint = hasHardConstraint(constraints, "invalid");
-    const hasUnknownHardConstraint = hasHardConstraint(constraints, "unknown");
-
-    return {
-        thresholdVersion: thresholds.threshold_version,
-        constraints,
-        hasInvalidHardConstraint,
-        hasUnknownHardConstraint,
-        eligibleForStableComparison: !hasInvalidHardConstraint && !hasUnknownHardConstraint,
-    };
-};
-
 const identityOf = (runtimeMetrics: RuntimeMetrics): RuntimeFitnessMetadata["current"] => ({
     scenario: runtimeMetrics.scenario,
     workload: runtimeMetrics.workload,
     source: runtimeMetrics.source,
 });
 
-const collectMissingRuntimeScoreMetrics = (
-    current: RuntimeMetrics,
-    baseline?: RuntimeMetrics
-): string[] => {
-    const missing = new Set<string>(current.missing ?? []);
-
-    for (const definition of RUNTIME_SCORE_DEFINITIONS) {
-        if (current.summary[definition.field] === undefined) {
-            missing.add(`current.summary.${definition.field}`);
-        }
-        if (baseline && baseline.summary[definition.field] === undefined) {
-            missing.add(`baseline.summary.${definition.field}`);
-        }
-    }
-
-    return [...missing].sort();
-};
-
 const buildRuntimeFitnessMetadata = (
-    current: RuntimeMetrics,
-    baseline: RuntimeMetrics | undefined,
-    sloClassification: RuntimeSloResult | undefined
+    classification: RuntimeEvidenceClassification
 ): RuntimeFitnessMetadata => {
     return {
-        current: identityOf(current),
-        baseline: baseline ? identityOf(baseline) : undefined,
+        current: identityOf(classification.current),
+        baseline: classification.baseline ? identityOf(classification.baseline) : undefined,
         activeMetricWeights: {},
-        missingMetrics: collectMissingRuntimeScoreMetrics(current, baseline),
+        missingMetrics: classification.missingMetrics,
         normalizedDeltas: {},
-        sloClassification,
-        eligibleForStableComparison: Boolean(
-            baseline && sloClassification?.eligibleForStableComparison
-        ),
+        sloClassification: classification.sloClassification,
+        eligibleForStableComparison: classification.eligibleForStableComparison,
+        reason: classification.reason,
     };
 };
 
@@ -329,6 +91,7 @@ const comparableRuntimeScoreDefinitions = (
     current: RuntimeMetrics,
     baseline: RuntimeMetrics
 ): readonly RuntimeScoreDefinition[] => RUNTIME_SCORE_DEFINITIONS.filter((definition) =>
+    SCORABLE_RUNTIME_METRICS.includes(definition.field) &&
     current.summary[definition.field] !== undefined &&
     baseline.summary[definition.field] !== undefined
 );
@@ -414,7 +177,7 @@ const computeRuntimeScoreDetails = (
 export const computeRuntimeFitness = (
     current?: RuntimeMetrics,
     baseline?: RuntimeMetrics,
-    sloClassification?: RuntimeSloResult
+    thresholdInput?: RuntimeSloResult | SloThresholdDocument
 ): RuntimeFitnessResult => {
     if (!current) {
         return {
@@ -423,16 +186,18 @@ export const computeRuntimeFitness = (
         };
     }
 
-    const metadataBase = buildRuntimeFitnessMetadata(current, baseline, sloClassification);
+    const evidenceClassification = classifyRuntimeEvidenceForScoring(
+        current,
+        baseline,
+        thresholdInput
+    );
+    const metadataBase = buildRuntimeFitnessMetadata(evidenceClassification);
 
     if (!baseline) {
         return {
             runtimeFitnessScore: null,
             runtimeFitnessScoreVersion: RUNTIME_FITNESS_SCORE_VERSION,
-            runtimeFitness: {
-                ...metadataBase,
-                reason: "runtime baseline metrics are not available",
-            },
+            runtimeFitness: metadataBase,
         };
     }
 
@@ -459,4 +224,18 @@ export const computeRuntimeFitness = (
             normalizedDeltas: scoreDetails.normalizedDeltas,
         },
     };
+};
+
+export {
+    classifyRuntimeEvidenceForScoring,
+    classifyRuntimeMetrics,
+    parseSloThresholds,
+};
+
+export type {
+    RuntimeEvidenceClassification,
+    RuntimeMetrics,
+    RuntimeMetricSummary,
+    RuntimeSloResult,
+    SloThresholdDocument,
 };
