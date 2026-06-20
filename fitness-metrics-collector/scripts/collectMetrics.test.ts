@@ -16,6 +16,7 @@ import {
 } from "./adaptiveScoring";
 import {
     classifyRuntimeMetrics,
+    classifyRuntimeEvidenceForScoring,
     computeRuntimeFitness,
     parseSloThresholds,
 } from "./runtimeScoring";
@@ -1271,6 +1272,89 @@ describe("classifyRuntimeMetrics", () => {
         t.assert.deepStrictEqual(
             result.constraints.map((constraint) => constraint.classification),
             EXPECTED_CONSTRAINT_CLASSIFICATIONS
+        );
+    });
+});
+
+describe("classifyRuntimeEvidenceForScoring", () => {
+    it("returns one classification result for runtime-aware scoring callers", (
+        t: TestContext
+    ) => {
+        t.plan(7);
+
+        const thresholds = parseSloThresholds(sloThresholdsJson);
+        const current = parseRuntimeMetrics(runtimeJson(CLASSIFICATION_RUNTIME_PAYLOAD));
+        const baseline = parseRuntimeMetrics(runtimeJson(ERROR_ONLY_BASELINE_PAYLOAD));
+
+        const result = classifyRuntimeEvidenceForScoring(current, baseline, thresholds);
+
+        t.assert.strictEqual(result.thresholdVersion, THRESHOLD_VERSION);
+        t.assert.strictEqual(result.eligibleForStableComparison, false);
+        t.assert.strictEqual(result.hasInvalidHardConstraint, true);
+        t.assert.strictEqual(result.hasUnknownHardConstraint, true);
+        t.assert.strictEqual(result.currentSummary.latency_p95_ms, CLASSIFICATION_INVALID_LATENCY_P95_MS);
+        t.assert.ok(result.missingMetrics.includes("current.summary.availability"));
+        t.assert.strictEqual(result.reason, "runtime evidence does not satisfy stable-comparison constraints");
+    });
+
+    it("reports missing baselines through the same classification seam", (t: TestContext) => {
+        t.plan(5);
+
+        const thresholds = parseSloThresholds(sloThresholdsJson);
+
+        const result = classifyRuntimeEvidenceForScoring(
+            runtimeCurrentMetrics,
+            undefined,
+            thresholds
+        );
+
+        t.assert.strictEqual(result.thresholdVersion, THRESHOLD_VERSION);
+        t.assert.strictEqual(result.eligibleForStableComparison, false);
+        t.assert.strictEqual(result.baselineSummary, undefined);
+        t.assert.strictEqual(result.currentSummary.throughput_rps, CURRENT_THROUGHPUT_RPS);
+        t.assert.strictEqual(result.reason, "runtime baseline metrics are not available");
+    });
+
+    it("distinguishes invalid hard constraints from missing hard-constraint evidence", (
+        t: TestContext
+    ) => {
+        t.plan(4);
+
+        const invalidOnlyThresholds = parseSloThresholds(JSON.stringify({
+            threshold_version: THRESHOLD_VERSION,
+            thresholds: [
+                {
+                    id: "latency-p95-only",
+                    metric: "latency_p95_ms",
+                    operator: "<=",
+                    value: THRESHOLD_LATENCY_P95_LIMIT_MS,
+                    severity: "invalid",
+                },
+            ],
+        }));
+        const unknownOnlyCurrent = parseRuntimeMetrics(runtimeJson(OPTIONAL_FIELD_PAYLOAD));
+        const invalidOnlyCurrent = parseRuntimeMetrics(runtimeJson(INVALID_LATENCY_CURRENT_PAYLOAD));
+
+        const unknownOnly = classifyRuntimeEvidenceForScoring(
+            unknownOnlyCurrent,
+            runtimeBaselineMetrics,
+            invalidOnlyThresholds
+        );
+        const invalidOnly = classifyRuntimeEvidenceForScoring(
+            invalidOnlyCurrent,
+            runtimeBaselineMetrics,
+            invalidOnlyThresholds
+        );
+
+        t.assert.strictEqual(unknownOnly.hasUnknownHardConstraint, true);
+        t.assert.strictEqual(
+            unknownOnly.reason,
+            "runtime evidence is missing hard-constraint evidence for stable comparison"
+        );
+        t.assert.strictEqual(invalidOnly.hasInvalidHardConstraint, true);
+        t.assert.strictEqual(
+            invalidOnly.reason,
+            "runtime evidence violates hard stable-comparison constraints"
         );
     });
 });

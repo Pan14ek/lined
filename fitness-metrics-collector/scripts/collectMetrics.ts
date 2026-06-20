@@ -10,15 +10,19 @@ import {
     ADAPTIVE_FITNESS_SCORE_VERSION,
 } from "./adaptiveScoring";
 import {
-    classifyRuntimeMetrics,
     computeRuntimeFitness,
     parseSloThresholds,
     RUNTIME_FITNESS_SCORE_VERSION,
     type RuntimeFitnessMetadata,
     type RuntimeFitnessResult,
+} from "./runtimeScoring";
+import {
+    parseRuntimeMetrics,
+    readRuntimeMetrics,
+    readRuntimeMetricSet,
     type RuntimeMetrics,
     type RuntimeMetricSummary,
-} from "./runtimeScoring";
+} from "./runtimeEvidence";
 import {
     computeParetoOptimization,
     PARETO_OPTIMIZATION_VERSION,
@@ -31,6 +35,12 @@ import {
     type DecisionUsefulnessMetadata,
     type DecisionUsefulnessResult,
 } from "./decisionUsefulnessReporting";
+
+export {
+    parseRuntimeMetrics,
+    readRuntimeMetrics,
+    readRuntimeMetricSet,
+};
 
 /* =======================
    TYPES
@@ -673,37 +683,6 @@ const parseMissingRuntimeFields = (value: unknown): string[] | undefined => {
     return value.map((item, index) => requireString(item, `missing[${index}]`));
 };
 
-export const parseRuntimeMetrics = (content: string): RuntimeMetrics => {
-    const parsed: unknown = JSON.parse(content);
-    if (!isRecord(parsed)) {
-        throw new Error("Runtime metrics JSON must contain an object");
-    }
-
-    if (parsed.schema_version !== 1) {
-        throw new Error("Runtime metrics: schema_version must be 1");
-    }
-
-    return {
-        schema_version: 1,
-        scenario: requireString(parsed.scenario, "scenario"),
-        workload: requireString(parsed.workload, "workload"),
-        source: requireString(parsed.source, "source"),
-        summary: parseRuntimeMetricSummary(parsed.summary),
-        missing: parseMissingRuntimeFields(parsed.missing),
-    };
-};
-
-export const readRuntimeMetrics = (path?: string): RuntimeMetrics | undefined => {
-    if (!path || path.trim() === "") {
-        return undefined;
-    }
-
-    return parseRuntimeMetrics(readFile(path));
-};
-
-export const readRuntimeMetricSet = (paths: readonly string[]): RuntimeMetrics[] =>
-    paths.map((path) => parseRuntimeMetrics(readFile(path)));
-
 const readRuntimeArtifact = (runtimeMetricsPath?: string): RuntimeArtifact | undefined => {
     if (!runtimeMetricsPath || runtimeMetricsPath.trim() === "") {
         return undefined;
@@ -1114,13 +1093,13 @@ const main = async (): Promise<void> => {
             metrics.runtime_metrics
         );
         const runtimeBaselineMetrics = runtimeBaseline?.runtimeMetrics;
-        const sloClassification = metrics.runtime_metrics
-            ? classifyRuntimeMetrics(metrics.runtime_metrics, readSloThresholds(config.sloThresholdsJsonPath))
+        const sloThresholds = metrics.runtime_metrics
+            ? readSloThresholds(config.sloThresholdsJsonPath)
             : undefined;
         const runtimeFitnessResult = computeRuntimeFitness(
             metrics.runtime_metrics,
             runtimeBaselineMetrics,
-            sloClassification
+            sloThresholds
         );
 
         if (!config.runtimeOnly) {
@@ -1145,7 +1124,7 @@ const main = async (): Promise<void> => {
             current: currentRuntimeArtifact?.provenance,
             baseline: runtimeBaseline?.provenance,
             paretoArtifacts,
-            scoringThresholdVersion: sloClassification?.thresholdVersion,
+            scoringThresholdVersion: runtimeFitnessResult.runtimeFitness?.sloClassification?.thresholdVersion,
         });
         const document = buildMetricsDocument(
             config,
