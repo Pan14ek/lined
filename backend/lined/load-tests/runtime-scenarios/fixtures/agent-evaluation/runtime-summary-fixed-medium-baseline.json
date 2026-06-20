@@ -1,0 +1,12 @@
+{
+  "scenario": "fixed-medium",
+  "workload": "baseline",
+  "source": "local-kind",
+  "latency_p95_ms": 842,
+  "latency_p99_ms": 1510,
+  "error_rate": 0.004,
+  "throughput_rps": 19.4,
+  "restart_count": 0,
+  "cpu_utilization": 0.61,
+  "memory_utilization": 0.58
+}
