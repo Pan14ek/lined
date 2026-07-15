@@ -27,6 +27,7 @@ const nestedK6Summary = {
   metrics: {
     http_req_duration: {
       values: {
+        med: 120.75,
         'p(95)': 250.5,
         'p(99)': 550.25,
       },
@@ -47,6 +48,7 @@ const nestedK6Summary = {
 const flatK6Summary = {
   metrics: {
     http_req_duration: {
+      med: 80.5,
       'p(95)': 150.25,
       'p(99)': 275.5,
     },
@@ -533,6 +535,7 @@ describe('buildRuntimeSummary', () => {
       workload: 'smoke',
       source: 'local-kind',
       summary: {
+        latency_median_ms: 120.75,
         latency_p95_ms: 250.5,
         latency_p99_ms: 550.25,
         error_rate: 0.002,
@@ -548,7 +551,7 @@ describe('buildRuntimeSummary', () => {
   });
 
   it('reads flat k6 v2 summary exports', (t) => {
-    t.plan(4);
+    t.plan(5);
     const summary = buildRuntimeSummary({
       k6Summary: flatK6Summary,
       kubernetes: {
@@ -559,6 +562,7 @@ describe('buildRuntimeSummary', () => {
       workload: 'smoke',
     });
 
+    t.assert.equal(summary.summary.latency_median_ms, 80.5);
     t.assert.equal(summary.summary.latency_p95_ms, 150.25);
     t.assert.equal(summary.summary.latency_p99_ms, 275.5);
     t.assert.equal(summary.summary.error_rate, 0);
@@ -1030,6 +1034,7 @@ describe('manifest and runScenario', () => {
               metrics: {
                 http_req_duration: {
                   values: {
+                    med: 120.75,
                     'p(95)': 250.5,
                   },
                 },

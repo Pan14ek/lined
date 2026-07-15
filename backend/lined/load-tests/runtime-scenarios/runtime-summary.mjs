@@ -14,6 +14,7 @@ export const parseK6Summary = (content) => {
 export const buildRuntimeSummary = ({ k6Summary, kubernetes, scenario, workload }) => {
   const missing = new Set(['availability']);
   const summary = {
+    latency_median_ms: requiredMetric(k6Summary, 'http_req_duration', 'med'),
     latency_p95_ms: requiredMetric(k6Summary, 'http_req_duration', 'p(95)'),
     latency_p99_ms: requiredMetric(k6Summary, 'http_req_duration', 'p(99)'),
     error_rate: requiredMetric(k6Summary, 'http_req_failed', 'rate', ['value']),
