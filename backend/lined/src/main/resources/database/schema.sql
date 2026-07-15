@@ -56,19 +56,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_user_active_sub
     WHERE is_active;
 
 INSERT INTO roles (name)
-VALUES ('ROLE_USER')
-ON CONFLICT (LOWER(name)) DO NOTHING;
+SELECT 'ROLE_USER'
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles WHERE LOWER(name) = LOWER('ROLE_USER')
+);
 
 INSERT INTO roles (name)
-VALUES ('ROLE_ADMIN')
-ON CONFLICT (LOWER(name)) DO NOTHING;
+SELECT 'ROLE_ADMIN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles WHERE LOWER(name) = LOWER('ROLE_ADMIN')
+);
 
-
-INSERT INTO plans (name, price_usd, duration_days)
-VALUES ('FREE', 0.00, 0),
-       ('PRO', 9.99, 30),
-       ('FAMILY', 19.99, 30)
-ON CONFLICT (LOWER(name)) DO NOTHING;
+INSERT INTO plans (name, price_usd, duration_days, created_at)
+SELECT seed.name, seed.price_usd, seed.duration_days, NOW()
+FROM (
+    VALUES ('FREE', 0.00, 0),
+           ('PRO', 9.99, 30),
+           ('FAMILY', 19.99, 30)
+) AS seed(name, price_usd, duration_days)
+WHERE NOT EXISTS (
+    SELECT 1 FROM plans existing WHERE LOWER(existing.name) = LOWER(seed.name)
+);
 
 CREATE TABLE IF NOT EXISTS lobbies
 (
@@ -78,14 +86,14 @@ CREATE TABLE IF NOT EXISTS lobbies
     owner_id   BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE TABLE lobby_members
+CREATE TABLE IF NOT EXISTS lobby_members
 (
     lobby_id BIGINT NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
     user_id  BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     PRIMARY KEY (lobby_id, user_id)
 );
 
-CREATE TABLE tasks
+CREATE TABLE IF NOT EXISTS tasks
 (
     id          BIGSERIAL PRIMARY KEY,
     title       VARCHAR(160) NOT NULL,
@@ -97,11 +105,11 @@ CREATE TABLE tasks
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tasks_lobby ON tasks (lobby_id);
-CREATE INDEX idx_tasks_assignee ON tasks (assignee_id);
-CREATE INDEX idx_tasks_status ON tasks (status);
+CREATE INDEX IF NOT EXISTS idx_tasks_lobby ON tasks (lobby_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks (assignee_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status);
 
-CREATE TABLE events
+CREATE TABLE IF NOT EXISTS events
 (
     id         BIGSERIAL PRIMARY KEY,
     title      VARCHAR(160) NOT NULL,
@@ -114,5 +122,5 @@ CREATE TABLE events
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_events_lobby ON events (lobby_id);
-CREATE INDEX idx_events_time ON events (lobby_id, start_at, end_at);
+CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
+CREATE INDEX IF NOT EXISTS idx_events_time ON events (lobby_id, start_at, end_at);

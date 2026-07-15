@@ -5,7 +5,7 @@ import path from 'node:path';
 import { runCommand } from './command-runner.mjs';
 import { parseK6Summary } from './runtime-summary.mjs';
 
-export const SUMMARY_TREND_STATS = 'p(95),p(99),avg,min,max';
+export const SUMMARY_TREND_STATS = 'med,p(95),p(99),avg,min,max';
 export const K6_PREFLIGHT_TIMEOUT_MS = 30_000;
 export const K6_RUN_TIMEOUT_MS = 600_000;
 

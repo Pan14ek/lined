@@ -289,10 +289,18 @@ export const baselineWorkflow = (data) => {
         getForUser(ENDPOINTS.calendarEvents(data.lobby.id), user.id, 'calendar', 'list-events'),
         MESSAGES.listEvents);
     expectStatus(
-        get(ENDPOINTS.calendarConflicts(data.lobby.id, user.id), 'calendar', 'conflicts'),
+        getForUser(
+            ENDPOINTS.calendarConflicts(data.lobby.id, user.id),
+            user.id,
+            'calendar',
+            'conflicts'),
         MESSAGES.findConflicts);
     expectStatus(
-        get(ENDPOINTS.userConflict(user.id, user.id), 'calendar', 'user-conflict'),
+        getForUser(
+            ENDPOINTS.userConflict(user.id, user.id),
+            user.id,
+            'calendar',
+            'user-conflict'),
         MESSAGES.findUserConflict);
   });
 
@@ -325,10 +333,18 @@ export const readHeavyWorkflow = (data) => {
         getForUser(ENDPOINTS.calendarEvents(data.lobby.id), user.id, 'calendar', 'list-events'),
         MESSAGES.listEvents);
     expectStatus(
-        get(ENDPOINTS.calendarConflicts(data.lobby.id, user.id), 'calendar', 'conflicts'),
+        getForUser(
+            ENDPOINTS.calendarConflicts(data.lobby.id, user.id),
+            user.id,
+            'calendar',
+            'conflicts'),
         MESSAGES.findConflicts);
     expectStatus(
-        get(ENDPOINTS.userConflict(user.id, user.id), 'calendar', 'user-conflict'),
+        getForUser(
+            ENDPOINTS.userConflict(user.id, user.id),
+            user.id,
+            'calendar',
+            'user-conflict'),
         MESSAGES.findUserConflict);
   });
 
