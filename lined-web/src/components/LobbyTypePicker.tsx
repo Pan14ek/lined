@@ -15,7 +15,7 @@ const LOBBY_TYPE_ICONS: Record<LobbyType, string> = {
 
 const LOBBY_TYPES: LobbyType[] = ['COUPLE', 'FAMILY', 'FRIENDS', 'WORK'];
 
-export function LobbyTypePicker({ value, onChange }: LobbyTypePickerProps) {
+export const LobbyTypePicker = ({ value, onChange }: LobbyTypePickerProps) => {
   return (
     <div role="radiogroup" aria-label="Lobby type" className="grid grid-cols-2 gap-2.5">
       {LOBBY_TYPES.map((type) => {
@@ -27,7 +27,7 @@ export function LobbyTypePicker({ value, onChange }: LobbyTypePickerProps) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(type)}
-            className={`rounded-lg border-2 px-3 py-3.5 text-center transition-colors ${
+            className={`cursor-pointer rounded-lg border-2 px-3 py-3.5 text-center transition-colors ${
               selected
                 ? 'border-brand-green bg-brand-green-light'
                 : 'border-border bg-white hover:bg-gray-50'
@@ -42,4 +42,4 @@ export function LobbyTypePicker({ value, onChange }: LobbyTypePickerProps) {
       })}
     </div>
   );
-}
+};

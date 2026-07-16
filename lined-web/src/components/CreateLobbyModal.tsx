@@ -5,13 +5,14 @@ import { HTTPError } from 'ky';
 import type { LobbyType } from '@/types';
 import { useCreateLobby } from '@/hooks/useLobbies';
 import { LobbyTypePicker } from '@/components/LobbyTypePicker';
+import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/components/AuthAlert';
 
 interface CreateLobbyModalProps {
   onClose: () => void;
 }
 
-export function CreateLobbyModal({ onClose }: CreateLobbyModalProps) {
+export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
   const navigate = useNavigate();
   const createLobby = useCreateLobby();
 
@@ -59,23 +60,15 @@ export function CreateLobbyModal({ onClose }: CreateLobbyModalProps) {
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-5">
             {/* Name */}
-            <div>
-              <label
-                htmlFor="create-lobby-name"
-                className="mb-1.5 block text-xs font-medium text-text-secondary"
-              >
-                Lobby name
-              </label>
-              <input
-                id="create-lobby-name"
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alex & Anastasiia, Johnson Family…"
-                className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
-              />
-            </div>
+            <FormField
+              id="create-lobby-name"
+              label="Lobby name"
+              type="text"
+              required
+              value={name}
+              onChange={setName}
+              placeholder="e.g. Alex & Anastasiia, Johnson Family…"
+            />
 
             {/* Type */}
             <div>
@@ -116,7 +109,7 @@ export function CreateLobbyModal({ onClose }: CreateLobbyModalProps) {
       </div>
     </div>
   );
-}
+};
 
 function getCreateLobbyErrorMessage(error: unknown): string {
   if (error instanceof HTTPError && error.response.status === 400) {

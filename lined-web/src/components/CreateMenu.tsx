@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCreateMenuStore } from '@/store/createMenu';
 
-export function CreateMenu() {
+export const CreateMenu = () => {
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
 
@@ -42,4 +42,4 @@ export function CreateMenu() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
