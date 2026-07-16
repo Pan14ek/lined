@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { renderWithProviders, screen } from '@/test/utils';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/test/data';
 import { LobbyHeader } from '../LobbyHeader';
@@ -44,5 +44,16 @@ describe('LobbyHeader', () => {
 
     const avatars = await screen.findByText('?');
     expect(avatars).toBeInTheDocument();
+  });
+
+  it('opens the Add Member modal when "+ Add member" is clicked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    renderWithProviders(<LobbyHeader lobby={lobby} />);
+
+    expect(screen.queryByText('Add Member')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '+ Add member' }));
+
+    expect(screen.getByText('Add Member')).toBeInTheDocument();
   });
 });
