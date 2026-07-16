@@ -235,6 +235,47 @@ are not implemented yet. Registration currently uses `POST /api/users`.
 
 ---
 
+## 👥 Lobbies API
+
+### Update Lobby
+
+`PATCH /api/lobbies/{id}`
+
+The current lobby owner can partially update the name, type, and ownership.
+The `X-User-Id` header identifies the owner for the current MVP authentication
+path. An ownership-transfer target must already be a member of the lobby.
+
+**Request Body**
+
+```json
+{
+  "name": "Weekend Crew",
+  "lobbyType": "FRIENDS",
+  "ownerId": 77
+}
+```
+
+All fields are optional; omitted fields remain unchanged.
+
+**Response 200**
+
+```json
+{
+  "id": 101,
+  "name": "Weekend Crew",
+  "lobbyType": "FRIENDS",
+  "ownerId": 77,
+  "memberIds": [42, 77]
+}
+```
+
+**Errors**
+
+- `403 Forbidden` when the caller is not the current owner.
+- `409 Conflict` when `ownerId` is not an existing lobby member.
+
+---
+
 ## 🛡️ Roles API
 
 ### Get All Roles

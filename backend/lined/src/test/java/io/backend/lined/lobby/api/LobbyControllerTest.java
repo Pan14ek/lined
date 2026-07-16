@@ -10,6 +10,7 @@ import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyService;
+import io.backend.lined.lobby.api.LobbyUpdateDto;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,6 +91,40 @@ class LobbyControllerTest {
     assertThatThrownBy(() -> controller.get(999L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
+  }
+
+  @Test
+  void update_delegatesToService() {
+    var dto = new LobbyUpdateDto("Weekend Crew", LobbyTypes.FRIENDS, 2L);
+    when(lobbyService.update(101L, dto, 1L)).thenReturn(sampleLobby);
+
+    LobbyDto result = controller.update(101L, 1L, dto);
+
+    assertThat(result).isEqualTo(sampleLobby);
+    verify(lobbyService).update(101L, dto, 1L);
+  }
+
+  @Test
+  void update_propagatesForbidden_whenRequesterIsNotOwner() {
+    var dto = new LobbyUpdateDto(null, null, null);
+    when(lobbyService.update(101L, dto, 99L))
+        .thenThrow(new ForbiddenException("Only owner can update lobby"));
+
+    assertThatThrownBy(() -> controller.update(101L, 99L, dto))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("owner");
+  }
+
+  @Test
+  void update_propagatesConflict_whenNewOwnerIsNotMember() {
+    var dto = new LobbyUpdateDto(null, null, 2L);
+    when(lobbyService.update(101L, dto, 1L))
+        .thenThrow(new io.backend.lined.common.exception.ConflictException(
+            "New owner must be a lobby member"));
+
+    assertThatThrownBy(() -> controller.update(101L, 1L, dto))
+        .isInstanceOf(io.backend.lined.common.exception.ConflictException.class)
+        .hasMessageContaining("member");
   }
 
   @Test

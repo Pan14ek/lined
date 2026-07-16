@@ -2,10 +2,12 @@ package io.backend.lined.lobby.service;
 
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
+import io.backend.lined.lobby.api.LobbyUpdateDto;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.user.domain.UserRepository;
@@ -54,6 +56,23 @@ public class LobbyServiceImpl implements LobbyService {
   }
 
   @Override
+  public LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId) {
+    var lobby = mustLobby(lobbyId);
+    accessPolicy.ensureOwner(lobby, requesterId);
+
+    if (dto.name() != null) {
+      lobby.setName(dto.name());
+    }
+    if (dto.lobbyType() != null) {
+      lobby.setLobbyType(dto.lobbyType());
+    }
+    if (dto.ownerId() != null) {
+      transferOwnership(lobby, dto.ownerId());
+    }
+    return mapper.toDto(lobby);
+  }
+
+  @Override
   public LobbyDto addMember(Long lobbyId, Long userIdToAdd, Long requesterId) {
     var lobby = mustLobby(lobbyId);
 
@@ -91,6 +110,14 @@ public class LobbyServiceImpl implements LobbyService {
     return EntityFinder.findOrThrow(
         lobbyRepo.findById(id),
         () -> new NotFoundException("Lobby %d not found".formatted(id)));
+  }
+
+  private void transferOwnership(LobbyEntity lobby, Long newOwnerId) {
+    var newOwner = lobby.getMembers().stream()
+        .filter(member -> member.getId().equals(newOwnerId))
+        .findFirst()
+        .orElseThrow(() -> new ConflictException("New owner must be a lobby member"));
+    lobby.setOwner(newOwner);
   }
 
 }
