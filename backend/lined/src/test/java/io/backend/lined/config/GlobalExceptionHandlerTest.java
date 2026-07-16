@@ -8,9 +8,12 @@ import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.exception.UnauthorizedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,6 +81,17 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  void handleBase_unauthorized_returns401WithCorrectTitle() {
+    var ex = new UnauthorizedException("Invalid email, username, or password");
+
+    ResponseEntity<ProblemDetail> response = handler.handleBase(ex);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Unauthorized");
+  }
+
+  @Test
   void handleValidation_returns400WithErrorsProperty() {
     MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
     BindingResult bindingResult = mock(BindingResult.class);
@@ -88,11 +102,12 @@ class GlobalExceptionHandlerTest {
     ResponseEntity<ProblemDetail> response = handler.handleValidation(ex);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getTitle()).isEqualTo("Validation error");
-    assertThat(response.getBody().getProperties()).containsKey("errors");
+    ProblemDetail body = Objects.requireNonNull(response.getBody());
+    assertThat(body.getTitle()).isEqualTo("Validation error");
+    Map<String, Object> properties = Objects.requireNonNull(body.getProperties());
+    assertThat(properties).containsKey("errors");
     @SuppressWarnings("unchecked")
-    List<String> errors = (List<String>) response.getBody().getProperties().get("errors");
+    List<String> errors = (List<String>) properties.get("errors");
     assertThat(errors).anyMatch(e -> e.contains("email"));
   }
 
