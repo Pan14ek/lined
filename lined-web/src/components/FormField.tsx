@@ -1,6 +1,6 @@
 import type { InputHTMLAttributes } from 'react';
 
-interface AuthFieldProps
+interface FormFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'onChange' | 'className'> {
   id: string;
   label: string;
@@ -9,7 +9,7 @@ interface AuthFieldProps
   error?: string | null;
 }
 
-export function AuthField({ id, label, value, onChange, error, ...rest }: AuthFieldProps) {
+export const FormField = ({ id, label, value, onChange, error, ...rest }: FormFieldProps) => {
   const errorId = `${id}-error`;
 
   return (
@@ -37,4 +37,4 @@ export function AuthField({ id, label, value, onChange, error, ...rest }: AuthFi
       )}
     </div>
   );
-}
+};

@@ -35,16 +35,17 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - `AppShell` + `Sidebar` layout (sidebar shows real lobbies + real current user
   from the API, with loading/empty states and sign-out)
 - **Global Calendar page (week view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands), `EventDetailPanel`, `CreateEventModal`, delete event. Missing: month view, edit event, legend.
-- Zustand stores: `auth` (persisted userId), `calendar` (view state)
-- Hooks: `useMyLobbies`, `useLobby`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`
+- **"+ Create" dropdown & Create Lobby modal** — `CreateMenu`, `CreateLobbyModal`, `LobbyTypePicker`, `useCreateLobby`; New Task / Reserve Free Slot only flip store state until Tasks 8/11 land.
+- Zustand stores: `auth` (persisted userId), `calendar` (view state), `createMenu` (create-lobby + event/task/reserveSlot overlay state)
+- Hooks: `useMyLobbies`, `useLobby`, `useCreateLobby`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`
 - MSW handlers + smoke tests
 
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage, LobbyPage, TasksPage,
 UserSettingsPage, LobbySettingsPage.
 
-**Not started:** Create menu dropdown, CreateLobbyModal, AddTaskDrawer,
-AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
+**Not started:** AddTaskDrawer, AddMemberModal, ReserveSlotModal, kanban
+board, lobby header/tabs/members.
 
 ## Backend API summary
 
@@ -75,7 +76,7 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 | 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (MVP auth via user search + `X-User-Id`) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | DONE |
 | 2 | `feature/ui-02-sidebar-live-data` | Sidebar: real lobbies + real current user from API, "+ New" lobby entry point | [tasks/UI-02-sidebar-live-data.md](tasks/UI-02-sidebar-live-data.md) | DONE |
 | 3 | `feature/ui-03-dashboard` | Dashboard page: lobby cards, upcoming events, my tasks, free-slot banner | [tasks/UI-03-dashboard.md](tasks/UI-03-dashboard.md) | DONE |
-| 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | TODO |
+| 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | DONE |
 | 5 | `feature/ui-05-lobby-tasks-tab` | Lobby detail page: header, tab bar, Tasks tab (filter pills, task rows) | [tasks/UI-05-lobby-tasks-tab.md](tasks/UI-05-lobby-tasks-tab.md) | TODO |
 | 6 | `feature/ui-06-lobby-members` | Lobby Members tab + Add Member modal (user search, invite, remove) | [tasks/UI-06-lobby-members.md](tasks/UI-06-lobby-members.md) | TODO |
 | 7 | `feature/ui-07-lobby-calendar` | Lobby Calendar tab (week grid scoped to lobby, free-slot bands) | [tasks/UI-07-lobby-calendar.md](tasks/UI-07-lobby-calendar.md) | TODO |

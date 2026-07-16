@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HTTPError } from 'ky';
 import { AuthCard } from '@/components/AuthCard';
-import { AuthField } from '@/components/AuthField';
+import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/components/AuthAlert';
 import { useSignUp } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth';
@@ -82,7 +82,7 @@ export function SignUpPage() {
     <AuthCard heading="Create your account" subheading="Join Lined and start coordinating together">
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <AuthField
+          <FormField
             id="signup-username"
             label="Username"
             type="text"
@@ -95,7 +95,7 @@ export function SignUpPage() {
           />
         </div>
         <div className="mt-5">
-          <AuthField
+          <FormField
             id="signup-email"
             label="Email address"
             type="email"
@@ -108,7 +108,7 @@ export function SignUpPage() {
           />
         </div>
         <div className="mt-5">
-          <AuthField
+          <FormField
             id="signup-password"
             label="Password"
             type="password"
@@ -121,7 +121,7 @@ export function SignUpPage() {
           />
         </div>
         <div className="mt-5">
-          <AuthField
+          <FormField
             id="signup-confirm-password"
             label="Confirm password"
             type="password"
