@@ -21,6 +21,13 @@ export const LOBBY_TYPE_BADGE_CLASSES: Record<LobbyType, string> = {
   WORK: 'bg-lobby-work/10 text-lobby-work',
 };
 
+export const LOBBY_TYPE_ICONS: Record<LobbyType, string> = {
+  COUPLE: '💑',
+  FAMILY: '👨‍👩‍👧‍👦',
+  FRIENDS: '🎉',
+  WORK: '💼',
+};
+
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
@@ -47,6 +54,7 @@ export const QUERY_KEYS = {
   lobbyFreeSlots: (id: number) => ['lobbies', id, 'free-slots'] as const,
   tasks: ['tasks'] as const,
   myTasks: ['tasks', 'mine'] as const,
+  lobbyTasks: (lobbyId: number) => ['tasks', 'lobby', lobbyId] as const,
   events: ['events'] as const,
   lobbyInvites: (lobbyId: number) => ['lobby-invites', lobbyId] as const,
   myInvites: ['lobby-invites', 'mine'] as const,
