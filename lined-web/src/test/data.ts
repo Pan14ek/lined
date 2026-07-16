@@ -1,4 +1,11 @@
-import type { UserDto, LobbyDto, TaskDto, EventDto } from '@/types';
+import type {
+  UserDto,
+  LobbyDto,
+  TaskDto,
+  EventDto,
+  LobbyInviteDto,
+  NotificationDto,
+} from '@/types';
 
 export const MOCK_USERS: UserDto[] = [
   {
@@ -58,6 +65,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 1,
     title: 'Plan dinner for Saturday',
+    description: 'Pick a restaurant and book a table for two',
+    priority: 'MEDIUM',
     status: 'TODO',
     lobbyId: 1,
     creatorId: 1,
@@ -68,6 +77,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 2,
     title: 'Book restaurant reservation',
+    description: null,
+    priority: 'HIGH',
     status: 'IN_PROGRESS',
     lobbyId: 1,
     creatorId: 2,
@@ -78,6 +89,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 3,
     title: 'Buy groceries',
+    description: 'Milk, bread, eggs',
+    priority: 'LOW',
     status: 'DONE',
     lobbyId: 2,
     creatorId: 1,
@@ -88,6 +101,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 4,
     title: 'Prepare presentation slides',
+    description: null,
+    priority: 'MEDIUM',
     status: 'TODO',
     lobbyId: 3,
     creatorId: 1,
@@ -98,6 +113,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 5,
     title: 'Send invitations',
+    description: null,
+    priority: 'MEDIUM',
     status: 'IN_PROGRESS',
     lobbyId: 3,
     creatorId: 2,
@@ -108,6 +125,8 @@ export const MOCK_TASKS: TaskDto[] = [
   {
     id: 6,
     title: 'Clean apartment',
+    description: null,
+    priority: 'LOW',
     status: 'TODO',
     lobbyId: 2,
     creatorId: 1,
@@ -121,6 +140,7 @@ export const MOCK_EVENTS: EventDto[] = [
   {
     id: 1,
     title: 'Morning Coffee',
+    location: 'Blue Bottle Cafe',
     shared: true,
     startAt: `${todayStr}T09:00:00Z`,
     endAt: `${todayStr}T10:00:00Z`,
@@ -132,6 +152,7 @@ export const MOCK_EVENTS: EventDto[] = [
   {
     id: 2,
     title: 'Team Lunch',
+    location: null,
     shared: true,
     startAt: `${todayStr}T12:00:00Z`,
     endAt: `${todayStr}T13:00:00Z`,
@@ -143,6 +164,7 @@ export const MOCK_EVENTS: EventDto[] = [
   {
     id: 3,
     title: 'Family Dinner',
+    location: 'Home',
     shared: true,
     startAt: `${tomorrowStr}T18:00:00Z`,
     endAt: `${tomorrowStr}T20:00:00Z`,
@@ -154,6 +176,7 @@ export const MOCK_EVENTS: EventDto[] = [
   {
     id: 4,
     title: 'Movie Night',
+    location: null,
     shared: true,
     startAt: `${tomorrowStr}T20:30:00Z`,
     endAt: `${tomorrowStr}T23:00:00Z`,
@@ -165,6 +188,7 @@ export const MOCK_EVENTS: EventDto[] = [
   {
     id: 5,
     title: 'Weekend Hike',
+    location: 'Blue Ridge Trailhead',
     shared: true,
     startAt: `${dayAfterStr}T08:00:00Z`,
     endAt: `${dayAfterStr}T12:00:00Z`,
@@ -172,5 +196,65 @@ export const MOCK_EVENTS: EventDto[] = [
     lobbyId: 3,
     ownerId: 1,
     createdAt: '2026-04-10T07:00:00Z',
+  },
+];
+
+export const MOCK_LOBBY_INVITES: LobbyInviteDto[] = [
+  {
+    id: 1,
+    lobbyId: 3,
+    inviterId: 1,
+    inviteeId: 2,
+    status: 'PENDING',
+    sentAt: '2026-07-15T10:00:00Z',
+    createdAt: '2026-07-15T10:00:00Z',
+    updatedAt: '2026-07-15T10:00:00Z',
+  },
+];
+
+export const MOCK_NOTIFICATIONS: NotificationDto[] = [
+  {
+    id: 1,
+    type: 'TASK_ASSIGNED',
+    title: 'New task assigned',
+    message: 'You were assigned "Plan dinner for Saturday"',
+    lobbyId: 1,
+    taskId: 1,
+    eventId: null,
+    readAt: null,
+    createdAt: '2026-07-15T09:00:00Z',
+    deliveries: [
+      {
+        channel: 'IN_APP',
+        status: 'DELIVERED',
+        queuedAt: '2026-07-15T09:00:00Z',
+        deliveredAt: '2026-07-15T09:00:00Z',
+      },
+      {
+        channel: 'EMAIL',
+        status: 'PENDING',
+        queuedAt: '2026-07-15T09:00:00Z',
+        deliveredAt: null,
+      },
+    ],
+  },
+  {
+    id: 2,
+    type: 'SHARED_EVENT_CREATED',
+    title: 'New shared event',
+    message: '"Family Dinner" was added to Johnson Family',
+    lobbyId: 2,
+    taskId: null,
+    eventId: 3,
+    readAt: '2026-07-15T12:00:00Z',
+    createdAt: '2026-07-15T11:00:00Z',
+    deliveries: [
+      {
+        channel: 'IN_APP',
+        status: 'DELIVERED',
+        queuedAt: '2026-07-15T11:00:00Z',
+        deliveredAt: '2026-07-15T11:00:00Z',
+      },
+    ],
   },
 ];

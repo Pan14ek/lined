@@ -4,6 +4,16 @@ export type LobbyType = 'COUPLE' | 'FAMILY' | 'FRIENDS' | 'WORK';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 
+export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type LobbyInviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
+
+export type NotificationType = 'TASK_ASSIGNED' | 'SHARED_EVENT_CREATED';
+
+export type NotificationDeliveryChannel = 'IN_APP' | 'EMAIL' | 'PUSH';
+
+export type NotificationDeliveryStatus = 'PENDING' | 'DELIVERED';
+
 // --- User ---
 
 export interface UserDto {
@@ -61,11 +71,37 @@ export interface LobbyCreateDto {
   lobbyType: LobbyType;
 }
 
+export interface LobbyUpdateDto {
+  name?: string;
+  lobbyType?: LobbyType;
+  ownerId?: number;
+}
+
+export interface FreeSlotDto {
+  start: string;
+  end: string;
+}
+
+// --- Lobby invite ---
+
+export interface LobbyInviteDto {
+  id: number;
+  lobbyId: number;
+  inviterId: number;
+  inviteeId: number;
+  status: LobbyInviteStatus;
+  sentAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // --- Task ---
 
 export interface TaskDto {
   id: number;
   title: string;
+  description: string | null;
+  priority: TaskPriority;
   status: TaskStatus;
   lobbyId: number;
   creatorId: number;
@@ -79,6 +115,10 @@ export interface TaskCreateDto {
   lobbyId: number;
   assigneeId?: number;
   dueDate?: string;
+  description?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  notifyAssignee?: boolean;
 }
 
 export interface TaskUpdateDto {
@@ -86,6 +126,8 @@ export interface TaskUpdateDto {
   assigneeId?: number;
   dueDate?: string;
   title?: string;
+  description?: string;
+  priority?: TaskPriority;
 }
 
 // --- Event ---
@@ -93,6 +135,7 @@ export interface TaskUpdateDto {
 export interface EventDto {
   id: number;
   title: string;
+  location: string | null;
   shared: boolean;
   startAt: string;
   endAt: string;
@@ -104,15 +147,19 @@ export interface EventDto {
 
 export interface EventCreateDto {
   title: string;
+  location?: string;
   shared: boolean;
   startAt: string;
   endAt: string;
   timezone: string;
   lobbyId: number;
+  notifyMembers?: boolean;
 }
 
 export interface EventUpdateDto {
   title?: string;
+  /** Omit to keep the current location; send '' to clear it. */
+  location?: string;
   shared?: boolean;
   startAt?: string;
   endAt?: string;
@@ -160,4 +207,64 @@ export interface SubscriptionDto {
 export interface RoleDto {
   id: number;
   name: string;
+}
+
+// --- Auth ---
+
+export interface LoginRequestDto {
+  identifier: string;
+  password: string;
+}
+
+export interface LoginResponseDto {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  userId: number;
+  username: string;
+  email: string;
+  roles: string[];
+}
+
+// --- Notifications ---
+
+export interface NotificationPreferencesDto {
+  sharedEventsEnabled: boolean;
+  taskAssignedEnabled: boolean;
+  freeSlotsEnabled: boolean;
+  eventRemindersEnabled: boolean;
+  emailDigestsEnabled: boolean;
+}
+
+export type NotificationPreferencesUpdateDto = Partial<NotificationPreferencesDto>;
+
+export interface LobbyNotificationPreferencesDto {
+  lobbyId: number;
+  newEventsEnabled: boolean;
+  taskUpdatesEnabled: boolean;
+  freeSlotsEnabled: boolean;
+}
+
+export type LobbyNotificationPreferencesUpdateDto = Partial<
+  Omit<LobbyNotificationPreferencesDto, 'lobbyId'>
+>;
+
+export interface NotificationDeliveryDto {
+  channel: NotificationDeliveryChannel;
+  status: NotificationDeliveryStatus;
+  queuedAt: string;
+  deliveredAt: string | null;
+}
+
+export interface NotificationDto {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  lobbyId: number | null;
+  taskId: number | null;
+  eventId: number | null;
+  readAt: string | null;
+  createdAt: string;
+  deliveries: NotificationDeliveryDto[];
 }

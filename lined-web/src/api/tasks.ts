@@ -22,3 +22,7 @@ export function updateTask(id: number, data: TaskUpdateDto): Promise<TaskDto> {
 export function deleteTask(id: number): Promise<void> {
   return api.delete(`tasks/${id}`).then(() => undefined);
 }
+
+export function listMyTasks(): Promise<TaskDto[]> {
+  return api.get('tasks/mine').json<TaskDto[]>();
+}

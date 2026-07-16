@@ -18,3 +18,7 @@ export function searchUsers(q: string, page = 0, size = 20): Promise<UserPageDto
     .get('users/search', { searchParams: { q, page, size } })
     .json<UserPageDto>();
 }
+
+export function deleteUser(id: number): Promise<void> {
+  return api.delete(`users/${id}`).then(() => undefined);
+}

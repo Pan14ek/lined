@@ -21,11 +21,23 @@ export const taskHandlers = [
     return HttpResponse.json(tasks);
   }),
 
+  http.get(`${BASE}/tasks/mine`, () => {
+    return HttpResponse.json(MOCK_TASKS);
+  }),
+
   http.post(`${BASE}/tasks`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body['title'] !== 'string' || body['title'].trim() === '') {
+      return HttpResponse.json(
+        { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
+        { status: 400 },
+      );
+    }
     return HttpResponse.json(
       {
         id: 100,
+        description: null,
+        priority: 'MEDIUM',
         status: 'TODO',
         creatorId: 1,
         assigneeId: null,

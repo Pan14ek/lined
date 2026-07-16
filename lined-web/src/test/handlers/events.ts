@@ -23,9 +23,16 @@ export const eventHandlers = [
 
   http.post(`${BASE}/calendar/events`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body['title'] !== 'string' || body['title'].trim() === '') {
+      return HttpResponse.json(
+        { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
+        { status: 400 },
+      );
+    }
     return HttpResponse.json(
       {
         id: 100,
+        location: null,
         ownerId: 1,
         createdAt: new Date().toISOString(),
         ...body,
@@ -38,6 +45,9 @@ export const eventHandlers = [
     const event = MOCK_EVENTS.find((e) => e.id === Number(params['id']));
     if (!event) return new HttpResponse(null, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body['location'] === 'string' && body['location'].trim() === '') {
+      body['location'] = null;
+    }
     return HttpResponse.json({ ...event, ...body });
   }),
 

@@ -27,15 +27,32 @@ export const lobbyHandlers = [
     );
   }),
 
-  http.post(`${BASE}/lobbies/:id/members`, ({ params, request }) => {
+  http.patch(`${BASE}/lobbies/:id`, async ({ params, request }) => {
+    const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
+    if (!lobby) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as Record<string, unknown>;
+    if (body['ownerId'] != null && !lobby.memberIds.includes(Number(body['ownerId']))) {
+      return HttpResponse.json(
+        { code: 'CONFLICT', message: 'ownerId must be an existing lobby member' },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json({ ...lobby, ...body });
+  }),
+
+  http.get(`${BASE}/lobbies/:id/free-slots`, ({ params, request }) => {
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
     if (!lobby) return new HttpResponse(null, { status: 404 });
     const url = new URL(request.url);
-    const userId = Number(url.searchParams.get('userId'));
-    return HttpResponse.json({
-      ...lobby,
-      memberIds: [...lobby.memberIds, userId],
-    });
+    const from = url.searchParams.get('from');
+    const to = url.searchParams.get('to');
+    if (!from || !to) {
+      return HttpResponse.json(
+        { code: 'VALIDATION_ERROR', message: 'from and to must define a non-empty window' },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json([{ start: from, end: to }]);
   }),
 
   http.delete(`${BASE}/lobbies/:lobbyId/members/:userId`, ({ params }) => {

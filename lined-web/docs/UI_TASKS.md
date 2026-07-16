@@ -85,7 +85,7 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | TODO |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | TODO |
 | 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | TODO |
-| 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | TODO |
+| 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | DONE |
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | TODO |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | TODO |
 
