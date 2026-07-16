@@ -30,9 +30,10 @@ feature-complete before the Reserve Slot flow (Task 11) builds on it.
   the event-detail panel and legend are on the same screen.
 - Serve with `npx serve -p 4321 mockups/`; no deep links yet — see
   [../UI_TASKS.md](../UI_TASKS.md) for how to add them.
-- Note: the mockup has **no Month-view screen** — design the month grid in
-  the same visual language (tokens, chip colours by lobby type) and consider
-  adding a `calendar-month` screen to the mockup for reference.
+- Month view now has a dedicated screen: id **`calendar-month`**
+  (`http://localhost:4321/#calendar-month`) — 6-week grid, other-month cells
+  dimmed, today highlighted, event chips coloured by lobby type, "+2 more"
+  overflow, free-slot chip, legend.
 
 ## Development steps
 

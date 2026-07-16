@@ -61,6 +61,14 @@ to switch screens.
 | Reserve Slot | `reserve-slot` | Dashboard + "Reserve Free Slot" modal (pre-filled from free-slot detection) |
 | Tasks Board | `tasks` | Global kanban: To Do / In Progress / Done columns |
 | User Settings | `user-settings` | User profile, notifications, appearance, danger zone |
+| Create Lobby | `create-lobby` | Dashboard + "New Lobby" modal (name + type picker) — UI task 04 |
+| Calendar: Month | `calendar-month` | Full calendar — month grid with event chips, "+N more", free-slot chip — UI task 10 |
+| Notifications | `notifications` | Dashboard + bell dropdown open (unread rows, badge, mark all read) — UI task 16 |
+| Invites | `invites` | Dashboard with pending-invite cards (Accept / Decline) — UI task 17 |
+| Subscription | `subscription` | Current plan, available plan cards, subscription history — UI task 14 |
+
+Screens support deep links: `http://localhost:4321/#<screen-id>`. The nav
+script reads `location.hash` on load/hashchange and updates it on click.
 
 ---
 

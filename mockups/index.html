@@ -335,6 +335,56 @@
   .kanban-done-check { width: 20px; height: 20px; border-radius: 50%; background: var(--done); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; }
   .kanban-add-btn { margin: 10px 12px 12px; background: var(--white); border: 1px dashed var(--border); border-radius: 10px; padding: 10px; text-align: center; font-size: 13px; color: var(--text-muted); cursor: pointer; }
 
+  /* ════════════════════════════════════════════════════════════
+     MONTH VIEW
+  ════════════════════════════════════════════════════════════ */
+  .month-dow-headers { display: flex; background: var(--white); border-bottom: 1px solid var(--border); }
+  .month-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; background: var(--white); }
+  .month-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6px 8px; min-width: 0; overflow: hidden; }
+  .month-cell.other-month { background: var(--bg); }
+  .month-cell.today { background: var(--green-lt); }
+  .month-day-num { font-size: 12px; color: var(--text-sec); margin-bottom: 4px; }
+  .month-cell.today .month-day-num { color: var(--green-dk); font-weight: 700; }
+  .month-cell.other-month .month-day-num { color: var(--text-muted); }
+  .month-chip { display: block; border-radius: 4px; padding: 2px 6px; margin-bottom: 3px; font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .92; }
+  .month-more { font-size: 10px; color: var(--text-sec); font-weight: 500; }
+
+  /* ════════════════════════════════════════════════════════════
+     NOTIFICATIONS DROPDOWN
+  ════════════════════════════════════════════════════════════ */
+  .notif-dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 360px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); overflow: hidden; z-index: 50; }
+  .notif-hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .notif-hd-title { font-size: 14px; font-weight: 700; color: var(--text-pri); }
+  .notif-mark-all { font-size: 12px; color: var(--green); cursor: pointer; }
+  .notif-item { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item.unread { background: var(--green-lt); }
+  .notif-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+  .notif-text { font-size: 13px; color: var(--text-pri); }
+  .notif-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-top: 5px; margin-left: auto; }
+  .bell-badge { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; border-radius: 8px; background: #E53E3E; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
+  /* ════════════════════════════════════════════════════════════
+     SUBSCRIPTION / PLANS
+  ════════════════════════════════════════════════════════════ */
+  .plan-cards { display: flex; gap: 18px; }
+  .plan-card { flex: 1; background: var(--white); border: 2px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .plan-card.current { border-color: var(--green); background: var(--green-lt); position: relative; }
+  .plan-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+  .plan-name { font-size: 16px; font-weight: 700; color: var(--text-pri); }
+  .plan-price { font-size: 26px; font-weight: 700; color: var(--text-pri); margin: 8px 0 2px; }
+  .plan-price span { font-size: 13px; font-weight: 500; color: var(--text-sec); }
+  .plan-duration { font-size: 12px; color: var(--text-sec); margin-bottom: 14px; }
+
+  /* ════════════════════════════════════════════════════════════
+     INVITE BANNER
+  ════════════════════════════════════════════════════════════ */
+  .invite-card { background: var(--white); border: 1.5px solid var(--green); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .invite-text .title { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+  .invite-text .sub { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .invite-actions { margin-left: auto; display: flex; gap: 8px; }
+
   /* Utility */
   .mt-4 { margin-top: 16px; }
   .mb-2 { margin-bottom: 8px; }
@@ -472,6 +522,11 @@
   <a href="#" onclick="show('reserve-slot')">Reserve Slot</a>
   <a href="#" onclick="show('tasks')">Tasks Board</a>
   <a href="#" onclick="show('user-settings')">User Settings</a>
+  <a href="#" onclick="show('create-lobby')">Create Lobby</a>
+  <a href="#" onclick="show('calendar-month')">Calendar: Month</a>
+  <a href="#" onclick="show('notifications')">Notifications</a>
+  <a href="#" onclick="show('invites')">Invites</a>
+  <a href="#" onclick="show('subscription')">Subscription</a>
 </nav>
 
 <div class="screens">
@@ -1863,15 +1918,417 @@
 </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     CREATE LOBBY (modal over dashboard) — UI task 04
+════════════════════════════════════════════════════════════ -->
+<div id="create-lobby" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main" style="position:relative">
+    <div style="opacity:.2;pointer-events:none;display:flex;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-spacer"></div>
+        <button class="btn-green">+ Create</button>
+      </div>
+      <div class="content">
+        <div style="height:120px;background:var(--white);border-radius:12px;margin-bottom:16px"></div>
+        <div style="height:200px;background:var(--white);border-radius:12px"></div>
+      </div>
+    </div>
+    <div class="modal-overlay">
+      <div class="modal-dialog" style="width:460px">
+        <div class="modal-header">
+          <div class="modal-title">New Lobby</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-top:0">
+            <label class="form-label">Lobby name</label>
+            <input class="form-input" type="text" placeholder="e.g. Alex &amp; Anastasiia, Johnson Family…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lobby type</label>
+            <div class="type-grid">
+              <div class="type-opt selected">
+                <div class="type-opt-icon">💑</div>
+                <div class="type-opt-label">Couple</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">👨‍👩‍👧‍👦</div>
+                <div class="type-opt-label">Family</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">🎉</div>
+                <div class="type-opt-label">Friends</div>
+              </div>
+              <div class="type-opt">
+                <div class="type-opt-icon">💼</div>
+                <div class="type-opt-label">Work</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:12px 14px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--text-sec)">
+            💡 You'll be the owner. Invite members right after creating the lobby.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-green" style="height:40px;padding:0 24px;font-size:14px">Create Lobby</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     CALENDAR — MONTH VIEW — UI task 10
+════════════════════════════════════════════════════════════ -->
+<div id="calendar-month" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item active"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div></div></div>
+  </div>
+  <div class="main" style="overflow:hidden">
+    <div class="cal-topbar">
+      <span class="cal-month">← &nbsp;March 2026&nbsp; →</span>
+      <button class="btn-outline" style="height:32px;padding:0 12px;font-size:13px">Today</button>
+      <div class="view-toggle"><button class="view-btn">Week</button><button class="view-btn active">Month</button></div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-green">+ New event</button>
+    </div>
+    <div class="month-dow-headers">
+      <div class="day-header">Mon</div><div class="day-header">Tue</div><div class="day-header">Wed</div>
+      <div class="day-header">Thu</div><div class="day-header">Fri</div><div class="day-header">Sat</div><div class="day-header">Sun</div>
+    </div>
+    <div class="month-grid">
+      <!-- Week 1: Feb 23 – Mar 1 -->
+      <div class="month-cell other-month"><div class="month-day-num">23</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">24</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">25</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">26</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">27</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">28</div></div>
+      <div class="month-cell"><div class="month-day-num">1</div></div>
+      <!-- Week 2: Mar 2 – 8 -->
+      <div class="month-cell"><div class="month-day-num">2</div><span class="month-chip" style="background:var(--work)">Standup</span></div>
+      <div class="month-cell"><div class="month-day-num">3</div></div>
+      <div class="month-cell"><div class="month-day-num">4</div><span class="month-chip" style="background:var(--couple)">Movie night</span></div>
+      <div class="month-cell"><div class="month-day-num">5</div></div>
+      <div class="month-cell"><div class="month-day-num">6</div><span class="month-chip" style="background:var(--work)">Standup</span></div>
+      <div class="month-cell"><div class="month-day-num">7</div></div>
+      <div class="month-cell"><div class="month-day-num">8</div><span class="month-chip" style="background:var(--family)">Family Dinner</span></div>
+      <!-- Week 3: Mar 9 – 15 -->
+      <div class="month-cell"><div class="month-day-num">9</div></div>
+      <div class="month-cell"><div class="month-day-num">10</div><span class="month-chip" style="background:var(--work)">Design Review</span></div>
+      <div class="month-cell"><div class="month-day-num">11</div></div>
+      <div class="month-cell"><div class="month-day-num">12</div><span class="month-chip" style="background:var(--couple)">Lunch date</span></div>
+      <div class="month-cell"><div class="month-day-num">13</div></div>
+      <div class="month-cell"><div class="month-day-num">14</div><span class="month-chip" style="background:var(--friends)">Game night</span></div>
+      <div class="month-cell"><div class="month-day-num">15</div><span class="month-chip" style="background:var(--family)">Family Dinner</span></div>
+      <!-- Week 4: Mar 16 – 22 -->
+      <div class="month-cell"><div class="month-day-num">16</div><span class="month-chip" style="background:var(--work)">Standup</span></div>
+      <div class="month-cell"><div class="month-day-num">17</div></div>
+      <div class="month-cell"><div class="month-day-num">18</div></div>
+      <div class="month-cell"><div class="month-day-num">19</div><span class="month-chip" style="background:var(--work)">1:1 Sarah</span></div>
+      <div class="month-cell"><div class="month-day-num">20</div></div>
+      <div class="month-cell"><div class="month-day-num">21</div><span class="month-chip" style="background:var(--couple)">Hiking trip</span></div>
+      <div class="month-cell"><div class="month-day-num">22</div><span class="month-chip" style="background:var(--family)">Family Dinner</span></div>
+      <!-- Week 5: Mar 23 – 29 -->
+      <div class="month-cell"><div class="month-day-num">23</div><span class="month-chip" style="background:var(--work)">Sprint Planning</span></div>
+      <div class="month-cell"><div class="month-day-num">24</div><span class="month-chip" style="background:var(--work)">Standup</span></div>
+      <div class="month-cell"><div class="month-day-num">25</div><span class="month-chip" style="background:var(--work)">Design Review</span></div>
+      <div class="month-cell"><div class="month-day-num">26</div><span class="month-chip" style="background:var(--family)">Family Call</span></div>
+      <div class="month-cell"><div class="month-day-num">27</div><span class="month-chip" style="background:var(--work)">Standup</span></div>
+      <div class="month-cell today"><div class="month-day-num">28</div><span class="month-chip" style="background:var(--couple)">Grocery Run</span></div>
+      <div class="month-cell"><div class="month-day-num">29</div><span class="month-chip" style="background:var(--family)">Family Dinner</span><span class="month-chip" style="background:#B4EBD0;color:var(--green-dk)">✨ Both free 2–5 PM</span></div>
+      <!-- Week 6: Mar 30 – Apr 5 -->
+      <div class="month-cell"><div class="month-day-num">30</div><span class="month-chip" style="background:var(--work)">Sprint Planning</span><span class="month-chip" style="background:var(--work)">Retro</span><span class="month-more">+2 more</span></div>
+      <div class="month-cell"><div class="month-day-num">31</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">1</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">2</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">3</div><span class="month-chip" style="background:var(--friends)">Maria's Birthday</span></div>
+      <div class="month-cell other-month"><div class="month-day-num">4</div></div>
+      <div class="month-cell other-month"><div class="month-day-num">5</div></div>
+    </div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--couple)"></div>Couple</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--family)"></div>Family</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--friends)"></div>Friends</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--work)"></div>Work</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#B4EBD0"></div>Free slot</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     NOTIFICATIONS (bell dropdown over dashboard) — UI task 16
+════════════════════════════════════════════════════════════ -->
+<div id="notifications" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-meta" style="font-size:12px;margin-top:1px">Saturday, 28 March 2026</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-btn-wrap">
+        <button class="btn-icon" style="position:relative;background:var(--green-lt)">🔔<span class="bell-badge">3</span></button>
+        <div class="notif-dropdown">
+          <div class="notif-hd">
+            <span class="notif-hd-title">Notifications</span>
+            <span class="notif-mark-all">Mark all read</span>
+          </div>
+          <div class="notif-item unread">
+            <span class="notif-icon">✅</span>
+            <div><div class="notif-text"><strong>Anastasiia</strong> assigned you a task: <strong>Grocery shopping</strong></div><div class="notif-time">10 minutes ago · Alex &amp; Anastasiia</div></div>
+            <div class="notif-dot"></div>
+          </div>
+          <div class="notif-item unread">
+            <span class="notif-icon">✨</span>
+            <div><div class="notif-text">Free slot found: you &amp; Anastasiia are both free <strong>Sunday 2–5 PM</strong></div><div class="notif-time">1 hour ago · Alex &amp; Anastasiia</div></div>
+            <div class="notif-dot"></div>
+          </div>
+          <div class="notif-item unread">
+            <span class="notif-icon">📅</span>
+            <div><div class="notif-text"><strong>Mark</strong> added a shared event: <strong>Family Sunday Dinner</strong></div><div class="notif-time">2 hours ago · Johnson Family</div></div>
+            <div class="notif-dot"></div>
+          </div>
+          <div class="notif-item">
+            <span class="notif-icon">⏰</span>
+            <div><div class="notif-text">Reminder: <strong>Sprint Planning</strong> starts in 30 minutes</div><div class="notif-time">Yesterday · Design Team</div></div>
+          </div>
+          <div class="notif-item">
+            <span class="notif-icon">👥</span>
+            <div><div class="notif-text"><strong>Maria</strong> accepted your invite to <strong>College Crew</strong></div><div class="notif-time">2 days ago · College Crew</div></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-green">+ Create</button>
+    </div>
+    <div class="content" style="opacity:.35;pointer-events:none">
+      <div class="section-header"><span class="section-title">My Lobbies</span><span class="see-all">See all →</span></div>
+      <div class="lobby-cards">
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--couple)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(244,71,155,.12);color:var(--couple)">Couple</span><div class="lobby-name">Alex &amp; Anastasiia</div><div class="lobby-stats"><span>👥 2 members</span><span>📅 3 events</span><span>✓ 5 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--family)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(251,138,47,.12);color:var(--family)">Family</span><div class="lobby-name">Johnson Family</div><div class="lobby-stats"><span>👥 5 members</span><span>📅 7 events</span><span>✓ 12 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--friends)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(167,139,250,.12);color:var(--friends)">Friends</span><div class="lobby-name">College Crew</div><div class="lobby-stats"><span>👥 6 members</span><span>📅 2 events</span><span>✓ 3 tasks</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     INVITES (pending invites on dashboard) — UI task 17
+════════════════════════════════════════════════════════════ -->
+<div id="invites" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item active"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Good morning, Alex 👋</div>
+        <div class="topbar-meta" style="font-size:12px;margin-top:1px">Saturday, 28 March 2026</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-icon">🔔</button>
+      <button class="btn-green">+ Create</button>
+    </div>
+    <div class="content">
+      <!-- Pending invites banner -->
+      <div class="section-header"><span class="section-title">Pending Invites · 2</span></div>
+      <div class="invite-card">
+        <div class="mc-avatar" style="background:var(--friends);width:40px;height:40px;font-size:16px">M</div>
+        <div class="invite-text">
+          <div class="title">Maria invited you to <strong>College Crew</strong></div>
+          <div class="sub">🎉 Friends lobby · 6 members · invited 2 hours ago</div>
+        </div>
+        <div class="invite-actions">
+          <button class="btn-green" style="height:34px">Accept</button>
+          <button class="btn-outline" style="height:34px;color:#E53E3E;border-color:#E53E3E">Decline</button>
+        </div>
+      </div>
+      <div class="invite-card">
+        <div class="mc-avatar" style="background:var(--work);width:40px;height:40px;font-size:16px">S</div>
+        <div class="invite-text">
+          <div class="title">Sarah invited you to <strong>Design Team</strong></div>
+          <div class="sub">💼 Work lobby · 4 members · invited yesterday</div>
+        </div>
+        <div class="invite-actions">
+          <button class="btn-green" style="height:34px">Accept</button>
+          <button class="btn-outline" style="height:34px;color:#E53E3E;border-color:#E53E3E">Decline</button>
+        </div>
+      </div>
+      <!-- Rest of dashboard -->
+      <div class="section-header" style="margin-top:24px"><span class="section-title">My Lobbies</span><span class="see-all">See all →</span></div>
+      <div class="lobby-cards">
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--couple)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(244,71,155,.12);color:var(--couple)">Couple</span><div class="lobby-name">Alex &amp; Anastasiia</div><div class="lobby-stats"><span>👥 2 members</span><span>📅 3 events</span><span>✓ 5 tasks</span></div></div></div>
+        <div class="lobby-card"><div class="lobby-card-accent" style="background:var(--family)"></div><div class="lobby-card-body"><span class="lobby-type-badge" style="background:rgba(251,138,47,.12);color:var(--family)">Family</span><div class="lobby-name">Johnson Family</div><div class="lobby-stats"><span>👥 5 members</span><span>📅 7 events</span><span>✓ 12 tasks</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SUBSCRIPTION & PLANS — UI task 14
+════════════════════════════════════════════════════════════ -->
+<div id="subscription" class="screen">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-logo">Lined</div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">NAVIGATE</div>
+    <div class="sb-nav-item"><span class="sb-icon">⊞</span> Dashboard</div>
+    <div class="sb-nav-item"><span class="sb-icon">◷</span> Calendar</div>
+    <div class="sb-nav-item"><span class="sb-icon">☑</span> Tasks</div>
+    <div class="sb-section-label">MY LOBBIES</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--couple)"></div> Alex &amp; Anastasiia</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--family)"></div> Johnson Family</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--friends)"></div> College Crew</div>
+    <div class="sb-lobby-item"><div class="sb-lobby-dot" style="background:var(--work)"></div> Design Team</div>
+    <div class="sb-user"><div class="sb-avatar">A</div><div><div class="sb-user-name">Alex Johnson</div><div class="sb-user-email">alex@lined.app</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Subscription</div>
+      <div class="topbar-spacer"></div>
+    </div>
+    <div class="content">
+      <!-- Current plan -->
+      <div class="settings-card">
+        <div class="settings-card-hd">Current Plan</div>
+        <div class="settings-rows">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Plan</div>
+              <div class="settings-row-val" style="font-size:16px;font-weight:700">Pro · $9.99/month</div>
+              <div style="font-size:12px;color:var(--text-sec);margin-top:2px">Renews 28 April 2026</div>
+            </div>
+            <button class="btn-danger">Cancel subscription</button>
+          </div>
+        </div>
+      </div>
+      <!-- Available plans -->
+      <div class="section-header" style="margin-top:8px"><span class="section-title">Available Plans</span></div>
+      <div class="plan-cards" style="margin-bottom:24px">
+        <div class="plan-card">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price">Free</div>
+          <div class="plan-duration">2 lobbies · basic features</div>
+          <button class="btn-outline" style="width:100%">Downgrade</button>
+        </div>
+        <div class="plan-card current">
+          <span class="plan-badge">CURRENT</span>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">$9.99 <span>/ month</span></div>
+          <div class="plan-duration">Unlimited lobbies · free-slot detection · reminders</div>
+          <button class="btn-green" style="width:100%" disabled>Your plan</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name">Family</div>
+          <div class="plan-price">$14.99 <span>/ month</span></div>
+          <div class="plan-duration">Everything in Pro · up to 8 member accounts</div>
+          <button class="btn-green" style="width:100%">Subscribe</button>
+        </div>
+      </div>
+      <!-- History -->
+      <div class="settings-card">
+        <div class="settings-card-hd">Subscription History</div>
+        <div class="settings-rows">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-val">Pro · $9.99/month</div>
+              <div class="settings-row-label">28 Mar 2026 – present</div>
+            </div>
+            <span class="status-badge" style="background:rgba(16,185,129,.12);color:var(--done)">ACTIVE</span>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-val">Starter · Free</div>
+              <div class="settings-row-label">10 Jan 2026 – 28 Mar 2026</div>
+            </div>
+            <span class="status-badge" style="background:rgba(148,163,184,.12);color:var(--todo)">ENDED</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
 </div><!-- /screens -->
 
 <script>
 function show(id) {
+  const screen = document.getElementById(id);
+  if (!screen || !screen.classList.contains('screen')) return;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.screen-nav a').forEach(a => a.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
+  screen.classList.add('active');
+  const link = document.querySelector(`.screen-nav a[onclick*="'${id}'"]`);
+  if (link) link.classList.add('active');
+  if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
 }
+// Deep links: http://localhost:4321/#<screen-id>
+function showFromHash() {
+  const id = location.hash.slice(1);
+  if (id) show(id);
+}
+window.addEventListener('hashchange', showFromHash);
+showFromHash();
 </script>
 </body>
 </html>

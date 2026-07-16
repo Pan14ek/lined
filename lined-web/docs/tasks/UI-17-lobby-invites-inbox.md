@@ -31,11 +31,11 @@ membership.
 
 ## Reference to mockup
 
-- **No mockup screen exists for the invitee side.** The owner-side pending
-  list is on screen id **`lobby-members`** (`mockups/index.html`) — reuse
-  its card style for the invitee banner. Recommended: add an
-  `invites-inbox` screen (or extend the `dashboard` screen with an invite
-  banner) to `mockups/index.html` for parity.
+- The invitee side now has a dedicated screen: id **`invites`**
+  (`http://localhost:4321/#invites`) — "Pending Invites · N" section on the
+  dashboard with green-bordered cards (inviter avatar, lobby type/member
+  count/sent time, Accept / Decline buttons). The owner-side pending list
+  remains on screen id **`lobby-members`**.
 
 ## Development steps
 
