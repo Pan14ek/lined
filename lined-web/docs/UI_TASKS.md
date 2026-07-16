@@ -81,13 +81,15 @@ endpoints, no server-side free-slot detection (computed client-side).
 | 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | TODO |
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | TODO |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | TODO |
+| 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | TODO |
 
 ## Suggested order
 
 Tasks 1–2 unblock everything (auth + live sidebar). Then 3–4 (dashboard +
 create flows), 5–8 (lobby detail), 9 (kanban), 10–11 (calendar), 12–13
-(settings). Tasks 6/7/8 depend on 5; task 11 depends on 3 and 10; everything
-else is parallelisable.
+(settings), 14 (subscription — lowest priority). Tasks 6/7/8 depend on 5;
+task 11 depends on 3 and 10; task 14 depends on 12 (linked from User
+Settings); everything else is parallelisable.
 
 ## Conventions for every task
 
@@ -100,3 +102,12 @@ else is parallelisable.
   `npm test` (`npm run test:run`) and `npm run build` all pass; new
   components have tests with MSW handlers; visually verified against the
   mockup screen at 1280×800.
+- **MSW first:** extend the handlers in `src/test/handlers/` with matching
+  mock responses before writing the component (mock server runs in dev via
+  `VITE_ENABLE_MSW=true`).
+- **Query keys:** add new keys to the `QUERY_KEYS` object in
+  `src/lib/constants.ts` — never inline query-key strings.
+- **Error handling:** mutations show an inline error on 4xx, a generic toast
+  on 5xx, and never swallow errors silently.
+- **Loading states:** every data-fetching component needs a skeleton or
+  spinner — prefer shadcn `Skeleton` (`src/components/ui/skeleton.tsx`).
