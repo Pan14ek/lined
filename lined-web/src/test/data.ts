@@ -3,6 +3,7 @@ import type {
   LobbyDto,
   TaskDto,
   EventDto,
+  FreeSlotDto,
   LobbyInviteDto,
   NotificationDto,
 } from '@/types';
@@ -60,6 +61,15 @@ const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 const dayAfter = new Date(today);
 dayAfter.setDate(dayAfter.getDate() + 2);
 const dayAfterStr = dayAfter.toISOString().slice(0, 10);
+const inThreeDaysStr = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+
+/** A 3h mutual free window a few days out, used by the dashboard free-slot banner. */
+export const MOCK_FREE_SLOT: FreeSlotDto = {
+  start: `${inThreeDaysStr}T14:00:00Z`,
+  end: `${inThreeDaysStr}T17:00:00Z`,
+};
 
 export const MOCK_TASKS: TaskDto[] = [
   {
