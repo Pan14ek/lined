@@ -1,57 +1,11 @@
 import { useState } from 'react';
 import { X, Search } from 'lucide-react';
 import { HTTPError } from 'ky';
-import type { LobbyDto, UserSearchResultDto } from '@/types';
+import type { LobbyDto } from '@/types';
 import { useUserSearch } from '@/hooks/useUsers';
 import { useCreateInvite } from '@/hooks/useInvites';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-
-interface SearchResultRowProps {
-  user: UserSearchResultDto;
-  isMember: boolean;
-  isInvited: boolean;
-  isSending: boolean;
-  error?: string;
-  onInvite: () => void;
-}
-
-const SearchResultRow = ({
-  user,
-  isMember,
-  isInvited,
-  isSending,
-  error,
-  onInvite,
-}: SearchResultRowProps) => {
-  return (
-    <div
-      className={`flex items-center gap-3 rounded-lg p-2.5 ${isMember ? 'bg-brand-green-light' : ''}`}
-    >
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-green text-sm font-bold text-white">
-        {user.username.charAt(0).toUpperCase()}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-text-primary">{user.username}</p>
-        <p className="text-xs text-text-secondary">
-          @{user.username}
-          {isMember && ' · already in lobby'}
-        </p>
-        {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
-      </div>
-      {isMember && <span className="text-lg text-task-done">✓</span>}
-      {!isMember && (
-        <button
-          type="button"
-          onClick={onInvite}
-          disabled={isInvited || isSending}
-          className="h-8 flex-shrink-0 rounded-lg bg-brand-green px-3.5 text-xs font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60"
-        >
-          {isSending ? 'Inviting…' : isInvited ? 'Invite sent' : 'Invite'}
-        </button>
-      )}
-    </div>
-  );
-};
+import { SearchResultsList } from './SearchResultsList';
 
 interface AddMemberModalProps {
   lobby: LobbyDto;
@@ -135,35 +89,17 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
               <p className="text-xs text-text-muted">Type at least 2 characters to search.</p>
             )}
 
-            {isLoading && debouncedQuery.length >= 2 && (
-              <div className="flex flex-col gap-2" data-testid="add-member-search-loading">
-                {[0, 1].map((i) => (
-                  <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />
-                ))}
-              </div>
-            )}
-
-            {isError && (
-              <p className="text-sm text-text-secondary">Search failed — try again.</p>
-            )}
-
-            {!isLoading && !isError && debouncedQuery.length >= 2 && results?.content.length === 0 && (
-              <p className="text-sm text-text-secondary">No users found.</p>
-            )}
-
-            {!isLoading &&
-              !isError &&
-              results?.content.map((user) => (
-                <SearchResultRow
-                  key={user.id}
-                  user={user}
-                  isMember={lobby.memberIds.includes(user.id)}
-                  isInvited={invitedIds.has(user.id)}
-                  isSending={sendingId === user.id}
-                  error={rowErrors[user.id]}
-                  onInvite={() => handleInvite(user.id)}
-                />
-              ))}
+            <SearchResultsList
+              debouncedQuery={debouncedQuery}
+              isLoading={isLoading}
+              isError={isError}
+              results={results}
+              memberIds={lobby.memberIds}
+              invitedIds={invitedIds}
+              sendingId={sendingId}
+              rowErrors={rowErrors}
+              onInvite={handleInvite}
+            />
           </div>
 
           <div className="mt-4 rounded-lg bg-bg px-3.5 py-3 text-xs text-text-secondary">
