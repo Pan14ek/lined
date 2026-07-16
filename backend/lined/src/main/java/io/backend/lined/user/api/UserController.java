@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -85,6 +86,19 @@ public class UserController {
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id) {
     return userService.getById(id);
+  }
+
+  @Operation(
+      summary = "Delete own account",
+      description = "Deletes the caller's account when they do not own a lobby."
+  )
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "User ID", example = "1") @PathVariable Long id,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "1")
+      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId) {
+    userService.delete(id, currentUserId);
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/search")

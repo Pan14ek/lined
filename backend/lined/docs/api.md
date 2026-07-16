@@ -158,9 +158,24 @@ Get paginated list of users. Admin-only endpoint.
 
 `DELETE /api/users/{id}`
 
-Delete a user by ID (admin only).
+Deletes the caller's own account. The temporary MVP `X-User-Id` header must
+match `{id}`. An account that owns one or more lobbies cannot be deleted until
+the caller transfers lobby ownership or deletes those lobbies.
 
 **Response 204** – User deleted successfully.
+
+Deleting a non-lobby-owner account removes its subscriptions, roles, lobby
+memberships, lobby invites, notification preferences, notifications and their
+deliveries, tasks it created, and events it owns. Lobbies owned by other users
+remain; tasks created by other users remain with the deleted account cleared as
+their assignee.
+
+**Errors**
+
+- `400 Bad Request` when `X-User-Id` is missing or invalid.
+- `403 Forbidden` when the header identifies a different user.
+- `404 Not Found` when `{id}` does not identify an account.
+- `409 Conflict` when the account owns one or more lobbies.
 
 ---
 
