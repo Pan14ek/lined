@@ -2,22 +2,71 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HTTPError } from 'ky';
 import { AuthCard } from '@/components/AuthCard';
+import { AuthField } from '@/components/AuthField';
+import { AuthAlert } from '@/components/AuthAlert';
 import { useSignUp } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth';
+
+interface FormValues {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate(values: FormValues): Partial<Record<keyof FormValues, string>> {
+  const errors: Partial<Record<keyof FormValues, string>> = {};
+  if (!values.username.trim()) errors.username = 'Username is required';
+  if (!values.email.trim()) {
+    errors.email = 'Email is required';
+  } else if (!EMAIL_RE.test(values.email)) {
+    errors.email = 'Enter a valid email address';
+  }
+  if (!values.password) {
+    errors.password = 'Password is required';
+  } else if (values.password.length < 8) {
+    errors.password = 'Password must be at least 8 characters';
+  }
+  if (!values.confirmPassword) {
+    errors.confirmPassword = 'Please confirm your password';
+  } else if (values.confirmPassword !== values.password) {
+    errors.confirmPassword = 'Passwords do not match';
+  }
+  return errors;
+}
 
 export function SignUpPage() {
   const navigate = useNavigate();
   const signUp = useSignUp();
   const setUserId = useAuthStore((s) => s.setUserId);
 
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [values, setValues] = useState<FormValues>({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
+
+  const errors = validate(values);
+
+  function set<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function markTouched(key: keyof FormValues) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTouched({ username: true, email: true, password: true, confirmPassword: true });
+    if (Object.keys(errors).length > 0) return;
+
     signUp.mutate(
-      { username, email, password },
+      { username: values.username, email: values.email, password: values.password },
       {
         onSuccess: (user) => {
           setUserId(user.id);
@@ -27,64 +76,61 @@ export function SignUpPage() {
     );
   }
 
-  const errorMessage = getErrorMessage(signUp.error);
+  const serverError = getServerErrorMessage(signUp.error);
 
   return (
     <AuthCard heading="Create your account" subheading="Join Lined and start coordinating together">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <label
-            htmlFor="signup-username"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
-            Username
-          </label>
-          <input
+          <AuthField
             id="signup-username"
+            label="Username"
             type="text"
-            required
             autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={values.username}
+            onChange={(v) => set('username', v)}
+            onBlur={() => markTouched('username')}
             placeholder="alex_johnson"
-            className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
+            error={touched.username ? errors.username : null}
           />
         </div>
         <div className="mt-5">
-          <label
-            htmlFor="signup-email"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
-            Email address
-          </label>
-          <input
+          <AuthField
             id="signup-email"
+            label="Email address"
             type="email"
-            required
             autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={values.email}
+            onChange={(v) => set('email', v)}
+            onBlur={() => markTouched('email')}
             placeholder="alex@example.com"
-            className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
+            error={touched.email ? errors.email : null}
           />
         </div>
         <div className="mt-5">
-          <label
-            htmlFor="signup-password"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
-            Password
-          </label>
-          <input
+          <AuthField
             id="signup-password"
+            label="Password"
             type="password"
-            required
-            minLength={8}
             autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={values.password}
+            onChange={(v) => set('password', v)}
+            onBlur={() => markTouched('password')}
             placeholder="Create a strong password"
-            className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
+            error={touched.password ? errors.password : null}
+          />
+        </div>
+        <div className="mt-5">
+          <AuthField
+            id="signup-confirm-password"
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            value={values.confirmPassword}
+            onChange={(v) => set('confirmPassword', v)}
+            onBlur={() => markTouched('confirmPassword')}
+            placeholder="Re-enter your password"
+            error={touched.confirmPassword ? errors.confirmPassword : null}
           />
         </div>
 
@@ -92,11 +138,7 @@ export function SignUpPage() {
           By creating an account you agree to our Terms &amp; Privacy Policy
         </p>
 
-        {errorMessage && (
-          <p className="mt-3 text-xs font-medium text-red-600" role="alert">
-            {errorMessage}
-          </p>
-        )}
+        {serverError && <AuthAlert message={serverError} />}
 
         <button
           type="submit"
@@ -117,7 +159,7 @@ export function SignUpPage() {
   );
 }
 
-function getErrorMessage(error: unknown): string | null {
+function getServerErrorMessage(error: unknown): string | null {
   if (!error) return null;
   if (error instanceof HTTPError && error.response.status === 409) {
     return 'Username or email already taken';

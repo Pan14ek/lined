@@ -66,4 +66,14 @@ describe('SignInPage', () => {
 
     expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
   });
+
+  it('shows a required-field error after blurring an empty password', async () => {
+    const user = userEvent.setup();
+    renderSignIn();
+
+    await user.click(screen.getByLabelText(/password/i));
+    await user.tab();
+
+    expect(await screen.findByText('Password is required')).toBeInTheDocument();
+  });
 });
