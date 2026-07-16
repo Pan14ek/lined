@@ -12,20 +12,23 @@ function createTestQueryClient() {
   });
 }
 
-function AllProviders({ children }: { children: ReactNode }) {
-  const queryClient = createTestQueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </QueryClientProvider>
-  );
+function createProviders(initialEntries: string[]) {
+  return function AllProviders({ children }: { children: ReactNode }) {
+    const queryClient = createTestQueryClient();
+    return (
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+      </QueryClientProvider>
+    );
+  };
 }
 
 export function renderWithProviders(
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
+  options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] },
 ) {
-  return render(ui, { wrapper: AllProviders, ...options });
+  const { initialEntries = ['/'], ...renderOptions } = options ?? {};
+  return render(ui, { wrapper: createProviders(initialEntries), ...renderOptions });
 }
 
 export { screen, waitFor } from '@testing-library/react';
