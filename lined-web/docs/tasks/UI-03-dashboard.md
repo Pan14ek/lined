@@ -75,5 +75,9 @@ into the create flows.
 | My tasks | `GET /api/tasks?assigneeId={me}` → `TaskDto[]` |
 | Current user | `GET /api/users/{id}` → `UserDto` |
 
-**Backend gap:** no aggregate "dashboard stats" endpoint and no server-side
-free-slot detection — both are computed client-side for MVP.
+**Backend gap (updated July 2026):** server-side free-slot detection now
+exists — prefer `GET /api/lobbies/{id}/free-slots?from=&to=` over the
+client-side computation for the banner (client-side stays as a fallback/for
+in-grid rendering). Still no aggregate dashboard endpoint (proposal:
+`backend/lined/docs/api-proposals/dashboard-summary-api.md`) — counts remain
+client-derived until it lands.

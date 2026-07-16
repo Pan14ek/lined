@@ -68,6 +68,6 @@ tab (tasks), including status toggling via checkbox.
 | Task list | `GET /api/tasks?lobbyId={id}` → `TaskDto[]` |
 | Toggle status | `PATCH /api/tasks/{id}` — body `TaskUpdateDto { status }` → `TaskDto` |
 
-**Backend gap:** `TaskDto` has no `description` field, but the mockup shows a
-description line under each title. MVP: omit the description line (or show
-nothing); flag `description` as a backend follow-up.
+**Backend gap (resolved July 2026):** `TaskDto` now includes `description`
+and `priority` — render the description line under the title as the mockup
+shows (requires Task 15's type updates).

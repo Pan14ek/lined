@@ -71,7 +71,10 @@ framing and pre-fill quality are the feature.
 | Verify member availability | `GET /api/calendar/user-conflict?userId=&from=&to=` → `UserConflictDto` |
 | Reserve | `POST /api/calendar/events` — `EventCreateDto { title, shared: true, startAt, endAt, timezone, lobbyId }` → `EventDto` |
 
-**Backend gaps:** no server-side free-slot endpoint (client-side detection
-sees only events visible to the caller), no `location` on events, no
-notification delivery ("Notify" toggle non-functional — disable with
-tooltip).
+**Backend gaps (resolved July 2026):** `GET /api/lobbies/{id}/free-slots`
+now computes privacy-correct common availability — use it as the primary
+slot source (steps 1–2's client-side detection becomes a rendering aid, and
+the user-conflict probing is no longer needed). Events accept `location` and
+`notifyMembers` — wire the location input and the notify toggle for real
+(in-app inbox notification; email/push delivery still pending). All require
+Task 15.

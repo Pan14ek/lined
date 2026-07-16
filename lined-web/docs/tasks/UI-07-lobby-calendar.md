@@ -68,5 +68,9 @@ generalises it for lobby scoping instead of rebuilding it.
 | Create event | `POST /api/calendar/events` — `EventCreateDto { title, shared, startAt, endAt, timezone, lobbyId }` |
 | Delete event | `DELETE /api/calendar/events/{id}` |
 
-**Backend gap:** no "free slots for lobby" endpoint and no per-lobby events
-query parameter — both handled client-side for MVP.
+**Backend gap (updated July 2026):** `GET /api/lobbies/{id}/free-slots?from=&to=`
+now exists and is privacy-correct (private events of other members block
+availability without exposing details) — use it for the free bands instead
+of the client-side computation (step 2's caveat no longer applies; requires
+Task 15). Still no per-lobby events query parameter — keep filtering the
+events list by `lobbyId` client-side.

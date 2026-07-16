@@ -70,6 +70,12 @@ persisted client-side (documented) so the UI is complete and swappable later.
 | Load profile | `GET /api/users/{id}` → `UserDto` |
 | Update profile / password | `PATCH /api/users/{id}` — `UserUpdateDto { username?, email?, password? }` → `UserDto` |
 
-**Backend gaps:** no delete-account endpoint, no notification-preferences
-API, no avatar upload, no display-name field, no current-password
-verification.
+**Backend gaps (updated July 2026):**
+- **Resolved:** `DELETE /api/users/{id}` exists (self-service; 409 when the
+  account still owns lobbies — surface "transfer or delete your lobbies
+  first") — implement the Danger Zone button for real (step 6 obsolete).
+  Notification preferences have a real API — step 4's client-only store is
+  superseded by Task 16 (`GET/PATCH /api/notifications/preferences`).
+- **Still missing:** avatar upload, display-name field, current-password
+  verification on change, `GET /api/users/me` (keep `users/{id}` until the
+  proposal in `backend/lined/docs/api-proposals/users-me-endpoint.md` lands).

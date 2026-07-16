@@ -16,15 +16,20 @@ render the card shell with a "form coming soon" placeholder. The auth store
 
 ## Idea of this task
 
-The backend has **no login endpoint** — MVP auth is the `X-User-Id: <Long>`
-header. So:
+> **Update (July 2026):** the backend now has `POST /api/auth/login` with
+> real password verification — the original user-search workaround is
+> obsolete. Requires Task 15 (API contract refresh) for the `auth.ts` API
+> module and token-aware auth store.
 
-- **Sign Up** = `POST /api/users` with username/email/password, then store the
-  returned `id` in the auth store and redirect to `/`.
-- **Sign In** = look the user up with `GET /api/users/search?q=<email or
-  username>`, match on exact email/username, store the `id`, redirect to `/`.
-  The password field is rendered (per mockup) but not validated server-side —
-  add a `// MVP: password not verified until real auth lands` note.
+- **Sign Up** = `POST /api/users` with username/email/password, then sign in
+  (or use the returned id directly), store identity in the auth store,
+  redirect to `/`.
+- **Sign In** = `POST /api/auth/login` with `{ identifier, password }`
+  (identifier = email **or** username). On 200, store `userId` + token in
+  the auth store and redirect to `/`; on 401 show "Invalid credentials"
+  without revealing which part failed.
+- Requests keep sending `X-User-Id` (the backend's transitional identity
+  path); the token is stored for the coming filter switch.
 - Add a route guard: unauthenticated users visiting any `AppShell` route are
   redirected to `/sign-in`; authenticated users visiting auth pages go to `/`.
 
@@ -71,9 +76,10 @@ header. So:
 | Purpose | Endpoint |
 |---|---|
 | Sign up | `POST /api/users` — body `UserCreateDto { username, email, password }` → `UserDto` |
-| Sign in (lookup) | `GET /api/users/search?q=<query>&page=0&size=20` → `UserPageDto` |
+| Sign in | `POST /api/auth/login` — body `{ identifier, password }` → token + `userId`/`username`/`email`/`roles`; `401` on bad credentials |
 | Load profile after auth | `GET /api/users/{id}` → `UserDto` |
 
-**Backend gap:** no `POST /api/auth/login` — password is not verified. When
-real auth (JWT) lands, only `useAuth.ts` and `src/api/client.ts` should need
-changes.
+**Backend gap (resolved July 2026):** `POST /api/auth/login` now exists with
+password verification. Remaining: no `refresh`/`logout`/`register` endpoints
+yet and request filtering still trusts `X-User-Id` — keep auth logic
+concentrated in `useAuth.ts` / `src/api/client.ts` for the token switch.
