@@ -2,6 +2,7 @@ package io.backend.lined.event.domain;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -34,6 +35,29 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       """)
   List<EventEntity> findOverlappingByUser(
       @Param("userId") Long userId,
+      @Param("from") OffsetDateTime from,
+      @Param("to") OffsetDateTime to
+  );
+
+  /**
+   * Finds events that block at least one supplied member, ordered for linear free-slot calculation.
+   */
+  @Query("""
+      SELECT DISTINCT e FROM EventEntity e
+      LEFT JOIN e.lobby.members sharedMember
+      WHERE e.startAt < :to
+        AND e.endAt > :from
+        AND (
+          e.owner.id IN :memberIds
+          OR (
+            e.shared = true
+            AND (e.lobby.owner.id IN :memberIds OR sharedMember.id IN :memberIds)
+          )
+        )
+      ORDER BY e.startAt ASC
+      """)
+  List<EventEntity> findBusyForMemberIds(
+      @Param("memberIds") Set<Long> memberIds,
       @Param("from") OffsetDateTime from,
       @Param("to") OffsetDateTime to
   );

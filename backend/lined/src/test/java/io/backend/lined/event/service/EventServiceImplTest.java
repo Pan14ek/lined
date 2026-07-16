@@ -51,6 +51,8 @@ class EventServiceImplTest {
   private LobbyAccessPolicy accessPolicy;
   @Mock
   private EventConflictAnalyzer conflictAnalyzer;
+  @Mock
+  private FreeSlotCalculator freeSlotCalculator;
 
   @InjectMocks
   private EventServiceImpl eventService;

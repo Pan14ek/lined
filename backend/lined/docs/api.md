@@ -274,6 +274,50 @@ All fields are optional; omitted fields remain unchanged.
 - `403 Forbidden` when the caller is not the current owner.
 - `409 Conflict` when `ownerId` is not an existing lobby member.
 
+### Find Common Free Slots
+
+`GET /api/lobbies/{id}/free-slots?from={timestamp}&to={timestamp}`
+
+Returns the portions of the requested half-open time window where every current lobby member
+is available. The current caller must be a lobby member and is identified by the temporary
+`X-User-Id` header.
+
+Private events block only their owner; shared events block every current member of the event's
+lobby. The response deliberately contains no event metadata, so a caller can discover mutual
+availability without seeing another member's private calendar details.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | Long | Lobby ID path parameter. |
+| `from` | OffsetDateTime | Inclusive availability-window start. |
+| `to` | OffsetDateTime | Exclusive availability-window end. |
+
+Timestamps use ISO-8601 with an explicit UTC designator or numeric offset, for example
+`2026-01-01T09:00:00Z` and `2026-01-01T11:00:00+02:00`. In a raw URL, encode the plus sign as
+`%2B`. Offset-less local timestamps are rejected because the API has no timezone context with
+which to interpret them safely.
+
+**Response 200**
+
+```json
+[
+  {
+    "start": "2026-01-01T09:00:00Z",
+    "end": "2026-01-01T11:00:00Z"
+  },
+  {
+    "start": "2026-01-01T13:00:00Z",
+    "end": "2026-01-01T22:00:00Z"
+  }
+]
+```
+
+**Errors**
+
+- `400 Bad Request` when `from` and `to` do not define a non-empty time window.
+- `403 Forbidden` when the caller is not a lobby member.
+- `404 Not Found` when the lobby does not exist.
+
 ---
 
 ## ✅ Tasks API
