@@ -395,7 +395,8 @@ priority defaults to `MEDIUM` and status defaults to `TODO`.
   "lobbyId": 101,
   "description": "Pick up milk and bread",
   "priority": "HIGH",
-  "status": "IN_PROGRESS"
+  "status": "IN_PROGRESS",
+  "notifyAssignee": true
 }
 ```
 
@@ -611,7 +612,8 @@ is optional, free-form text limited to 255 characters.
   "startAt": "2025-11-20T17:00:00Z",
   "endAt": "2025-11-20T19:00:00Z",
   "timezone": "Europe/Kyiv",
-  "lobbyId": 101
+  "lobbyId": 101,
+  "notifyMembers": true
 }
 ```
 
@@ -647,6 +649,58 @@ nullable `location` field.
   "createdAt": "2025-11-13T10:00:00Z"
 }
 ```
+
+---
+
+## 🔔 Notifications API
+
+All notification endpoints use the temporary `X-User-Id` header. Preference
+updates are partial: omitted fields keep their current value. Every preference
+defaults to `true` until the user saves an explicit choice.
+
+### Global Preferences
+
+`GET /api/notifications/preferences`
+
+`PATCH /api/notifications/preferences`
+
+```json
+{
+  "sharedEventsEnabled": true,
+  "taskAssignedEnabled": true,
+  "freeSlotsEnabled": true,
+  "eventRemindersEnabled": true,
+  "emailDigestsEnabled": true
+}
+```
+
+### Per-Lobby Preferences
+
+`GET /api/lobbies/{lobbyId}/notification-preferences`
+
+`PATCH /api/lobbies/{lobbyId}/notification-preferences`
+
+```json
+{
+  "newEventsEnabled": true,
+  "taskUpdatesEnabled": true,
+  "freeSlotsEnabled": true
+}
+```
+
+The caller must be a member of the lobby. A notification is emitted only when
+both its global and per-lobby preference are enabled.
+
+### Inbox
+
+`GET /api/notifications/mine`
+
+`PATCH /api/notifications/{id}/read`
+
+Inbox records are visible only to their recipient. Each record contains an
+immediately delivered `IN_APP` delivery and pending `EMAIL` and `PUSH`
+delivery intents. This backend does not yet send external email or push
+messages.
 
 ---
 

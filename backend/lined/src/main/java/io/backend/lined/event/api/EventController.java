@@ -49,7 +49,8 @@ public class EventController {
                       "startAt":"2025-11-20T17:00:00Z",
                       "endAt":"2025-11-20T19:00:00Z",
                       "timezone":"Europe/Kyiv",
-                      "lobbyId":101
+                      "lobbyId":101,
+                      "notifyMembers":true
                     }
                   """)))
       @Valid @RequestBody EventCreateDto dto) {

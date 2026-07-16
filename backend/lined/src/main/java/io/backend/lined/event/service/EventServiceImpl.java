@@ -15,6 +15,7 @@ import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
@@ -38,6 +39,7 @@ public class EventServiceImpl implements EventService {
   private final LobbyAccessPolicy accessPolicy;
   private final EventConflictAnalyzer conflictAnalyzer;
   private final FreeSlotCalculator freeSlotCalculator;
+  private final NotificationService notificationService;
 
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId) {
@@ -57,7 +59,14 @@ public class EventServiceImpl implements EventService {
         .owner(owner)
         .build();
 
-    return mapper.toDto(repo.save(entity));
+    var saved = repo.save(entity);
+    if (dto.notifyMembers() && saved.isShared()) {
+      lobby.getMembers().stream()
+          .filter(member -> !member.getId().equals(owner.getId()))
+          .forEach(member -> notificationService.notifySharedEventCreated(
+              member, owner, saved.getId(), lobby, saved.getTitle()));
+    }
+    return mapper.toDto(saved);
   }
 
   @Override

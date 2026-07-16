@@ -20,6 +20,7 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
@@ -53,6 +54,8 @@ class EventServiceImplTest {
   private EventConflictAnalyzer conflictAnalyzer;
   @Mock
   private FreeSlotCalculator freeSlotCalculator;
+  @Mock
+  private NotificationService notificationService;
 
   @InjectMocks
   private EventServiceImpl eventService;
@@ -128,6 +131,22 @@ class EventServiceImplTest {
     var entityCaptor = ArgumentCaptor.forClass(EventEntity.class);
     verify(repo).save(entityCaptor.capture());
     assertThat(entityCaptor.getValue().getLocation()).isEqualTo("Whole Foods Market");
+  }
+
+  @Test
+  void create_notifiesOtherMembers_whenRequestedForSharedEvent() {
+    EventCreateDto dto = new EventCreateDto(
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 101L, true);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(any(EventEntity.class))).thenReturn(eventEntity);
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    eventService.create(dto, 1L);
+
+    verify(notificationService).notifySharedEventCreated(member, owner, 9001L, lobby,
+        "Dinner together");
   }
 
   @Test

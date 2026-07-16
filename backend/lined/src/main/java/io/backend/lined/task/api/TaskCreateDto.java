@@ -16,6 +16,12 @@ public record TaskCreateDto(
     @Schema(example = "2025-11-20") LocalDate dueDate,
     @Schema(example = "Pick up milk and bread") @Size(max = 1000) String description,
     @Schema(example = "MEDIUM") TaskPriority priority,
-    @Schema(example = "TODO") TaskStatus status
+    @Schema(example = "TODO") TaskStatus status,
+    @Schema(example = "true") boolean notifyAssignee
 ) {
+
+  public TaskCreateDto(String title, Long lobbyId, Long assigneeId, LocalDate dueDate,
+                       String description, TaskPriority priority, TaskStatus status) {
+    this(title, lobbyId, assigneeId, dueDate, description, priority, status, false);
+  }
 }

@@ -73,6 +73,14 @@ public class OpenApiConfig {
   }
 
   @Bean
+  public GroupedOpenApi notificationsApi() {
+    return GroupedOpenApi.builder()
+        .group("notifications")
+        .pathsToMatch("/api/notifications/**", "/api/lobbies/*/notification-preferences")
+        .build();
+  }
+
+  @Bean
   public GroupedOpenApi plansApi() {
     return GroupedOpenApi.builder()
         .group("plans")
