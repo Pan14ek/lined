@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/AppShell';
+import { RequireAuth, RedirectIfAuthed } from '@/components/RequireAuth';
 import { SignInPage } from '@/pages/SignInPage';
 import { SignUpPage } from '@/pages/SignUpPage';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -12,22 +13,35 @@ import { UserSettingsPage } from '@/pages/UserSettingsPage';
 export const router = createBrowserRouter([
   {
     path: '/sign-in',
-    element: <SignInPage />,
+    element: (
+      <RedirectIfAuthed>
+        <SignInPage />
+      </RedirectIfAuthed>
+    ),
   },
   {
     path: '/sign-up',
-    element: <SignUpPage />,
+    element: (
+      <RedirectIfAuthed>
+        <SignUpPage />
+      </RedirectIfAuthed>
+    ),
   },
   {
-    path: '/',
-    element: <AppShell />,
+    element: <RequireAuth />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'lobbies/:id', element: <LobbyPage /> },
-      { path: 'lobbies/:id/settings', element: <LobbySettingsPage /> },
-      { path: 'calendar', element: <CalendarPage /> },
-      { path: 'tasks', element: <TasksPage /> },
-      { path: 'settings', element: <UserSettingsPage /> },
+      {
+        path: '/',
+        element: <AppShell />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'lobbies/:id', element: <LobbyPage /> },
+          { path: 'lobbies/:id/settings', element: <LobbySettingsPage /> },
+          { path: 'calendar', element: <CalendarPage /> },
+          { path: 'tasks', element: <TasksPage /> },
+          { path: 'settings', element: <UserSettingsPage /> },
+        ],
+      },
     ],
   },
 ]);
