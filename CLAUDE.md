@@ -51,6 +51,7 @@ npm run build
 
 ## Always Check Before Changing Web Code
 
+0. **Task plan:** UI feature work is driven by `lined-web/docs/UI_TASKS.md` — one task per branch/PR, branch names from the table, workflow in `lined-web/AGENTS.md`.
 1. **Data fetching:** Only through TanStack Query hooks in `src/hooks/` — never direct `ky` calls in components.
 2. **State split:** Server data → TanStack Query. UI state → Zustand.
 3. **Colours:** Only Tailwind tokens from `tailwind.config.ts` — no hard-coded hex values.
