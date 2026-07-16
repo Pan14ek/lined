@@ -21,6 +21,13 @@ export const LOBBY_TYPE_BADGE_CLASSES: Record<LobbyType, string> = {
   WORK: 'bg-lobby-work/10 text-lobby-work',
 };
 
+export const LOBBY_TYPE_BORDER_CLASSES: Record<LobbyType, string> = {
+  COUPLE: 'border-lobby-couple',
+  FAMILY: 'border-lobby-family',
+  FRIENDS: 'border-lobby-friends',
+  WORK: 'border-lobby-work',
+};
+
 export const LOBBY_TYPE_ICONS: Record<LobbyType, string> = {
   COUPLE: '💑',
   FAMILY: '👨‍👩‍👧‍👦',
