@@ -16,7 +16,13 @@ npx serve -p 4321 mockups/
 
 Or use `preview_start { name: "mockups" }` (configured in `.claude/launch.json`).
 
-## 15 Screens (nav label → screen id)
+## Deep links
+
+Every screen is directly linkable: `http://localhost:4321/#<screen-id>`
+(e.g. `/#calendar-month`). The nav script syncs `location.hash` on click and
+on load/hashchange.
+
+## 20 Screens (nav label → screen id)
 
 | Screen | id |
 |---|---|
@@ -35,6 +41,11 @@ Or use `preview_start { name: "mockups" }` (configured in `.claude/launch.json`)
 | Reserve Slot | `reserve-slot` |
 | Tasks Board | `tasks` |
 | User Settings | `user-settings` |
+| Create Lobby | `create-lobby` |
+| Calendar: Month | `calendar-month` |
+| Notifications | `notifications` |
+| Invites | `invites` |
+| Subscription | `subscription` |
 
 ## Key Rules
 

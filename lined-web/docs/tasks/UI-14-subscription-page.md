@@ -32,12 +32,10 @@ the UI so plan management is self-service. The API layer
 
 ## Reference to mockup
 
-- **There is no mockup screen for this page.** Design it in the existing
-  settings visual language: reuse `SettingsCard` (Task 12) for the sections
-  and the standard card/button tokens.
-- Recommended: add a `subscription` screen to `mockups/index.html` (nav tab
-  "Subscription") before or during this task so the visual target is
-  explicit; follow the mockup conventions in `mockups/AGENTS.md`.
+- The page now has a dedicated screen: id **`subscription`**
+  (`http://localhost:4321/#subscription`) — Current Plan card with cancel
+  button, three plan cards (current one highlighted with a CURRENT badge),
+  and a Subscription History card with ACTIVE/ENDED badges.
 
 ## Development steps
 

@@ -18,16 +18,13 @@ npx serve -p 4321 mockups/
 # → http://localhost:4321
 ```
 
-The mockup is a single HTML file with 15 screens toggled by the top nav bar.
-Each screen is a `<div class="screen" id="...">`. **There is currently no
-deep-linking** — you must click the nav tab with the matching label.
-
-> **Recommended improvement:** add hash-based deep links to
-> `mockups/index.html` so each task file can link straight to its screen
-> (e.g. `http://localhost:4321/#calendar`). Implementation: in the inline
-> `<script>`, read `location.hash` on load and call `show(hash)`, and update
-> `location.hash` inside `show()`. Until then, every task file references the
-> screen **id** and the nav tab label to click.
+The mockup is a single HTML file with 20 screens toggled by the top nav bar.
+Each screen is a `<div class="screen" id="...">`. **Deep links are
+supported**: open `http://localhost:4321/#<screen-id>` directly (e.g.
+`/#calendar-month`); the hash also updates as you click nav tabs. Screens
+exist for every task, including `create-lobby` (task 4), `calendar-month`
+(task 10), `subscription` (task 14), `notifications` (task 16), and
+`invites` (task 17).
 
 ## Current implementation status (July 2026)
 

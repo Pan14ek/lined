@@ -41,9 +41,10 @@ directly and skip the migration.
 - The bell button appears on screen id **`dashboard`**; the toggle sections
   are on **`user-settings`** and **`lobby-settings`** (`mockups/index.html`,
   serve with `npx serve -p 4321 mockups/`).
-- **There is no inbox-dropdown mockup screen.** Build it in the create-menu
-  dropdown's visual language (`.create-dropdown` styles); recommended: add a
-  `notifications` screen to the mockup for parity.
+- The inbox dropdown now has a dedicated screen: id **`notifications`**
+  (`http://localhost:4321/#notifications`) — bell with unread badge, header
+  with "Mark all read", unread rows tinted green with a dot, per-row icon,
+  message, relative time, and lobby name.
 
 ## Development steps
 

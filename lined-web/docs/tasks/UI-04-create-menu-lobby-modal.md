@@ -29,9 +29,9 @@ the menu itself, the shared UI store, and the Create Lobby modal end-to-end.
   **`lobby-settings`** (`.type-grid` / `.type-opt` styles).
 - Serve with `npx serve -p 4321 mockups/`; no deep links yet — see
   [../UI_TASKS.md](../UI_TASKS.md) for how to add them.
-- Note: there is **no dedicated Create Lobby mockup screen** — build it as a
-  standard modal (like Create Event) containing the type picker; consider
-  adding a `create-lobby` screen to the mockup for parity.
+- The Create Lobby modal now has a dedicated screen: id **`create-lobby`**
+  (`http://localhost:4321/#create-lobby`) — name input, 2×2 type picker,
+  owner hint, Cancel / Create Lobby buttons.
 
 ## Development steps
 
