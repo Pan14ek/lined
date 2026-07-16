@@ -13,6 +13,25 @@ export function useWeekEvents(weekStart: Date) {
   });
 }
 
+const UPCOMING_EVENTS_WINDOW_DAYS = 14;
+const UPCOMING_EVENTS_LIMIT = 5;
+
+/** Next 5 events across all lobbies over the coming 2 weeks, soonest first. */
+export function useUpcomingEvents() {
+  const now = new Date();
+  const from = now.toISOString();
+  const to = addDays(now, UPCOMING_EVENTS_WINDOW_DAYS).toISOString();
+
+  return useQuery({
+    queryKey: [...QUERY_KEYS.events, 'upcoming', from.slice(0, 10)],
+    queryFn: () => listEvents({ from, to }),
+    select: (events) =>
+      [...events]
+        .sort((a, b) => a.startAt.localeCompare(b.startAt))
+        .slice(0, UPCOMING_EVENTS_LIMIT),
+  });
+}
+
 export function useCreateEvent() {
   const queryClient = useQueryClient();
   return useMutation({
