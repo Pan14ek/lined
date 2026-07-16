@@ -1,5 +1,5 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { getUser } from '@/api/users';
+import { getUser, searchUsers } from '@/api/users';
 import { QUERY_KEYS } from '@/lib/constants';
 
 export function useUser(id: number | undefined) {
@@ -16,4 +16,11 @@ export const useUsers = (ids: number[]) =>
       queryKey: QUERY_KEYS.user(id),
       queryFn: () => getUser(id),
     })),
+  });
+
+export const useUserSearch = (query: string) =>
+  useQuery({
+    queryKey: QUERY_KEYS.userSearch(query),
+    queryFn: () => searchUsers(query),
+    enabled: query.trim().length >= 2,
   });

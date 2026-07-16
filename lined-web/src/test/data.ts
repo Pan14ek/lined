@@ -27,6 +27,24 @@ export const MOCK_USERS: UserDto[] = [
     activePlan: 'PRO_MONTHLY',
     activeUntil: '2026-05-01T12:00:00Z',
   },
+  {
+    id: 3,
+    username: 'nastia_bondar',
+    email: 'nastia.bondar@lined.app',
+    createdAt: '2025-06-10T09:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: null,
+    activeUntil: null,
+  },
+  {
+    id: 4,
+    username: 'natascha_m',
+    email: 'natascha@lined.app',
+    createdAt: '2025-08-22T09:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: null,
+    activeUntil: null,
+  },
 ];
 
 export const MOCK_LOBBIES: LobbyDto[] = [
@@ -219,6 +237,16 @@ export const MOCK_LOBBY_INVITES: LobbyInviteDto[] = [
     sentAt: '2026-07-15T10:00:00Z',
     createdAt: '2026-07-15T10:00:00Z',
     updatedAt: '2026-07-15T10:00:00Z',
+  },
+  {
+    id: 2,
+    lobbyId: 1,
+    inviterId: 1,
+    inviteeId: 3,
+    status: 'PENDING',
+    sentAt: '2026-03-27T10:00:00Z',
+    createdAt: '2026-03-27T10:00:00Z',
+    updatedAt: '2026-03-27T10:00:00Z',
   },
 ];
 

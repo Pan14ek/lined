@@ -56,6 +56,7 @@ export const TASK_STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
 export const QUERY_KEYS = {
   users: ['users'] as const,
   user: (id: number) => ['users', id] as const,
+  userSearch: (q: string) => ['users', 'search', q] as const,
   lobbies: ['lobbies'] as const,
   lobbyDetail: (id: number) => ['lobbies', id] as const,
   lobbyFreeSlots: (id: number) => ['lobbies', id, 'free-slots'] as const,
