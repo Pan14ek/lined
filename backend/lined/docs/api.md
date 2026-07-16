@@ -303,6 +303,17 @@ Partially update task metadata. Valid priority values are `HIGH`, `MEDIUM`, and
 `LOW`. Omitted fields remain unchanged; an empty or whitespace-only
 `description` clears the stored description.
 
+### List My Tasks
+
+`GET /api/tasks/mine`
+
+Returns every task in lobbies where the caller is a member. The caller is
+identified by the temporary `X-User-Id` request header. This endpoint is
+intended for the global task board and does not accept filters; clients apply
+lobby, member, and date filters locally.
+
+Tasks from lobbies where the caller is not a member are never returned.
+
 ---
 
 ## 🛡️ Roles API
