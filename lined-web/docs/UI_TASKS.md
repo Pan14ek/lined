@@ -88,6 +88,7 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 | 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | DONE |
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | TODO |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | TODO |
+| 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | TODO |
 
 ## Suggested order
 
@@ -96,8 +97,9 @@ and every other task builds on it. Then 1–2 (auth + live sidebar), 3–4
 (dashboard + create flows), 5–8 (lobby detail), 9 (kanban), 10–11
 (calendar), 12–13 (settings), 16–17 (notifications + invites), 14
 (subscription — lowest priority). Tasks 6/7/8 depend on 5; task 11 depends
-on 3 and 10; task 14 depends on 12; tasks 16/17 depend on 15; everything
-else is parallelisable.
+on 3 and 10; task 14 depends on 12; tasks 16/17 depend on 15; task 18 is
+blocked on the backend gap it flags (`feature/password-reset-flow` in
+`backend/lined/docs/experiment-tasks.md`) and otherwise parallelisable.
 
 ## Conventions for every task
 
