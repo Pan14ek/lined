@@ -14,6 +14,13 @@ export const LOBBY_TYPE_COLORS: Record<LobbyType, string> = {
   WORK: 'bg-lobby-work',
 };
 
+export const LOBBY_TYPE_BADGE_CLASSES: Record<LobbyType, string> = {
+  COUPLE: 'bg-lobby-couple/10 text-lobby-couple',
+  FAMILY: 'bg-lobby-family/10 text-lobby-family',
+  FRIENDS: 'bg-lobby-friends/10 text-lobby-friends',
+  WORK: 'bg-lobby-work/10 text-lobby-work',
+};
+
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
@@ -24,6 +31,12 @@ export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
   TODO: 'bg-task-todo',
   IN_PROGRESS: 'bg-task-inprog',
   DONE: 'bg-task-done',
+};
+
+export const TASK_STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
+  TODO: 'bg-task-todo/10 text-task-todo',
+  IN_PROGRESS: 'bg-task-inprog/10 text-task-inprog',
+  DONE: 'bg-task-done/10 text-task-done',
 };
 
 export const QUERY_KEYS = {

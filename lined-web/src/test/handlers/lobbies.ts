@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { MOCK_LOBBIES } from '../data';
+import { MOCK_LOBBIES, MOCK_FREE_SLOT } from '../data';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -52,7 +52,9 @@ export const lobbyHandlers = [
         { status: 400 },
       );
     }
-    return HttpResponse.json([{ start: from, end: to }]);
+    const slots =
+      MOCK_FREE_SLOT.start >= from && MOCK_FREE_SLOT.end <= to ? [MOCK_FREE_SLOT] : [];
+    return HttpResponse.json(slots);
   }),
 
   http.delete(`${BASE}/lobbies/:lobbyId/members/:userId`, ({ params }) => {
