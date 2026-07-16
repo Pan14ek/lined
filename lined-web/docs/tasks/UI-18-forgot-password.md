@@ -19,7 +19,9 @@ set a new password.
 > `PATCH /api/users/{id}` requires the caller's own `X-User-Id` — there is
 > no way for a signed-out, locked-out user to prove identity and set a new
 > password. This gap is recorded as `feature/password-reset-flow` (Domain
-> "Backend API gap") in `backend/lined/docs/experiment-tasks.md`. **Do not
+> "Backend API gap") in `backend/lined/docs/experiment-tasks.md`, with a
+> detailed proposal at
+> `backend/lined/docs/api-proposals/password-reset-flow.md`. **Do not
 > start this task until that endpoint (or an agreed MVP substitute) exists**
 > — implementing it against `PATCH /api/users/{id}` today would require the
 > old password or a signed-in session, which defeats the purpose of a
@@ -64,8 +66,10 @@ there is no separate mockup screen to match pixel-for-pixel.
 6. Register both routes in `src/router.tsx`, wrapped in `RedirectIfAuthed`
    like `/sign-in` and `/sign-up`.
 7. Update `SignInPage.tsx`'s "Forgot password?" text to a real `Link`.
-8. MSW handlers in `src/test/handlers/auth.ts`: success (always 200,
-   neutral message), invalid/expired token (4xx on redemption).
+8. MSW handlers in `src/test/handlers/auth.ts`: request step always returns
+   `202` regardless of whether the identifier matches (no distinguishable
+   response); redemption returns `204` on success, `400` for an invalid or
+   expired token.
 9. Tests: request-step shows the neutral success message for both known and
    unknown identifiers; redemption-step validates and blocks on mismatched
    passwords (same assertions as the existing `SignUpPage.test.tsx` mismatch
@@ -84,8 +88,8 @@ there is no separate mockup screen to match pixel-for-pixel.
 
 | Purpose | Endpoint |
 |---|---|
-| Request reset | *Not yet implemented* — see `feature/password-reset-flow` in `backend/lined/docs/experiment-tasks.md` |
-| Redeem token | *Not yet implemented* — see `feature/password-reset-flow` in `backend/lined/docs/experiment-tasks.md` |
+| Request reset | *Not yet implemented* — `POST /api/auth/password-reset-requests`, see `backend/lined/docs/api-proposals/password-reset-flow.md` |
+| Redeem token | *Not yet implemented* — `POST /api/auth/password-resets`, see `backend/lined/docs/api-proposals/password-reset-flow.md` |
 
 **Backend gap:** no password-reset endpoints exist. This task cannot start
 until they (or an agreed MVP substitute) ship — see the gap entry above for
