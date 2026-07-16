@@ -196,36 +196,6 @@ class LobbyControllerTest {
   }
 
   @Test
-  void addMember_delegatesToService() {
-    when(lobbyService.addMember(101L, 2L, 1L)).thenReturn(sampleLobby);
-
-    LobbyDto result = controller.addMember(101L, 1L, 2L);
-
-    assertThat(result).isEqualTo(sampleLobby);
-    verify(lobbyService).addMember(101L, 2L, 1L);
-  }
-
-  @Test
-  void addMember_propagatesForbidden_whenNotOwner() {
-    when(lobbyService.addMember(101L, 2L, 99L))
-        .thenThrow(new ForbiddenException("Only owner can add members"));
-
-    assertThatThrownBy(() -> controller.addMember(101L, 99L, 2L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("owner");
-  }
-
-  @Test
-  void addMember_propagatesNotFoundException_whenUserNotFound() {
-    when(lobbyService.addMember(101L, 999L, 1L))
-        .thenThrow(new NotFoundException("User 999 not found"));
-
-    assertThatThrownBy(() -> controller.addMember(101L, 1L, 999L))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("999");
-  }
-
-  @Test
   void removeMember_delegatesToService() {
     when(lobbyService.removeMember(101L, 2L, 1L)).thenReturn(sampleLobby);
 

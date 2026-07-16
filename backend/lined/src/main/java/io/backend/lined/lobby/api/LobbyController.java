@@ -104,16 +104,6 @@ public class LobbyController {
     return lobbyService.update(id, dto, currentUserId);
   }
 
-  @Operation(summary = "Add member", description = "Add user to lobby (owner only).")
-  @PostMapping("/{id}/members")
-  public LobbyDto addMember(
-      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId,
-      @Parameter(description = "User ID to add", example = "77") @RequestParam Long userId) {
-    return lobbyService.addMember(id, userId, currentUserId);
-  }
-
   @Operation(summary = "Remove member", description = "Remove user from lobby (owner only). Owner cannot be removed.")
   @DeleteMapping("/{id}/members/{userId}")
   public LobbyDto removeMember(

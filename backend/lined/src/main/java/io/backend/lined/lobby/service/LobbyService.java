@@ -15,8 +15,6 @@ public interface LobbyService {
 
   LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId);
 
-  LobbyDto addMember(Long lobbyId, Long userIdToAdd, Long requesterId);
-
   LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId);
 
   void delete(Long lobbyId, Long requesterId);

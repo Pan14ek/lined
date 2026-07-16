@@ -93,6 +93,25 @@ CREATE TABLE IF NOT EXISTS lobby_members
     PRIMARY KEY (lobby_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS lobby_invites
+(
+    id         BIGSERIAL PRIMARY KEY,
+    lobby_id   BIGINT      NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
+    inviter_id BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    invitee_id BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    status     VARCHAR(16) NOT NULL CHECK (status IN ('PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED')),
+    sent_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_lobby_invites_lobby_pending
+    ON lobby_invites (lobby_id, status, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lobby_invites_invitee_pending
+    ON lobby_invites (invitee_id, status, sent_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_lobby_pending_invite
+    ON lobby_invites (lobby_id, invitee_id) WHERE status = 'PENDING';
+
 CREATE TABLE IF NOT EXISTS tasks
 (
     id          BIGSERIAL PRIMARY KEY,
