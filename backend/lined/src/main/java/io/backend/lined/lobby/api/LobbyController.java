@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -60,6 +61,26 @@ public class LobbyController {
   public LobbyDto get(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id) {
     return lobbyService.getById(id);
+  }
+
+  @Operation(
+      summary = "Update lobby",
+      description = "Partially update lobby name, type, or owner (owner only)."
+  )
+  @PatchMapping("/{id}")
+  public LobbyDto update(
+      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true,
+          description = "Fields to update; ownership may transfer only to an existing member",
+          content = @Content(schema = @Schema(implementation = LobbyUpdateDto.class),
+              examples = @ExampleObject(value = """
+                    { "name": "Weekend Crew", "lobbyType": "FRIENDS", "ownerId": 77 }
+                  """)))
+      @Valid @RequestBody LobbyUpdateDto dto) {
+    return lobbyService.update(id, dto, currentUserId);
   }
 
   @Operation(summary = "Add member", description = "Add user to lobby (owner only).")

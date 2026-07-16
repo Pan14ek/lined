@@ -8,11 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
+import io.backend.lined.lobby.api.LobbyUpdateDto;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -163,6 +165,88 @@ class LobbyServiceImplTest {
     List<LobbyDto> result = lobbyService.myLobbies(99L);
 
     assertThat(result).isEmpty();
+  }
+
+  /* =======================
+     UPDATE
+  ======================= */
+
+  @Test
+  void update_renamesLobby() {
+    LobbyUpdateDto dto = new LobbyUpdateDto("Weekend Crew", null, null);
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    LobbyDto result = lobbyService.update(101L, dto, 1L);
+
+    assertThat(result).isEqualTo(lobbyDto);
+    assertThat(lobbyEntity.getName()).isEqualTo("Weekend Crew");
+  }
+
+  @Test
+  void update_changesLobbyType() {
+    LobbyUpdateDto dto = new LobbyUpdateDto(null, LobbyTypes.FRIENDS, null);
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    lobbyService.update(101L, dto, 1L);
+
+    assertThat(lobbyEntity.getLobbyType()).isEqualTo(LobbyTypes.FRIENDS);
+  }
+
+  @Test
+  void update_changesAllSuppliedFields() {
+    lobbyEntity.getMembers().add(member);
+    LobbyUpdateDto dto = new LobbyUpdateDto("Weekend Crew", LobbyTypes.FRIENDS, 2L);
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    lobbyService.update(101L, dto, 1L);
+
+    assertThat(lobbyEntity.getName()).isEqualTo("Weekend Crew");
+    assertThat(lobbyEntity.getLobbyType()).isEqualTo(LobbyTypes.FRIENDS);
+    assertThat(lobbyEntity.getOwner()).isEqualTo(member);
+    assertThat(lobbyEntity.getMembers()).containsExactlyInAnyOrder(owner, member);
+  }
+
+  @Test
+  void update_skipsNullFields() {
+    LobbyUpdateDto dto = new LobbyUpdateDto(null, null, null);
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    lobbyService.update(101L, dto, 1L);
+
+    assertThat(lobbyEntity.getName()).isEqualTo("Our Family");
+    assertThat(lobbyEntity.getLobbyType()).isEqualTo(LobbyTypes.FAMILY);
+    assertThat(lobbyEntity.getOwner()).isEqualTo(owner);
+  }
+
+  @Test
+  void update_throwsNotFound_whenLobbyNotFound() {
+    when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> lobbyService.update(999L, new LobbyUpdateDto(null, null, null), 1L))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("999");
+  }
+
+  @Test
+  void update_throwsForbidden_whenRequesterIsNotOwner() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+
+    assertThatThrownBy(() -> lobbyService.update(101L, new LobbyUpdateDto(null, null, null), 99L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("owner");
+  }
+
+  @Test
+  void update_throwsConflict_whenNewOwnerIsNotMember() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+
+    assertThatThrownBy(() -> lobbyService.update(101L, new LobbyUpdateDto(null, null, 2L), 1L))
+        .isInstanceOf(ConflictException.class)
+        .hasMessageContaining("member");
   }
 
   /* =======================
