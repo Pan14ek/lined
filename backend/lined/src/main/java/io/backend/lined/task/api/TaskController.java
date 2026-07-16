@@ -70,6 +70,14 @@ public class TaskController {
     return service.list(lobbyId, assigneeId, status);
   }
 
+  @Operation(summary = "List my tasks", description = "Returns tasks in every lobby where the requester is a member.")
+  @GetMapping("/mine")
+  public List<TaskDto> mine(
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    return service.listMine(currentUserId);
+  }
+
   @Operation(summary = "Delete task", description = "Delete task (lobby owner or member).")
   @DeleteMapping("/{id}")
   public void delete(

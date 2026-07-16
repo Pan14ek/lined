@@ -60,4 +60,12 @@ public interface TaskService {
    */
   List<TaskDto> list(Long lobbyId, Long assigneeId, String status);
 
+  /**
+   * Lists all tasks in lobbies where the current user is a member.
+   *
+   * @param currentUserId the ID of the requesting user
+   * @return tasks visible to the requester through lobby membership
+   */
+  List<TaskDto> listMine(Long currentUserId);
+
 }
