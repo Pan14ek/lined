@@ -16,6 +16,13 @@ export const lobbyHandlers = [
 
   http.post(`${BASE}/lobbies`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
+    const name = typeof body['name'] === 'string' ? body['name'] : '';
+    if (!name.trim()) {
+      return HttpResponse.json(
+        { code: 'VALIDATION_ERROR', message: 'name must not be blank' },
+        { status: 400 },
+      );
+    }
     return HttpResponse.json(
       {
         id: 100,
