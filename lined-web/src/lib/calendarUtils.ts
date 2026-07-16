@@ -1,4 +1,4 @@
-import type { EventDto } from '@/types';
+import type { EventDto, TaskStatus } from '@/types';
 
 export const GRID_START_HOUR = 8; // 8 AM
 export const GRID_END_HOUR = 22; // 10 PM
@@ -55,6 +55,17 @@ export function formatHour(hour: number): string {
   return `${hour} AM`;
 }
 
+/** "9:00 AM", "12 PM", "2:30 PM" */
+export function formatClockTime(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return m === 0
+    ? `${hour} ${ampm}`
+    : `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
 /** "Mon 13 Apr · 9:00 – 10:00 AM" */
 export function formatEventTime(startAt: string, endAt: string): string {
   const start = new Date(startAt);
@@ -66,17 +77,98 @@ export function formatEventTime(startAt: string, endAt: string): string {
     month: 'short',
   });
 
-  const formatTime = (d: Date): string => {
+  return `${dateStr} · ${formatClockTime(start)} – ${formatClockTime(end)}`;
+}
+
+/** "Good morning" / "Good afternoon" / "Good evening" based on the hour. */
+export function getGreeting(date: Date = new Date()): string {
+  const hour = date.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/** "Saturday, 28 March 2026" */
+export function formatFullDate(date: Date): string {
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/** "Today · 5:00 PM", "Tomorrow · 7:00 PM", "Sun, 29 Mar · 7:00 PM" */
+export function formatRelativeEventTime(startAt: string): string {
+  const start = new Date(startAt);
+  const now = new Date();
+  const timeStr = formatClockTime(start);
+
+  if (isSameDay(start, now)) return `Today · ${timeStr}`;
+  if (isSameDay(start, addDays(now, 1))) return `Tomorrow · ${timeStr}`;
+
+  const weekday = start.toLocaleDateString('en-US', { weekday: 'short' });
+  const dayMonth = start.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+  });
+  return `${weekday}, ${dayMonth} · ${timeStr}`;
+}
+
+/** "Today 2–5 PM", "Tomorrow 2–5 PM", "Sunday 2–5 PM" */
+export function formatFreeSlotRange(start: string, end: string): string {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const now = new Date();
+
+  const dayLabel = isSameDay(startDate, now)
+    ? 'Today'
+    : isSameDay(startDate, addDays(now, 1))
+      ? 'Tomorrow'
+      : startDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+  const formatHour = (d: Date): string => {
     const h = d.getHours();
     const m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
     const hour = h % 12 || 12;
-    return m === 0
-      ? `${hour} ${ampm}`
-      : `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+    return m === 0 ? `${hour}` : `${hour}:${m.toString().padStart(2, '0')}`;
   };
 
-  return `${dateStr} · ${formatTime(start)} – ${formatTime(end)}`;
+  const startAmPm = startDate.getHours() >= 12 ? 'PM' : 'AM';
+  const endAmPm = endDate.getHours() >= 12 ? 'PM' : 'AM';
+
+  const range =
+    startAmPm === endAmPm
+      ? `${formatHour(startDate)}–${formatHour(endDate)} ${endAmPm}`
+      : `${formatHour(startDate)} ${startAmPm}–${formatHour(endDate)} ${endAmPm}`;
+
+  return `${dayLabel} ${range}`;
+}
+
+/** Due-date label + urgency flag for a task row ("Today"/overdue are urgent). */
+export function formatTaskDueDate(
+  dueDate: string | null,
+  status: TaskStatus,
+): { label: string; isUrgent: boolean } {
+  if (status === 'DONE') return { label: 'Done', isUrgent: false };
+  if (!dueDate) return { label: 'No due date', isUrgent: false };
+
+  const dueStr = dueDate.slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  if (dueStr === todayStr) return { label: 'Today', isUrgent: true };
+
+  const due = new Date(`${dueStr}T00:00:00Z`);
+  const today = new Date(`${todayStr}T00:00:00Z`);
+  const isOverdue = due.getTime() < today.getTime();
+
+  const label = due.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  return { label, isUrgent: isOverdue };
 }
 
 /** Pixel offset from the top of the time grid. */
