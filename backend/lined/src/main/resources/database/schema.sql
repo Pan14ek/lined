@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS events
 (
     id         BIGSERIAL PRIMARY KEY,
     title      VARCHAR(160) NOT NULL,
+    location   VARCHAR(255),
     shared     BOOLEAN      NOT NULL,
     start_at   TIMESTAMPTZ  NOT NULL,
     end_at     TIMESTAMPTZ  NOT NULL,

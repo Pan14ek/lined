@@ -136,7 +136,7 @@ class EventConflictAnalyzerTest {
   }
 
   private EventDto dto(Long id) {
-    return new EventDto(id, "Event " + id, true, base, base.plusHours(1),
+    return new EventDto(id, "Event " + id, null, true, base, base.plusHours(1),
         "Europe/Kyiv", 101L, 1L, base);
   }
 }

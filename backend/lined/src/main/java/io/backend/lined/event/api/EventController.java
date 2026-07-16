@@ -44,6 +44,7 @@ public class EventController {
               examples = @ExampleObject(value = """
                     {
                       "title":"Dinner together",
+                      "location":"Whole Foods Market",
                       "shared":true,
                       "startAt":"2025-11-20T17:00:00Z",
                       "endAt":"2025-11-20T19:00:00Z",
@@ -55,7 +56,9 @@ public class EventController {
     return service.create(dto, currentUserId);
   }
 
-  @Operation(summary = "Update event", description = "Partial update: title/shared/startAt/endAt/timezone.")
+  @Operation(summary = "Update event",
+      description = "Partial update: title/location/shared/startAt/endAt/timezone. "
+          + "Blank location clears it; omitted location is unchanged.")
   @PatchMapping("/events/{id}")
   public EventDto update(
       @Parameter(example = "9001") @PathVariable Long id,
@@ -65,7 +68,7 @@ public class EventController {
           required = true,
           content = @Content(schema = @Schema(implementation = EventUpdateDto.class),
               examples = @ExampleObject(value = """
-                    { "title":"Late dinner", "startAt":"2025-11-20T18:00:00Z" }
+                    { "location":"Central Park", "startAt":"2025-11-20T18:00:00Z" }
                   """)))
       @Valid @RequestBody EventUpdateDto dto) {
     return service.update(id, dto, currentUserId);

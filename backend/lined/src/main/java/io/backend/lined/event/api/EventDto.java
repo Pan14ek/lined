@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 public record EventDto(
     @Schema(example = "9001") Long id,
     @Schema(example = "Dinner together") String title,
+    @Schema(example = "Whole Foods Market") String location,
     @Schema(example = "true") boolean shared,
     @Schema(example = "2025-11-20T17:00:00Z") OffsetDateTime startAt,
     @Schema(example = "2025-11-20T19:00:00Z") OffsetDateTime endAt,

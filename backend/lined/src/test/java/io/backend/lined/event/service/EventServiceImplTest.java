@@ -30,6 +30,7 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -88,6 +89,7 @@ class EventServiceImplTest {
     eventEntity = EventEntity.builder()
         .id(9001L)
         .title("Dinner together")
+        .location("Whole Foods Market")
         .shared(true)
         .startAt(startAt)
         .endAt(endAt)
@@ -97,7 +99,7 @@ class EventServiceImplTest {
         .build();
 
     eventDto = new EventDto(
-        9001L, "Dinner together", true,
+        9001L, "Dinner together", "Whole Foods Market", true,
         startAt, endAt, "Europe/Kyiv",
         101L, 1L, now
     );
@@ -110,7 +112,8 @@ class EventServiceImplTest {
   @Test
   void create_success() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, startAt, endAt, "Europe/Kyiv", 101L);
+        "Dinner together", "  Whole Foods Market  ", true, startAt, endAt, "Europe/Kyiv",
+        101L);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -120,13 +123,47 @@ class EventServiceImplTest {
     EventDto result = eventService.create(dto, 1L);
 
     assertThat(result).isEqualTo(eventDto);
-    verify(repo).save(any(EventEntity.class));
+    var entityCaptor = ArgumentCaptor.forClass(EventEntity.class);
+    verify(repo).save(entityCaptor.capture());
+    assertThat(entityCaptor.getValue().getLocation()).isEqualTo("Whole Foods Market");
+  }
+
+  @Test
+  void create_storesNullLocation_whenLocationIsBlank() {
+    EventCreateDto dto = new EventCreateDto(
+        "Dinner together", "  ", true, startAt, endAt, "Europe/Kyiv", 101L);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(any(EventEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    eventService.create(dto, 1L);
+
+    var entityCaptor = ArgumentCaptor.forClass(EventEntity.class);
+    verify(repo).save(entityCaptor.capture());
+    assertThat(entityCaptor.getValue().getLocation()).isNull();
+  }
+
+  @Test
+  void create_storesNullLocation_whenLocationIsOmitted() {
+    EventCreateDto dto = new EventCreateDto(
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 101L);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(any(EventEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    eventService.create(dto, 1L);
+
+    var entityCaptor = ArgumentCaptor.forClass(EventEntity.class);
+    verify(repo).save(entityCaptor.capture());
+    assertThat(entityCaptor.getValue().getLocation()).isNull();
   }
 
   @Test
   void create_throwsBadRequest_whenStartAtNotBeforeEndAt() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, endAt, startAt, "Europe/Kyiv", 101L);
+        "Dinner together", null, true, endAt, startAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -141,7 +178,7 @@ class EventServiceImplTest {
   @Test
   void create_throwsBadRequest_whenStartAtEqualsEndAt() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, startAt, startAt, "Europe/Kyiv", 101L);
+        "Dinner together", null, true, startAt, startAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -154,7 +191,7 @@ class EventServiceImplTest {
   @Test
   void create_throwsBadRequest_whenStartAtIsNull() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, null, endAt, "Europe/Kyiv", 101L);
+        "Dinner together", null, true, null, endAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -169,7 +206,7 @@ class EventServiceImplTest {
   @Test
   void create_throwsNotFound_whenUserNotFound() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, startAt, endAt, "Europe/Kyiv", 101L);
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
@@ -183,7 +220,7 @@ class EventServiceImplTest {
   @Test
   void create_throwsNotFound_whenLobbyNotFound() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, startAt, endAt, "Europe/Kyiv", 999L);
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 999L);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
@@ -199,7 +236,7 @@ class EventServiceImplTest {
     outsider.setId(99L);
 
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", true, startAt, endAt, "Europe/Kyiv", 101L);
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(99L)).thenReturn(Optional.of(outsider));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -212,7 +249,7 @@ class EventServiceImplTest {
   @Test
   void create_allowsMember_toCreateEvent() {
     EventCreateDto dto = new EventCreateDto(
-        "Lunch", true, startAt, endAt, "Europe/Kyiv", 101L);
+        "Lunch", null, true, startAt, endAt, "Europe/Kyiv", 101L);
 
     when(userRepo.findById(2L)).thenReturn(Optional.of(member));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -230,7 +267,8 @@ class EventServiceImplTest {
 
   @Test
   void update_success() {
-    EventUpdateDto dto = new EventUpdateDto("Updated title", false, null, null, null);
+    EventUpdateDto dto = new EventUpdateDto("Updated title", "  Central Park  ", false,
+        null, null, null);
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
@@ -239,12 +277,13 @@ class EventServiceImplTest {
 
     assertThat(result).isNotNull();
     assertThat(eventEntity.getTitle()).isEqualTo("Updated title");
+    assertThat(eventEntity.getLocation()).isEqualTo("Central Park");
     assertThat(eventEntity.isShared()).isFalse();
   }
 
   @Test
   void update_updatesOnlyNonNullFields() {
-    EventUpdateDto dto = new EventUpdateDto(null, null, null, null, "UTC");
+    EventUpdateDto dto = new EventUpdateDto(null, null, null, null, null, "UTC");
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
@@ -253,11 +292,24 @@ class EventServiceImplTest {
 
     assertThat(eventEntity.getTitle()).isEqualTo("Dinner together");
     assertThat(eventEntity.getTimezone()).isEqualTo("UTC");
+    assertThat(eventEntity.getLocation()).isEqualTo("Whole Foods Market");
+  }
+
+  @Test
+  void update_clearsLocation_whenLocationIsBlank() {
+    EventUpdateDto dto = new EventUpdateDto(null, " ", null, null, null, null);
+
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    eventService.update(9001L, dto, 1L);
+
+    assertThat(eventEntity.getLocation()).isNull();
   }
 
   @Test
   void update_throwsBadRequest_whenUpdatedDatesAreInvalid() {
-    EventUpdateDto dto = new EventUpdateDto(null, null, endAt, startAt, null);
+    EventUpdateDto dto = new EventUpdateDto(null, null, null, endAt, startAt, null);
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
@@ -268,7 +320,8 @@ class EventServiceImplTest {
 
   @Test
   void update_doesNotMutateEntity_whenUpdatedDatesAreInvalid() {
-    EventUpdateDto dto = new EventUpdateDto("Invalid update", false, endAt, startAt, "UTC");
+    EventUpdateDto dto = new EventUpdateDto("Invalid update", null, false, endAt, startAt,
+        "UTC");
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
@@ -284,7 +337,7 @@ class EventServiceImplTest {
 
   @Test
   void update_throwsBadRequest_whenNewStartAtExceedsExistingEndAt() {
-    EventUpdateDto dto = new EventUpdateDto("Invalid update", false, endAt.plusHours(1),
+    EventUpdateDto dto = new EventUpdateDto("Invalid update", null, false, endAt.plusHours(1),
         null, "UTC");
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
@@ -302,7 +355,7 @@ class EventServiceImplTest {
 
   @Test
   void update_throwsNotFound_whenEventNotFound() {
-    EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null);
+    EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null, null);
 
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
@@ -313,7 +366,7 @@ class EventServiceImplTest {
 
   @Test
   void update_throwsForbidden_whenUserIsNotLobbyMember() {
-    EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null);
+    EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null, null);
 
     when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
