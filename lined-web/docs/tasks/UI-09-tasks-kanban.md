@@ -70,5 +70,8 @@ of Task 5.
 | Delete | `DELETE /api/tasks/{id}` |
 | Lobbies / members | `GET /api/lobbies/mine`, `GET /api/users/{id}` |
 
-**Backend gaps:** no priority field (mockup's red/orange/green priority bars —
-omit for MVP, flag follow-up), no cross-lobby task listing endpoint.
+**Backend gaps (resolved July 2026):** `GET /api/tasks/mine` now returns all
+tasks across the caller's lobbies — replace step 1's per-lobby `useQueries`
+fan-out with one `useAllMyTasks()` query (filters stay client-side, as the
+endpoint intends). Tasks also carry `priority` (`HIGH`/`MEDIUM`/`LOW`) —
+render the mockup's priority bars (red/orange/green). Both require Task 15.

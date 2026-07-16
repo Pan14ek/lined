@@ -52,17 +52,23 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 
 | Domain | Endpoints |
 |---|---|
-| Users | `POST /api/users`, `PATCH /api/users/{id}`, `GET /api/users/{id}`, `GET /api/users/search?q=`, `GET /api/users/by-role` |
-| Lobbies | `POST /api/lobbies`, `GET /api/lobbies/mine`, `GET /api/lobbies/{id}`, `POST /api/lobbies/{id}/members?userId=`, `DELETE /api/lobbies/{id}/members/{userId}`, `DELETE /api/lobbies/{id}` |
-| Events | `POST /api/calendar/events`, `PATCH /api/calendar/events/{id}`, `GET /api/calendar/events?from=&to=`, `DELETE /api/calendar/events/{id}`, `GET /api/calendar/conflicts`, `GET /api/calendar/user-conflict` |
-| Tasks | `POST /api/tasks`, `PATCH /api/tasks/{id}`, `GET /api/tasks?lobbyId=&assigneeId=&status=`, `DELETE /api/tasks/{id}` |
-| Roles / Plans / Subscriptions | admin-ish; not needed for MVP UI |
+| Auth | `POST /api/auth/login` (identifier = email or username; returns token + user identity) |
+| Users | `POST /api/users`, `PATCH /api/users/{id}`, `GET /api/users/{id}`, `DELETE /api/users/{id}` (self), `GET /api/users/search?q=`, `GET /api/users/by-role` |
+| Lobbies | `POST /api/lobbies`, `GET /api/lobbies/mine`, `GET /api/lobbies/{id}`, `PATCH /api/lobbies/{id}` (name/type/ownerId, owner-only), `DELETE /api/lobbies/{id}/members/{userId}`, `DELETE /api/lobbies/{id}`, `GET /api/lobbies/{id}/free-slots?from=&to=` |
+| Lobby invites | `POST /api/lobbies/{lobbyId}/invites?userId=` or `?userEmail=`, `GET /api/lobbies/{lobbyId}/invites`, `POST …/invites/{inviteId}/resend`, `DELETE …/invites/{inviteId}`, `GET /api/lobby-invites/mine`, `POST /api/lobby-invites/{inviteId}/accept`, `POST /api/lobby-invites/{inviteId}/decline` |
+| Events | `POST /api/calendar/events` (incl. `location`, `notifyMembers`), `PATCH /api/calendar/events/{id}`, `GET /api/calendar/events?from=&to=`, `DELETE /api/calendar/events/{id}`, `GET /api/calendar/conflicts`, `GET /api/calendar/user-conflict` |
+| Tasks | `POST /api/tasks` (incl. `description`, `priority`, `status`, `notifyAssignee`), `PATCH /api/tasks/{id}`, `GET /api/tasks?lobbyId=&assigneeId=&status=`, `GET /api/tasks/mine`, `DELETE /api/tasks/{id}` |
+| Notifications | `GET/PATCH /api/notifications/preferences`, `GET/PATCH /api/lobbies/{lobbyId}/notification-preferences`, `GET /api/notifications/mine`, `PATCH /api/notifications/{id}/read` |
+| Plans / Subscriptions | `GET /api/plans`, `POST /api/subscriptions`, `POST /api/subscriptions/{userId}/cancel-active`, `GET /api/subscriptions/{userId}/active`, `GET /api/subscriptions/{userId}/history` |
 
-**Known backend gaps** (mockup features with no API yet — each task notes how to handle):
-no login endpoint (MVP: `X-User-Id` header), no event `location` field,
-no task `description`/`priority` fields, no lobby rename/update endpoint,
-no pending-invites concept, no user delete endpoint, no notification-settings
-endpoints, no server-side free-slot detection (computed client-side).
+> **Contract update (July 2026):** all nine backend gaps originally flagged by
+> this plan are now implemented on `main` (see `backend/lined/docs/api.md`).
+> **Breaking change:** `POST /api/lobbies/{id}/members` was removed — members
+> join via the invite flow. Task 15 migrates the client API layer; where an
+> older task file mentions a "backend gap", the per-file update note wins.
+> Still missing/planned: `GET /api/users/me`, external email/push delivery,
+> avatar upload, display-name field (see
+> `backend/lined/docs/experiment-tasks.md`, Domain "Backend API gap").
 
 ## Task table
 
@@ -82,14 +88,19 @@ endpoints, no server-side free-slot detection (computed client-side).
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | TODO |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | TODO |
 | 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | TODO |
+| 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | TODO |
+| 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | TODO |
+| 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | TODO |
 
 ## Suggested order
 
-Tasks 1–2 unblock everything (auth + live sidebar). Then 3–4 (dashboard +
-create flows), 5–8 (lobby detail), 9 (kanban), 10–11 (calendar), 12–13
-(settings), 14 (subscription — lowest priority). Tasks 6/7/8 depend on 5;
-task 11 depends on 3 and 10; task 14 depends on 12 (linked from User
-Settings); everything else is parallelisable.
+**Task 15 first** — it aligns the API layer/types with the current backend
+and every other task builds on it. Then 1–2 (auth + live sidebar), 3–4
+(dashboard + create flows), 5–8 (lobby detail), 9 (kanban), 10–11
+(calendar), 12–13 (settings), 16–17 (notifications + invites), 14
+(subscription — lowest priority). Tasks 6/7/8 depend on 5; task 11 depends
+on 3 and 10; task 14 depends on 12; tasks 16/17 depend on 15; everything
+else is parallelisable.
 
 ## Conventions for every task
 

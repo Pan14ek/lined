@@ -34,15 +34,14 @@ and the exits (leave/delete). Completes the lobby feature set.
 1. Route already exists (`/lobbies/:id/settings`). Compose: `LobbyHeader`
    (Task 5), breadcrumb, settings cards (reuse card styles from Task 12 —
    extract a shared `SettingsCard` component).
-2. General card: **the backend has no lobby update endpoint** (`PUT/PATCH
-   /api/lobbies/{id}` does not exist — only create/get/delete/members).
-   MVP: render name + type picker **read-only/disabled** with a "Renaming
-   coming soon" hint, and file a backend task to add
-   `PATCH /api/lobbies/{id} { name?, lobbyType? }` (owner-only). If the
-   backend endpoint lands first, wire it here.
-3. Notifications card: per-lobby toggles in the persisted client-side
-   `useSettingsStore` (keyed by lobbyId) — same approach and caveat as
-   Task 12.
+2. General card: **now fully supported** — `PATCH /api/lobbies/{id}` with
+   `{ name?, lobbyType? }` (owner-only; requires Task 15). Wire the name
+   input and type picker with dirty-state tracking and "Save changes";
+   non-owners see the card read-only. Handle 403 (not owner).
+3. Notifications card: use the real per-lobby API —
+   `GET/PATCH /api/lobbies/{lobbyId}/notification-preferences` (member-only,
+   partial PATCH). Superseded detail in Task 16; if Task 16 already rewired
+   these toggles, just compose its hooks here.
 4. Leave lobby: `DELETE /api/lobbies/{id}/members/{myUserId}` after a
    confirm dialog; on success invalidate lobbies and navigate to `/`.
    The owner cannot leave (backend forbids removing the owner — surface the
@@ -67,9 +66,11 @@ and the exits (leave/delete). Completes the lobby feature set.
 | Purpose | Endpoint |
 |---|---|
 | Load lobby | `GET /api/lobbies/{id}` → `LobbyDto` |
+| Update lobby | `PATCH /api/lobbies/{id}` — `{ name?, lobbyType?, ownerId? }` (owner-only) → `LobbyDto` |
+| Per-lobby notification prefs | `GET/PATCH /api/lobbies/{lobbyId}/notification-preferences` |
 | Leave lobby | `DELETE /api/lobbies/{id}/members/{userId}` (self) → `LobbyDto` |
 | Delete lobby | `DELETE /api/lobbies/{id}` (owner only) |
 
-**Backend gaps:** no lobby rename/type-change endpoint (blocks the General
-card — proposed: `PATCH /api/lobbies/{id}`), no per-lobby notification
-preferences API.
+**Backend gaps (resolved July 2026):** lobby update and per-lobby
+notification preferences both exist now — the General card is editable and
+the toggles persist server-side (see Tasks 15/16).

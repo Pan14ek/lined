@@ -36,22 +36,31 @@ acceptance flow exists in the backend yet).
    Role badge: `Owner` when `user.id === lobby.ownerId`, else `Member`.
    "Joined" date: not in the API — omit or show `user.createdAt` labelled
    "Member since" (document the choice).
-2. Add mutations: `useAddMember(lobbyId)` and `useRemoveMember(lobbyId)`
-   wrapping the existing `addMember`/`removeMember` API functions;
-   invalidate the lobby query on success.
+> **Update (July 2026):** the backend replaced direct member adds with a
+> full invite lifecycle — `POST /api/lobbies/{id}/members` **no longer
+> exists**. "Invite" now really invites (pending until accepted). Requires
+> Task 15 for the invite API module; the invitee side is Task 17.
+
+2. Add mutations: `useCreateInvite(lobbyId)` (by `userId` or `userEmail`),
+   `useResendInvite`, `useCancelInvite`, and `useRemoveMember(lobbyId)`;
+   invalidate the lobby and invite queries on success.
 3. "Remove" requires a confirm dialog; only rendered when the current user
    is the owner. Removing yourself = leaving (also covered on Lobby
    Settings, Task 13 — share the mutation).
 4. Build `AddMemberModal`: debounced search (≥2 chars) via `searchUsers`,
-   result rows with three states (already member ✓ / invitable / just added).
-   "Invite" calls `useAddMember`; row flips to ✓ optimistically.
-5. "Make owner": **no backend endpoint** — hide the button for MVP and note
-   the gap (ownership transfer needs a `PATCH /api/lobbies/{id}` API).
-6. "Pending Invites" section: **no backend support** — skip rendering for
-   MVP; keep the mockup as the target for when invites land.
-7. Tests (MSW): members render with correct badges; search shows results and
-   filters already-members; invite POSTs and updates the member list;
-   remove DELETEs after confirm.
+   result rows with three states (already member ✓ / invitable / invite
+   pending). "Invite" calls `useCreateInvite`; the row flips to "Invite
+   sent"; a 409 means already a member or already invited — surface it.
+5. "Make owner": now supported — `PATCH /api/lobbies/{id}` with `ownerId`
+   (owner-only; target must already be a member; 409 otherwise). Confirm
+   dialog, then invalidate the lobby query; the role badges swap.
+6. "Pending Invites" section: real — `GET /api/lobbies/{lobbyId}/invites`
+   (owner-only) with **Resend** (`POST …/invites/{id}/resend`) and
+   **Cancel** (`DELETE …/invites/{id}`) buttons, matching the mockup.
+7. Tests (MSW): members render with correct badges; search filters
+   already-members; invite POSTs and appears under Pending Invites;
+   duplicate invite shows the 409 message; make-owner PATCHes and swaps
+   badges; remove DELETEs after confirm.
 
 ## Final / expected result
 
@@ -67,8 +76,13 @@ acceptance flow exists in the backend yet).
 | Lobby + memberIds | `GET /api/lobbies/{id}` → `LobbyDto` |
 | Member profiles | `GET /api/users/{id}` → `UserDto` |
 | Search users | `GET /api/users/search?q=&page=&size=` → `UserPageDto` |
-| Add member | `POST /api/lobbies/{id}/members?userId={userId}` (header `X-User-Id` must be owner) → `LobbyDto` |
+| Create invite | `POST /api/lobbies/{lobbyId}/invites?userId=` or `?userEmail=` (owner-only) → `LobbyInviteDto` |
+| Pending invites | `GET /api/lobbies/{lobbyId}/invites` (owner-only) → `LobbyInviteDto[]` |
+| Resend / cancel invite | `POST …/invites/{inviteId}/resend`, `DELETE …/invites/{inviteId}` |
+| Transfer ownership | `PATCH /api/lobbies/{id}` — body `{ ownerId }` (owner-only) → `LobbyDto` |
 | Remove member | `DELETE /api/lobbies/{id}/members/{userId}` → `LobbyDto` |
 
-**Backend gaps:** no invite/acceptance flow (add is immediate), no ownership
-transfer endpoint, no "joined lobby at" timestamp.
+**Backend gaps (mostly resolved July 2026):** invite flow and ownership
+transfer now exist. Remaining: no "joined lobby at" timestamp, no shareable
+invite links, and invite emails are not sent (`userEmail` only resolves
+existing accounts).

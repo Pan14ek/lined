@@ -67,6 +67,9 @@ of a modal) keeps the task list visible behind it, matching the mockup.
 | Set non-default status | `PATCH /api/tasks/{id}` — `TaskUpdateDto { status }` |
 | Lobby members | `GET /api/lobbies/{id}` + `GET /api/users/{id}` |
 
-**Backend gaps:** no `description` field, no initial `status` on create, no
-notification mechanism ("Notify assignee" toggle is non-functional — either
-hide it or disable with a tooltip; flag for backend follow-up).
+**Backend gaps (resolved July 2026):** `POST /api/tasks` now accepts
+`description`, `priority` (default `MEDIUM`), initial `status` (default
+`TODO`), and `notifyAssignee` — implement all drawer fields directly
+(step 4's two-step PATCH workaround is obsolete; requires Task 15). The
+"Notify assignee" toggle maps to `notifyAssignee` and produces a real in-app
+inbox notification (email/push delivery still pending backend work).

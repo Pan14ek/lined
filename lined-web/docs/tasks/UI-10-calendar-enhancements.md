@@ -68,6 +68,9 @@ feature-complete before the Reserve Slot flow (Task 11) builds on it.
 | Range events | `GET /api/calendar/events?from=&to=` → `EventDto[]` |
 | Delete | `DELETE /api/calendar/events/{id}` |
 
-**Backend gaps:** `EventDto` has no `location` field (mockup shows
-"📍 Whole Foods Market") — omit the location row for MVP and flag a backend
-follow-up; an event's lobby cannot be changed after creation.
+**Backend gaps (updated July 2026):** events now have an optional `location`
+(≤255 chars; on update, omit to preserve, empty string to clear) — show the
+📍 row in the detail panel and add the location input to create/edit
+(requires Task 15). Still true: an event's lobby cannot be changed after
+creation (`EventUpdateDto` has no `lobbyId`) — keep the lobby selector
+disabled in edit mode.
