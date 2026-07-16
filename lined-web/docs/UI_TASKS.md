@@ -32,7 +32,8 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - Project scaffold: Vite + React 19 + TypeScript (strict) + Tailwind v4 + shadcn + TanStack Query + Zustand + ky + MSW v2
 - Full API client layer (`src/api/`) covering users, lobbies, events, tasks, plans, subscriptions, with `X-User-Id` interceptor
 - TypeScript types mirroring all backend DTOs (`src/types/index.ts`)
-- `AppShell` + `Sidebar` layout (sidebar uses **hardcoded** lobbies and user)
+- `AppShell` + `Sidebar` layout (sidebar shows real lobbies + real current user
+  from the API, with loading/empty states and sign-out)
 - **Global Calendar page (week view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands), `EventDetailPanel`, `CreateEventModal`, delete event. Missing: month view, edit event, legend.
 - Zustand stores: `auth` (persisted userId), `calendar` (view state)
 - Hooks: `useMyLobbies`, `useLobby`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`
@@ -72,7 +73,7 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 | # | Branch name | Task description | Reference | Status |
 |---|---|---|---|---|
 | 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (MVP auth via user search + `X-User-Id`) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | DONE |
-| 2 | `feature/ui-02-sidebar-live-data` | Sidebar: real lobbies + real current user from API, "+ New" lobby entry point | [tasks/UI-02-sidebar-live-data.md](tasks/UI-02-sidebar-live-data.md) | TODO |
+| 2 | `feature/ui-02-sidebar-live-data` | Sidebar: real lobbies + real current user from API, "+ New" lobby entry point | [tasks/UI-02-sidebar-live-data.md](tasks/UI-02-sidebar-live-data.md) | DONE |
 | 3 | `feature/ui-03-dashboard` | Dashboard page: lobby cards, upcoming events, my tasks, free-slot banner | [tasks/UI-03-dashboard.md](tasks/UI-03-dashboard.md) | TODO |
 | 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | TODO |
 | 5 | `feature/ui-05-lobby-tasks-tab` | Lobby detail page: header, tab bar, Tasks tab (filter pills, task rows) | [tasks/UI-05-lobby-tasks-tab.md](tasks/UI-05-lobby-tasks-tab.md) | TODO |
