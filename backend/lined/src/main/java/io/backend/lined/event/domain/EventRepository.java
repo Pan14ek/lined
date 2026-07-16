@@ -1,8 +1,8 @@
 package io.backend.lined.event.domain;
 
 import java.time.OffsetDateTime;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -39,6 +39,9 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       @Param("to") OffsetDateTime to
   );
 
+  /**
+   * Finds events that block at least one supplied member, ordered for linear free-slot calculation.
+   */
   @Query("""
       SELECT DISTINCT e FROM EventEntity e
       LEFT JOIN e.lobby.members sharedMember
