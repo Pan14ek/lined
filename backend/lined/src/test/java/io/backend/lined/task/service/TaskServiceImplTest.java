@@ -325,4 +325,24 @@ class TaskServiceImplTest {
         .hasMessageContaining("Invalid status value");
   }
 
+  @Test
+  void listMine_returnsTasksVisibleToCurrentUser() {
+    when(repo.findAllByLobbyMemberId(1L)).thenReturn(List.of(taskEntity));
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    List<TaskDto> result = taskService.listMine(1L);
+
+    assertThat(result).containsExactly(taskDto);
+    verify(repo).findAllByLobbyMemberId(1L);
+  }
+
+  @Test
+  void listMine_returnsEmptyList_whenUserHasNoLobbyTasks() {
+    when(repo.findAllByLobbyMemberId(99L)).thenReturn(List.of());
+
+    List<TaskDto> result = taskService.listMine(99L);
+
+    assertThat(result).isEmpty();
+  }
+
 }

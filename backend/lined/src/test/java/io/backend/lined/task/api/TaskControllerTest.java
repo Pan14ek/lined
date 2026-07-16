@@ -127,6 +127,16 @@ class TaskControllerTest {
   }
 
   @Test
+  void mine_delegatesToService() {
+    when(taskService.listMine(42L)).thenReturn(List.of(sampleTask));
+
+    List<TaskDto> result = controller.mine(42L);
+
+    assertThat(result).containsExactly(sampleTask);
+    verify(taskService).listMine(42L);
+  }
+
+  @Test
   void delete_delegatesToService() {
     controller.delete(555L, 42L);
 

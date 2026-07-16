@@ -111,6 +111,11 @@ public class TaskServiceImpl implements TaskService {
     return repo.findAll(spec).stream().map(mapper::toDto).toList();
   }
 
+  @Override
+  public List<TaskDto> listMine(Long currentUserId) {
+    return repo.findAllByLobbyMemberId(currentUserId).stream().map(mapper::toDto).toList();
+  }
+
   private UserEntity mustUser(Long id) {
     return EntityFinder.findOrThrow(userRepo.findById(id),
         () -> new NotFoundException("User %d not found".formatted(id)));
