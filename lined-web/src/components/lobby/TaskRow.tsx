@@ -11,6 +11,20 @@ interface TaskRowProps {
   updateError?: string;
 }
 
+const AssigneeAvatarFallback = ({ assignee }: { assignee: UserDto | undefined }) => {
+  if (!assignee) {
+    return (
+      <AvatarFallback className="bg-gray-300 text-xs font-semibold text-white">?</AvatarFallback>
+    );
+  }
+
+  return (
+    <AvatarFallback className="bg-brand-green text-xs font-semibold text-white">
+      {assignee.username.charAt(0).toUpperCase()}
+    </AvatarFallback>
+  );
+};
+
 export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: TaskRowProps) => {
   const isDone = task.status === 'DONE';
   const due = formatTaskDueDate(task.dueDate, task.status);
@@ -52,15 +66,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: T
       <div className="flex flex-shrink-0 items-center gap-3">
         <StatusBadge status={task.status} />
         <Avatar size="sm">
-          {assignee ? (
-            <AvatarFallback className="bg-brand-green text-xs font-semibold text-white">
-              {assignee.username.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          ) : (
-            <AvatarFallback className="bg-gray-300 text-xs font-semibold text-white">
-              ?
-            </AvatarFallback>
-          )}
+          <AssigneeAvatarFallback assignee={assignee} />
         </Avatar>
         <span
           className={`w-16 text-right text-xs ${

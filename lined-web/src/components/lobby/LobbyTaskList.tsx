@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { TaskDto, TaskStatus } from '@/types';
+import type { TaskDto, TaskStatus, UserDto } from '@/types';
 import { useLobbyTasks, useUpdateTask } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
 import { useCreateMenuStore } from '@/store/createMenu';
@@ -25,6 +25,67 @@ const sortByDueDate = (tasks: TaskDto[]): TaskDto[] =>
     if (b.dueDate == null) return -1;
     return a.dueDate.localeCompare(b.dueDate);
   });
+
+interface TaskListContentProps {
+  isLoading: boolean;
+  isError: boolean;
+  tasks: TaskDto[] | undefined;
+  sorted: TaskDto[];
+  assigneesById: Map<number, UserDto | undefined>;
+  updatingTaskId: number | null;
+  rowErrors: Record<number, string>;
+  onToggle: (task: TaskDto) => void;
+}
+
+const TaskListContent = ({
+  isLoading,
+  isError,
+  tasks,
+  sorted,
+  assigneesById,
+  updatingTaskId,
+  rowErrors,
+  onToggle,
+}: TaskListContentProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2" data-testid="lobby-tasks-loading">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-white" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-text-secondary">Couldn&apos;t load tasks. Try again later.</p>
+    );
+  }
+
+  if (tasks != null && tasks.length === 0) {
+    return <p className="text-sm text-text-secondary">No tasks yet.</p>;
+  }
+
+  if (sorted.length === 0) {
+    return <p className="text-sm text-text-secondary">No tasks match this filter.</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {sorted.map((task) => (
+        <TaskRow
+          key={task.id}
+          task={task}
+          assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
+          onToggle={onToggle}
+          isUpdating={updatingTaskId === task.id}
+          updateError={rowErrors[task.id]}
+        />
+      ))}
+    </div>
+  );
+};
 
 interface LobbyTaskListProps {
   lobbyId: number;
@@ -94,40 +155,16 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
         <span className="ml-auto text-xs text-text-secondary">Sort: Due date</span>
       </div>
 
-      {isLoading && (
-        <div className="flex flex-col gap-2" data-testid="lobby-tasks-loading">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-white" />
-          ))}
-        </div>
-      )}
-
-      {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">Couldn&apos;t load tasks. Try again later.</p>
-      )}
-
-      {!isLoading && !isError && tasks != null && tasks.length === 0 && (
-        <p className="text-sm text-text-secondary">No tasks yet.</p>
-      )}
-
-      {!isLoading && !isError && tasks != null && tasks.length > 0 && sorted.length === 0 && (
-        <p className="text-sm text-text-secondary">No tasks match this filter.</p>
-      )}
-
-      {!isLoading && !isError && sorted.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {sorted.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
-              onToggle={handleToggle}
-              isUpdating={updatingTaskId === task.id}
-              updateError={rowErrors[task.id]}
-            />
-          ))}
-        </div>
-      )}
+      <TaskListContent
+        isLoading={isLoading}
+        isError={isError}
+        tasks={tasks}
+        sorted={sorted}
+        assigneesById={assigneesById}
+        updatingTaskId={updatingTaskId}
+        rowErrors={rowErrors}
+        onToggle={handleToggle}
+      />
 
       <button
         type="button"
