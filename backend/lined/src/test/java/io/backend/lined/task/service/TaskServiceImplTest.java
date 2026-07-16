@@ -14,6 +14,7 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.task.api.TaskCreateDto;
 import io.backend.lined.task.api.TaskDto;
 import io.backend.lined.task.api.TaskMapper;
@@ -50,6 +51,8 @@ class TaskServiceImplTest {
   private TaskMapper mapper;
   @Spy
   private LobbyAccessPolicy accessPolicy;
+  @Mock
+  private NotificationService notificationService;
 
   @InjectMocks
   private TaskServiceImpl taskService;
@@ -105,6 +108,26 @@ class TaskServiceImplTest {
 
     assertThat(result).isEqualTo(taskDto);
     verify(repo).save(any(TaskEntity.class));
+  }
+
+  @Test
+  void create_notifiesAssignee_whenRequested() {
+    UserEntity assignee = new UserEntity();
+    assignee.setId(2L);
+    assignee.setUsername("assignee");
+    taskEntity.setAssignee(assignee);
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, 2L, null,
+        null, null, null, true);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(userRepo.findById(2L)).thenReturn(Optional.of(assignee));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(any(TaskEntity.class))).thenReturn(taskEntity);
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    taskService.create(dto, 1L);
+
+    verify(notificationService).notifyTaskAssigned(assignee, owner, taskEntity);
   }
 
   @Test

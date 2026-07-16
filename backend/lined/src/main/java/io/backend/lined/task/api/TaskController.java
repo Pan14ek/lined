@@ -39,7 +39,7 @@ public class TaskController {
           description = "Task payload",
           content = @Content(schema = @Schema(implementation = TaskCreateDto.class),
               examples = @ExampleObject(value = """
-                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO" }
+                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "notifyAssignee":true }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
     return service.create(dto, currentUserId);

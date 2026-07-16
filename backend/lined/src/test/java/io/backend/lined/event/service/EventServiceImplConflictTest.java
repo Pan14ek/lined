@@ -22,6 +22,7 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
@@ -54,6 +55,9 @@ class EventServiceImplConflictTest {
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
+  @Mock
+  private NotificationService notificationService;
+
   private EventServiceImpl eventService;
 
   private UserEntity owner;
@@ -82,7 +86,7 @@ class EventServiceImplConflictTest {
     setupDtos();
     eventService = new EventServiceImpl(
         repo, lobbyRepo, userRepo, mapper, accessPolicy, new EventConflictAnalyzer(mapper),
-        new FreeSlotCalculator());
+        new FreeSlotCalculator(), notificationService);
   }
 
   private void setupDtos() {

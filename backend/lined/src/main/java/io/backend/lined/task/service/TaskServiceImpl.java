@@ -6,6 +6,7 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.task.api.TaskCreateDto;
 import io.backend.lined.task.api.TaskDto;
 import io.backend.lined.task.api.TaskMapper;
@@ -32,6 +33,7 @@ public class TaskServiceImpl implements TaskService {
   private final UserRepository userRepo;
   private final TaskMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final NotificationService notificationService;
 
   @Override
   public TaskDto create(TaskCreateDto dto, Long currentUserId) {
@@ -50,7 +52,11 @@ public class TaskServiceImpl implements TaskService {
         .dueDate(dto.dueDate())
         .build();
 
-    return mapper.toDto(repo.save(entity));
+    var saved = repo.save(entity);
+    if (dto.notifyAssignee() && saved.getAssignee() != null) {
+      notificationService.notifyTaskAssigned(saved.getAssignee(), creator, saved);
+    }
+    return mapper.toDto(saved);
   }
 
   @Override

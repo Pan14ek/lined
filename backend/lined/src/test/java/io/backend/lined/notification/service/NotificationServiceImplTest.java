@@ -26,6 +26,7 @@ import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,6 +71,7 @@ class NotificationServiceImplTest {
         .name("Family")
         .lobbyType(LobbyTypes.FAMILY)
         .owner(actor)
+        .members(Set.of(actor, recipient))
         .build();
     task = TaskEntity.builder()
         .id(55L)
@@ -100,6 +102,15 @@ class NotificationServiceImplTest {
   @Test
   void notifyTaskAssigned_skipsSelfNotification() {
     notificationService.notifyTaskAssigned(actor, actor, task);
+
+    verify(notificationRepo, never()).save(any());
+  }
+
+  @Test
+  void notifyTaskAssigned_skipsUserOutsideLobby() {
+    UserEntity outsider = user(3L, "outsider");
+
+    notificationService.notifyTaskAssigned(outsider, actor, task);
 
     verify(notificationRepo, never()).save(any());
   }

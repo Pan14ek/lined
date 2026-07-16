@@ -26,6 +26,7 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -100,7 +101,9 @@ public class NotificationServiceImpl implements NotificationService {
 
   @Override
   public void notifyTaskAssigned(UserEntity recipient, UserEntity actor, TaskEntity task) {
-    if (recipient.getId().equals(actor.getId()) || !allowsTaskAssignment(recipient, task.getLobby())) {
+    if (recipient.getId().equals(actor.getId())
+        || !isLobbyMember(task.getLobby(), recipient.getId())
+        || !allowsTaskAssignment(recipient, task.getLobby())) {
       return;
     }
     saveNotification(recipient, task.getLobby(), NotificationType.TASK_ASSIGNED,
@@ -111,7 +114,9 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void notifySharedEventCreated(UserEntity recipient, UserEntity actor, Long eventId,
                                        LobbyEntity lobby, String eventTitle) {
-    if (recipient.getId().equals(actor.getId()) || !allowsSharedEvent(recipient, lobby)) {
+    if (recipient.getId().equals(actor.getId())
+        || !isLobbyMember(lobby, recipient.getId())
+        || !allowsSharedEvent(recipient, lobby)) {
       return;
     }
     saveNotification(recipient, lobby, NotificationType.SHARED_EVENT_CREATED,
@@ -179,6 +184,11 @@ public class NotificationServiceImpl implements NotificationService {
         () -> new NotFoundException("Lobby %d not found".formatted(lobbyId)));
     accessPolicy.ensureMember(lobby, currentUserId);
     return lobby;
+  }
+
+  private boolean isLobbyMember(LobbyEntity lobby, Long userId) {
+    return Objects.equals(lobby.getOwner().getId(), userId)
+        || lobby.getMembers().stream().anyMatch(member -> Objects.equals(member.getId(), userId));
   }
 
   private UserEntity mustUser(Long userId) {
