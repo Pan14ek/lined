@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import type { UserDto } from '@/types';
+import { ROLES, MEMBER_CARD_TEXT } from '@/test/lobbyMemberContent';
 import { MemberCard } from '../MemberCard';
 
 const member: UserDto = {
@@ -27,8 +28,8 @@ describe('MemberCard', () => {
       />,
     );
 
-    expect(screen.getByText('nastia_k')).toBeInTheDocument();
-    expect(screen.getByText('@nastia_k')).toBeInTheDocument();
+    expect(screen.getByText(member.username)).toBeInTheDocument();
+    expect(screen.getByText(`@${member.username}`)).toBeInTheDocument();
     expect(screen.getByText('Member since February 2025')).toBeInTheDocument();
   });
 
@@ -45,8 +46,8 @@ describe('MemberCard', () => {
       />,
     );
 
-    expect(screen.getByText('Owner')).toBeInTheDocument();
-    expect(screen.queryByText('Member')).not.toBeInTheDocument();
+    expect(screen.getByText(MEMBER_CARD_TEXT.ownerBadge)).toBeInTheDocument();
+    expect(screen.queryByText(MEMBER_CARD_TEXT.memberBadge)).not.toBeInTheDocument();
   });
 
   it('shows the Member badge for a non-owner', () => {
@@ -62,7 +63,7 @@ describe('MemberCard', () => {
       />,
     );
 
-    expect(screen.getByText('Member')).toBeInTheDocument();
+    expect(screen.getByText(MEMBER_CARD_TEXT.memberBadge)).toBeInTheDocument();
   });
 
   it('shows "That\'s you" and hides management actions for the current user', () => {
@@ -78,9 +79,13 @@ describe('MemberCard', () => {
       />,
     );
 
-    expect(screen.getByText("That's you")).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Make owner' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(screen.getByText(MEMBER_CARD_TEXT.thatsYou)).toBeInTheDocument();
+    expect(
+      screen.queryByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }),
+    ).not.toBeInTheDocument();
   });
 
   it('hides "Make owner"/"Remove" actions when the viewer cannot manage members', () => {
@@ -96,8 +101,12 @@ describe('MemberCard', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'Make owner' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows "Make owner"/"Remove" actions for the owner viewing another member', async () => {
@@ -116,8 +125,8 @@ describe('MemberCard', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Make owner' }));
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }));
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }));
 
     expect(onMakeOwner).toHaveBeenCalledTimes(1);
     expect(onRemove).toHaveBeenCalledTimes(1);

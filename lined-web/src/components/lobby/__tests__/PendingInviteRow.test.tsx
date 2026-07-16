@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import type { LobbyInviteDto } from '@/types';
+import { ROLES, PENDING_INVITE_TEXT } from '@/test/lobbyMemberContent';
 import { PendingInviteRow } from '../PendingInviteRow';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -66,7 +67,7 @@ describe('PendingInviteRow', () => {
     );
     await screen.findByText('nastia_bondar');
 
-    await user.click(screen.getByRole('button', { name: 'Resend' }));
+    await user.click(screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.resendButtonName }));
 
     expect(onResend).toHaveBeenCalledTimes(1);
   });
@@ -86,7 +87,7 @@ describe('PendingInviteRow', () => {
     );
     await screen.findByText('nastia_bondar');
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.cancelButtonName }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
@@ -103,8 +104,12 @@ describe('PendingInviteRow', () => {
       />,
     );
 
-    expect(await screen.findByRole('button', { name: 'Resending…' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(
+      await screen.findByRole(ROLES.button, { name: PENDING_INVITE_TEXT.resendingLabel }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.cancelButtonName }),
+    ).toBeDisabled();
   });
 
   it('shows an inline error message when provided', async () => {

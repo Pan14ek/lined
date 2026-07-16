@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/test/data';
+import { ADD_MEMBER_MODAL_TEXT } from '@/test/lobbyMemberContent';
 import { LobbyHeader } from '../LobbyHeader';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -51,9 +52,9 @@ describe('LobbyHeader', () => {
     const user = userEvent.setup();
     renderWithProviders(<LobbyHeader lobby={lobby} />);
 
-    expect(screen.queryByText('Add Member')).not.toBeInTheDocument();
+    expect(screen.queryByText(ADD_MEMBER_MODAL_TEXT.title)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '+ Add member' }));
 
-    expect(screen.getByText('Add Member')).toBeInTheDocument();
+    expect(screen.getByText(ADD_MEMBER_MODAL_TEXT.title)).toBeInTheDocument();
   });
 });

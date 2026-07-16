@@ -4,6 +4,14 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/test/data';
 import { useAuthStore } from '@/store/auth';
+import {
+  ROLES,
+  TEST_IDS,
+  NUMBERS,
+  MEMBER_CARD_TEXT,
+  PENDING_INVITE_TEXT,
+  LOBBY_MEMBER_LIST_TEXT,
+} from '@/test/lobbyMemberContent';
 import { LobbyMemberList } from '../LobbyMemberList';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -18,17 +26,19 @@ describe('LobbyMemberList', () => {
     expect.assertions(1);
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(screen.getByTestId('lobby-members-loading')).toBeInTheDocument();
+    expect(screen.getByTestId(TEST_IDS.lobbyMembersLoading)).toBeInTheDocument();
   });
 
   it('renders the member count, role badges, and "that\'s you" for the current user', async () => {
     expect.assertions(4);
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(await screen.findByText('Owner')).toBeInTheDocument();
-    expect(screen.getByText('Members · 2')).toBeInTheDocument();
-    expect(screen.getByText('Member')).toBeInTheDocument();
-    expect(screen.getByText("That's you")).toBeInTheDocument();
+    expect(await screen.findByText(MEMBER_CARD_TEXT.ownerBadge)).toBeInTheDocument();
+    expect(
+      screen.getByText(LOBBY_MEMBER_LIST_TEXT.membersHeading(NUMBERS.aliceAndAnastasiiaMemberCount)),
+    ).toBeInTheDocument();
+    expect(screen.getByText(MEMBER_CARD_TEXT.memberBadge)).toBeInTheDocument();
+    expect(screen.getByText(MEMBER_CARD_TEXT.thatsYou)).toBeInTheDocument();
   });
 
   it('shows an error message when a member profile fails to load', async () => {
@@ -36,9 +46,7 @@ describe('LobbyMemberList', () => {
     server.use(http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 500 })));
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(
-      await screen.findByText("Couldn't load members. Try again later."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.loadMembersError)).toBeInTheDocument();
   });
 
   it('shows owner-only management actions and the Pending Invites section for the owner', async () => {
@@ -46,9 +54,15 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
 
-    expect(screen.getByRole('button', { name: 'Make owner' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
-    expect(await screen.findByText('Pending Invites')).toBeInTheDocument();
+    expect(
+      screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(LOBBY_MEMBER_LIST_TEXT.pendingInvitesHeading),
+    ).toBeInTheDocument();
   });
 
   it('hides management actions and the Pending Invites section for a non-owner viewer', async () => {
@@ -56,9 +70,13 @@ describe('LobbyMemberList', () => {
     useAuthStore.setState({ userId: 2, token: 'token' });
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(await screen.findByText("That's you")).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Make owner' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Pending Invites')).not.toBeInTheDocument();
+    expect(await screen.findByText(MEMBER_CARD_TEXT.thatsYou)).toBeInTheDocument();
+    expect(
+      screen.queryByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(LOBBY_MEMBER_LIST_TEXT.pendingInvitesHeading),
+    ).not.toBeInTheDocument();
   });
 
   it('resolves and renders the pending invite for the owner', async () => {
@@ -74,7 +92,7 @@ describe('LobbyMemberList', () => {
     server.use(http.get(`${BASE}/lobbies/:lobbyId/invites`, () => HttpResponse.json([])));
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(await screen.findByText('No pending invites.')).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.noPendingInvites)).toBeInTheDocument();
   });
 
   it('shows an error message when pending invites fail to load', async () => {
@@ -84,7 +102,7 @@ describe('LobbyMemberList', () => {
     );
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
-    expect(await screen.findByText("Couldn't load pending invites.")).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.loadInvitesError)).toBeInTheDocument();
   });
 
   it('resends a pending invite', async () => {
@@ -93,10 +111,12 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_bondar');
 
-    await user.click(screen.getByRole('button', { name: 'Resend' }));
+    await user.click(screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.resendButtonName }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resend' })).toBeEnabled();
+      expect(
+        screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.resendButtonName }),
+      ).toBeEnabled();
     });
   });
 
@@ -112,9 +132,9 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_bondar');
 
-    await user.click(screen.getByRole('button', { name: 'Resend' }));
+    await user.click(screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.resendButtonName }));
 
-    expect(await screen.findByText("Couldn't resend — try again")).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.resendError)).toBeInTheDocument();
   });
 
   it('cancels a pending invite without leaving it stuck in a pending state', async () => {
@@ -123,10 +143,12 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_bondar');
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.cancelButtonName }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+      expect(
+        screen.getByRole(ROLES.button, { name: PENDING_INVITE_TEXT.cancelButtonName }),
+      ).toBeEnabled();
     });
   });
 
@@ -136,18 +158,22 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
 
-    await user.click(screen.getByRole('button', { name: 'Make owner' }));
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }));
     expect(
       screen.getByText(
         'Make @nastia_k the owner of "Alex & Anastasiia"? You will become a regular member.',
       ),
     ).toBeInTheDocument();
 
-    const [, confirmButton] = screen.getAllByRole('button', { name: 'Make owner' });
+    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+      name: MEMBER_CARD_TEXT.makeOwnerButtonName,
+    });
     await user.click(confirmButton!);
 
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: 'Make owner' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole(ROLES.heading, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -158,13 +184,13 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
 
-    await user.click(screen.getByRole('button', { name: 'Make owner' }));
-    const [, confirmButton] = screen.getAllByRole('button', { name: 'Make owner' });
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }));
+    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+      name: MEMBER_CARD_TEXT.makeOwnerButtonName,
+    });
     await user.click(confirmButton!);
 
-    expect(
-      await screen.findByText('Could not transfer ownership — please try again'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.makeOwnerError)).toBeInTheDocument();
   });
 
   it('opens a confirm dialog and removes the member when "Remove" is confirmed', async () => {
@@ -173,12 +199,14 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
 
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
-    const [, confirmButton] = screen.getAllByRole('button', { name: 'Remove' });
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }));
+    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+      name: MEMBER_CARD_TEXT.removeButtonName,
+    });
     await user.click(confirmButton!);
 
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: 'Remove member' })).not.toBeInTheDocument();
+      expect(screen.queryByRole(ROLES.heading, { name: 'Remove member' })).not.toBeInTheDocument();
     });
   });
 
@@ -194,12 +222,12 @@ describe('LobbyMemberList', () => {
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
 
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
-    const [, confirmButton] = screen.getAllByRole('button', { name: 'Remove' });
+    await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }));
+    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+      name: MEMBER_CARD_TEXT.removeButtonName,
+    });
     await user.click(confirmButton!);
 
-    expect(
-      await screen.findByText('Could not remove this member — please try again'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.removeError)).toBeInTheDocument();
   });
 });
