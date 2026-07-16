@@ -1,5 +1,7 @@
 package io.backend.lined.lobby.api;
 
+import io.backend.lined.event.api.FreeSlotDto;
+import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.service.LobbyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -8,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class LobbyController {
 
   private final LobbyService lobbyService;
+  private final EventService eventService;
 
   @Operation(
       summary = "Create lobby",
@@ -61,6 +65,20 @@ public class LobbyController {
   public LobbyDto get(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id) {
     return lobbyService.getById(id);
+  }
+
+  @Operation(
+      summary = "Find common free slots",
+      description = "Returns windows where every lobby member is available without event details."
+  )
+  @GetMapping("/{id}/free-slots")
+  public List<FreeSlotDto> freeSlots(
+      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
+      @Parameter(example = "2026-01-01T09:00:00Z") @RequestParam OffsetDateTime from,
+      @Parameter(example = "2026-01-01T22:00:00Z") @RequestParam OffsetDateTime to,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    return eventService.findFreeSlots(id, from, to, currentUserId);
   }
 
   @Operation(

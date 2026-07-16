@@ -7,6 +7,7 @@ import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventUpdateDto;
+import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.api.UserConflictDto;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -93,5 +94,20 @@ public interface EventService {
    */
   UserConflictDto hasConflict(Long userId, OffsetDateTime start,
                               OffsetDateTime end, Long requesterId);
+
+  /**
+   * Finds windows where every member of a lobby is free without returning calendar-event details.
+   *
+   * @param lobbyId       the lobby whose members' availability is checked
+   * @param from          inclusive availability-window start
+   * @param to            exclusive availability-window end
+   * @param currentUserId the requesting lobby member
+   * @return ordered common free windows
+   * @throws BadRequestException if the time window is invalid
+   * @throws ForbiddenException  if the requester is not a lobby member
+   * @throws NotFoundException   if the lobby does not exist
+   */
+  List<FreeSlotDto> findFreeSlots(Long lobbyId, OffsetDateTime from,
+                                  OffsetDateTime to, Long currentUserId);
 
 }

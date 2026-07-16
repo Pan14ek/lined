@@ -8,9 +8,11 @@ import static org.mockito.Mockito.when;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.event.api.FreeSlotDto;
+import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyService;
-import io.backend.lined.lobby.api.LobbyUpdateDto;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,13 +26,15 @@ class LobbyControllerTest {
 
   @Mock
   private LobbyService lobbyService;
+  @Mock
+  private EventService eventService;
 
   private LobbyController controller;
   private LobbyDto sampleLobby;
 
   @BeforeEach
   void setUp() {
-    controller = new LobbyController(lobbyService);
+    controller = new LobbyController(lobbyService, eventService);
     sampleLobby = new LobbyDto(101L, "Our Family", LobbyTypes.FAMILY, 1L, Set.of(1L));
   }
 
@@ -91,6 +95,19 @@ class LobbyControllerTest {
     assertThatThrownBy(() -> controller.get(999L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
+  }
+
+  @Test
+  void freeSlots_delegatesToEventService() {
+    var from = OffsetDateTime.parse("2026-01-01T09:00:00Z");
+    var to = OffsetDateTime.parse("2026-01-01T22:00:00Z");
+    var freeSlots = List.of(new FreeSlotDto(from, to));
+    when(eventService.findFreeSlots(101L, from, to, 1L)).thenReturn(freeSlots);
+
+    List<FreeSlotDto> result = controller.freeSlots(101L, from, to, 1L);
+
+    assertThat(result).containsExactlyElementsOf(freeSlots);
+    verify(eventService).findFreeSlots(101L, from, to, 1L);
   }
 
   @Test

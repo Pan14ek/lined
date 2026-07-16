@@ -8,6 +8,7 @@ import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
 import io.backend.lined.event.api.EventUpdateDto;
+import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.api.UserConflictDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
@@ -18,8 +19,10 @@ import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +37,7 @@ public class EventServiceImpl implements EventService {
   private final EventMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
   private final EventConflictAnalyzer conflictAnalyzer;
+  private final FreeSlotCalculator freeSlotCalculator;
 
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId) {
@@ -124,6 +128,16 @@ public class EventServiceImpl implements EventService {
     return new UserConflictDto(userId, true, mapper.toDto(overlapping.get(0)));
   }
 
+  @Override
+  public List<FreeSlotDto> findFreeSlots(Long lobbyId, OffsetDateTime from,
+                                         OffsetDateTime to, Long currentUserId) {
+    var lobby = mustLobby(lobbyId);
+    accessPolicy.ensureMember(lobby, currentUserId);
+    var window = queryWindow(from, to);
+    var busyEvents = repo.findBusyForMemberIds(memberIds(lobby), window.start(), window.end());
+    return freeSlotCalculator.findFreeSlots(window, busyEvents);
+  }
+
   private UserEntity mustUser(Long id) {
     return EntityFinder.findOrThrow(userRepo.findById(id),
         () -> new NotFoundException("User %d not found".formatted(id)));
@@ -162,6 +176,13 @@ public class EventServiceImpl implements EventService {
     if (!Objects.equals(userId, requesterId)) {
       throw new ForbiddenException("Requester can only check their own calendar");
     }
+  }
+
+  private Set<Long> memberIds(LobbyEntity lobby) {
+    Set<Long> memberIds = new HashSet<>();
+    memberIds.add(lobby.getOwner().getId());
+    lobby.getMembers().forEach(member -> memberIds.add(member.getId()));
+    return memberIds;
   }
 
 }

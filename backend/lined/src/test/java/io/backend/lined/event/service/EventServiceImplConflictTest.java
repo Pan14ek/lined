@@ -14,6 +14,7 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
+import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.api.UserConflictDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
@@ -80,7 +81,8 @@ class EventServiceImplConflictTest {
     setupEvents();
     setupDtos();
     eventService = new EventServiceImpl(
-        repo, lobbyRepo, userRepo, mapper, accessPolicy, new EventConflictAnalyzer(mapper));
+        repo, lobbyRepo, userRepo, mapper, accessPolicy, new EventConflictAnalyzer(mapper),
+        new FreeSlotCalculator());
   }
 
   private void setupDtos() {
@@ -363,5 +365,51 @@ class EventServiceImplConflictTest {
 
     assertThat(result.userId()).isEqualTo(2L);
     assertThat(result.hasConflict()).isFalse();
+  }
+
+  /* ======================= FIND FREE SLOTS ======================= */
+
+  @Test
+  void findFreeSlots_returnsOnlyCommonAvailabilityWindows() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.findBusyForMemberIds(Set.of(1L, 2L), windowStart, windowEnd))
+        .thenReturn(List.of(eventA, eventB));
+
+    List<FreeSlotDto> result = eventService.findFreeSlots(101L, windowStart, windowEnd, 1L);
+
+    assertThat(result).containsExactly(new FreeSlotDto(eventB.getEndAt(), windowEnd));
+  }
+
+  @Test
+  void findFreeSlots_throwsBadRequest_whenWindowIsInvalid() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> eventService.findFreeSlots(101L, windowEnd, windowStart, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("from < to");
+
+    verify(repo, never()).findBusyForMemberIds(any(), any(), any());
+  }
+
+  @Test
+  void findFreeSlots_throwsForbidden_whenRequesterIsNotLobbyMember() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> eventService.findFreeSlots(101L, windowStart, windowEnd, 99L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("not a member");
+
+    verify(repo, never()).findBusyForMemberIds(any(), any(), any());
+  }
+
+  @Test
+  void findFreeSlots_throwsNotFound_whenLobbyDoesNotExist() {
+    when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> eventService.findFreeSlots(999L, windowStart, windowEnd, 1L))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("999");
+
+    verify(repo, never()).findBusyForMemberIds(any(), any(), any());
   }
 }
