@@ -182,7 +182,7 @@ Setup creates:
 
 - synthetic users named `k6_<RUN_ID>_<index>`
 - one `FRIENDS` lobby owned by the first synthetic user
-- lobby memberships for the other synthetic users
+- accepted lobby invitations for the other synthetic users
 - a bounded task corpus
 - a bounded event corpus
 

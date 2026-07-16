@@ -274,6 +274,66 @@ All fields are optional; omitted fields remain unchanged.
 - `403 Forbidden` when the caller is not the current owner.
 - `409 Conflict` when `ownerId` is not an existing lobby member.
 
+### Lobby Invites
+
+Lobby owners invite a specific existing user instead of adding that user to the
+lobby immediately. The invited user becomes a member only after accepting.
+Invite links and notification delivery are not part of this API.
+
+#### Create Invite
+
+`POST /api/lobbies/{lobbyId}/invites?userId={userId}`
+
+`POST /api/lobbies/{lobbyId}/invites?userEmail={userEmail}`
+
+The caller must be the lobby owner. Returns a pending `LobbyInviteDto`; it does
+not change the lobby's `memberIds`. Supply exactly one target selector. An
+email selector resolves to an existing account; it does not send an email.
+
+#### List and Manage Pending Invites
+
+`GET /api/lobbies/{lobbyId}/invites`
+
+`POST /api/lobbies/{lobbyId}/invites/{inviteId}/resend`
+
+`DELETE /api/lobbies/{lobbyId}/invites/{inviteId}`
+
+All three endpoints are owner-only. Listing returns only pending invitations.
+Resend renews `sentAt`; it does not send email or push notifications. Delete
+marks the invitation cancelled.
+
+#### Respond to an Invite
+
+`GET /api/lobby-invites/mine`
+
+`POST /api/lobby-invites/{inviteId}/accept`
+
+`POST /api/lobby-invites/{inviteId}/decline`
+
+`mine` returns the current user's pending invitations. Only the invitee can
+accept or decline; accept adds the invitee to the lobby and marks the invite
+`ACCEPTED`, while decline marks it `DECLINED`.
+
+```json
+{
+  "id": 501,
+  "lobbyId": 101,
+  "inviterId": 42,
+  "inviteeId": 77,
+  "status": "PENDING",
+  "sentAt": "2026-07-16T10:00:00Z",
+  "createdAt": "2026-07-16T10:00:00Z",
+  "updatedAt": "2026-07-16T10:00:00Z"
+}
+```
+
+These endpoints return `403 Forbidden` for a caller without the required owner
+or invitee role, `404 Not Found` for missing resources, and `409 Conflict` for
+an existing member, duplicate pending invite, or terminal invite action.
+
+`POST /api/lobbies/{id}/members` is no longer available; clients must create
+an invitation and wait for the recipient to accept it.
+
 ### Find Common Free Slots
 
 `GET /api/lobbies/{id}/free-slots?from={timestamp}&to={timestamp}`

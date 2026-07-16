@@ -73,19 +73,6 @@ public class LobbyServiceImpl implements LobbyService {
   }
 
   @Override
-  public LobbyDto addMember(Long lobbyId, Long userIdToAdd, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
-
-    accessPolicy.ensureOwner(lobby, requesterId);
-
-    var user = EntityFinder.findOrThrow(userRepo.findById(userIdToAdd),
-        () -> new NotFoundException("User %d not found".formatted(userIdToAdd)));
-
-    lobby.getMembers().add(user);
-    return mapper.toDto(lobby);
-  }
-
-  @Override
   public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId) {
     var lobby = mustLobby(lobbyId);
 

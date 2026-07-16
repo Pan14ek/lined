@@ -1,0 +1,87 @@
+package io.backend.lined.lobby.invite.api;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
+import io.backend.lined.lobby.invite.service.LobbyInviteService;
+import java.time.OffsetDateTime;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class LobbyInviteControllerTest {
+
+  @Mock
+  private LobbyInviteService inviteService;
+
+  private LobbyInviteController controller;
+  private LobbyInviteDto invite;
+
+  @BeforeEach
+  void setUp() {
+    controller = new LobbyInviteController(inviteService);
+    var now = OffsetDateTime.parse("2026-07-16T10:00:00Z");
+    invite = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.PENDING,
+        now, now, now);
+  }
+
+  @Test
+  void create_delegatesToService() {
+    when(inviteService.create(101L, 2L, null, 1L)).thenReturn(invite);
+
+    assertThat(controller.create(101L, 2L, null, 1L)).isEqualTo(invite);
+    verify(inviteService).create(101L, 2L, null, 1L);
+  }
+
+  @Test
+  void pendingForLobby_delegatesToService() {
+    when(inviteService.pendingForLobby(101L, 1L)).thenReturn(List.of(invite));
+
+    assertThat(controller.pendingForLobby(101L, 1L)).containsExactly(invite);
+  }
+
+  @Test
+  void resend_delegatesToService() {
+    when(inviteService.resend(101L, 501L, 1L)).thenReturn(invite);
+
+    assertThat(controller.resend(101L, 501L, 1L)).isEqualTo(invite);
+  }
+
+  @Test
+  void cancel_delegatesToService() {
+    when(inviteService.cancel(101L, 501L, 1L)).thenReturn(invite);
+
+    assertThat(controller.cancel(101L, 501L, 1L)).isEqualTo(invite);
+  }
+
+  @Test
+  void mine_delegatesToService() {
+    when(inviteService.pendingForInvitee(2L)).thenReturn(List.of(invite));
+
+    assertThat(controller.mine(2L)).containsExactly(invite);
+  }
+
+  @Test
+  void accept_delegatesToService() {
+    when(inviteService.accept(501L, 2L)).thenReturn(invite);
+
+    assertThat(controller.accept(501L, 2L)).isEqualTo(invite);
+  }
+
+  @Test
+  void decline_propagatesForbiddenException() {
+    when(inviteService.decline(501L, 99L)).thenThrow(new ForbiddenException("Not invitee"));
+
+    assertThatThrownBy(() -> controller.decline(501L, 99L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("invitee");
+  }
+}

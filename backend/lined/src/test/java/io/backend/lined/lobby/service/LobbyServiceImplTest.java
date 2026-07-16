@@ -250,50 +250,6 @@ class LobbyServiceImplTest {
   }
 
   /* =======================
-     ADD MEMBER
-  ======================= */
-
-  @Test
-  void addMember_success() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
-    when(userRepo.findById(2L)).thenReturn(Optional.of(member));
-    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
-
-    LobbyDto result = lobbyService.addMember(101L, 2L, 1L);
-
-    assertThat(result).isNotNull();
-    assertThat(lobbyEntity.getMembers()).contains(member);
-  }
-
-  @Test
-  void addMember_throwsNotFound_whenLobbyNotFound() {
-    when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> lobbyService.addMember(999L, 2L, 1L))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("999");
-  }
-
-  @Test
-  void addMember_throwsNotFound_whenUserNotFound() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
-    when(userRepo.findById(99L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> lobbyService.addMember(101L, 99L, 1L))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining("99");
-  }
-
-  @Test
-  void addMember_throwsForbidden_whenRequesterIsNotOwner() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
-
-    assertThatThrownBy(() -> lobbyService.addMember(101L, 2L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("owner");
-  }
-
-  /* =======================
      REMOVE MEMBER
   ======================= */
 

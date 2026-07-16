@@ -49,7 +49,7 @@ const JSON_HEADERS = {
 };
 
 const ENDPOINTS = {
-  addLobbyMember: (lobbyId, userId) => `/api/lobbies/${lobbyId}/members?userId=${userId}`,
+  acceptLobbyInvite: (inviteId) => `/api/lobby-invites/${inviteId}/accept`,
   calendarConflicts: (lobbyId, requesterId) => queryPath('/api/calendar/conflicts', {
     end: EVENT_WINDOW.to,
     lobbyId,
@@ -62,6 +62,7 @@ const ENDPOINTS = {
     to: EVENT_WINDOW.to,
   }),
   createCalendarEvent: '/api/calendar/events',
+  createLobbyInvite: (lobbyId, userId) => `/api/lobbies/${lobbyId}/invites?userId=${userId}`,
   event: (eventId) => `/api/calendar/events/${eventId}`,
   lobbies: '/api/lobbies',
   lobby: (lobbyId) => `/api/lobbies/${lobbyId}`,
@@ -89,9 +90,10 @@ const ENDPOINTS = {
 };
 
 const MESSAGES = {
-  addLobbyMember: 'add lobby member succeeds',
+  acceptLobbyInvite: 'accept lobby invite succeeds',
   createEvent: 'create event succeeds',
   createLobby: 'create lobby succeeds',
+  createLobbyInvite: 'create lobby invite succeeds',
   createTask: 'create task succeeds',
   createUser: 'create user succeeds',
   deleteEvent: 'delete seeded event succeeds',
@@ -242,7 +244,7 @@ export const setup = () => {
   const [owner] = users;
   const lobby = createLobby(owner.id);
 
-  users.slice(1).forEach((user) => addMember(lobby.id, owner.id, user.id));
+  users.slice(1).forEach((user) => inviteAndAcceptMember(lobby.id, owner.id, user.id));
 
   return {
     events: seedEvents(owner.id, lobby.id),
@@ -514,14 +516,22 @@ const createLobby = (ownerId) => {
   return responseJson(res, 'create lobby');
 };
 
-const addMember = (lobbyId, ownerId, memberId) => {
-  const res = postForUser(
-      ENDPOINTS.addLobbyMember(lobbyId, memberId),
+const inviteAndAcceptMember = (lobbyId, ownerId, memberId) => {
+  const inviteRes = postForUser(
+      ENDPOINTS.createLobbyInvite(lobbyId, memberId),
       null,
       ownerId,
-      'lobbies',
-      'add-member');
-  expectStatus(res, MESSAGES.addLobbyMember);
+      'lobby-invites',
+      'create');
+  expectStatus(inviteRes, MESSAGES.createLobbyInvite);
+  const invite = responseJson(inviteRes, 'create lobby invite');
+  const acceptRes = postForUser(
+      ENDPOINTS.acceptLobbyInvite(invite.id),
+      null,
+      memberId,
+      'lobby-invites',
+      'accept');
+  expectStatus(acceptRes, MESSAGES.acceptLobbyInvite);
 };
 
 const seedTasks = (ownerId, lobbyId, users) => range(SEED_TASK_COUNT).map((index) => {
