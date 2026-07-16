@@ -53,6 +53,6 @@ class UserDeletionPersistenceTest {
   }
 
   private int count(String table) {
-    return jdbcTemplate.queryForObject("select count(*) from " + table, Integer.class);
+    return jdbcTemplate.queryForList("select count(*) from " + table, Integer.class).get(0);
   }
 }
