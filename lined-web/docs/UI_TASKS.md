@@ -71,7 +71,7 @@ AddMemberModal, ReserveSlotModal, kanban board, lobby header/tabs/members.
 
 | # | Branch name | Task description | Reference | Status |
 |---|---|---|---|---|
-| 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (MVP auth via user search + `X-User-Id`) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | TODO |
+| 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (MVP auth via user search + `X-User-Id`) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | DONE |
 | 2 | `feature/ui-02-sidebar-live-data` | Sidebar: real lobbies + real current user from API, "+ New" lobby entry point | [tasks/UI-02-sidebar-live-data.md](tasks/UI-02-sidebar-live-data.md) | TODO |
 | 3 | `feature/ui-03-dashboard` | Dashboard page: lobby cards, upcoming events, my tasks, free-slot banner | [tasks/UI-03-dashboard.md](tasks/UI-03-dashboard.md) | TODO |
 | 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | TODO |
