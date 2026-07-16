@@ -4,12 +4,12 @@ import { useMyLobbies } from '@/hooks/useLobbies';
 import { useUpcomingEvents } from '@/hooks/useEvents';
 import { useMyTasks } from '@/hooks/useTasks';
 import { useFreeSlotBanner } from '@/hooks/useDashboard';
-import { useCreateMenuStore } from '@/store/createMenu';
 import { getGreeting, formatFullDate } from '@/lib/calendarUtils';
 import { LobbyCardGrid } from '@/components/dashboard/LobbyCardGrid';
 import { UpcomingEventsList } from '@/components/dashboard/UpcomingEventsList';
 import { MyTasksList } from '@/components/dashboard/MyTasksList';
 import { FreeSlotBanner } from '@/components/dashboard/FreeSlotBanner';
+import { CreateMenu } from '@/components/CreateMenu';
 
 export function DashboardPage() {
   const { data: user } = useCurrentUser();
@@ -17,7 +17,6 @@ export function DashboardPage() {
   const { data: events, isLoading: eventsLoading, isError: eventsError } = useUpcomingEvents();
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { slot, isLoading: slotLoading } = useFreeSlotBanner();
-  const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -37,13 +36,7 @@ export function DashboardPage() {
           >
             <Bell className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={openCreateLobby}
-            className="h-9 rounded-lg bg-brand-green px-4 text-sm font-semibold text-white hover:bg-brand-green-dark transition-colors"
-          >
-            + Create
-          </button>
+          <CreateMenu />
         </div>
       </div>
 
