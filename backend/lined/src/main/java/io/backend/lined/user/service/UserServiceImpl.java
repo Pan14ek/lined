@@ -4,7 +4,9 @@ import static java.lang.String.format;
 
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.ConflictException;
+import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
@@ -33,11 +35,14 @@ public class UserServiceImpl implements UserService {
 
   private static final String USER_NOT_FOUND_ERROR_MESSAGE = "User not found: %s";
   private static final String USERNAME_ALREADY_EXISTS_ERROR_MESSAGE = "Username already exists: %s";
+  private static final String OWNED_LOBBY_DELETE_ERROR_MESSAGE =
+      "Transfer ownership or delete owned lobbies before deleting your account";
 
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final RoleResolver roleResolver;
+  private final LobbyRepository lobbyRepository;
 
   @Override
   public UserDto create(UserCreateDto dto) {
@@ -93,11 +98,15 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void delete(Long id) {
-    if (!userRepository.existsById(id)) {
-      throw new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id));
+  public void delete(Long id, Long currentUserId) {
+    var user = mustUser(id);
+    if (!id.equals(currentUserId)) {
+      throw new ForbiddenException("Users can only delete their own account");
     }
-    userRepository.deleteById(id);
+    if (!lobbyRepository.findAllByOwner_Id(id).isEmpty()) {
+      throw new ConflictException(OWNED_LOBBY_DELETE_ERROR_MESSAGE);
+    }
+    userRepository.delete(user);
   }
 
   @Override

@@ -43,12 +43,15 @@ public interface UserService {
   UserDto update(Long id, UserUpdateDto dto);
 
   /**
-   * Deletes a user by their unique identifier.
+   * Deletes the requesting user's account when they do not own a lobby.
    *
    * @param id the user ID to delete
+   * @param currentUserId the ID supplied by the current MVP authentication header
+   * @throws ForbiddenException if the requester is deleting another account
+   * @throws ConflictException if the account owns one or more lobbies
    * @throws NotFoundException if no user exists with the given ID
    */
-  void delete(Long id);
+  void delete(Long id, Long currentUserId);
 
   /**
    * Changes the password for a user.

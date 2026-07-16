@@ -3,10 +3,15 @@ package io.backend.lined.user.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.app.AccountApplicationService;
+import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.user.service.UserService;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
@@ -26,11 +33,15 @@ class UserControllerTest {
   private AccountApplicationService accountService;
 
   private UserController controller;
+  private MockMvc mockMvc;
   private UserDto sampleUser;
 
   @BeforeEach
   void setUp() {
     controller = new UserController(userService, accountService);
+    mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
     sampleUser = new UserDto(1L, "alice", "alice@example.com",
         OffsetDateTime.now(), Set.of("USER"), null, null);
   }
@@ -74,6 +85,39 @@ class UserControllerTest {
     assertThatThrownBy(() -> controller.get(99L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
+  }
+
+  @Test
+  void delete_delegatesSelfServiceRequestAndReturnsNoContent() {
+    var response = controller.delete(1L, 1L);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(204);
+    verify(userService).delete(1L, 1L);
+  }
+
+  @Test
+  void delete_acceptsCurrentUserHeader() throws Exception {
+    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "1"))
+        .andExpect(status().isNoContent());
+
+    verify(userService).delete(1L, 1L);
+  }
+
+  @Test
+  void delete_rejectsMissingCurrentUserHeader() throws Exception {
+    mockMvc.perform(delete("/api/users/1"))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(userService);
+  }
+
+  @Test
+  void delete_mapsForbiddenServiceResult() throws Exception {
+    org.mockito.Mockito.doThrow(new ForbiddenException("Users can only delete their own account"))
+        .when(userService).delete(1L, 2L);
+
+    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "2"))
+        .andExpect(status().isForbidden());
   }
 
   @Test
