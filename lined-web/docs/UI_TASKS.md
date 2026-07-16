@@ -4,6 +4,13 @@ This plan is derived from a detailed comparison of the mockups
 (`mockups/index.html`, 15 screens) against the current `lined-web`
 implementation and the REST API available in `backend/lined`.
 
+**For AI agents (Claude Code, Codex, Gemini, etc.):** read
+[`../AGENTS.md`](../AGENTS.md) before starting — it defines the workflow for
+this table. Summary: one task per branch/PR using the branch name below; read
+the linked task file fully before coding; respect dependencies; update the
+Status column (`TODO` → `IN PROGRESS` → `DONE`) in the same PR; don't expand
+scope beyond the task file.
+
 ## How to view the mockups
 
 ```bash
@@ -84,9 +91,11 @@ else is parallelisable.
 
 ## Conventions for every task
 
-- Follow `lined-web` rules in the root `CLAUDE.md`: data fetching only via
-  TanStack Query hooks in `src/hooks/`, UI state in Zustand, Tailwind tokens
-  only (no hex), never edit `src/components/ui/`, MSW v2 for test mocking.
+- Follow the `lined-web` rules in [`../AGENTS.md`](../AGENTS.md) (full detail
+  in the root `AGENTS.md`, section "Web — Vite + React"): data fetching only
+  via TanStack Query hooks in `src/hooks/`, UI state in Zustand, Tailwind
+  tokens only (no hex), never edit `src/components/ui/`, MSW v2 for test
+  mocking.
 - Definition of done for each task: `npm run lint`, `npm run typecheck`,
   `npm test` (`npm run test:run`) and `npm run build` all pass; new
   components have tests with MSW handlers; visually verified against the

@@ -39,6 +39,11 @@ Scientific experiment work must be done iteratively. Use the task table in
 `backend/lined/docs/experiment-tasks.md`, create one pull request per task, and
 use the `experiment/` branch prefix for those PRs.
 
+Web UI feature work is likewise task-driven. Read `lined-web/AGENTS.md` first,
+then use the task table in `lined-web/docs/UI_TASKS.md` (each row links to a
+detailed spec in `lined-web/docs/tasks/`), create one pull request per task,
+and use the branch name given in the table (`feature/ui-NN-...`).
+
 ---
 
 ## Repository Layout
