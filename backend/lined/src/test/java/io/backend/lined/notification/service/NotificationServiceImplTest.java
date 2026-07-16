@@ -10,8 +10,12 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.notification.api.LobbyNotificationPreferencesDto;
+import io.backend.lined.notification.api.LobbyNotificationPreferencesUpdateDto;
 import io.backend.lined.notification.api.NotificationDto;
 import io.backend.lined.notification.api.NotificationMapper;
+import io.backend.lined.notification.api.NotificationPreferencesDto;
+import io.backend.lined.notification.api.NotificationPreferencesUpdateDto;
 import io.backend.lined.notification.domain.LobbyNotificationPreferenceEntity;
 import io.backend.lined.notification.domain.LobbyNotificationPreferenceRepository;
 import io.backend.lined.notification.domain.NotificationDeliveryChannel;
@@ -138,6 +142,86 @@ class NotificationServiceImplTest {
   }
 
   @Test
+  void notifySharedEventCreated_queuesNotification_whenPreferencesAllow() {
+    allowSharedEventNotifications();
+    ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+
+    notificationService.notifySharedEventCreated(recipient, actor, 77L, lobby, "Dinner");
+
+    verify(notificationRepo).save(captor.capture());
+    assertThat(captor.getValue().getType()).isEqualTo(
+        io.backend.lined.notification.domain.NotificationType.SHARED_EVENT_CREATED);
+    assertThat(captor.getValue().getEventId()).isEqualTo(77L);
+  }
+
+  @Test
+  void getPreferences_returnsEnabledDefaults_withoutPersisting() {
+    when(userRepo.findById(recipient.getId())).thenReturn(Optional.of(recipient));
+    when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.empty());
+    var expected = new NotificationPreferencesDto(true, true, true, true, true);
+    when(mapper.toDto(any(UserNotificationPreferenceEntity.class))).thenReturn(expected);
+
+    NotificationPreferencesDto result = notificationService.getPreferences(recipient.getId());
+
+    assertThat(result).isEqualTo(expected);
+    verify(userPreferenceRepo, never()).save(any());
+  }
+
+  @Test
+  void updatePreferences_appliesEveryProvidedValue() {
+    var preferences = UserNotificationPreferenceEntity.builder().user(recipient).build();
+    var update = new NotificationPreferencesUpdateDto(false, false, false, false, false);
+    var expected = new NotificationPreferencesDto(false, false, false, false, false);
+    when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.of(preferences));
+    when(userPreferenceRepo.save(preferences)).thenReturn(preferences);
+    when(mapper.toDto(preferences)).thenReturn(expected);
+
+    NotificationPreferencesDto result = notificationService.updatePreferences(recipient.getId(), update);
+
+    assertThat(result).isEqualTo(expected);
+    assertThat(preferences.isSharedEventsEnabled()).isFalse();
+    assertThat(preferences.isTaskAssignedEnabled()).isFalse();
+    assertThat(preferences.isFreeSlotsEnabled()).isFalse();
+    assertThat(preferences.isEventRemindersEnabled()).isFalse();
+    assertThat(preferences.isEmailDigestsEnabled()).isFalse();
+  }
+
+  @Test
+  void getLobbyPreferences_returnsDefaultsForMember() {
+    when(lobbyRepo.findById(lobby.getId())).thenReturn(Optional.of(lobby));
+    when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
+        .thenReturn(Optional.empty());
+    var expected = new LobbyNotificationPreferencesDto(101L, true, true, true);
+    when(mapper.toDto(any(LobbyNotificationPreferenceEntity.class))).thenReturn(expected);
+
+    LobbyNotificationPreferencesDto result = notificationService.getLobbyPreferences(
+        lobby.getId(), recipient.getId());
+
+    assertThat(result).isEqualTo(expected);
+    verify(lobbyPreferenceRepo, never()).save(any());
+  }
+
+  @Test
+  void updateLobbyPreferences_appliesEveryProvidedValue() {
+    var preferences = LobbyNotificationPreferenceEntity.builder().user(recipient).lobby(lobby).build();
+    var update = new LobbyNotificationPreferencesUpdateDto(false, false, false);
+    var expected = new LobbyNotificationPreferencesDto(101L, false, false, false);
+    when(lobbyRepo.findById(lobby.getId())).thenReturn(Optional.of(lobby));
+    when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
+        .thenReturn(Optional.of(preferences));
+    when(lobbyPreferenceRepo.save(preferences)).thenReturn(preferences);
+    when(mapper.toDto(preferences)).thenReturn(expected);
+
+    LobbyNotificationPreferencesDto result = notificationService.updateLobbyPreferences(
+        lobby.getId(), recipient.getId(), update);
+
+    assertThat(result).isEqualTo(expected);
+    assertThat(preferences.isNewEventsEnabled()).isFalse();
+    assertThat(preferences.isTaskUpdatesEnabled()).isFalse();
+    assertThat(preferences.isFreeSlotsEnabled()).isFalse();
+  }
+
+  @Test
   void markRead_rejectsAnotherUsersNotification() {
     when(notificationRepo.findByIdAndRecipientId(10L, recipient.getId())).thenReturn(Optional.empty());
 
@@ -173,6 +257,12 @@ class NotificationServiceImplTest {
   }
 
   private void allowTaskNotifications() {
+    when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.empty());
+    when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
+        .thenReturn(Optional.empty());
+  }
+
+  private void allowSharedEventNotifications() {
     when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.empty());
     when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
         .thenReturn(Optional.empty());
