@@ -22,6 +22,7 @@ public class GlobalExceptionHandler {
       case CONFLICT -> "Conflict";
       case BAD_REQUEST -> "Bad request";
       case FORBIDDEN -> "Forbidden";
+      case UNAUTHORIZED -> "Unauthorized";
       default -> ex.getStatus().getReasonPhrase();
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));

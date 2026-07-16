@@ -7,11 +7,17 @@ Base URL: **http://localhost:8080**
 
 ## 🔑 Authentication
 
-All protected endpoints require **JWT Bearer Token** in the `Authorization` header.
+`POST /api/auth/login` verifies a user's password and returns a short-lived
+Bearer-style token plus the authenticated user identity.
 
 ```http
 Authorization: Bearer <access_token>
 ```
+
+The rest of the backend still accepts the MVP `X-User-Id: <Long>` caller
+identity header on endpoints that require a user id. Treat that header path as
+deprecated transitional auth while request filtering is moved to the login
+token.
 
 ---
 
@@ -187,13 +193,15 @@ Returns the currently authenticated user's profile.
 
 `POST /api/auth/login`
 
-Authenticate and get JWT access token.
+Verify a password for an existing user and return a token plus the user identity
+needed by the current web auth store. The identifier can be an email address or
+username.
 
 **Request**
 
 ```json
 {
-  "email": "alex@example.com",
+  "identifier": "alex@example.com",
   "password": "P@ssw0rd!"
 }
 ```
@@ -202,74 +210,28 @@ Authenticate and get JWT access token.
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR...",
+  "accessToken": "djE6NDI6MTc2MDAwMDAwMA.qfV...",
   "tokenType": "Bearer",
-  "expiresIn": 3600
+  "expiresIn": 3600,
+  "userId": 42,
+  "username": "alex",
+  "email": "alex@example.com",
+  "roles": [
+    "ROLE_USER"
+  ]
 }
 ```
+
+**Response 401**
+
+Returned when the identifier does not exist or the password does not match.
 
 ---
 
-### Refresh Token
+### Legacy / Planned Auth Endpoints
 
-`POST /api/auth/refresh`
-
-Get a new access token using a refresh token.
-
-**Request**
-
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR..."
-}
-```
-
-**Response 200**
-
-```json
-{
-  "accessToken": "newAccessToken123",
-  "tokenType": "Bearer",
-  "expiresIn": 3600
-}
-```
-
----
-
-### Register
-
-`POST /api/auth/register`
-
-Alternative registration endpoint for public users.
-
-**Request**
-
-```json
-{
-  "username": "newUser",
-  "email": "new.user@example.com",
-  "password": "Qwerty@123"
-}
-```
-
-**Response 201**
-
-```json
-{
-  "message": "User registered successfully"
-}
-```
-
----
-
-### Logout
-
-`POST /api/auth/logout`
-
-Invalidate refresh token (logout).
-
-**Response 204**
+`POST /api/auth/refresh`, `POST /api/auth/register`, and `POST /api/auth/logout`
+are not implemented yet. Registration currently uses `POST /api/users`.
 
 ---
 
@@ -472,7 +434,7 @@ Simple health and uptime information.
 | Status | Meaning               | Example                                                             |
 |:-------|:----------------------|:--------------------------------------------------------------------|
 | 400    | Bad Request           | `{ "code": "VALIDATION_ERROR", "message": "Invalid email" }`        |
-| 401    | Unauthorized          | `{ "code": "UNAUTHORIZED", "message": "Missing or invalid token" }` |
+| 401    | Unauthorized          | `{ "title": "Unauthorized", "detail": "Invalid email, username, or password" }` |
 | 403    | Forbidden             | `{ "code": "FORBIDDEN", "message": "Access denied" }`               |
 | 404    | Not Found             | `{ "code": "NOT_FOUND", "message": "User not found" }`              |
 | 409    | Conflict              | `{ "code": "EMAIL_EXISTS", "message": "Email already registered" }` |
