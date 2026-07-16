@@ -11,6 +11,7 @@ import io.backend.lined.task.api.TaskDto;
 import io.backend.lined.task.api.TaskMapper;
 import io.backend.lined.task.api.TaskUpdateDto;
 import io.backend.lined.task.domain.TaskEntity;
+import io.backend.lined.task.domain.TaskPriority;
 import io.backend.lined.task.domain.TaskRepository;
 import io.backend.lined.task.domain.TaskStatus;
 import io.backend.lined.user.domain.UserEntity;
@@ -40,7 +41,9 @@ public class TaskServiceImpl implements TaskService {
 
     var entity = TaskEntity.builder()
         .title(dto.title())
-        .status(TaskStatus.TODO)
+        .description(normalizeDescription(dto.description()))
+        .priority(dto.priority() == null ? TaskPriority.MEDIUM : dto.priority())
+        .status(dto.status() == null ? TaskStatus.TODO : dto.status())
         .lobby(lobby)
         .creator(creator)
         .assignee(dto.assigneeId() == null ? null : mustUser(dto.assigneeId()))
@@ -66,6 +69,12 @@ public class TaskServiceImpl implements TaskService {
     }
     if (dto.dueDate() != null) {
       task.setDueDate(dto.dueDate());
+    }
+    if (dto.description() != null) {
+      task.setDescription(normalizeDescription(dto.description()));
+    }
+    if (dto.priority() != null) {
+      task.setPriority(dto.priority());
     }
 
     return mapper.toDto(task);
@@ -115,6 +124,10 @@ public class TaskServiceImpl implements TaskService {
   private TaskEntity mustTask(Long id) {
     return EntityFinder.findOrThrow(repo.findById(id),
         () -> new NotFoundException("Task %d not found".formatted(id)));
+  }
+
+  private String normalizeDescription(String description) {
+    return description == null || description.isBlank() ? null : description;
   }
 
 }

@@ -1,5 +1,6 @@
 package io.backend.lined.task.api;
 
+import io.backend.lined.task.domain.TaskPriority;
 import io.backend.lined.task.domain.TaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
@@ -9,6 +10,8 @@ import java.time.OffsetDateTime;
 public record TaskDto(
     @Schema(example = "555") Long id,
     @Schema(example = "Buy groceries") String title,
+    @Schema(example = "Pick up milk and bread") String description,
+    @Schema(example = "MEDIUM") TaskPriority priority,
     @Schema(example = "TODO") TaskStatus status,
     @Schema(example = "101") Long lobbyId,
     @Schema(example = "42") Long creatorId,

@@ -19,6 +19,7 @@ import io.backend.lined.task.api.TaskDto;
 import io.backend.lined.task.api.TaskMapper;
 import io.backend.lined.task.api.TaskUpdateDto;
 import io.backend.lined.task.domain.TaskEntity;
+import io.backend.lined.task.domain.TaskPriority;
 import io.backend.lined.task.domain.TaskRepository;
 import io.backend.lined.task.domain.TaskStatus;
 import io.backend.lined.user.domain.UserEntity;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -74,12 +76,15 @@ class TaskServiceImplTest {
     taskEntity = TaskEntity.builder()
         .id(555L)
         .title("Buy groceries")
+        .description("Pick up milk")
+        .priority(TaskPriority.MEDIUM)
         .status(TaskStatus.TODO)
         .lobby(lobby)
         .creator(owner)
         .build();
 
-    taskDto = new TaskDto(555L, "Buy groceries", TaskStatus.TODO, 101L, 1L, null, null, null);
+    taskDto = new TaskDto(555L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
+        TaskStatus.TODO, 101L, 1L, null, null, null);
   }
 
   /* =======================
@@ -88,7 +93,8 @@ class TaskServiceImplTest {
 
   @Test
   void create_success() {
-    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
+        null, null, null);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -102,8 +108,44 @@ class TaskServiceImplTest {
   }
 
   @Test
+  void create_appliesProvidedMetadata() {
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
+        "Pick up milk and bread", TaskPriority.HIGH, TaskStatus.IN_PROGRESS);
+    ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(taskCaptor.capture())).thenReturn(taskEntity);
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    taskService.create(dto, 1L);
+
+    assertThat(taskCaptor.getValue().getDescription()).isEqualTo("Pick up milk and bread");
+    assertThat(taskCaptor.getValue().getPriority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(taskCaptor.getValue().getStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
+  }
+
+  @Test
+  void create_defaultsMissingPriorityAndStatus() {
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
+        null, null, null);
+    ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(taskCaptor.capture())).thenReturn(taskEntity);
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    taskService.create(dto, 1L);
+
+    assertThat(taskCaptor.getValue().getPriority()).isEqualTo(TaskPriority.MEDIUM);
+    assertThat(taskCaptor.getValue().getStatus()).isEqualTo(TaskStatus.TODO);
+  }
+
+  @Test
   void create_throwsNotFound_whenCreatorNotFound() {
-    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
+        null, null, null);
 
     when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
@@ -116,7 +158,8 @@ class TaskServiceImplTest {
 
   @Test
   void create_throwsNotFound_whenLobbyNotFound() {
-    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 999L, null, null);
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 999L, null, null,
+        null, null, null);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(999L)).thenReturn(Optional.empty());
@@ -130,7 +173,8 @@ class TaskServiceImplTest {
 
   @Test
   void create_throwsForbidden_whenUserIsNotLobbyMember() {
-    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null);
+    TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
+        null, null, null);
 
     when(userRepo.findById(99L)).thenReturn(Optional.of(new UserEntity()));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -148,7 +192,8 @@ class TaskServiceImplTest {
 
   @Test
   void update_success() {
-    TaskUpdateDto dto = new TaskUpdateDto(TaskStatus.IN_PROGRESS, null, null, "Updated title");
+    TaskUpdateDto dto = new TaskUpdateDto(TaskStatus.IN_PROGRESS, null, null, "Updated title",
+        "Updated description", TaskPriority.HIGH);
 
     when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
@@ -158,12 +203,14 @@ class TaskServiceImplTest {
     assertThat(result).isEqualTo(taskDto);
     assertThat(taskEntity.getStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(taskEntity.getTitle()).isEqualTo("Updated title");
+    assertThat(taskEntity.getDescription()).isEqualTo("Updated description");
+    assertThat(taskEntity.getPriority()).isEqualTo(TaskPriority.HIGH);
     verify(accessPolicy).ensureMember(lobby, 1L);
   }
 
   @Test
   void update_skipsNullFields() {
-    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null);
+    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, null, null);
 
     when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
@@ -172,11 +219,25 @@ class TaskServiceImplTest {
 
     assertThat(taskEntity.getTitle()).isEqualTo("Buy groceries");
     assertThat(taskEntity.getStatus()).isEqualTo(TaskStatus.TODO);
+    assertThat(taskEntity.getDescription()).isEqualTo("Pick up milk");
+    assertThat(taskEntity.getPriority()).isEqualTo(TaskPriority.MEDIUM);
+  }
+
+  @Test
+  void update_clearsDescription_whenBlank() {
+    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, "  ", null);
+
+    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    taskService.update(555L, dto, 1L);
+
+    assertThat(taskEntity.getDescription()).isNull();
   }
 
   @Test
   void update_throwsNotFound_whenTaskNotFound() {
-    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title");
+    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title", null, null);
 
     when(repo.findById(999L)).thenReturn(Optional.empty());
 
@@ -187,7 +248,7 @@ class TaskServiceImplTest {
 
   @Test
   void update_throwsForbidden_whenUserIsNotLobbyMember() {
-    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title");
+    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title", null, null);
 
     when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
 
