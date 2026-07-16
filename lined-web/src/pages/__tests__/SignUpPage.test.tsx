@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
-import { renderWithProviders, screen, waitFor, userEvent } from '@/test/utils';
-import { SignUpPage } from './SignUpPage';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
+import { SignUpPage } from '../SignUpPage';
 import { useAuthStore } from '@/store/auth';
 
 function renderSignUp() {
@@ -33,17 +33,19 @@ describe('SignUpPage', () => {
   });
 
   it('creates an account, stores the id, and redirects home', async () => {
+    expect.assertions(2);
     const user = userEvent.setup();
     renderSignUp();
 
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: /create account/i }));
 
-    await waitFor(() => expect(screen.getByText('Home Page')).toBeInTheDocument());
+    expect(await screen.findByText('Home Page')).toBeInTheDocument();
     expect(useAuthStore.getState().userId).toBe(99);
   });
 
   it('shows a banner error when the username/email is already taken', async () => {
+    expect.assertions(2);
     const user = userEvent.setup();
     renderSignUp();
 
@@ -57,6 +59,7 @@ describe('SignUpPage', () => {
   });
 
   it('shows a required-field error after blurring an empty username', async () => {
+    expect.assertions(1);
     const user = userEvent.setup();
     renderSignUp();
 
@@ -67,6 +70,7 @@ describe('SignUpPage', () => {
   });
 
   it('shows a mismatch error when the passwords differ and blocks submission', async () => {
+    expect.assertions(2);
     const user = userEvent.setup();
     renderSignUp();
 

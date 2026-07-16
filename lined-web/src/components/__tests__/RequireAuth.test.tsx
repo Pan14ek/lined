@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, screen } from '@/test/utils';
-import { RequireAuth, RedirectIfAuthed } from './RequireAuth';
+import { RequireAuth, RedirectIfAuthed } from '../RequireAuth';
 import { useAuthStore } from '@/store/auth';
 
 describe('RequireAuth', () => {
@@ -10,6 +10,7 @@ describe('RequireAuth', () => {
   });
 
   it('redirects to /sign-in when signed out', () => {
+    expect.assertions(1);
     renderWithProviders(
       <Routes>
         <Route element={<RequireAuth />}>
@@ -24,6 +25,7 @@ describe('RequireAuth', () => {
   });
 
   it('renders the protected route when signed in', () => {
+    expect.assertions(1);
     useAuthStore.setState({ userId: 1, token: 'token' });
     renderWithProviders(
       <Routes>
@@ -45,6 +47,7 @@ describe('RedirectIfAuthed', () => {
   });
 
   it('redirects home when already signed in', () => {
+    expect.assertions(1);
     useAuthStore.setState({ userId: 1, token: 'token' });
     renderWithProviders(
       <Routes>
@@ -65,6 +68,7 @@ describe('RedirectIfAuthed', () => {
   });
 
   it('renders the auth page when signed out', () => {
+    expect.assertions(1);
     renderWithProviders(
       <Routes>
         <Route
