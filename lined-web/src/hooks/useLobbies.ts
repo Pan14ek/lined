@@ -28,7 +28,7 @@ export function useCreateLobby() {
   });
 }
 
-export function useUpdateLobbyOwner(lobbyId: number) {
+export const useUpdateLobbyOwner = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (ownerId: number) => updateLobby(lobbyId, { ownerId }),
@@ -36,9 +36,9 @@ export function useUpdateLobbyOwner(lobbyId: number) {
       queryClient.setQueryData<LobbyDto>(QUERY_KEYS.lobbyDetail(lobbyId), lobby);
     },
   });
-}
+};
 
-export function useRemoveMember(lobbyId: number) {
+export const useRemoveMember = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: number) => removeMember(lobbyId, userId),
@@ -47,4 +47,4 @@ export function useRemoveMember(lobbyId: number) {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
     },
   });
-}
+};

@@ -15,7 +15,7 @@ export const useLobbyInvites = (lobbyId: number | undefined) =>
     enabled: lobbyId != null,
   });
 
-export function useCreateInvite(lobbyId: number) {
+export const useCreateInvite = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (target: InviteTarget) => createInvite(lobbyId, target),
@@ -23,9 +23,9 @@ export function useCreateInvite(lobbyId: number) {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
     },
   });
-}
+};
 
-export function useResendInvite(lobbyId: number) {
+export const useResendInvite = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: number) => resendInvite(lobbyId, inviteId),
@@ -33,9 +33,9 @@ export function useResendInvite(lobbyId: number) {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
     },
   });
-}
+};
 
-export function useCancelInvite(lobbyId: number) {
+export const useCancelInvite = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: number) => cancelInvite(lobbyId, inviteId),
@@ -43,4 +43,4 @@ export function useCancelInvite(lobbyId: number) {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
     },
   });
-}
+};
