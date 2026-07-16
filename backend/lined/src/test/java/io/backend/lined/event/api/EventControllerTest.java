@@ -38,10 +38,12 @@ class EventControllerTest {
     controller = new EventController(service);
     start = OffsetDateTime.parse("2026-01-01T10:00:00Z");
     end = start.plusHours(1);
-    sampleEvent = new EventDto(9001L, "Dinner together", true, start, end,
+    sampleEvent = new EventDto(9001L, "Dinner together", "Whole Foods Market", true, start,
+        end,
         "Europe/Kyiv", 101L, 42L, OffsetDateTime.now());
-    createDto = new EventCreateDto("Dinner together", true, start, end, "Europe/Kyiv", 101L);
-    updateDto = new EventUpdateDto("Late dinner", null, null, null, null);
+    createDto = new EventCreateDto("Dinner together", "Whole Foods Market", true, start, end,
+        "Europe/Kyiv", 101L);
+    updateDto = new EventUpdateDto("Late dinner", null, null, null, null, null);
   }
 
   /* =======================
@@ -104,7 +106,7 @@ class EventControllerTest {
 
   @Test
   void update_propagatesBadRequest_whenDatesInvalid() {
-    var badUpdate = new EventUpdateDto(null, null, end, start, null);
+    var badUpdate = new EventUpdateDto(null, null, null, end, start, null);
     when(service.update(9001L, badUpdate, 42L))
         .thenThrow(new BadRequestException("Start must be before end"));
 

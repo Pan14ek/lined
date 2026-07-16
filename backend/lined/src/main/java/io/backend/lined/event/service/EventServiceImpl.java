@@ -44,6 +44,7 @@ public class EventServiceImpl implements EventService {
 
     var entity = EventEntity.builder()
         .title(dto.title())
+        .location(normalizeLocation(dto.location()))
         .shared(dto.shared())
         .startAt(window.start())
         .endAt(window.end())
@@ -65,6 +66,9 @@ public class EventServiceImpl implements EventService {
 
     if (dto.title() != null && !dto.title().isBlank()) {
       e.setTitle(dto.title());
+    }
+    if (dto.location() != null) {
+      e.setLocation(normalizeLocation(dto.location()));
     }
     if (dto.shared() != null) {
       e.setShared(dto.shared());
@@ -137,6 +141,13 @@ public class EventServiceImpl implements EventService {
 
   private CalendarTimeWindow eventWindow(OffsetDateTime start, OffsetDateTime end) {
     return CalendarTimeWindow.of(start, end, "startAt must be before endAt");
+  }
+
+  private String normalizeLocation(String location) {
+    if (location == null || location.isBlank()) {
+      return null;
+    }
+    return location.trim();
   }
 
   private CalendarTimeWindow queryWindow(OffsetDateTime start, OffsetDateTime end) {

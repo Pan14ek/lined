@@ -38,6 +38,9 @@ public class EventEntity {
   @Column(nullable = false, length = 160)
   private String title;
 
+  @Column(length = 255)
+  private String location;
+
   @Column(nullable = false)
   private boolean shared;
 

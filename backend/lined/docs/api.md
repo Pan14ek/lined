@@ -479,6 +479,62 @@ Cancel the active subscription.
 
 ---
 
+## 📅 Calendar Events API
+
+Calendar event endpoints require the MVP `X-User-Id` header. An event location
+is optional, free-form text limited to 255 characters.
+
+### Create Event
+
+`POST /api/calendar/events`
+
+```json
+{
+  "title": "Dinner together",
+  "location": "Whole Foods Market",
+  "shared": true,
+  "startAt": "2025-11-20T17:00:00Z",
+  "endAt": "2025-11-20T19:00:00Z",
+  "timezone": "Europe/Kyiv",
+  "lobbyId": 101
+}
+```
+
+### Update Event
+
+`PATCH /api/calendar/events/{id}`
+
+Send a nonblank `location` to set it. Omit `location` to preserve its current
+value; send an empty or whitespace-only string to clear it.
+
+```json
+{
+  "location": "Central Park"
+}
+```
+
+### Event Response
+
+Create, update, list, and conflict responses return `EventDto`, including the
+nullable `location` field.
+
+```json
+{
+  "id": 9001,
+  "title": "Dinner together",
+  "location": "Whole Foods Market",
+  "shared": true,
+  "startAt": "2025-11-20T17:00:00Z",
+  "endAt": "2025-11-20T19:00:00Z",
+  "timezone": "Europe/Kyiv",
+  "lobbyId": 101,
+  "ownerId": 42,
+  "createdAt": "2025-11-13T10:00:00Z"
+}
+```
+
+---
+
 ## ❤️ Health API
 
 ### Check Health
