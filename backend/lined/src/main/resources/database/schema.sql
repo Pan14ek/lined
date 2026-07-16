@@ -149,3 +149,52 @@ CREATE TABLE IF NOT EXISTS events
 
 CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events (lobby_id, start_at, end_at);
+
+CREATE TABLE IF NOT EXISTS user_notification_preferences
+(
+    id                      BIGSERIAL PRIMARY KEY,
+    user_id                 BIGINT  NOT NULL UNIQUE REFERENCES users (id) ON DELETE CASCADE,
+    shared_events_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
+    task_assigned_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
+    free_slots_enabled      BOOLEAN NOT NULL DEFAULT TRUE,
+    event_reminders_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    email_digests_enabled   BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS lobby_notification_preferences
+(
+    id                   BIGSERIAL PRIMARY KEY,
+    user_id              BIGINT  NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    lobby_id             BIGINT  NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
+    new_events_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
+    task_updates_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    free_slots_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
+    UNIQUE (user_id, lobby_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications
+(
+    id           BIGSERIAL PRIMARY KEY,
+    recipient_id BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    lobby_id     BIGINT       REFERENCES lobbies (id) ON DELETE CASCADE,
+    type         VARCHAR(32)  NOT NULL,
+    title        VARCHAR(160) NOT NULL,
+    message      VARCHAR(500) NOT NULL,
+    task_id      BIGINT,
+    event_id     BIGINT,
+    read_at      TIMESTAMPTZ,
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notification_deliveries
+(
+    id              BIGSERIAL PRIMARY KEY,
+    notification_id BIGINT      NOT NULL REFERENCES notifications (id) ON DELETE CASCADE,
+    channel         VARCHAR(16) NOT NULL,
+    status          VARCHAR(16) NOT NULL,
+    queued_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    delivered_at    TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
+    ON notifications (recipient_id, created_at DESC);
