@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { ROLES, CREATE_MENU_TEXT } from '@/test/createMenuContent';
 import { CreateMenu } from '../CreateMenu';
 
 describe('CreateMenu', () => {
@@ -12,7 +13,7 @@ describe('CreateMenu', () => {
     expect.assertions(1);
     renderWithProviders(<CreateMenu />);
 
-    expect(screen.queryByText('New Event')).not.toBeInTheDocument();
+    expect(screen.queryByText(CREATE_MENU_TEXT.newEvent)).not.toBeInTheDocument();
   });
 
   it('lists all four create actions with the Reserve Free Slot row highlighted', async () => {
@@ -20,12 +21,12 @@ describe('CreateMenu', () => {
     const user = userEvent.setup();
     renderWithProviders(<CreateMenu />);
 
-    await user.click(screen.getByRole('button', { name: /create/i }));
+    await user.click(screen.getByRole(ROLES.button, { name: CREATE_MENU_TEXT.triggerName }));
 
-    expect(await screen.findByText('New Event')).toBeInTheDocument();
-    expect(screen.getByText('New Task')).toBeInTheDocument();
-    expect(screen.getByText('New Lobby')).toBeInTheDocument();
-    expect(screen.getByText('Reserve Free Slot')).toBeInTheDocument();
+    expect(await screen.findByText(CREATE_MENU_TEXT.newEvent)).toBeInTheDocument();
+    expect(screen.getByText(CREATE_MENU_TEXT.newTask)).toBeInTheDocument();
+    expect(screen.getByText(CREATE_MENU_TEXT.newLobby)).toBeInTheDocument();
+    expect(screen.getByText(CREATE_MENU_TEXT.reserveFreeSlot)).toBeInTheDocument();
   });
 
   it('opens the create-lobby overlay when "New Lobby" is clicked', async () => {
@@ -33,8 +34,8 @@ describe('CreateMenu', () => {
     const user = userEvent.setup();
     renderWithProviders(<CreateMenu />);
 
-    await user.click(screen.getByRole('button', { name: /create/i }));
-    await user.click(await screen.findByText('New Lobby'));
+    await user.click(screen.getByRole(ROLES.button, { name: CREATE_MENU_TEXT.triggerName }));
+    await user.click(await screen.findByText(CREATE_MENU_TEXT.newLobby));
 
     expect(useCreateMenuStore.getState().isCreateLobbyOpen).toBe(true);
   });
@@ -44,8 +45,8 @@ describe('CreateMenu', () => {
     const user = userEvent.setup();
     renderWithProviders(<CreateMenu />);
 
-    await user.click(screen.getByRole('button', { name: /create/i }));
-    await user.click(await screen.findByText('New Event'));
+    await user.click(screen.getByRole(ROLES.button, { name: CREATE_MENU_TEXT.triggerName }));
+    await user.click(await screen.findByText(CREATE_MENU_TEXT.newEvent));
 
     expect(useCreateMenuStore.getState().overlay).toBe('event');
   });
@@ -55,8 +56,8 @@ describe('CreateMenu', () => {
     const user = userEvent.setup();
     renderWithProviders(<CreateMenu />);
 
-    await user.click(screen.getByRole('button', { name: /create/i }));
-    await user.click(await screen.findByText('New Task'));
+    await user.click(screen.getByRole(ROLES.button, { name: CREATE_MENU_TEXT.triggerName }));
+    await user.click(await screen.findByText(CREATE_MENU_TEXT.newTask));
 
     expect(useCreateMenuStore.getState().overlay).toBe('task');
   });
@@ -66,8 +67,8 @@ describe('CreateMenu', () => {
     const user = userEvent.setup();
     renderWithProviders(<CreateMenu />);
 
-    await user.click(screen.getByRole('button', { name: /create/i }));
-    await user.click(await screen.findByText('Reserve Free Slot'));
+    await user.click(screen.getByRole(ROLES.button, { name: CREATE_MENU_TEXT.triggerName }));
+    await user.click(await screen.findByText(CREATE_MENU_TEXT.reserveFreeSlot));
 
     expect(useCreateMenuStore.getState().overlay).toBe('reserveSlot');
   });

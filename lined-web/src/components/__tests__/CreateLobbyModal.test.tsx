@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
+import { ROLES, CREATE_LOBBY_MODAL_TEXT, LOBBY_TYPE_OPTION_NAME } from '@/test/createMenuContent';
 import { CreateLobbyModal } from '../CreateLobbyModal';
 import { useAuthStore } from '@/store/auth';
 
@@ -30,9 +31,11 @@ describe('CreateLobbyModal', () => {
     expect.assertions(3);
     renderModal();
 
-    expect(screen.getByLabelText(/lobby name/i)).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: /lobby type/i })).toBeInTheDocument();
-    expect(screen.getByText(/you'll be the owner/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.nameFieldLabel)).toBeInTheDocument();
+    expect(
+      screen.getByRole(ROLES.radiogroup, { name: CREATE_LOBBY_MODAL_TEXT.typeFieldLabel }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(CREATE_LOBBY_MODAL_TEXT.ownerHint)).toBeInTheDocument();
   });
 
   it('disables the submit button until a name is entered', async () => {
@@ -40,11 +43,15 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     renderModal();
 
-    expect(screen.getByRole('button', { name: /create lobby/i })).toBeDisabled();
+    expect(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.submitButtonName }),
+    ).toBeDisabled();
 
-    await user.type(screen.getByLabelText(/lobby name/i), 'Weekend Crew');
+    await user.type(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.nameFieldLabel), 'Weekend Crew');
 
-    expect(screen.getByRole('button', { name: /create lobby/i })).toBeEnabled();
+    expect(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.submitButtonName }),
+    ).toBeEnabled();
   });
 
   it('calls onClose without posting when Cancel is clicked', async () => {
@@ -52,7 +59,9 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     const { onClose } = renderModal();
 
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    await user.click(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.cancelButtonName }),
+    );
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -62,9 +71,11 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     const { onClose } = renderModal();
 
-    await user.type(screen.getByLabelText(/lobby name/i), 'Weekend Crew');
-    await user.click(screen.getByRole('radio', { name: /friends/i }));
-    await user.click(screen.getByRole('button', { name: /create lobby/i }));
+    await user.type(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.nameFieldLabel), 'Weekend Crew');
+    await user.click(screen.getByRole(ROLES.radio, { name: LOBBY_TYPE_OPTION_NAME.FRIENDS }));
+    await user.click(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.submitButtonName }),
+    );
 
     expect(await screen.findByText('Lobby Page')).toBeInTheDocument();
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -83,10 +94,12 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     const { onClose } = renderModal();
 
-    await user.type(screen.getByLabelText(/lobby name/i), '   ok   ');
-    await user.click(screen.getByRole('button', { name: /create lobby/i }));
+    await user.type(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.nameFieldLabel), '   ok   ');
+    await user.click(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.submitButtonName }),
+    );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid lobby name');
+    expect(await screen.findByRole(ROLES.alert)).toHaveTextContent('Enter a valid lobby name');
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -96,10 +109,12 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.type(screen.getByLabelText(/lobby name/i), 'Weekend Crew');
-    await user.click(screen.getByRole('button', { name: /create lobby/i }));
+    await user.type(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.nameFieldLabel), 'Weekend Crew');
+    await user.click(
+      screen.getByRole(ROLES.button, { name: CREATE_LOBBY_MODAL_TEXT.submitButtonName }),
+    );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+    expect(await screen.findByRole(ROLES.alert)).toHaveTextContent(
       'Something went wrong — please try again',
     );
   });
@@ -109,7 +124,7 @@ describe('CreateLobbyModal', () => {
     const user = userEvent.setup();
     const { onClose } = renderModal();
 
-    await user.click(screen.getByLabelText(/close/i));
+    await user.click(screen.getByLabelText(CREATE_LOBBY_MODAL_TEXT.closeButtonName));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });

@@ -4,6 +4,7 @@ import { renderWithProviders, screen } from '@/test/utils';
 import { AppShell } from '../AppShell';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 
 describe('AppShell', () => {
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('AppShell', () => {
     expect.assertions(1);
     renderShell();
 
-    expect(screen.queryByText('New Lobby')).not.toBeInTheDocument();
+    expect(screen.queryByText(CREATE_MENU_TEXT.newLobby)).not.toBeInTheDocument();
   });
 
   it('renders the create-lobby modal when the store flags it open', async () => {
@@ -41,7 +42,7 @@ describe('AppShell', () => {
     useCreateMenuStore.setState({ isCreateLobbyOpen: true });
     renderShell();
 
-    expect(await screen.findByText('New Lobby')).toBeInTheDocument();
+    expect(await screen.findByText(CREATE_MENU_TEXT.newLobby)).toBeInTheDocument();
   });
 
   it('renders the create-event modal when the overlay is "event"', async () => {
@@ -49,7 +50,7 @@ describe('AppShell', () => {
     useCreateMenuStore.setState({ overlay: 'event' });
     renderShell();
 
-    expect(await screen.findByText('New Event')).toBeInTheDocument();
+    expect(await screen.findByText(CREATE_MENU_TEXT.newEvent)).toBeInTheDocument();
   });
 
   it('renders nothing extra when the overlay is "task" (Task 8 not implemented yet)', async () => {
@@ -58,6 +59,6 @@ describe('AppShell', () => {
     renderShell();
 
     expect(await screen.findByText('Page Content')).toBeInTheDocument();
-    expect(screen.queryByText('New Task')).not.toBeInTheDocument();
+    expect(screen.queryByText(CREATE_MENU_TEXT.newTask)).not.toBeInTheDocument();
   });
 });
