@@ -82,8 +82,8 @@ const CURRENT_CPU_UTILIZATION = 0.63;
 const CURRENT_MEMORY_UTILIZATION = 0.72;
 
 const EXPECTED_RUNTIME_SCORE = 0.2915;
-const EXPECTED_ADAPTIVE_BALANCED_SCORE = 0.325;
-const EXPECTED_ADAPTIVE_WORKLOAD_SCORE = 0.2758;
+const EXPECTED_ADAPTIVE_BALANCED_SCORE = 0.2894;
+const EXPECTED_ADAPTIVE_WORKLOAD_SCORE = 0.3024;
 const EXPECTED_ADAPTIVE_SLO_SCORE = 0.3072;
 const EXPECTED_ADAPTIVE_RESOURCE_PRESSURE_SCORE = 0.2143;
 const EXPECTED_LATENCY_P95_WEIGHT = 0.2;
@@ -666,7 +666,7 @@ describe("computeAdaptiveFitness", () => {
         t.assert.strictEqual(result.adaptiveFitness?.selectedContext, "balanced");
         t.assert.strictEqual(
             result.adaptiveFitness?.activeSignalWeights.structural_quality,
-            0.35
+            0.2
         );
     });
 

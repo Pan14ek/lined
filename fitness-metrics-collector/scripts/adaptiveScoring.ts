@@ -57,25 +57,31 @@ const ADAPTIVE_WEIGHT_PROFILES: Record<
     ResolvedAdaptiveFitnessContext,
     Record<AdaptiveSignal, number>
 > = {
+    // balanced/workload derived from a tier-budget rule over runtime signals (0.80 total, leaving a
+    // fixed 0.20 share for structural_quality). balanced uses a flat 2-tier grouping (even emphasis
+    // across response quality/correctness/throughput/availability; B=0.70/n=5=0.14 each), so it is not
+    // a scalar multiple of Table 2's differentiated fixed profile. workload keeps a differentiated
+    // 4-tier grouping (B(4)=0.32,B(3)=0.36,B(2)=0.08,B(1)=0.04) that shifts priority toward response
+    // time and throughput. See science_sections/03_materials_and_methods for the full derivation.
     balanced: {
-        structural_quality: 0.35,
-        latency_p95_ms: 0.13,
-        latency_p99_ms: 0.08,
+        structural_quality: 0.2,
+        latency_p95_ms: 0.14,
+        latency_p99_ms: 0.14,
         error_rate: 0.14,
-        throughput_rps: 0.1,
-        availability: 0.1,
-        restart_count: 0.05,
-        cpu_utilization: 0.025,
-        memory_utilization: 0.025,
+        throughput_rps: 0.14,
+        availability: 0.14,
+        restart_count: 0.06,
+        cpu_utilization: 0.02,
+        memory_utilization: 0.02,
     },
     workload: {
         structural_quality: 0.2,
-        latency_p95_ms: 0.2,
-        latency_p99_ms: 0.12,
-        error_rate: 0.15,
-        throughput_rps: 0.18,
-        availability: 0.08,
-        restart_count: 0.03,
+        latency_p95_ms: 0.16,
+        latency_p99_ms: 0.18,
+        error_rate: 0.18,
+        throughput_rps: 0.16,
+        availability: 0.04,
+        restart_count: 0.04,
         cpu_utilization: 0.02,
         memory_utilization: 0.02,
     },
