@@ -3,11 +3,15 @@ package io.backend.lined.lobby.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -20,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class LobbyControllerTest {
@@ -30,11 +36,15 @@ class LobbyControllerTest {
   private EventService eventService;
 
   private LobbyController controller;
+  private MockMvc mockMvc;
   private LobbyDto sampleLobby;
 
   @BeforeEach
   void setUp() {
     controller = new LobbyController(lobbyService, eventService);
+    mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
     sampleLobby = new LobbyDto(101L, "Our Family", LobbyTypes.FAMILY, 1L, Set.of(1L));
   }
 
@@ -108,6 +118,47 @@ class LobbyControllerTest {
 
     assertThat(result).containsExactlyElementsOf(freeSlots);
     verify(eventService).findFreeSlots(101L, from, to, 1L);
+  }
+
+  @Test
+  void freeSlots_acceptsUtcTimestampFormat() throws Exception {
+    var from = OffsetDateTime.parse("2026-01-01T09:00:00Z");
+    var to = OffsetDateTime.parse("2026-01-01T22:00:00Z");
+    when(eventService.findFreeSlots(101L, from, to, 1L)).thenReturn(List.of());
+
+    mockMvc.perform(get("/api/lobbies/101/free-slots")
+            .header("X-User-Id", "1")
+            .param("from", "2026-01-01T09:00:00Z")
+            .param("to", "2026-01-01T22:00:00Z"))
+        .andExpect(status().isOk());
+
+    verify(eventService).findFreeSlots(101L, from, to, 1L);
+  }
+
+  @Test
+  void freeSlots_acceptsNumericOffsetTimestampFormat() throws Exception {
+    var from = OffsetDateTime.parse("2026-01-01T11:00:00+02:00");
+    var to = OffsetDateTime.parse("2026-01-02T00:00:00+02:00");
+    when(eventService.findFreeSlots(101L, from, to, 1L)).thenReturn(List.of());
+
+    mockMvc.perform(get("/api/lobbies/101/free-slots")
+            .header("X-User-Id", "1")
+            .param("from", "2026-01-01T11:00:00+02:00")
+            .param("to", "2026-01-02T00:00:00+02:00"))
+        .andExpect(status().isOk());
+
+    verify(eventService).findFreeSlots(101L, from, to, 1L);
+  }
+
+  @Test
+  void freeSlots_rejectsTimestampWithoutOffset() throws Exception {
+    mockMvc.perform(get("/api/lobbies/101/free-slots")
+            .header("X-User-Id", "1")
+            .param("from", "2026-01-01T09:00:00")
+            .param("to", "2026-01-01T22:00:00"))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(eventService);
   }
 
   @Test

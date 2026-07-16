@@ -292,6 +292,11 @@ availability without seeing another member's private calendar details.
 | `from` | OffsetDateTime | Inclusive availability-window start. |
 | `to` | OffsetDateTime | Exclusive availability-window end. |
 
+Timestamps use ISO-8601 with an explicit UTC designator or numeric offset, for example
+`2026-01-01T09:00:00Z` and `2026-01-01T11:00:00+02:00`. In a raw URL, encode the plus sign as
+`%2B`. Offset-less local timestamps are rejected because the API has no timezone context with
+which to interpret them safely.
+
 **Response 200**
 
 ```json

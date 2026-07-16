@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -74,8 +75,10 @@ public class LobbyController {
   @GetMapping("/{id}/free-slots")
   public List<FreeSlotDto> freeSlots(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
-      @Parameter(example = "2026-01-01T09:00:00Z") @RequestParam OffsetDateTime from,
-      @Parameter(example = "2026-01-01T22:00:00Z") @RequestParam OffsetDateTime to,
+      @Parameter(example = "2026-01-01T09:00:00Z")
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+      @Parameter(example = "2026-01-01T22:00:00Z")
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId) {
     return eventService.findFreeSlots(id, from, to, currentUserId);
