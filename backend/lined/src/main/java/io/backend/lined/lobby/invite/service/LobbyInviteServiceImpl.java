@@ -1,6 +1,7 @@
 package io.backend.lined.lobby.invite.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -20,6 +21,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Transactional implementation of the lobby-invitation lifecycle.
+ * The class-level transaction keeps lazy lobby relationships available while
+ * mapping responses and makes invite acceptance plus membership insertion atomic.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -32,12 +38,13 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private final LobbyAccessPolicy accessPolicy;
 
   @Override
-  public LobbyInviteDto create(Long lobbyId, Long inviteeId, Long requesterId) {
+  public LobbyInviteDto create(
+      Long lobbyId, Long inviteeId, String inviteeEmail, Long requesterId) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureOwner(lobby, requesterId);
-    var invitee = mustUser(inviteeId);
-    ensureNotMember(lobby, inviteeId);
-    ensureNoPendingInvite(lobbyId, inviteeId);
+    var invitee = resolveInvitee(inviteeId, inviteeEmail);
+    ensureNotMember(lobby, invitee.getId());
+    ensureNoPendingInvite(lobbyId, invitee.getId());
 
     var invite = LobbyInviteEntity.builder()
         .lobby(lobby)
@@ -138,6 +145,19 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
     requirePending(invite);
     invite.setStatus(status);
     invite.setUpdatedAt(OffsetDateTime.now());
+  }
+
+  private UserEntity resolveInvitee(Long inviteeId, String inviteeEmail) {
+    boolean hasUserId = inviteeId != null;
+    boolean hasEmail = inviteeEmail != null && !inviteeEmail.isBlank();
+    if (hasUserId == hasEmail) {
+      throw new BadRequestException("Provide exactly one of userId or userEmail");
+    }
+    if (hasUserId) {
+      return mustUser(inviteeId);
+    }
+    return EntityFinder.findOrThrow(userRepo.findByEmailIgnoreCase(inviteeEmail),
+        () -> new NotFoundException("User with email %s not found".formatted(inviteeEmail)));
   }
 
   private LobbyEntity mustLobby(Long lobbyId) {

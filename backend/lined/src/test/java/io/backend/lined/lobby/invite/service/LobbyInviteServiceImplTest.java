@@ -91,7 +91,7 @@ class LobbyInviteServiceImplTest {
     when(inviteRepo.save(any(LobbyInviteEntity.class))).thenReturn(invite);
     when(mapper.toDto(invite)).thenReturn(inviteDto);
 
-    LobbyInviteDto result = inviteService.create(101L, 2L, 1L);
+    LobbyInviteDto result = inviteService.create(101L, 2L, null, 1L);
 
     ArgumentCaptor<LobbyInviteEntity> captor = ArgumentCaptor.forClass(LobbyInviteEntity.class);
     verify(inviteRepo).save(captor.capture());
@@ -106,7 +106,7 @@ class LobbyInviteServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
     when(userRepo.findById(2L)).thenReturn(Optional.of(invitee));
 
-    assertThatThrownBy(() -> inviteService.create(101L, 2L, 1L))
+    assertThatThrownBy(() -> inviteService.create(101L, 2L, null, 1L))
         .isInstanceOf(ConflictException.class)
         .hasMessageContaining("already a lobby member");
 
@@ -120,9 +120,31 @@ class LobbyInviteServiceImplTest {
     when(inviteRepo.findByLobby_IdAndInvitee_IdAndStatus(101L, 2L, LobbyInviteStatus.PENDING))
         .thenReturn(Optional.of(invite));
 
-    assertThatThrownBy(() -> inviteService.create(101L, 2L, 1L))
+    assertThatThrownBy(() -> inviteService.create(101L, 2L, null, 1L))
         .isInstanceOf(ConflictException.class)
         .hasMessageContaining("pending");
+  }
+
+  @Test
+  void create_resolvesInviteeByEmail() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(userRepo.findByEmailIgnoreCase("invitee@example.com")).thenReturn(Optional.of(invitee));
+    when(inviteRepo.findByLobby_IdAndInvitee_IdAndStatus(101L, 2L, LobbyInviteStatus.PENDING))
+        .thenReturn(Optional.empty());
+    when(inviteRepo.save(any(LobbyInviteEntity.class))).thenReturn(invite);
+    when(mapper.toDto(invite)).thenReturn(inviteDto);
+
+    assertThat(inviteService.create(101L, null, "invitee@example.com", 1L)).isEqualTo(inviteDto);
+  }
+
+  @Test
+  void create_rejectsMissingOrAmbiguousInviteeSelector() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> inviteService.create(101L, null, null, 1L))
+        .hasMessageContaining("exactly one");
+    assertThatThrownBy(() -> inviteService.create(101L, 2L, "invitee@example.com", 1L))
+        .hasMessageContaining("exactly one");
   }
 
   @Test

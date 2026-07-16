@@ -35,10 +35,10 @@ class LobbyInviteControllerTest {
 
   @Test
   void create_delegatesToService() {
-    when(inviteService.create(101L, 2L, 1L)).thenReturn(invite);
+    when(inviteService.create(101L, 2L, null, 1L)).thenReturn(invite);
 
-    assertThat(controller.create(101L, 2L, 1L)).isEqualTo(invite);
-    verify(inviteService).create(101L, 2L, 1L);
+    assertThat(controller.create(101L, 2L, null, 1L)).isEqualTo(invite);
+    verify(inviteService).create(101L, 2L, null, 1L);
   }
 
   @Test

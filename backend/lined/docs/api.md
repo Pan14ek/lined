@@ -284,8 +284,11 @@ Invite links and notification delivery are not part of this API.
 
 `POST /api/lobbies/{lobbyId}/invites?userId={userId}`
 
+`POST /api/lobbies/{lobbyId}/invites?userEmail={userEmail}`
+
 The caller must be the lobby owner. Returns a pending `LobbyInviteDto`; it does
-not change the lobby's `memberIds`.
+not change the lobby's `memberIds`. Supply exactly one target selector. An
+email selector resolves to an existing account; it does not send an email.
 
 #### List and Manage Pending Invites
 

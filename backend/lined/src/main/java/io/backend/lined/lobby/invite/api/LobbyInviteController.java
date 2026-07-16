@@ -25,9 +25,10 @@ public class LobbyInviteController {
   @PostMapping("/api/lobbies/{lobbyId}/invites")
   public LobbyInviteDto create(
       @PathVariable Long lobbyId,
-      @RequestParam Long userId,
+      @RequestParam(required = false) Long userId,
+      @RequestParam(required = false) String userEmail,
       @RequestHeader("X-User-Id") Long currentUserId) {
-    return inviteService.create(lobbyId, userId, currentUserId);
+    return inviteService.create(lobbyId, userId, userEmail, currentUserId);
   }
 
   @Operation(summary = "List pending lobby invites", description = "Lobby owner only.")
