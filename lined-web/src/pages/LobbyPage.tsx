@@ -3,6 +3,7 @@ import { useLobby } from '@/hooks/useLobbies';
 import { LobbyHeader } from '@/components/lobby/LobbyHeader';
 import { LobbyTabBar, type LobbyTab } from '@/components/lobby/LobbyTabBar';
 import { LobbyTaskList } from '@/components/lobby/LobbyTaskList';
+import { LobbyMemberList } from '@/components/lobby/LobbyMemberList';
 
 const VALID_TABS: LobbyTab[] = ['calendar', 'tasks', 'members'];
 
@@ -56,9 +57,7 @@ export function LobbyPage() {
         <p className="p-6 text-sm text-text-secondary">Lobby calendar coming soon...</p>
       )}
 
-      {activeTab === 'members' && (
-        <p className="p-6 text-sm text-text-secondary">Lobby members coming soon...</p>
-      )}
+      {activeTab === 'members' && <LobbyMemberList lobby={lobby} />}
     </div>
   );
 }

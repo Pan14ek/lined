@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LobbyDto } from '@/types';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -8,6 +9,7 @@ import {
   LOBBY_TYPE_LABELS,
 } from '@/lib/constants';
 import { useUsers } from '@/hooks/useUsers';
+import { AddMemberModal } from './AddMemberModal';
 
 const MAX_AVATARS_SHOWN = 4;
 
@@ -18,6 +20,7 @@ interface LobbyHeaderProps {
 export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
   const memberQueries = useUsers(lobby.memberIds);
   const shown = memberQueries.slice(0, MAX_AVATARS_SHOWN);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
   return (
     <div className={`border-t-4 bg-white ${LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType]}`}>
@@ -62,6 +65,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
         <div className="flex flex-shrink-0 items-center gap-2">
           <button
             type="button"
+            onClick={() => setIsAddMemberOpen(true)}
             className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-50"
           >
             + Add member
@@ -74,6 +78,10 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
           </Link>
         </div>
       </div>
+
+      {isAddMemberOpen && (
+        <AddMemberModal lobby={lobby} onClose={() => setIsAddMemberOpen(false)} />
+      )}
     </div>
   );
 };

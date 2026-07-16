@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { MOCK_USERS, MOCK_LOBBIES, MOCK_TASKS, MOCK_EVENTS } from './data';
 
 describe('Mock data', () => {
-  it('has two users matching mockup personas', () => {
-    expect(MOCK_USERS).toHaveLength(2);
+  it('has users matching mockup personas, including invitable non-members', () => {
+    expect(MOCK_USERS).toHaveLength(4);
     expect(MOCK_USERS[0]?.username).toBe('alex_johnson');
     expect(MOCK_USERS[1]?.username).toBe('nastia_k');
   });

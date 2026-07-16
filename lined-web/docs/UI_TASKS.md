@@ -37,16 +37,17 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - **Global Calendar page (week view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands), `EventDetailPanel`, `CreateEventModal`, delete event. Missing: month view, edit event, legend.
 - **"+ Create" dropdown & Create Lobby modal** — `CreateMenu`, `CreateLobbyModal`, `LobbyTypePicker`, `useCreateLobby`; New Task / Reserve Free Slot only flip store state until Tasks 8/11 land.
 - Zustand stores: `auth` (persisted userId), `calendar` (view state), `createMenu` (create-lobby + event/task/reserveSlot overlay state)
-- Hooks: `useMyLobbies`, `useLobby`, `useCreateLobby`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`, `useUsers`, `useLobbyTasks`, `useUpdateTask`
+- Hooks: `useMyLobbies`, `useLobby`, `useCreateLobby`, `useUpdateLobbyOwner`, `useRemoveMember`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`, `useUsers`, `useUserSearch`, `useLobbyTasks`, `useUpdateTask`, `useLobbyInvites`, `useCreateInvite`, `useResendInvite`, `useCancelInvite`
 - MSW handlers + smoke tests
-- **Lobby detail page** — `LobbyHeader`, `LobbyTabBar`, `LobbyTaskList`, `TaskRow`: type-accent header with resolved member avatars, `?tab=`-synced tab bar, and a live Tasks tab (filter pills with counts, due-date sort, checkbox status toggle). Calendar/Members tabs remain "coming soon" placeholders until Tasks 6/7.
+- **Lobby detail page** — `LobbyHeader`, `LobbyTabBar`, `LobbyTaskList`, `TaskRow`: type-accent header with resolved member avatars, `?tab=`-synced tab bar, and a live Tasks tab (filter pills with counts, due-date sort, checkbox status toggle). Calendar tab remains a "coming soon" placeholder until Task 7.
+- **Lobby Members tab & Add Member modal** — `LobbyMemberList`, `MemberCard`, `PendingInviteRow`, `AddMemberModal`, shared `ConfirmDialog`: role badges, owner-only "Make owner"/"Remove" actions with confirm dialogs, owner-only Pending Invites section (resend/cancel), and debounced user search with already-member/invitable/invite-sent states.
 
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage, TasksPage,
 UserSettingsPage, LobbySettingsPage.
 
-**Not started:** AddTaskDrawer, AddMemberModal, ReserveSlotModal, kanban
-board, lobby calendar/members tabs.
+**Not started:** AddTaskDrawer, ReserveSlotModal, kanban board, lobby
+calendar tab.
 
 ## Backend API summary
 
@@ -79,7 +80,7 @@ board, lobby calendar/members tabs.
 | 3 | `feature/ui-03-dashboard` | Dashboard page: lobby cards, upcoming events, my tasks, free-slot banner | [tasks/UI-03-dashboard.md](tasks/UI-03-dashboard.md) | DONE |
 | 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | DONE |
 | 5 | `feature/ui-05-lobby-tasks-tab` | Lobby detail page: header, tab bar, Tasks tab (filter pills, task rows) | [tasks/UI-05-lobby-tasks-tab.md](tasks/UI-05-lobby-tasks-tab.md) | DONE |
-| 6 | `feature/ui-06-lobby-members` | Lobby Members tab + Add Member modal (user search, invite, remove) | [tasks/UI-06-lobby-members.md](tasks/UI-06-lobby-members.md) | TODO |
+| 6 | `feature/ui-06-lobby-members` | Lobby Members tab + Add Member modal (user search, invite, remove) | [tasks/UI-06-lobby-members.md](tasks/UI-06-lobby-members.md) | DONE |
 | 7 | `feature/ui-07-lobby-calendar` | Lobby Calendar tab (week grid scoped to lobby, free-slot bands) | [tasks/UI-07-lobby-calendar.md](tasks/UI-07-lobby-calendar.md) | TODO |
 | 8 | `feature/ui-08-add-task-drawer` | Add Task drawer (title, assignee picker, due date, status) | [tasks/UI-08-add-task-drawer.md](tasks/UI-08-add-task-drawer.md) | TODO |
 | 9 | `feature/ui-09-tasks-kanban` | Global Tasks Board: 3-column kanban with filters and status transitions | [tasks/UI-09-tasks-kanban.md](tasks/UI-09-tasks-kanban.md) | TODO |

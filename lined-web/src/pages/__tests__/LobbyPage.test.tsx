@@ -38,7 +38,7 @@ describe('LobbyPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows placeholder copy for the calendar and members tabs', async () => {
+  it('shows placeholder copy for the calendar tab', async () => {
     expect.assertions(2);
     renderLobbyPage('/lobbies/1?tab=calendar');
 
@@ -46,11 +46,18 @@ describe('LobbyPage', () => {
     expect(screen.queryByText('Plan dinner for Saturday')).not.toBeInTheDocument();
   });
 
+  it('shows the real member list on the members tab', async () => {
+    expect.assertions(1);
+    renderLobbyPage('/lobbies/1?tab=members');
+
+    expect(await screen.findByText('Members · 2')).toBeInTheDocument();
+  });
+
   it('switches to the tasks tab and updates the URL when clicked', async () => {
     expect.assertions(2);
     const user = userEvent.setup();
     renderLobbyPage('/lobbies/1?tab=members');
-    await screen.findByText('Lobby members coming soon...');
+    await screen.findByText('Members · 2');
 
     await user.click(screen.getByRole('tab', { name: '✅ Tasks' }));
 

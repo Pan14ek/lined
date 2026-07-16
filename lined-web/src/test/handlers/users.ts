@@ -4,12 +4,8 @@ import { MOCK_USERS, MOCK_LOBBIES } from '../data';
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export const userHandlers = [
-  http.get(`${BASE}/users/:id`, ({ params }) => {
-    const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
-    if (!user) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(user);
-  }),
-
+  // Must come before /users/:id — otherwise ":id" greedily matches the literal
+  // "search" segment and this handler never runs.
   http.get(`${BASE}/users/search`, ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get('q')?.toLowerCase() ?? '';
@@ -25,6 +21,12 @@ export const userHandlers = [
       totalElements: matches.length,
       totalPages: 1,
     });
+  }),
+
+  http.get(`${BASE}/users/:id`, ({ params }) => {
+    const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
+    if (!user) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(user);
   }),
 
   http.post(`${BASE}/users`, async ({ request }) => {
