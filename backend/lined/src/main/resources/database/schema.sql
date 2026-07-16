@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS tasks
 (
     id          BIGSERIAL PRIMARY KEY,
     title       VARCHAR(160) NOT NULL,
+    description VARCHAR(1000),
+    priority    VARCHAR(16)  NOT NULL DEFAULT 'MEDIUM',
     status      VARCHAR(16)  NOT NULL,
     lobby_id    BIGINT       NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
     creator_id  BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -104,6 +106,9 @@ CREATE TABLE IF NOT EXISTS tasks
     due_date    DATE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(16) NOT NULL DEFAULT 'MEDIUM';
 
 CREATE INDEX IF NOT EXISTS idx_tasks_lobby ON tasks (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks (assignee_id);

@@ -41,6 +41,13 @@ public class TaskEntity {
   @Column(nullable = false, length = 160)
   private String title;
 
+  @Column(length = 1000)
+  private String description;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  private TaskPriority priority;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 16)
   private TaskStatus status;
@@ -69,6 +76,9 @@ public class TaskEntity {
     }
     if (status == null) {
       status = TaskStatus.TODO;
+    }
+    if (priority == null) {
+      priority = TaskPriority.MEDIUM;
     }
   }
 

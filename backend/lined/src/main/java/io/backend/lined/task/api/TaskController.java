@@ -39,13 +39,13 @@ public class TaskController {
           description = "Task payload",
           content = @Content(schema = @Schema(implementation = TaskCreateDto.class),
               examples = @ExampleObject(value = """
-                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20" }
+                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO" }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
     return service.create(dto, currentUserId);
   }
 
-  @Operation(summary = "Update task", description = "Partial update (status, assignee, title, dueDate).")
+  @Operation(summary = "Update task", description = "Partial update (status, assignee, title, dueDate, description, priority).")
   @PatchMapping("/{id}")
   public TaskDto update(
       @Parameter(description = "Task ID", example = "555") @PathVariable Long id,
@@ -55,7 +55,7 @@ public class TaskController {
           required = true,
           content = @Content(schema = @Schema(implementation = TaskUpdateDto.class),
               examples = @ExampleObject(value = """
-                    { "status":"IN_PROGRESS", "assigneeId":77, "dueDate":"2025-11-25" }
+                    { "status":"IN_PROGRESS", "assigneeId":77, "dueDate":"2025-11-25", "description":"Pick up milk and bread", "priority":"HIGH" }
                   """)))
       @Valid @RequestBody TaskUpdateDto dto) {
     return service.update(id, dto, currentUserId);

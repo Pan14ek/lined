@@ -276,6 +276,35 @@ All fields are optional; omitted fields remain unchanged.
 
 ---
 
+## ✅ Tasks API
+
+### Create Task
+
+`POST /api/tasks`
+
+Create a task in a lobby. `description`, `priority`, and `status` are optional;
+priority defaults to `MEDIUM` and status defaults to `TODO`.
+
+```json
+{
+  "title": "Buy groceries",
+  "lobbyId": 101,
+  "description": "Pick up milk and bread",
+  "priority": "HIGH",
+  "status": "IN_PROGRESS"
+}
+```
+
+### Update Task
+
+`PATCH /api/tasks/{id}`
+
+Partially update task metadata. Valid priority values are `HIGH`, `MEDIUM`, and
+`LOW`. Omitted fields remain unchanged; an empty or whitespace-only
+`description` clears the stored description.
+
+---
+
 ## 🛡️ Roles API
 
 ### Get All Roles
