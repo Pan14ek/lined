@@ -6,11 +6,12 @@ import { server } from '@/test/server';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { KanbanBoard } from '../KanbanBoard';
 import { TASK_DRAG_DATA_FORMAT } from '../KanbanCard';
+import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from '../kanbanConstants';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 /** jsdom has no real DataTransfer — a minimal stand-in for HTML5 drag events. */
-function createDataTransferMock() {
+const createDataTransferMock = () => {
   const store: Record<string, string> = {};
   const types: string[] = [];
   return {
@@ -23,14 +24,14 @@ function createDataTransferMock() {
     effectAllowed: 'none',
     dropEffect: 'none',
   };
-}
+};
 
 describe('KanbanBoard', () => {
   it('shows a loading state while tasks are being fetched', () => {
     expect.assertions(1);
     renderWithProviders(<KanbanBoard />);
 
-    expect(screen.getByTestId('kanban-loading')).toBeInTheDocument();
+    expect(screen.getByTestId(KANBAN_TEST_IDS.loading)).toBeInTheDocument();
   });
 
   it('groups tasks into the correct columns with counts', async () => {
@@ -38,9 +39,9 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
 
     expect(await screen.findByText('Plan dinner for Saturday')).toBeInTheDocument();
-    expect(screen.getByTestId('kanban-column-TODO')).toHaveTextContent('3');
-    expect(screen.getByTestId('kanban-column-IN_PROGRESS')).toHaveTextContent('2');
-    expect(screen.getByTestId('kanban-column-DONE')).toHaveTextContent('1');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('3');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('IN_PROGRESS'))).toHaveTextContent('2');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('DONE'))).toHaveTextContent('1');
   });
 
   it('shows an error message when the tasks request fails', async () => {
@@ -48,9 +49,7 @@ describe('KanbanBoard', () => {
     server.use(http.get(`${BASE}/tasks/mine`, () => new HttpResponse(null, { status: 500 })));
     renderWithProviders(<KanbanBoard />);
 
-    expect(
-      await screen.findByText("Couldn't load your tasks. Try again later."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(KANBAN_TEXT.loadError)).toBeInTheDocument();
   });
 
   it('renders done tasks dimmed, struck through, with a checkmark badge', async () => {
@@ -59,7 +58,7 @@ describe('KanbanBoard', () => {
 
     const title = await screen.findByText('Buy groceries');
     expect(title).toHaveClass('line-through');
-    expect(screen.getByTestId('kanban-column-DONE')).toHaveTextContent('✓');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('DONE'))).toHaveTextContent('✓');
   });
 
   it('moving a card forward PATCHes its status and moves it to the next column', async () => {
@@ -68,17 +67,19 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.click(screen.getByRole('button', { name: 'Move "Plan dinner for Saturday" forward' }));
+    await user.click(
+      screen.getByRole('button', { name: KANBAN_LABELS.moveForward('Plan dinner for Saturday') }),
+    );
 
     await waitFor(() => {
-      expect(screen.getByTestId('kanban-column-IN_PROGRESS')).toHaveTextContent(
+      expect(screen.getByTestId(KANBAN_TEST_IDS.column('IN_PROGRESS'))).toHaveTextContent(
         'Plan dinner for Saturday',
       );
     });
-    expect(screen.getByTestId('kanban-column-TODO')).not.toHaveTextContent(
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).not.toHaveTextContent(
       'Plan dinner for Saturday',
     );
-    expect(screen.getByTestId('kanban-column-TODO')).toHaveTextContent('2');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('2');
   });
 
   it('shows an inline error and keeps the card in place when the move PATCH fails', async () => {
@@ -88,10 +89,14 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.click(screen.getByRole('button', { name: 'Move "Plan dinner for Saturday" forward' }));
+    await user.click(
+      screen.getByRole('button', { name: KANBAN_LABELS.moveForward('Plan dinner for Saturday') }),
+    );
 
-    expect(await screen.findByText("Couldn't move — try again")).toBeInTheDocument();
-    expect(screen.getByTestId('kanban-column-TODO')).toHaveTextContent('Plan dinner for Saturday');
+    expect(await screen.findByText(KANBAN_TEXT.moveError)).toBeInTheDocument();
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent(
+      'Plan dinner for Saturday',
+    );
   });
 
   it('deletes a task after confirming, removing it from the board', async () => {
@@ -100,10 +105,12 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.click(screen.getByRole('button', { name: 'Delete "Plan dinner for Saturday"' }));
-    expect(screen.getByText('Delete task')).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: KANBAN_LABELS.deleteTask('Plan dinner for Saturday') }),
+    );
+    expect(screen.getByText(KANBAN_TEXT.deleteDialogTitle)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: KANBAN_TEXT.deleteConfirmLabel }));
 
     await waitFor(() => {
       expect(screen.queryByText('Plan dinner for Saturday')).not.toBeInTheDocument();
@@ -117,12 +124,12 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.click(screen.getByRole('button', { name: 'Delete "Plan dinner for Saturday"' }));
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(
+      screen.getByRole('button', { name: KANBAN_LABELS.deleteTask('Plan dinner for Saturday') }),
+    );
+    await user.click(screen.getByRole('button', { name: KANBAN_TEXT.deleteConfirmLabel }));
 
-    expect(
-      await screen.findByText("Couldn't delete this task — please try again"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(KANBAN_TEXT.deleteError)).toBeInTheDocument();
     expect(screen.getByText('Plan dinner for Saturday')).toBeInTheDocument();
   });
 
@@ -132,7 +139,7 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.selectOptions(screen.getByLabelText('Filter by lobby'), 'Weekend Crew');
+    await user.selectOptions(screen.getByLabelText(KANBAN_LABELS.filterByLobby), 'Weekend Crew');
 
     expect(screen.queryByText('Plan dinner for Saturday')).not.toBeInTheDocument();
     expect(screen.getByText('Prepare presentation slides')).toBeInTheDocument();
@@ -145,7 +152,9 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    await user.click(screen.getByRole('button', { name: 'Add task to In Progress' }));
+    await user.click(
+      screen.getByRole('button', { name: KANBAN_LABELS.addTaskToColumn('In Progress') }),
+    );
 
     expect(useCreateMenuStore.getState().taskInitialStatus).toBe('IN_PROGRESS');
   });
@@ -155,8 +164,8 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    const card = screen.getByTestId('kanban-card-1');
-    const doneColumn = screen.getByTestId('kanban-column-DONE');
+    const card = screen.getByTestId(KANBAN_TEST_IDS.card(1));
+    const doneColumn = screen.getByTestId(KANBAN_TEST_IDS.column('DONE'));
     const dataTransfer = createDataTransferMock();
 
     fireEvent.dragStart(card, { dataTransfer });
@@ -165,7 +174,7 @@ describe('KanbanBoard', () => {
     fireEvent.drop(doneColumn, { dataTransfer });
 
     expect(await within(doneColumn).findByText('Plan dinner for Saturday')).toBeInTheDocument();
-    expect(screen.getByTestId('kanban-column-TODO')).not.toHaveTextContent(
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).not.toHaveTextContent(
       'Plan dinner for Saturday',
     );
     expect(doneColumn).toHaveTextContent('2');
@@ -176,8 +185,8 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
 
-    const card = screen.getByTestId('kanban-card-1');
-    const todoColumn = screen.getByTestId('kanban-column-TODO');
+    const card = screen.getByTestId(KANBAN_TEST_IDS.card(1));
+    const todoColumn = screen.getByTestId(KANBAN_TEST_IDS.column('TODO'));
     const dataTransfer = createDataTransferMock();
 
     fireEvent.dragStart(card, { dataTransfer });
