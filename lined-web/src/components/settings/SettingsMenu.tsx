@@ -1,6 +1,8 @@
+import { Link } from 'react-router-dom';
+
 interface SettingsMenuSection {
   label: string;
-  items: { id: string; label: string; danger?: boolean }[];
+  items: { id: string; label: string; danger?: boolean; route?: string }[];
 }
 
 const SECTIONS: SettingsMenuSection[] = [
@@ -14,7 +16,10 @@ const SECTIONS: SettingsMenuSection[] = [
   },
   {
     label: 'PREFERENCES',
-    items: [{ id: 'appearance', label: 'Appearance' }],
+    items: [
+      { id: 'appearance', label: 'Appearance' },
+      { id: 'subscription', label: 'Subscription', route: '/subscription' },
+    ],
   },
   {
     label: 'DANGER',
@@ -22,7 +27,14 @@ const SECTIONS: SettingsMenuSection[] = [
   },
 ];
 
-/** Left-hand anchor jump list for the single-scroll settings page. */
+function menuItemClass(danger?: boolean): string {
+  return `block border-l-[3px] border-transparent px-5 py-2.5 text-sm ${
+    danger ? 'text-red-600' : 'text-text-secondary hover:text-text-primary'
+  }`;
+}
+
+/** Left-hand jump list for the settings page — most items scroll-anchor within the
+ * single-scroll page; items with a `route` navigate to a separate page instead. */
 export const SettingsMenu = () => (
   <nav className="w-[220px] flex-shrink-0 border-r border-border bg-white py-5">
     {SECTIONS.map((section) => (
@@ -30,17 +42,17 @@ export const SettingsMenu = () => (
         <div className="px-5 py-1.5 text-[11px] font-semibold tracking-wider text-text-muted">
           {section.label}
         </div>
-        {section.items.map((item) => (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            className={`block border-l-[3px] border-transparent px-5 py-2.5 text-sm ${
-              item.danger ? 'text-red-600' : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {item.label}
-          </a>
-        ))}
+        {section.items.map((item) =>
+          item.route ? (
+            <Link key={item.id} to={item.route} className={menuItemClass(item.danger)}>
+              {item.label}
+            </Link>
+          ) : (
+            <a key={item.id} href={`#${item.id}`} className={menuItemClass(item.danger)}>
+              {item.label}
+            </a>
+          ),
+        )}
       </div>
     ))}
   </nav>

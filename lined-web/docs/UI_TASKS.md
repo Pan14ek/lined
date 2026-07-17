@@ -51,6 +51,20 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - **Notifications Center** — `NotificationBell`, `NotificationInbox`: dashboard bell with a live unread-count badge (capped "9+"), dropdown inbox listing `GET /api/notifications/mine` (per-row type icon, message, relative time via new `formatRelativeTimeAgo`, lobby name, unread tint/dot), click-to-mark-read (`PATCH /api/notifications/{id}/read`) with navigation to the related lobby Tasks tab / calendar (selecting the event) / lobby page depending on which ids are set, and a "Mark all read" header action. `useMyNotifications` polls every 60s. Global/per-lobby notification preference cards (`NotificationsCard`, `LobbyNotificationsCard`) were already backend-persisted from earlier work — this task only added the inbox/bell.
 - **Lobby Invites (invitee side)** — `InviteCard`, `PendingInvitesBanner`: a "Pending Invites · N" section (green-bordered cards, inviter avatar tinted by lobby-type accent, `GET /api/lobby-invites/mine`) rendered above "My Lobbies" on the dashboard; Accept (`POST /api/lobby-invites/{id}/accept`) navigates into the joined lobby, Decline goes through the shared `ConfirmDialog`, and a 409 on either (stale/already-actioned invite) shows "This invite is no longer valid" and refetches. The same `InviteCard`s now also appear at the top of the notification-bell dropdown (`NotificationInbox`), reusing the accept/decline hooks without the confirm-dialog step. New hooks: `useMyInvites`/`useAcceptInvite`/`useDeclineInvite` in `useInvites.ts` (the API client and MSW mocks already existed from Task 15). Verified `GET /api/lobbies/{id}` has no membership check server-side, so the invitee-side lobby name/type/member-count render directly instead of falling back to generic text.
 
+- **Subscription & Plan page** — `CurrentPlanCard`, `PlanCards`,
+  `SubscriptionHistoryCard`: `/subscription` route (linked from a new
+  "Subscription" item in the User Settings PREFERENCES menu); current-plan
+  card shows plan/price/renewal date with a confirm-gated "Cancel
+  subscription" (`POST /api/subscriptions/{userId}/cancel-active`) or a
+  free-plan message when `GET /api/subscriptions/{userId}/active` 404s;
+  plan cards from `GET /api/plans` highlight the active plan and
+  "Subscribe" others (`POST /api/subscriptions`, inline 409 message when
+  already subscribed); history card lists `GET
+  /api/subscriptions/{userId}/history` with ACTIVE/ENDED badges. New
+  `useSubscriptions.ts` hooks (`usePlans`, `useActivePlan`,
+  `useSubscriptionHistory`, `useStartSubscription`,
+  `useCancelSubscription`).
+
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage.
 
@@ -93,7 +107,7 @@ SignInPage, SignUpPage, DashboardPage.
 | 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | DONE |
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | DONE |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | DONE |
-| 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | TODO |
+| 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | DONE |
 | 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | DONE |
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | DONE |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
