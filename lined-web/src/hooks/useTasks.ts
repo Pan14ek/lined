@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listMyTasks, listTasks, updateTask } from '@/api/tasks';
+import { createTask, listMyTasks, listTasks, updateTask } from '@/api/tasks';
 import { QUERY_KEYS } from '@/lib/constants';
 import type { TaskDto, TaskUpdateDto } from '@/types';
 
@@ -16,6 +16,16 @@ export const useLobbyTasks = (lobbyId: number | undefined) =>
     queryFn: () => listTasks({ lobbyId }),
     enabled: lobbyId != null,
   });
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTask,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks });
+    },
+  });
+}
 
 export const useUpdateTask = (lobbyId: number) => {
   const queryClient = useQueryClient();
