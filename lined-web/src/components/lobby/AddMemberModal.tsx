@@ -5,6 +5,7 @@ import type { LobbyDto } from '@/types';
 import { useUserSearch } from '@/hooks/useUsers';
 import { useCreateInvite } from '@/hooks/useInvites';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { SearchResultsList } from './SearchResultsList';
 
 interface AddMemberModalProps {
@@ -19,17 +20,10 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
   const createInvite = useCreateInvite(lobby.id);
 
   const [invitedIds, setInvitedIds] = useState<Set<number>>(new Set());
-  const [sendingId, setSendingId] = useState<number | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
+  const { busyId: sendingId, errors: rowErrors, start, finish, setError } = useRowMutationState();
 
   const handleInvite = (userId: number) => {
-    setSendingId(userId);
-    setRowErrors((prev) => {
-      if (!(userId in prev)) return prev;
-      const next = { ...prev };
-      delete next[userId];
-      return next;
-    });
+    start(userId);
 
     createInvite.mutate(
       { userId },
@@ -42,9 +36,9 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
             error instanceof HTTPError && error.response.status === 409
               ? 'Already a member or already invited'
               : "Couldn't send invite — try again";
-          setRowErrors((prev) => ({ ...prev, [userId]: message }));
+          setError(userId, message);
         },
-        onSettled: () => setSendingId(null),
+        onSettled: finish,
       },
     );
   };

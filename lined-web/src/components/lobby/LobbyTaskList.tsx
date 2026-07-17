@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { TaskDto, TaskStatus, UserDto } from '@/types';
 import { useLobbyTasks, useUpdateTask } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
+import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/lib/constants';
 import { TaskRow } from './TaskRow';
@@ -96,8 +97,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   const updateTask = useUpdateTask(lobbyId);
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
   const [filter, setFilter] = useState<FilterId>('ALL');
-  const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
+  const { busyId: updatingTaskId, errors: rowErrors, start, finish, setError } = useRowMutationState();
 
   const assigneeIds = Array.from(
     new Set((tasks ?? []).map((t) => t.assigneeId).filter((id): id is number => id != null)),
@@ -117,19 +117,12 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
 
   const handleToggle = (task: TaskDto) => {
     const nextStatus: TaskStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
-    setUpdatingTaskId(task.id);
-    setRowErrors((prev) => {
-      if (!(task.id in prev)) return prev;
-      const next = { ...prev };
-      delete next[task.id];
-      return next;
-    });
+    start(task.id);
     updateTask.mutate(
       { id: task.id, data: { status: nextStatus } },
       {
-        onSettled: () => setUpdatingTaskId(null),
-        onError: () =>
-          setRowErrors((prev) => ({ ...prev, [task.id]: "Couldn't update — try again" })),
+        onSettled: finish,
+        onError: () => setError(task.id, "Couldn't update — try again"),
       },
     );
   };
