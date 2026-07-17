@@ -245,18 +245,30 @@ export interface FreeSlot {
   endHour: number;
 }
 
-/** Compute gaps between events within the visible grid range (≥ 30 min). */
-export function computeFreeSlots(events: EventDto[]): FreeSlot[] {
+/**
+ * Compute gaps between events within the visible grid range (>= 30 min), for
+ * one specific day. Events are clipped to that day first — a plain
+ * `.getHours()` read on a midnight-spanning event's real endAt (e.g. 2 AM the
+ * next day) would come back smaller than its own start hour, making the gap
+ * logic below think the day was free again right after the event started.
+ */
+export function computeFreeSlots(events: EventDto[], day: Date): FreeSlot[] {
   if (events.length === 0) return [];
 
   const MIN_SLOT_HOURS = 0.5;
 
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  // Hours elapsed since this day's midnight, rather than getHours(), so a
+  // clipped end exactly at the next day's midnight reads as 24, not 0.
+  const hoursSinceMidnight = (d: Date): number =>
+    (d.getTime() - dayStart.getTime()) / (1000 * 60 * 60);
+
   const ranges = events
-    .map((e) => ({
-      start:
-        new Date(e.startAt).getHours() + new Date(e.startAt).getMinutes() / 60,
-      end:
-        new Date(e.endAt).getHours() + new Date(e.endAt).getMinutes() / 60,
+    .map((e) => clipEventToDay(e, day))
+    .map(({ startAt, endAt }) => ({
+      start: hoursSinceMidnight(new Date(startAt)),
+      end: hoursSinceMidnight(new Date(endAt)),
     }))
     .sort((a, b) => a.start - b.start);
 

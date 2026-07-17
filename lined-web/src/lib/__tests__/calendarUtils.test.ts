@@ -13,6 +13,7 @@ import {
   isSameMonth,
   eventTouchesDay,
   clipEventToDay,
+  computeFreeSlots,
 } from '../calendarUtils';
 
 afterEach(() => {
@@ -282,6 +283,56 @@ describe('clipEventToDay', () => {
     const clipped = clipEventToDay(event, new Date('2026-07-19T00:00:00'));
     expect(new Date(clipped.startAt).getHours()).toBe(0);
     expect(new Date(clipped.endAt).toISOString()).toBe(new Date('2026-07-19T02:00:00').toISOString());
+  });
+});
+
+describe('computeFreeSlots', () => {
+  const makeEvent = (id: number, startAt: string, endAt: string): EventDto => ({
+    id,
+    title: `Event ${id}`,
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('caps the free slot before a midnight-spanning event at its real start, not GRID_END_HOUR', () => {
+    expect.assertions(1);
+    // A gap from early evening up to 11:30 PM, when Movie Night starts and
+    // runs past midnight — the bug this guards: raw .getHours() on the 2 AM
+    // end reads smaller than 23.5, so cursor never advances past the event's
+    // start and the loop wrongly reports the day free all the way to 12 AM.
+    const events = [
+      makeEvent(1, '2026-07-18T20:00:00', '2026-07-18T21:00:00'),
+      makeEvent(2, '2026-07-18T23:30:00', '2026-07-19T02:00:00'),
+    ];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    const trailingSlot = slots[slots.length - 1]!;
+    expect(trailingSlot).toEqual({ startHour: 21, endHour: 23.5 });
+  });
+
+  it('reports no free time after a midnight-spanning event that runs to the end of the day', () => {
+    expect.assertions(1);
+    const events = [makeEvent(1, '2026-07-18T23:30:00', '2026-07-19T02:00:00')];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    expect(slots.some((s) => s.endHour === 24)).toBe(false);
+  });
+
+  it('still computes ordinary same-day gaps correctly', () => {
+    expect.assertions(1);
+    const events = [makeEvent(1, '2026-07-18T09:00:00', '2026-07-18T10:00:00')];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    expect(slots).toEqual([
+      { startHour: 1, endHour: 9 },
+      { startHour: 10, endHour: 24 },
+    ]);
   });
 });
 

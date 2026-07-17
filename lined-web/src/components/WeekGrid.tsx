@@ -266,8 +266,8 @@ interface WeekGridProps {
   onFreeSlotClick?: (day: Date, slot: FreeSlot) => void;
 }
 
-const defaultGetFreeSlotsForDay = (_day: Date, dayEvents: EventDto[]): FreeSlot[] =>
-  dayEvents.length > 0 ? computeFreeSlots(dayEvents) : [];
+const defaultGetFreeSlotsForDay = (day: Date, dayEvents: EventDto[]): FreeSlot[] =>
+  dayEvents.length > 0 ? computeFreeSlots(dayEvents, day) : [];
 
 export function WeekGrid({
   weekStart,
