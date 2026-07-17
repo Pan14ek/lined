@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getPreferences,
   updatePreferences,
   getLobbyPreferences,
   updateLobbyPreferences,
+  myNotifications,
+  markRead,
 } from '@/api/notifications';
 import { QUERY_KEYS } from '@/lib/constants';
 import { useOptimisticPatchMutation } from './useOptimisticPatchMutation';
@@ -12,7 +14,10 @@ import type {
   NotificationPreferencesUpdateDto,
   LobbyNotificationPreferencesDto,
   LobbyNotificationPreferencesUpdateDto,
+  NotificationDto,
 } from '@/types';
+
+const NOTIFICATIONS_POLL_INTERVAL_MS = 60_000;
 
 export const useNotificationPreferences = () =>
   useQuery({
@@ -40,3 +45,22 @@ export const useUpdateLobbyNotificationPreferences = (lobbyId: number) =>
     queryKey: QUERY_KEYS.lobbyNotificationPreferences(lobbyId),
     mutationFn: (data) => updateLobbyPreferences(lobbyId, data),
   });
+
+export const useMyNotifications = () =>
+  useQuery({
+    queryKey: QUERY_KEYS.myNotifications,
+    queryFn: myNotifications,
+    refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+  });
+
+export const useMarkNotificationRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => markRead(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<NotificationDto[]>(QUERY_KEYS.myNotifications, (current) =>
+        current?.map((n) => (n.id === updated.id ? updated : n)),
+      );
+    },
+  });
+};

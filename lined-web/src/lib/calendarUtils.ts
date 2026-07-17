@@ -159,6 +159,28 @@ export function formatRelativeEventTime(startAt: string): string {
   return `${weekday}, ${dayMonth} · ${timeStr}`;
 }
 
+/** "Just now", "10 minutes ago", "2 hours ago", "Yesterday", "3 days ago" */
+export function formatRelativeTimeAgo(iso: string): string {
+  const then = new Date(iso);
+  const now = new Date();
+  const seconds = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
+
+  if (seconds < 60) return 'Just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+  if (isSameDay(then, addDays(now, -1))) return 'Yesterday';
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+  return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 /** "Today 2–5 PM", "Tomorrow 2–5 PM", "Sunday 2–5 PM" */
 export function formatFreeSlotRange(start: string, end: string): string {
   const startDate = new Date(start);

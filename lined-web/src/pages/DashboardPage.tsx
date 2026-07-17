@@ -1,4 +1,3 @@
-import { Bell } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useUpcomingEvents } from '@/hooks/useEvents';
@@ -10,6 +9,7 @@ import { UpcomingEventsList } from '@/components/dashboard/UpcomingEventsList';
 import { MyTasksList } from '@/components/dashboard/MyTasksList';
 import { FreeSlotBanner } from '@/components/dashboard/FreeSlotBanner';
 import { CreateMenu } from '@/components/CreateMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useCreateMenuStore } from '@/store/createMenu';
 
 export function DashboardPage() {
@@ -31,13 +31,7 @@ export function DashboardPage() {
           <p className="text-xs text-text-secondary">{formatFullDate(new Date())}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-gray-100"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationBell />
           <CreateMenu />
         </div>
       </div>
