@@ -4,6 +4,9 @@ import {
   listLobbyInvites,
   resendInvite,
   cancelInvite,
+  myInvites,
+  acceptInvite,
+  declineInvite,
   type InviteTarget,
 } from '@/api/invites';
 import { QUERY_KEYS } from '@/lib/constants';
@@ -41,6 +44,34 @@ export const useCancelInvite = (lobbyId: number) => {
     mutationFn: (inviteId: number) => cancelInvite(lobbyId, inviteId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
+    },
+  });
+};
+
+export const useMyInvites = () =>
+  useQuery({
+    queryKey: QUERY_KEYS.myInvites,
+    queryFn: myInvites,
+    refetchOnWindowFocus: true,
+  });
+
+export const useAcceptInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: number) => acceptInvite(inviteId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myInvites });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
+    },
+  });
+};
+
+export const useDeclineInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: number) => declineInvite(inviteId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myInvites });
     },
   });
 };
