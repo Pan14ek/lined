@@ -161,4 +161,31 @@ describe('NotificationBell', () => {
 
     expect(await screen.findByText("Couldn't load notifications.")).toBeInTheDocument();
   });
+
+  it('lists pending invites above the notifications with working accept/decline', async () => {
+    expect.assertions(2);
+    renderBell();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
+
+    expect((await screen.findAllByTestId('invite-card')).length).toBe(3);
+
+    await user.click(screen.getAllByRole('button', { name: 'Accept' })[0]!);
+
+    expect(await screen.findByTestId('location')).toHaveTextContent(/^\/lobbies\/\d+$/);
+  });
+
+  it('declines an invite from the dropdown and removes its card', async () => {
+    expect.assertions(1);
+    renderBell();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
+    await screen.findAllByTestId('invite-card');
+
+    await user.click(screen.getAllByRole('button', { name: 'Decline' })[0]!);
+
+    await waitFor(() => expect(screen.getAllByTestId('invite-card').length).toBe(2));
+  });
 });

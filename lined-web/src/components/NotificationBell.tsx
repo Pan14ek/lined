@@ -1,20 +1,31 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
 import { useMyNotifications, useMarkNotificationRead } from '@/hooks/useNotifications';
 import { useMyLobbies } from '@/hooks/useLobbies';
+import { useMyInvites, useAcceptInvite, useDeclineInvite } from '@/hooks/useInvites';
 import { useCalendarStore } from '@/store/calendar';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { NotificationInbox } from './NotificationInbox';
 import type { NotificationDto } from '@/types';
 
 const MAX_BADGE_COUNT = 9;
 
+function getInviteErrorMessage(error: unknown, fallback: string): string {
+  return getApiErrorMessage(error, { 409: 'This invite is no longer valid' }, fallback);
+}
+
 export const NotificationBell = () => {
   const navigate = useNavigate();
   const { data: notifications, isLoading, isError } = useMyNotifications();
   const { data: lobbies } = useMyLobbies();
+  const { data: invites, refetch: refetchInvites } = useMyInvites();
   const markRead = useMarkNotificationRead();
+  const acceptInvite = useAcceptInvite();
+  const declineInvite = useDeclineInvite();
   const setSelectedEventId = useCalendarStore((s) => s.setSelectedEventId);
+  const [inviteErrors, setInviteErrors] = useState<Record<number, string>>({});
 
   const unreadCount = notifications?.filter((n) => n.readAt == null).length ?? 0;
   const badgeLabel = unreadCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(unreadCount);
@@ -34,6 +45,33 @@ export const NotificationBell = () => {
 
   const handleMarkAllRead = () => {
     notifications?.filter((n) => n.readAt == null).forEach((n) => markRead.mutate(n.id));
+  };
+
+  const handleAcceptInvite = (inviteId: number, lobbyId: number) => {
+    setInviteErrors((prev) => ({ ...prev, [inviteId]: '' }));
+    acceptInvite.mutate(inviteId, {
+      onSuccess: () => navigate(`/lobbies/${lobbyId}`),
+      onError: (error) => {
+        setInviteErrors((prev) => ({
+          ...prev,
+          [inviteId]: getInviteErrorMessage(error, 'Could not accept — please try again'),
+        }));
+        void refetchInvites();
+      },
+    });
+  };
+
+  const handleDeclineInvite = (inviteId: number) => {
+    setInviteErrors((prev) => ({ ...prev, [inviteId]: '' }));
+    declineInvite.mutate(inviteId, {
+      onError: (error) => {
+        setInviteErrors((prev) => ({
+          ...prev,
+          [inviteId]: getInviteErrorMessage(error, 'Could not decline — please try again'),
+        }));
+        void refetchInvites();
+      },
+    });
   };
 
   return (
@@ -57,6 +95,12 @@ export const NotificationBell = () => {
           isError={isError}
           onRowClick={handleRowClick}
           onMarkAllRead={handleMarkAllRead}
+          invites={invites}
+          onAcceptInvite={handleAcceptInvite}
+          onDeclineInvite={handleDeclineInvite}
+          acceptingInviteId={acceptInvite.isPending ? acceptInvite.variables : undefined}
+          decliningInviteId={declineInvite.isPending ? declineInvite.variables : undefined}
+          inviteErrors={inviteErrors}
         />
       </DropdownMenuContent>
     </DropdownMenu>

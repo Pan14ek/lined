@@ -10,6 +10,7 @@ import { MyTasksList } from '@/components/dashboard/MyTasksList';
 import { FreeSlotBanner } from '@/components/dashboard/FreeSlotBanner';
 import { CreateMenu } from '@/components/CreateMenu';
 import { NotificationBell } from '@/components/NotificationBell';
+import { PendingInvitesBanner } from '@/components/PendingInvitesBanner';
 import { useCreateMenuStore } from '@/store/createMenu';
 
 export function DashboardPage() {
@@ -38,6 +39,8 @@ export function DashboardPage() {
 
       {/* Content */}
       <div className="flex flex-col gap-6 p-6">
+        <PendingInvitesBanner />
+
         <LobbyCardGrid
           lobbies={lobbies}
           upcomingEvents={events}

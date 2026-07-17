@@ -1,6 +1,7 @@
 import { CheckCircle2, CalendarPlus, Bell as BellIcon } from 'lucide-react';
-import type { NotificationDto, NotificationType, LobbyDto } from '@/types';
+import type { NotificationDto, NotificationType, LobbyDto, LobbyInviteDto } from '@/types';
 import { formatRelativeTimeAgo } from '@/lib/calendarUtils';
+import { InviteCard } from './InviteCard';
 
 const TYPE_ICONS: Record<NotificationType, typeof CheckCircle2> = {
   TASK_ASSIGNED: CheckCircle2,
@@ -14,6 +15,12 @@ interface NotificationInboxProps {
   isError: boolean;
   onRowClick: (notification: NotificationDto) => void;
   onMarkAllRead: () => void;
+  invites: LobbyInviteDto[] | undefined;
+  onAcceptInvite: (inviteId: number, lobbyId: number) => void;
+  onDeclineInvite: (inviteId: number) => void;
+  acceptingInviteId: number | undefined;
+  decliningInviteId: number | undefined;
+  inviteErrors: Record<number, string>;
 }
 
 export const NotificationInbox = ({
@@ -23,6 +30,12 @@ export const NotificationInbox = ({
   isError,
   onRowClick,
   onMarkAllRead,
+  invites,
+  onAcceptInvite,
+  onDeclineInvite,
+  acceptingInviteId,
+  decliningInviteId,
+  inviteErrors,
 }: NotificationInboxProps) => {
   const lobbyMap = new Map((lobbies ?? []).map((l) => [l.id, l]));
   const hasUnread = notifications?.some((n) => n.readAt == null) ?? false;
@@ -43,6 +56,22 @@ export const NotificationInbox = ({
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {invites != null && invites.length > 0 && (
+          <div className="border-b border-border p-2">
+            {invites.map((invite) => (
+              <InviteCard
+                key={invite.id}
+                invite={invite}
+                onAccept={() => onAcceptInvite(invite.id, invite.lobbyId)}
+                onDecline={() => onDeclineInvite(invite.id)}
+                isAccepting={acceptingInviteId === invite.id}
+                isDeclining={decliningInviteId === invite.id}
+                error={inviteErrors[invite.id] || undefined}
+              />
+            ))}
+          </div>
+        )}
+
         {isLoading && (
           <div className="space-y-2 p-3" data-testid="notification-inbox-loading">
             {[0, 1, 2].map((i) => (

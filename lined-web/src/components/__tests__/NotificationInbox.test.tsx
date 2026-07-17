@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { NotificationDto, LobbyDto } from '@/types';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
+import type { NotificationDto, LobbyDto, LobbyInviteDto } from '@/types';
 import { NotificationInbox } from '../NotificationInbox';
 
 const LOBBIES: LobbyDto[] = [
@@ -34,12 +33,32 @@ const READ_NOTIFICATION: NotificationDto = {
   deliveries: [],
 };
 
+const INVITE: LobbyInviteDto = {
+  id: 1,
+  lobbyId: 1,
+  inviterId: 1,
+  inviteeId: 2,
+  status: 'PENDING',
+  sentAt: '2026-07-15T10:00:00Z',
+  createdAt: '2026-07-15T10:00:00Z',
+  updatedAt: '2026-07-15T10:00:00Z',
+};
+
 const noop = () => {};
+
+const inviteProps = {
+  invites: undefined,
+  onAcceptInvite: noop,
+  onDeclineInvite: noop,
+  acceptingInviteId: undefined,
+  decliningInviteId: undefined,
+  inviteErrors: {},
+};
 
 describe('NotificationInbox', () => {
   it('shows a loading skeleton while notifications are loading', () => {
     expect.assertions(1);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={undefined}
         lobbies={undefined}
@@ -47,6 +66,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -55,7 +75,7 @@ describe('NotificationInbox', () => {
 
   it('shows an inline error message when notifications fail to load', () => {
     expect.assertions(1);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={undefined}
         lobbies={undefined}
@@ -63,6 +83,7 @@ describe('NotificationInbox', () => {
         isError
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -71,7 +92,7 @@ describe('NotificationInbox', () => {
 
   it('shows an empty state when there are no notifications', () => {
     expect.assertions(1);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[]}
         lobbies={[]}
@@ -79,6 +100,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -87,7 +109,7 @@ describe('NotificationInbox', () => {
 
   it('does not show the "Mark all read" button when everything is read', () => {
     expect.assertions(1);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[READ_NOTIFICATION]}
         lobbies={[]}
@@ -95,6 +117,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -103,7 +126,7 @@ describe('NotificationInbox', () => {
 
   it('renders each notification with its message, relative time, and lobby name', () => {
     expect.assertions(2);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[UNREAD_NOTIFICATION]}
         lobbies={LOBBIES}
@@ -111,6 +134,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -122,7 +146,7 @@ describe('NotificationInbox', () => {
 
   it('omits the lobby name when the notification has no lobbyId', () => {
     expect.assertions(1);
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[READ_NOTIFICATION]}
         lobbies={LOBBIES}
@@ -130,6 +154,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -140,7 +165,7 @@ describe('NotificationInbox', () => {
     expect.assertions(1);
     const onRowClick = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[UNREAD_NOTIFICATION]}
         lobbies={LOBBIES}
@@ -148,6 +173,7 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={onRowClick}
         onMarkAllRead={noop}
+        {...inviteProps}
       />,
     );
 
@@ -160,7 +186,7 @@ describe('NotificationInbox', () => {
     expect.assertions(1);
     const onMarkAllRead = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <NotificationInbox
         notifications={[UNREAD_NOTIFICATION]}
         lobbies={LOBBIES}
@@ -168,11 +194,40 @@ describe('NotificationInbox', () => {
         isError={false}
         onRowClick={noop}
         onMarkAllRead={onMarkAllRead}
+        {...inviteProps}
       />,
     );
 
     await user.click(screen.getByText('Mark all read'));
 
     expect(onMarkAllRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a pending invite above the notifications and wires accept/decline', async () => {
+    expect.assertions(2);
+    const onAcceptInvite = vi.fn();
+    const onDeclineInvite = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <NotificationInbox
+        notifications={[]}
+        lobbies={LOBBIES}
+        isLoading={false}
+        isError={false}
+        onRowClick={noop}
+        onMarkAllRead={noop}
+        {...inviteProps}
+        invites={[INVITE]}
+        onAcceptInvite={onAcceptInvite}
+        onDeclineInvite={onDeclineInvite}
+      />,
+    );
+    await screen.findByTestId('invite-card');
+
+    await user.click(screen.getByRole('button', { name: 'Accept' }));
+    await user.click(screen.getByRole('button', { name: 'Decline' }));
+
+    expect(onAcceptInvite).toHaveBeenCalledWith(INVITE.id, INVITE.lobbyId);
+    expect(onDeclineInvite).toHaveBeenCalledWith(INVITE.id);
   });
 });

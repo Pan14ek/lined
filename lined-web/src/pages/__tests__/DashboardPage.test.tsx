@@ -17,7 +17,7 @@ describe('DashboardPage', () => {
     expect.assertions(5);
     renderWithProviders(<DashboardPage />);
 
-    expect(await screen.findByText(/alex_johnson/)).toBeInTheDocument();
+    expect(await screen.findByText(/good (morning|afternoon|evening), alex_johnson/i)).toBeInTheDocument();
     expect(screen.getByText('My Lobbies')).toBeInTheDocument();
     expect((await screen.findAllByText('Alex & Anastasiia')).length).toBeGreaterThan(0);
     expect(await screen.findByText('Morning Coffee')).toBeInTheDocument();
@@ -59,5 +59,18 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByText(/couldn't load your tasks/i)).toBeInTheDocument();
     expect(await screen.findByText('Morning Coffee')).toBeInTheDocument();
+  });
+
+  it('renders the pending invites banner above "My Lobbies"', async () => {
+    expect.assertions(2);
+    renderWithProviders(<DashboardPage />);
+
+    const invitesHeading = await screen.findByText('Pending Invites · 3');
+    const lobbiesHeading = await screen.findByText('My Lobbies');
+    expect(invitesHeading).toBeInTheDocument();
+    expect(
+      invitesHeading.compareDocumentPosition(lobbiesHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });
