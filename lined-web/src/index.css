@@ -28,6 +28,10 @@
   --color-task-inprog: #3B82F6;
   --color-task-done: #10B981;
 
+  /* Task priority */
+  --color-priority-high: #E53E3E;
+  --color-priority-medium: #FB8A2F;
+
   /* Text */
   --color-text-primary: #1A1A2E;
   --color-text-secondary: #6B7280;

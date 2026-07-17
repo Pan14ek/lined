@@ -1,4 +1,4 @@
-import type { LobbyType, TaskStatus } from '@/types';
+import type { LobbyType, TaskPriority, TaskStatus } from '@/types';
 
 export const LOBBY_TYPE_LABELS: Record<LobbyType, string> = {
   COUPLE: 'Couple',
@@ -51,6 +51,12 @@ export const TASK_STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
   TODO: 'bg-task-todo/10 text-task-todo',
   IN_PROGRESS: 'bg-task-inprog/10 text-task-inprog',
   DONE: 'bg-task-done/10 text-task-done',
+};
+
+export const TASK_PRIORITY_COLORS: Record<TaskPriority, string> = {
+  HIGH: 'bg-priority-high',
+  MEDIUM: 'bg-priority-medium',
+  LOW: 'bg-task-done',
 };
 
 export const QUERY_KEYS = {

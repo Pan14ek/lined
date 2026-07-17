@@ -1,14 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, listMyTasks, listTasks, updateTask } from '@/api/tasks';
+import { createTask, deleteTask, listMyTasks, listTasks, updateTask } from '@/api/tasks';
 import { QUERY_KEYS } from '@/lib/constants';
-import type { TaskDto, TaskUpdateDto } from '@/types';
+import type { TaskDto, TaskStatus, TaskUpdateDto } from '@/types';
 
-export function useMyTasks() {
-  return useQuery({
+export const useMyTasks = () =>
+  useQuery({
     queryKey: QUERY_KEYS.myTasks,
     queryFn: listMyTasks,
   });
-}
 
 export const useLobbyTasks = (lobbyId: number | undefined) =>
   useQuery({
@@ -17,7 +16,7 @@ export const useLobbyTasks = (lobbyId: number | undefined) =>
     enabled: lobbyId != null,
   });
 
-export function useCreateTask() {
+export const useCreateTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createTask,
@@ -25,7 +24,7 @@ export function useCreateTask() {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks });
     },
   });
-}
+};
 
 export const useUpdateTask = (lobbyId: number) => {
   const queryClient = useQueryClient();
@@ -36,6 +35,45 @@ export const useUpdateTask = (lobbyId: number) => {
         old?.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
       );
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myTasks });
+    },
+  });
+};
+
+interface UpdateTaskStatusContext {
+  previous: TaskDto[] | undefined;
+}
+
+export const useUpdateTaskStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation<TaskDto, unknown, { id: number; status: TaskStatus }, UpdateTaskStatusContext>({
+    mutationFn: ({ id, status }) => updateTask(id, { status }),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.myTasks });
+      const previous = queryClient.getQueryData<TaskDto[]>(QUERY_KEYS.myTasks);
+      queryClient.setQueryData<TaskDto[]>(QUERY_KEYS.myTasks, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, status } : t)),
+      );
+      return { previous };
+    },
+    onSuccess: (updatedTask) => {
+      queryClient.setQueryData<TaskDto[]>(QUERY_KEYS.myTasks, (old) =>
+        old?.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      );
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(QUERY_KEYS.myTasks, context.previous);
+    },
+  });
+};
+
+export const useDeleteTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteTask(id),
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<TaskDto[]>(QUERY_KEYS.myTasks, (old) =>
+        old?.filter((t) => t.id !== id),
+      );
     },
   });
 };

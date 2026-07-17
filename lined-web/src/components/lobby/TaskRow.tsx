@@ -1,7 +1,7 @@
 import type { TaskDto, UserDto } from '@/types';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 
 interface TaskRowProps {
   task: TaskDto;
@@ -10,20 +10,6 @@ interface TaskRowProps {
   isUpdating: boolean;
   updateError?: string;
 }
-
-const AssigneeAvatarFallback = ({ assignee }: { assignee: UserDto | undefined }) => {
-  if (!assignee) {
-    return (
-      <AvatarFallback className="bg-gray-300 text-xs font-semibold text-white">?</AvatarFallback>
-    );
-  }
-
-  return (
-    <AvatarFallback className="bg-brand-green text-xs font-semibold text-white">
-      {assignee.username.charAt(0).toUpperCase()}
-    </AvatarFallback>
-  );
-};
 
 export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: TaskRowProps) => {
   const isDone = task.status === 'DONE';
@@ -65,9 +51,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: T
 
       <div className="flex flex-shrink-0 items-center gap-3">
         <StatusBadge status={task.status} />
-        <Avatar size="sm">
-          <AssigneeAvatarFallback assignee={assignee} />
-        </Avatar>
+        <AssigneeAvatar assignee={assignee} size="sm" />
         <span
           className={`w-16 text-right text-xs ${
             due.isUrgent ? 'font-semibold text-red-500' : isDone ? 'text-text-muted' : 'text-text-secondary'

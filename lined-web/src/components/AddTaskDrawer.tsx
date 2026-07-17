@@ -15,6 +15,8 @@ interface AddTaskDrawerProps {
   onCreated?: (task: TaskDto) => void;
   /** When set, the lobby field is locked to this id and shown as read-only. */
   lockedLobbyId?: number;
+  /** Preselects the status field, e.g. when opened from a kanban column. */
+  initialStatus?: TaskStatus;
 }
 
 const STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
@@ -30,7 +32,13 @@ function getCreateTaskErrorMessage(error: unknown): string {
   return "Couldn't create task — please try again";
 }
 
-export function AddTaskDrawer({ lobbies, onClose, onCreated, lockedLobbyId }: AddTaskDrawerProps) {
+export function AddTaskDrawer({
+  lobbies,
+  onClose,
+  onCreated,
+  lockedLobbyId,
+  initialStatus,
+}: AddTaskDrawerProps) {
   const createTask = useCreateTask();
   const isLocked = lockedLobbyId != null;
   const lockedLobby = isLocked ? lobbies.find((l) => l.id === lockedLobbyId) : undefined;
@@ -40,7 +48,7 @@ export function AddTaskDrawer({ lobbies, onClose, onCreated, lockedLobbyId }: Ad
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState<number | undefined>(undefined);
   const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<TaskStatus>('TODO');
+  const [status, setStatus] = useState<TaskStatus>(initialStatus ?? 'TODO');
   const [notifyAssignee, setNotifyAssignee] = useState(true);
 
   const selectedLobby = isLocked ? lockedLobby : lobbies.find((l) => l.id === Number(lobbyId));
