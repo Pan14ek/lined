@@ -33,6 +33,15 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+/** Midnight-to-midnight bounds of the day containing `date`. */
+export function getDayBounds(date: Date): { start: Date; end: Date } {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
 export function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
@@ -211,9 +220,10 @@ export function getEventHeight(startAt: string, endAt: string): number {
 
 /** True if an event starts, ends, or spans across the given day. */
 export function eventTouchesDay(event: EventDto, day: Date): boolean {
-  return (
-    isSameDay(new Date(event.startAt), day) || isSameDay(new Date(event.endAt), day)
-  );
+  const { start: dayStart, end: dayEnd } = getDayBounds(day);
+  const eventStart = new Date(event.startAt);
+  const eventEnd = new Date(event.endAt);
+  return eventStart < dayEnd && eventEnd > dayStart;
 }
 
 /**

@@ -245,6 +245,13 @@ describe('eventTouchesDay', () => {
     const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
     expect(eventTouchesDay(event, new Date('2026-07-20T00:00:00'))).toBe(false);
   });
+
+  it('is true for a day fully inside a multi-day event, touching neither endpoint', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-17T10:00:00', '2026-07-20T10:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-18T00:00:00'))).toBe(true);
+    expect(eventTouchesDay(event, new Date('2026-07-19T00:00:00'))).toBe(true);
+  });
 });
 
 describe('clipEventToDay', () => {
