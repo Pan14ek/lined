@@ -56,11 +56,13 @@ export function useUpdateTaskStatus() {
       );
       return { previous };
     },
+    onSuccess: (updatedTask) => {
+      queryClient.setQueryData<TaskDto[]>(QUERY_KEYS.myTasks, (old) =>
+        old?.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      );
+    },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(QUERY_KEYS.myTasks, context.previous);
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myTasks });
     },
   });
 }
@@ -73,7 +75,6 @@ export function useDeleteTask() {
       queryClient.setQueryData<TaskDto[]>(QUERY_KEYS.myTasks, (old) =>
         old?.filter((t) => t.id !== id),
       );
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks });
     },
   });
 }
