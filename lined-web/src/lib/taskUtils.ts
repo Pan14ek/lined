@@ -13,6 +13,18 @@ export const getAdjacentStatus = (
   return STATUS_ORDER[nextIndex];
 };
 
+/** Not-done tasks first, then ascending by due date (tasks with no due date last). */
+export const sortTasksByDueDate = (tasks: TaskDto[]): TaskDto[] =>
+  [...tasks].sort((a, b) => {
+    if ((a.status === 'DONE') !== (b.status === 'DONE')) {
+      return a.status === 'DONE' ? 1 : -1;
+    }
+    if (a.dueDate == null && b.dueDate == null) return 0;
+    if (a.dueDate == null) return 1;
+    if (b.dueDate == null) return -1;
+    return a.dueDate.localeCompare(b.dueDate);
+  });
+
 export const groupTasksByStatus = (tasks: TaskDto[]): Record<TaskStatus, TaskDto[]> => {
   const groups: Record<TaskStatus, TaskDto[]> = { TODO: [], IN_PROGRESS: [], DONE: [] };
   for (const task of tasks) {

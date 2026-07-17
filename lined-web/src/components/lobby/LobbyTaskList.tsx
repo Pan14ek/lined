@@ -5,6 +5,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/lib/constants';
+import { sortTasksByDueDate } from '@/lib/taskUtils';
 import { TaskRow } from './TaskRow';
 
 type FilterId = 'ALL' | TaskStatus;
@@ -15,17 +16,6 @@ const FILTERS: { id: FilterId; label: string }[] = [
   { id: 'IN_PROGRESS', label: TASK_STATUS_LABELS.IN_PROGRESS },
   { id: 'DONE', label: TASK_STATUS_LABELS.DONE },
 ];
-
-const sortByDueDate = (tasks: TaskDto[]): TaskDto[] =>
-  [...tasks].sort((a, b) => {
-    if ((a.status === 'DONE') !== (b.status === 'DONE')) {
-      return a.status === 'DONE' ? 1 : -1;
-    }
-    if (a.dueDate == null && b.dueDate == null) return 0;
-    if (a.dueDate == null) return 1;
-    if (b.dueDate == null) return -1;
-    return a.dueDate.localeCompare(b.dueDate);
-  });
 
 interface TaskListContentProps {
   isLoading: boolean;
@@ -113,7 +103,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   };
 
   const filtered = (tasks ?? []).filter((t) => filter === 'ALL' || t.status === filter);
-  const sorted = sortByDueDate(filtered);
+  const sorted = sortTasksByDueDate(filtered);
 
   const handleToggle = (task: TaskDto) => {
     const nextStatus: TaskStatus = task.status === 'DONE' ? 'TODO' : 'DONE';

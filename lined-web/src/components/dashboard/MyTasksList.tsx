@@ -2,22 +2,13 @@ import { Link } from 'react-router-dom';
 import type { TaskDto } from '@/types';
 import { TASK_STATUS_COLORS } from '@/lib/constants';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
+import { sortTasksByDueDate } from '@/lib/taskUtils';
 import { StatusBadge } from './StatusBadge';
 
 const MAX_TASKS_SHOWN = 5;
 
 function sortTasks(tasks: TaskDto[]): TaskDto[] {
-  return [...tasks]
-    .sort((a, b) => {
-      if ((a.status === 'DONE') !== (b.status === 'DONE')) {
-        return a.status === 'DONE' ? 1 : -1;
-      }
-      if (a.dueDate == null && b.dueDate == null) return 0;
-      if (a.dueDate == null) return 1;
-      if (b.dueDate == null) return -1;
-      return a.dueDate.localeCompare(b.dueDate);
-    })
-    .slice(0, MAX_TASKS_SHOWN);
+  return sortTasksByDueDate(tasks).slice(0, MAX_TASKS_SHOWN);
 }
 
 interface MyTasksListProps {
