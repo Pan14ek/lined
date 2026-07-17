@@ -22,7 +22,7 @@ Every screen is directly linkable: `http://localhost:4321/#<screen-id>`
 (e.g. `/#calendar-month`). The nav script syncs `location.hash` on click and
 on load/hashchange.
 
-## 24 Screens (nav label → screen id)
+## 30 Screens (nav label → screen id)
 
 | Screen | id |
 |---|---|
@@ -50,6 +50,12 @@ on load/hashchange.
 | Task Detail | `task-detail` |
 | Empty Dashboard | `dashboard-empty` |
 | Mobile | `mobile` |
+| Language | `language` |
+| Loading | `loading` |
+| Checkout | `checkout` |
+| Lobby: Chat | `lobby-chat` |
+| Lobby: Stats | `lobby-stats` |
+| Calendar Sync | `calendar-sync` |
 
 ## Key Rules
 

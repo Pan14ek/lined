@@ -70,6 +70,12 @@ to switch screens.
 | Task Detail | `task-detail` | Lobby Tasks + "Task details" edit drawer (all fields, priority, delete) — UI task 20 |
 | Empty Dashboard | `dashboard-empty` | First-run dashboard: welcome hero, lobby-type cards, empty placeholders — UI task 21 |
 | Mobile | `mobile` | Two 390 px phone frames: mobile dashboard + calendar day view — UI task 22 |
+| Language | `language` | Settings: Language & Region card (English / Українська, preview strip) — UI task 24 |
+| Loading | `loading` | Dashboard mid-fetch: shimmering skeleton blocks mirroring the loaded layout — UI task 25 |
+| Checkout | `checkout` | "Upgrade to Premium" modal: period picker, order summary, hosted-payment CTA — UI task 26 |
+| Lobby: Chat | `lobby-chat` | Lobby detail — 💬 Chat tab: message bubbles, day divider, composer — UI task 28 |
+| Lobby: Stats | `lobby-stats` | Lobby detail — 📊 Stats tab: stat tiles, month picker, per-member split bars — UI task 29 |
+| Calendar Sync | `calendar-sync` | Settings: ICS feed export (copy/regenerate/revoke) + .ics import card — UI task 30 |
 
 Screens support deep links: `http://localhost:4321/#<screen-id>`. The nav
 script reads `location.hash` on load/hashchange and updates it on click.
@@ -144,7 +150,7 @@ Screens that show a modal or drawer over a base layout use:
 ```
 
 Existing overlay screens: `create-event`, `reserve-slot`, `add-member`,
-`add-task`, `event-conflict`, `task-detail`.
+`add-task`, `event-conflict`, `task-detail`, `checkout`.
 
 ---
 
@@ -195,6 +201,11 @@ Existing overlay screens: `create-event`, `reserve-slot`, `add-member`,
 - `.conflict-banner` (+ `.cb-icon` / `.cb-title` / `.cb-sub` / `.cb-hint`) — amber non-blocking conflict warning
 - `.empty-hero` / `.empty-type-row` / `.empty-type-card` / `.empty-placeholder` — first-run onboarding & empty states
 - `.phone-row` / `.phone` / `.phone-appbar` / `.phone-body` / `.phone-tabbar` / `.phone-tab` / `.phone-fab` / `.phone-caption` — 390 px responsive reference frames
+
+### Product Expansion (tasks 25/28/29)
+- `.skel` (+ `.skel-circle`) — shimmering skeleton block, sized inline per use
+- `.chat-list` / `.chat-day` / `.chat-msg` (+ `.mine`) / `.chat-bubble` / `.chat-meta` / `.chat-composer` — lobby chat tab
+- `.stat-tiles` / `.stat-tile` (+ `.st-label` / `.st-value` / `.st-sub`) / `.split-bar` — lobby stats tab
 
 ### Badges
 - `.lobby-type-badge` — Couple / Family / Friends / Work label

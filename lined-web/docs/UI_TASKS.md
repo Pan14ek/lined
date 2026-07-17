@@ -18,7 +18,7 @@ npx serve -p 4321 mockups/
 # → http://localhost:4321
 ```
 
-The mockup is a single HTML file with 24 screens toggled by the top nav bar.
+The mockup is a single HTML file with 30 screens toggled by the top nav bar.
 Each screen is a `<div class="screen" id="...">`. **Deep links are
 supported**: open `http://localhost:4321/#<screen-id>` directly (e.g.
 `/#calendar-month`); the hash also updates as you click nav tabs. Screens
@@ -26,7 +26,11 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 (task 10), `subscription` (task 14), `notifications` (task 16), and
 `invites` (task 17). The July 2026 gap-analysis batch added four more:
 `event-conflict` (task 19), `task-detail` (task 20), `dashboard-empty`
-(task 21) and `mobile` (task 22).
+(task 21) and `mobile` (task 22). The product-expansion batch added six:
+`language` (task 24), `loading` (task 25), `checkout` (task 26),
+`lobby-chat` (task 28), `lobby-stats` (task 29) and `calendar-sync`
+(task 30); task 31's reminder select lives on the existing `create-event`
+screen.
 
 ## Current implementation status (July 2026)
 
@@ -138,6 +142,14 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
+| 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | TODO |
+| 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
+| 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | TODO |
+| 27 | `feature/ui-27-dashboard-summary` | Adopt `GET /api/dashboard/summary`: one request, accurate lobby-card counts, 404 fallback | [tasks/UI-27-dashboard-summary.md](tasks/UI-27-dashboard-summary.md) | TODO |
+| 28 | `feature/ui-28-lobby-chat` | Lobby Chat tab: polling message list, optimistic send, edit/delete, chat notifications | [tasks/UI-28-lobby-chat.md](tasks/UI-28-lobby-chat.md) | TODO |
+| 29 | `feature/ui-29-lobby-stats` | Lobby Stats tab: time-together tiles, month picker, per-member split bars | [tasks/UI-29-lobby-stats.md](tasks/UI-29-lobby-stats.md) | TODO |
+| 30 | `feature/ui-30-calendar-sync` | Calendar Sync settings: ICS feed link (copy/regenerate/revoke) + .ics import | [tasks/UI-30-calendar-sync.md](tasks/UI-30-calendar-sync.md) | TODO |
+| 31 | `feature/ui-31-event-reminders` | Reminder select on event/reserve modals + EVENT_REMINDER / TASK_DUE inbox types | [tasks/UI-31-event-reminders.md](tasks/UI-31-event-reminders.md) | TODO |
 
 ## Suggested order
 
@@ -155,6 +167,20 @@ blocked on the backend gap it flags (`feature/password-reset-flow` in
 (onboarding/empty states). Land 22 (responsive) last: it touches most
 screens and would conflict with everything else in flight. 23 (dark mode)
 is independent but coordinate its file sweep with 22.
+
+**Batch 24–31 (product expansion, July 2026):** 24 (i18n) and 25 (loading
+system) first — both are sweeps that everything later inherits, so land
+them before new surfaces; they conflict with 22/23 the same way those
+conflict with each other (coordinate). Then 31 (reminders — smallest) and
+27 (dashboard summary), which have merge-before-backend fallbacks. 26
+(checkout), 28 (chat), 29 (stats), 30 (calendar sync) are independent of
+each other and mock-first — order by product priority; each is blocked
+from *real*-API verification on its proposal branch
+(`feature/payment-checkout-api`, `feature/lobby-chat-api`,
+`feature/lobby-statistics-api`, `feature/calendar-ics-integration`,
+`feature/user-locale-preference`, `feature/event-reminder-scheduler`,
+`feature/dashboard-summary-api` — see
+`backend/lined/docs/experiment-tasks.md`).
 
 ## Conventions for every task
 
