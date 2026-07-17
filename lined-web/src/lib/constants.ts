@@ -94,4 +94,7 @@ export const QUERY_KEYS = {
   lobbyNotificationPreferences: (lobbyId: number) =>
     ['notifications', 'lobby-preferences', lobbyId] as const,
   myNotifications: ['notifications', 'mine'] as const,
+  plans: ['plans'] as const,
+  activeSubscription: (userId: number) => ['subscriptions', userId, 'active'] as const,
+  subscriptionHistory: (userId: number) => ['subscriptions', userId, 'history'] as const,
 } as const;
