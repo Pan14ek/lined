@@ -1,5 +1,11 @@
 import type { FreeSlotDto } from '@/types';
-import { GRID_END_HOUR, GRID_START_HOUR, isSameDay, type FreeSlot } from './calendarUtils';
+import {
+  GRID_END_HOUR,
+  GRID_START_HOUR,
+  getDayBounds,
+  isSameDay,
+  type FreeSlot,
+} from './calendarUtils';
 
 const toHour = (d: Date): number => d.getHours() + d.getMinutes() / 60;
 
@@ -13,7 +19,8 @@ export function freeSlotsForDay(slots: FreeSlotDto[], day: Date): FreeSlot[] {
   for (const slot of slots) {
     const start = new Date(slot.start);
     const end = new Date(slot.end);
-    if (!isSameDay(start, day) && !isSameDay(end, day)) continue;
+    const { start: dayStart, end: dayEnd } = getDayBounds(day);
+    if (!(start < dayEnd && end > dayStart)) continue;
 
     const startHour = isSameDay(start, day)
       ? Math.max(toHour(start), GRID_START_HOUR)
