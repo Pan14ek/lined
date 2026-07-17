@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid } from './client';
 import type { SubscriptionDto } from '@/types';
 
 export function getActiveSubscription(userId: number): Promise<SubscriptionDto> {
@@ -17,5 +17,5 @@ export function startSubscription(data: {
 }
 
 export function cancelSubscription(userId: number): Promise<void> {
-  return api.post(`subscriptions/${userId}/cancel-active`).then(() => undefined);
+  return requestVoid('post', `subscriptions/${userId}/cancel-active`);
 }

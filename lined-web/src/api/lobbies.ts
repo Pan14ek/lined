@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid } from './client';
 import type { LobbyDto, LobbyCreateDto, LobbyUpdateDto, FreeSlotDto } from '@/types';
 
 export function getMyLobbies(): Promise<LobbyDto[]> {
@@ -32,5 +32,5 @@ export function removeMember(lobbyId: number, userId: number): Promise<LobbyDto>
 }
 
 export function deleteLobby(id: number): Promise<void> {
-  return api.delete(`lobbies/${id}`).then(() => undefined);
+  return requestVoid('delete', `lobbies/${id}`);
 }
