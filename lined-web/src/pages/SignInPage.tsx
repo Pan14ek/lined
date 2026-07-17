@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { HTTPError } from 'ky';
 import { AuthCard } from '@/components/AuthCard';
 import { FormField } from '@/components/FormField';
@@ -21,8 +21,10 @@ function validate(values: FormValues): Partial<Record<keyof FormValues, string>>
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const signIn = useSignIn();
   const setUserId = useAuthStore((s) => s.setUserId);
+  const resetSucceeded = searchParams.get('reset') === 'success';
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { identifier: '', password: '' },
@@ -46,6 +48,9 @@ export function SignInPage() {
 
   return (
     <AuthCard heading="Welcome back" subheading="Sign in to your Lined account">
+      {resetSucceeded && (
+        <AuthAlert variant="success" message="Password reset — sign in with your new password." />
+      )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
           <FormField
@@ -72,7 +77,11 @@ export function SignInPage() {
             placeholder="••••••••"
             error={touched.password ? errors.password : null}
           />
-          <div className="mt-1.5 text-xs text-text-secondary">Forgot password?</div>
+          <div className="mt-1.5 text-xs">
+            <Link to="/forgot-password" className="font-medium text-brand-green hover:underline">
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         {serverError && <AuthAlert message={serverError} />}

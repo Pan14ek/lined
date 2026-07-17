@@ -95,3 +95,15 @@ there is no separate mockup screen to match pixel-for-pixel.
 until they (or an agreed MVP substitute) ship — see the gap entry above for
 the proposed shape (reset-request → single-use expiring token → token
 redemption sets the new password).
+
+## Progress note (mock-only MVP)
+
+Shipped against MSW only, per an explicit decision to unblock the frontend
+work ahead of the backend gap (`feature/password-reset-flow` in
+`backend/lined/docs/experiment-tasks.md`, still `No`/not started as of this
+PR). `src/api/auth.ts`'s `requestPasswordReset`/`resetPassword` call the
+exact contract from `backend/lined/docs/api-proposals/password-reset-flow.md`
+(`POST /api/auth/password-reset-requests` → 202, `POST
+/api/auth/password-resets` → 204/400), so the client is ready to point at
+the real endpoints once they ship — no frontend changes should be needed,
+only removing this note and re-verifying against the live backend.

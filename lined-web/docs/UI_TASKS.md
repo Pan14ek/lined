@@ -65,6 +65,20 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
   `useSubscriptionHistory`, `useStartSubscription`,
   `useCancelSubscription`).
 
+- **Forgot Password flow** — `ForgotPasswordPage`, `ResetPasswordPage`:
+  `/forgot-password` (identifier form, always shows a neutral "we've sent a
+  link" message regardless of match, avoiding account enumeration) and
+  `/reset-password?token=...` (new-password + confirm fields reusing
+  `SignUpPage`'s validation; missing token shows an `AuthAlert` before any
+  form renders; a rejected token shows the same alert with a link back to
+  `/forgot-password`; success redirects to `/sign-in?reset=success`, which
+  shows a new `AuthAlert` `success` variant). **Mock-only MVP:** the backend
+  has no password-reset endpoints yet (`POST /api/auth/password-reset-requests`,
+  `POST /api/auth/password-resets` — see `backend/lined/docs/experiment-tasks.md`,
+  `feature/password-reset-flow`); this flow is only exercised against MSW
+  and cannot be verified against the real API until that gap ships.
+  `SignInPage`'s "Forgot password?" text is now a real `<Link>`.
+
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage.
 
@@ -111,7 +125,7 @@ SignInPage, SignUpPage, DashboardPage.
 | 15 | `feature/ui-15-api-contract-refresh` | Migrate `src/api`/`src/types`/MSW to the July 2026 backend contract (login, invites, new task/event fields, tasks/mine, free-slots, notifications) | [tasks/UI-15-api-contract-refresh.md](tasks/UI-15-api-contract-refresh.md) | DONE |
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | DONE |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
-| 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | TODO |
+| 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
 
 ## Suggested order
 

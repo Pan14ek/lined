@@ -231,6 +231,15 @@ export interface LoginResponseDto {
   roles: string[];
 }
 
+export interface PasswordResetRequestDto {
+  identifier: string;
+}
+
+export interface PasswordResetDto {
+  token: string;
+  newPassword: string;
+}
+
 // --- Notifications ---
 
 export interface NotificationPreferencesDto {

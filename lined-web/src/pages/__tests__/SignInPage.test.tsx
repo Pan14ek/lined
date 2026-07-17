@@ -80,4 +80,28 @@ describe('SignInPage', () => {
 
     expect(await screen.findByText('Password is required')).toBeInTheDocument();
   });
+
+  it('renders a "Forgot password?" link to /forgot-password', () => {
+    expect.assertions(1);
+    renderSignIn();
+
+    expect(screen.getByRole('link', { name: /forgot password/i })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
+  });
+
+  it('shows a success banner when redirected from a completed password reset', () => {
+    expect.assertions(1);
+    renderWithProviders(
+      <Routes>
+        <Route path="/sign-in" element={<SignInPage />} />
+      </Routes>,
+      { initialEntries: ['/sign-in?reset=success'] },
+    );
+
+    expect(
+      screen.getByText(/password reset — sign in with your new password/i),
+    ).toBeInTheDocument();
+  });
 });
