@@ -134,7 +134,7 @@ function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
         onClick={onClick}
         aria-label="Reserve this free slot"
         className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark hover:opacity-80"
-        style={{ top, height, backgroundColor: '#B4EBD0', opacity: 0.6 }}
+        style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
       >
         {height >= 40 && 'Free slot'}
       </button>
@@ -144,7 +144,7 @@ function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
   return (
     <div
       className="pointer-events-none absolute left-[2px] right-[2px] rounded-[6px] flex items-center justify-center text-[10px] font-semibold text-brand-green-dark"
-      style={{ top, height, backgroundColor: '#B4EBD0', opacity: 0.6 }}
+      style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
     >
       {height >= 40 && 'Free slot'}
     </div>

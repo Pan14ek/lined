@@ -10,7 +10,7 @@ export const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
   { label: 'Family', color: 'var(--color-lobby-family)' },
   { label: 'Friends', color: 'var(--color-lobby-friends)' },
   { label: 'Work', color: 'var(--color-lobby-work)' },
-  { label: 'Free slot', color: '#B4EBD0' },
+  { label: 'Free slot', color: 'var(--color-free-slot)' },
 ];
 
 export const LOBBY_TYPE_LABELS: Record<LobbyType, string> = {

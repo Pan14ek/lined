@@ -57,7 +57,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
 
   const legendItems: LegendItem[] = [
     { label: 'Shared event', color: lobbyAccentColor(lobby.lobbyType) },
-    { label: 'Free slot (both available)', color: '#B4EBD0' },
+    { label: 'Free slot (both available)', color: 'var(--color-free-slot)' },
   ];
 
   function handleDelete() {
