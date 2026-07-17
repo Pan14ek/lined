@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { HTTPError } from 'ky';
 import type { EventDto, LobbyDto } from '@/types';
 import { useCreateEvent } from '@/hooks/useEvents';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/calendarUtils';
+import { AuthAlert } from '@/components/AuthAlert';
 
 interface CreateEventModalProps {
   lobbies: LobbyDto[];
   onClose: () => void;
   onCreated: (event: EventDto) => void;
+  /** When set, the lobby field is locked to this id and shown as read-only. */
+  lockedLobbyId?: number;
 }
 
 interface FormState {
@@ -22,8 +26,11 @@ export function CreateEventModal({
   lobbies,
   onClose,
   onCreated,
+  lockedLobbyId,
 }: CreateEventModalProps) {
   const createEvent = useCreateEvent();
+  const lockedLobby =
+    lockedLobbyId != null ? lobbies.find((l) => l.id === lockedLobbyId) : undefined;
 
   // Default: start = now rounded to next hour, end = +1h
   const defaultStart = (() => {
@@ -36,7 +43,7 @@ export function CreateEventModal({
 
   const [form, setForm] = useState<FormState>({
     title: '',
-    lobbyId: String(lobbies[0]?.id ?? ''),
+    lobbyId: String(lockedLobbyId ?? lobbies[0]?.id ?? ''),
     startAt: toDatetimeLocal(defaultStart),
     endAt: toDatetimeLocal(defaultEnd),
     shared: true,
@@ -115,18 +122,24 @@ export function CreateEventModal({
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
                 Lobby
               </label>
-              <select
-                required
-                value={form.lobbyId}
-                onChange={(e) => set('lobbyId', e.target.value)}
-                className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary focus:border-brand-green focus:outline-none"
-              >
-                {lobbies.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+              {lockedLobby ? (
+                <div className="flex h-12 w-full items-center rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary">
+                  {lockedLobby.name}
+                </div>
+              ) : (
+                <select
+                  required
+                  value={form.lobbyId}
+                  onChange={(e) => set('lobbyId', e.target.value)}
+                  className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary focus:border-brand-green focus:outline-none"
+                >
+                  {lobbies.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Start / End */}
@@ -164,6 +177,10 @@ export function CreateEventModal({
               checked={form.shared}
               onChange={(v) => set('shared', v)}
             />
+
+            {createEvent.isError && (
+              <AuthAlert message={getCreateEventErrorMessage(createEvent.error)} />
+            )}
           </div>
 
           {/* Footer */}
@@ -187,6 +204,13 @@ export function CreateEventModal({
       </div>
     </div>
   );
+}
+
+function getCreateEventErrorMessage(error: unknown): string {
+  if (error instanceof HTTPError && error.response.status === 400) {
+    return 'Enter a valid title and time range';
+  }
+  return "Couldn't create event — please try again";
 }
 
 // ─── ToggleRow ────────────────────────────────────────────────────────────────
