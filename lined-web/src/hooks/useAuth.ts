@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { login } from '@/api/auth';
+import { login, requestPasswordReset, resetPassword } from '@/api/auth';
 import { createUser } from '@/api/users';
 
 export function useSignIn() {
@@ -8,4 +8,12 @@ export function useSignIn() {
 
 export function useSignUp() {
   return useMutation({ mutationFn: createUser });
+}
+
+export function useRequestPasswordReset() {
+  return useMutation({ mutationFn: requestPasswordReset });
+}
+
+export function useResetPassword() {
+  return useMutation({ mutationFn: resetPassword });
 }
