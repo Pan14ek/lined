@@ -5,17 +5,25 @@ import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } fro
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
 
+export interface KanbanMoveState {
+  movingTaskId: number | null;
+  moveErrors: Record<number, string>;
+}
+
+export interface KanbanActions {
+  onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
+  onDelete: (task: TaskDto) => void;
+  onQuickAdd: (status: TaskStatus) => void;
+  onDropTask: (taskId: number, status: TaskStatus) => void;
+}
+
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: TaskDto[];
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
-  movingTaskId: number | null;
-  moveErrors: Record<number, string>;
-  onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
-  onDelete: (task: TaskDto) => void;
-  onQuickAdd: (status: TaskStatus) => void;
-  onDropTask: (taskId: number, status: TaskStatus) => void;
+  moveState: KanbanMoveState;
+  actions: KanbanActions;
 }
 
 interface KanbanCardListProps {
@@ -23,10 +31,8 @@ interface KanbanCardListProps {
   tasks: TaskDto[];
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
-  movingTaskId: number | null;
-  moveErrors: Record<number, string>;
-  onMove: KanbanColumnProps['onMove'];
-  onDelete: KanbanColumnProps['onDelete'];
+  moveState: KanbanMoveState;
+  actions: Pick<KanbanActions, 'onMove' | 'onDelete'>;
 }
 
 /** The column's card stack, or an empty-state message when it has no tasks. */
@@ -35,10 +41,8 @@ const KanbanCardList = ({
   tasks,
   lobbiesById,
   assigneesById,
-  movingTaskId,
-  moveErrors,
-  onMove,
-  onDelete,
+  moveState,
+  actions,
 }: KanbanCardListProps) => {
   if (tasks.length === 0) {
     return <p className="text-xs text-text-secondary">No tasks in {TASK_STATUS_LABELS[status]}.</p>;
@@ -52,10 +56,10 @@ const KanbanCardList = ({
           task={task}
           lobby={lobbiesById.get(task.lobbyId)}
           assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
-          isMoving={movingTaskId === task.id}
-          moveError={moveErrors[task.id]}
-          onMove={onMove}
-          onDelete={onDelete}
+          isMoving={moveState.movingTaskId === task.id}
+          moveError={moveState.moveErrors[task.id]}
+          onMove={actions.onMove}
+          onDelete={actions.onDelete}
         />
       ))}
     </>
@@ -67,12 +71,8 @@ export const KanbanColumn = ({
   tasks,
   lobbiesById,
   assigneesById,
-  movingTaskId,
-  moveErrors,
-  onMove,
-  onDelete,
-  onQuickAdd,
-  onDropTask,
+  moveState,
+  actions,
 }: KanbanColumnProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -87,7 +87,7 @@ export const KanbanColumn = ({
     e.preventDefault();
     setIsDragOver(false);
     const taskId = Number(e.dataTransfer.getData(TASK_DRAG_DATA_FORMAT));
-    if (taskId) onDropTask(taskId, status);
+    if (taskId) actions.onDropTask(taskId, status);
   };
 
   return (
@@ -111,7 +111,7 @@ export const KanbanColumn = ({
         <button
           type="button"
           aria-label={KANBAN_LABELS.addTaskToColumn(TASK_STATUS_LABELS[status])}
-          onClick={() => onQuickAdd(status)}
+          onClick={() => actions.onQuickAdd(status)}
           className="ml-auto text-lg leading-none text-text-secondary hover:text-brand-green"
         >
           +
@@ -124,16 +124,14 @@ export const KanbanColumn = ({
           tasks={tasks}
           lobbiesById={lobbiesById}
           assigneesById={assigneesById}
-          movingTaskId={movingTaskId}
-          moveErrors={moveErrors}
-          onMove={onMove}
-          onDelete={onDelete}
+          moveState={moveState}
+          actions={actions}
         />
       </div>
 
       <button
         type="button"
-        onClick={() => onQuickAdd(status)}
+        onClick={() => actions.onQuickAdd(status)}
         className="mt-2.5 w-full rounded-lg border-2 border-dashed border-border py-2 text-xs font-medium text-text-secondary hover:border-brand-green hover:text-brand-green"
       >
         {KANBAN_TEXT.addTask}

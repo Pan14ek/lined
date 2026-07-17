@@ -153,18 +153,22 @@ function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
 
 // ─── DayColumn ────────────────────────────────────────────────────────────────
 
+interface DayColumnActions {
+  onEventClick: (id: number) => void;
+  onFreeSlotClick?: (slot: FreeSlot) => void;
+  onShowMore?: () => void;
+}
+
 interface DayColumnProps {
   day: Date;
   events: EventDto[];
   lobbyMap: Map<number, LobbyDto>;
   today: boolean;
   selectedEventId: number | null;
-  onEventClick: (id: number) => void;
   freeSlots: FreeSlot[];
-  onFreeSlotClick?: (slot: FreeSlot) => void;
   lanes?: Map<number, EventLane>;
   overflowCount?: number;
-  onShowMore?: () => void;
+  actions: DayColumnActions;
 }
 
 function DayColumn({
@@ -173,12 +177,10 @@ function DayColumn({
   lobbyMap,
   today,
   selectedEventId,
-  onEventClick,
   freeSlots,
-  onFreeSlotClick,
   lanes,
   overflowCount = 0,
-  onShowMore,
+  actions,
 }: DayColumnProps) {
   return (
     <div
@@ -201,7 +203,7 @@ function DayColumn({
           key={i}
           startHour={slot.startHour}
           endHour={slot.endHour}
-          onClick={onFreeSlotClick ? () => onFreeSlotClick(slot) : undefined}
+          onClick={actions.onFreeSlotClick ? () => actions.onFreeSlotClick!(slot) : undefined}
         />
       ))}
 
@@ -217,7 +219,7 @@ function DayColumn({
             displayEndAt={displayEndAt}
             lobby={lobbyMap.get(event.lobbyId)}
             isSelected={event.id === selectedEventId}
-            onClick={() => onEventClick(event.id)}
+            onClick={() => actions.onEventClick(event.id)}
             lane={laneInfo?.lane}
             laneCount={laneInfo?.laneCount}
           />
@@ -225,10 +227,10 @@ function DayColumn({
       })}
 
       {/* Overflow pill — opens the day agenda view for the remaining events */}
-      {overflowCount > 0 && onShowMore && (
+      {overflowCount > 0 && actions.onShowMore && (
         <button
           type="button"
-          onClick={onShowMore}
+          onClick={actions.onShowMore}
           className="absolute right-1 top-1 z-20 rounded-full bg-text-primary/80 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-text-primary"
         >
           +{overflowCount} more
@@ -365,11 +367,13 @@ export function WeekGrid({
                   lobbyMap={lobbyMap}
                   today={isToday(day)}
                   selectedEventId={selectedEventId}
-                  onEventClick={onEventClick}
                   freeSlots={freeSlots}
-                  onFreeSlotClick={
-                    onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
-                  }
+                  actions={{
+                    onEventClick,
+                    onFreeSlotClick: onFreeSlotClick
+                      ? (slot) => onFreeSlotClick(day, slot)
+                      : undefined,
+                  }}
                 />
               );
             }
@@ -387,14 +391,16 @@ export function WeekGrid({
                 lobbyMap={lobbyMap}
                 today={isToday(day)}
                 selectedEventId={selectedEventId}
-                onEventClick={onEventClick}
                 freeSlots={freeSlots}
-                onFreeSlotClick={
-                  onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
-                }
                 lanes={lanes}
                 overflowCount={overflowCount}
-                onShowMore={() => onDayClick(day, dayEvents)}
+                actions={{
+                  onEventClick,
+                  onFreeSlotClick: onFreeSlotClick
+                    ? (slot) => onFreeSlotClick(day, slot)
+                    : undefined,
+                  onShowMore: () => onDayClick(day, dayEvents),
+                }}
               />
             );
           })}

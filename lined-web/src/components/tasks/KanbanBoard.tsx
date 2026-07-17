@@ -7,7 +7,7 @@ import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } from '@/lib/taskUtils';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { KanbanColumn } from './KanbanColumn';
+import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
 import { KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
 
@@ -34,12 +34,8 @@ interface KanbanBoardContentProps {
   grouped: Record<TaskStatus, TaskDto[]>;
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
-  movingTaskId: number | null;
-  moveErrors: Record<number, string>;
-  onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
-  onDelete: (task: TaskDto) => void;
-  onQuickAdd: (status: TaskStatus) => void;
-  onDropTask: (taskId: number, status: TaskStatus) => void;
+  moveState: KanbanMoveState;
+  actions: KanbanActions;
 }
 
 /** Loading skeleton, error message, or the 3-column board — whichever applies. */
@@ -49,12 +45,8 @@ const KanbanBoardContent = ({
   grouped,
   lobbiesById,
   assigneesById,
-  movingTaskId,
-  moveErrors,
-  onMove,
-  onDelete,
-  onQuickAdd,
-  onDropTask,
+  moveState,
+  actions,
 }: KanbanBoardContentProps) => {
   if (isLoading) return <KanbanBoardSkeleton />;
 
@@ -71,12 +63,8 @@ const KanbanBoardContent = ({
           tasks={grouped[status]}
           lobbiesById={lobbiesById}
           assigneesById={assigneesById}
-          movingTaskId={movingTaskId}
-          moveErrors={moveErrors}
-          onMove={onMove}
-          onDelete={onDelete}
-          onQuickAdd={onQuickAdd}
-          onDropTask={onDropTask}
+          moveState={moveState}
+          actions={actions}
         />
       ))}
     </div>
@@ -185,12 +173,13 @@ export const KanbanBoard = () => {
         grouped={grouped}
         lobbiesById={lobbiesById}
         assigneesById={assigneesById}
-        movingTaskId={movingTaskId}
-        moveErrors={moveErrors}
-        onMove={handleMove}
-        onDelete={handleDelete}
-        onQuickAdd={handleQuickAdd}
-        onDropTask={handleDropTask}
+        moveState={{ movingTaskId, moveErrors }}
+        actions={{
+          onMove: handleMove,
+          onDelete: handleDelete,
+          onQuickAdd: handleQuickAdd,
+          onDropTask: handleDropTask,
+        }}
       />
 
       {pendingDelete && (
