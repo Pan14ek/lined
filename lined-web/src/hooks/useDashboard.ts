@@ -7,8 +7,8 @@ import { useAuthStore } from '@/store/auth';
 import { useMyLobbies } from './useLobbies';
 import { useUser } from './useUsers';
 
-const FREE_SLOT_WINDOW_DAYS = 7;
-const MIN_SLOT_MS = 60 * 60 * 1000; // 1 hour
+const FREE_SLOTS_WINDOW_DAYS = 7;
+const MIN_FREE_SLOT_MS = 60 * 60 * 1000; // 1 hour
 
 export interface FreeSlotBannerData {
   lobbyId: number;
@@ -31,7 +31,7 @@ export function useFreeSlotBanner(): {
   const targetLobby = lobbies?.find((l) => l.memberIds.length > 1) ?? null;
 
   const from = new Date();
-  const to = addDays(from, FREE_SLOT_WINDOW_DAYS);
+  const to = addDays(from, FREE_SLOTS_WINDOW_DAYS);
 
   const freeSlotsQuery = useQuery({
     queryKey: [
@@ -45,7 +45,7 @@ export function useFreeSlotBanner(): {
 
   const slot =
     freeSlotsQuery.data?.find(
-      (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_SLOT_MS,
+      (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_FREE_SLOT_MS,
     ) ?? null;
 
   const otherMemberId = targetLobby?.memberIds.find((id) => id !== currentUserId);
@@ -73,9 +73,6 @@ export interface FreeSlotCandidate {
   end: string;
 }
 
-const CANDIDATE_WINDOW_DAYS = 7;
-const MIN_CANDIDATE_MS = 60 * 60 * 1000; // 1 hour
-
 /**
  * Earliest ≥1h mutual free slot per multi-member lobby (next 7 days), sorted
  * soonest-first. Used by ReserveSlotModal when opened with no specific slot
@@ -87,7 +84,7 @@ export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
 } {
   const multiMemberLobbies = lobbies.filter((l) => l.memberIds.length > 1);
   const from = new Date();
-  const to = addDays(from, CANDIDATE_WINDOW_DAYS);
+  const to = addDays(from, FREE_SLOTS_WINDOW_DAYS);
   const fromKey = from.toISOString().slice(0, 10);
 
   const queries = useQueries({
@@ -100,7 +97,7 @@ export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
   const candidates: FreeSlotCandidate[] = multiMemberLobbies
     .map((lobby, i) => {
       const slot = queries[i]?.data?.find(
-        (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_CANDIDATE_MS,
+        (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_FREE_SLOT_MS,
       );
       return slot ? { lobby, start: slot.start, end: slot.end } : null;
     })
@@ -110,12 +107,10 @@ export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
   return { candidates, isLoading: queries.some((q) => q.isLoading) };
 }
 
-const LOBBY_FREE_SLOTS_WINDOW_DAYS = 7;
-
 /** Free slots for one lobby over the visible week, used by the lobby calendar tab. */
 export function useLobbyFreeSlots(lobbyId: number, weekStart: Date) {
   const from = weekStart.toISOString();
-  const to = addDays(weekStart, LOBBY_FREE_SLOTS_WINDOW_DAYS).toISOString();
+  const to = addDays(weekStart, FREE_SLOTS_WINDOW_DAYS).toISOString();
 
   return useQuery<FreeSlotDto[]>({
     queryKey: [...QUERY_KEYS.lobbyFreeSlots(lobbyId), from.slice(0, 10)],
