@@ -22,7 +22,7 @@ Every screen is directly linkable: `http://localhost:4321/#<screen-id>`
 (e.g. `/#calendar-month`). The nav script syncs `location.hash` on click and
 on load/hashchange.
 
-## 20 Screens (nav label → screen id)
+## 30 Screens (nav label → screen id)
 
 | Screen | id |
 |---|---|
@@ -46,6 +46,16 @@ on load/hashchange.
 | Notifications | `notifications` |
 | Invites | `invites` |
 | Subscription | `subscription` |
+| Event Conflict | `event-conflict` |
+| Task Detail | `task-detail` |
+| Empty Dashboard | `dashboard-empty` |
+| Mobile | `mobile` |
+| Language | `language` |
+| Loading | `loading` |
+| Checkout | `checkout` |
+| Lobby: Chat | `lobby-chat` |
+| Lobby: Stats | `lobby-stats` |
+| Calendar Sync | `calendar-sync` |
 
 ## Key Rules
 
@@ -53,7 +63,7 @@ on load/hashchange.
 2. **Never add `min-height: NNpx`** — use `flex: 1; min-height: 0` instead.
 3. **Modal overlays** need `position: absolute; inset: 0` inside `.screen.active`
    (which has `position: relative`). Don't nest them inside `overflow: hidden` containers.
-4. **Nav wraps to 2 rows** — `.screens { padding-top: 84px }`. Update if adding many nav items.
+4. **Nav row count varies** — `padScreens()` in the nav script sets `.screens` padding-top to the measured nav height on load/resize; never hard-code it.
 5. **Anastasiia's avatar initial is "An"** (not "A") — distinguishes her from Alex in shared views.
 
 ## Design Tokens
@@ -61,6 +71,7 @@ on load/hashchange.
 - Brand: `--green` `--green-lt` `--green-dk` `--sidebar` `--beige`
 - Lobby colours: `--couple` (pink) `--family` (orange) `--friends` (purple) `--work` (blue)
 - Task status: `--todo` (slate) `--inprog` (blue) `--done` (green)
+- Warnings: `--warn` `--warn-bg` `--warn-bd` (amber conflict banner)
 
 ## After Editing
 

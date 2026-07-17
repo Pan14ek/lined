@@ -66,6 +66,16 @@ to switch screens.
 | Notifications | `notifications` | Dashboard + bell dropdown open (unread rows, badge, mark all read) — UI task 16 |
 | Invites | `invites` | Dashboard with pending-invite cards (Accept / Decline) — UI task 17 |
 | Subscription | `subscription` | Current plan, available plan cards, subscription history — UI task 14 |
+| Event Conflict | `event-conflict` | New Event modal with amber conflict-warning banner + next-free-slot hint — UI task 19 |
+| Task Detail | `task-detail` | Lobby Tasks + "Task details" edit drawer (all fields, priority, delete) — UI task 20 |
+| Empty Dashboard | `dashboard-empty` | First-run dashboard: welcome hero, lobby-type cards, empty placeholders — UI task 21 |
+| Mobile | `mobile` | Two 390 px phone frames: mobile dashboard + calendar day view — UI task 22 |
+| Language | `language` | Settings: Language & Region card (English / Українська, preview strip) — UI task 24 |
+| Loading | `loading` | Dashboard mid-fetch: shimmering skeleton blocks mirroring the loaded layout — UI task 25 |
+| Checkout | `checkout` | "Upgrade to Premium" modal: period picker, order summary, hosted-payment CTA — UI task 26 |
+| Lobby: Chat | `lobby-chat` | Lobby detail — 💬 Chat tab: message bubbles, day divider, composer — UI task 28 |
+| Lobby: Stats | `lobby-stats` | Lobby detail — 📊 Stats tab: stat tiles, month picker, per-member split bars — UI task 29 |
+| Calendar Sync | `calendar-sync` | Settings: ICS feed export (copy/regenerate/revoke) + .ics import card — UI task 30 |
 
 Screens support deep links: `http://localhost:4321/#<screen-id>`. The nav
 script reads `location.hash` on load/hashchange and updates it on click.
@@ -92,6 +102,7 @@ of `:root` — always reference a variable.
 | `--todo` | `#94A3B8` | Task status: To Do |
 | `--inprog` | `#3B82F6` | Task status: In Progress |
 | `--done` | `#10B981` | Task status: Done |
+| `--warn` / `--warn-bg` / `--warn-bd` | `#B45309` / `#FEF3C7` / `#FCD34D` | Conflict-warning banner (UI task 19) |
 
 ---
 
@@ -138,7 +149,8 @@ Screens that show a modal or drawer over a base layout use:
 </div>
 ```
 
-Existing overlay screens: `create-event`, `reserve-slot`, `add-member`, `add-task`.
+Existing overlay screens: `create-event`, `reserve-slot`, `add-member`,
+`add-task`, `event-conflict`, `task-detail`, `checkout`.
 
 ---
 
@@ -185,6 +197,16 @@ Existing overlay screens: `create-event`, `reserve-slot`, `add-member`, `add-tas
 - `.btn-danger` — white with red border
 - `.btn-danger-fill` — solid red
 
+### Warnings & Empty States (tasks 19/21/22)
+- `.conflict-banner` (+ `.cb-icon` / `.cb-title` / `.cb-sub` / `.cb-hint`) — amber non-blocking conflict warning
+- `.empty-hero` / `.empty-type-row` / `.empty-type-card` / `.empty-placeholder` — first-run onboarding & empty states
+- `.phone-row` / `.phone` / `.phone-appbar` / `.phone-body` / `.phone-tabbar` / `.phone-tab` / `.phone-fab` / `.phone-caption` — 390 px responsive reference frames
+
+### Product Expansion (tasks 25/28/29)
+- `.skel` (+ `.skel-circle`) — shimmering skeleton block, sized inline per use
+- `.chat-list` / `.chat-day` / `.chat-msg` (+ `.mine`) / `.chat-bubble` / `.chat-meta` / `.chat-composer` — lobby chat tab
+- `.stat-tiles` / `.stat-tile` (+ `.st-label` / `.st-value` / `.st-sub`) / `.split-bar` — lobby stats tab
+
 ### Badges
 - `.lobby-type-badge` — Couple / Family / Friends / Work label
 - `.status-badge` — TODO / IN PROGRESS / DONE
@@ -214,9 +236,9 @@ distinguish her avatar from Alex's when both appear in the same view.
    ```html
    <a href="#" onclick="show('new-screen-id')">Label</a>
    ```
-3. If the screen height is not `84px` (nav is exactly 2 rows), update
-   `.screens { padding-top: ... }`.
-4. Take a preview screenshot to verify full-height layout.
+3. Take a preview screenshot to verify full-height layout. (The nav height
+   is measured at runtime by `padScreens()` in the nav script, which sets
+   `.screens` padding-top — no manual padding update needed.)
 
 ---
 
@@ -231,5 +253,6 @@ distinguish her avatar from Alex's when both appear in the same view.
 4. **Hard-coding hex colours** — always use a CSS variable.
 5. **Jordan still in the mockup** — the persona was renamed to Anastasiia;
    avatar initial is "An", background `var(--inprog)`.
-6. **Nav overflow** — the nav wraps to 2 rows; `padding-top` on `.screens`
-   is `84px`. If you add many more nav items, measure and update this value.
+6. **Nav overflow** — the nav wraps to a variable number of rows;
+   `padScreens()` in the nav script sets `.screens` padding-top to the
+   measured nav height on load/resize. Don't hard-code it.

@@ -18,13 +18,19 @@ npx serve -p 4321 mockups/
 # → http://localhost:4321
 ```
 
-The mockup is a single HTML file with 20 screens toggled by the top nav bar.
+The mockup is a single HTML file with 30 screens toggled by the top nav bar.
 Each screen is a `<div class="screen" id="...">`. **Deep links are
 supported**: open `http://localhost:4321/#<screen-id>` directly (e.g.
 `/#calendar-month`); the hash also updates as you click nav tabs. Screens
 exist for every task, including `create-lobby` (task 4), `calendar-month`
 (task 10), `subscription` (task 14), `notifications` (task 16), and
-`invites` (task 17).
+`invites` (task 17). The July 2026 gap-analysis batch added four more:
+`event-conflict` (task 19), `task-detail` (task 20), `dashboard-empty`
+(task 21) and `mobile` (task 22). The product-expansion batch added six:
+`language` (task 24), `loading` (task 25), `checkout` (task 26),
+`lobby-chat` (task 28), `lobby-stats` (task 29) and `calendar-sync`
+(task 30); task 31's reminder select lives on the existing `create-event`
+screen.
 
 ## Current implementation status (July 2026)
 
@@ -79,8 +85,13 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
   and cannot be verified against the real API until that gap ships.
   `SignInPage`'s "Forgot password?" text is now a real `<Link>`.
 
-**Stubs only ("coming soon" placeholders):**
-SignInPage, SignUpPage, DashboardPage.
+All 18 tasks of the original plan are DONE. A gap analysis against the
+mockups and the live app (July 2026) found the remaining holes now tracked
+as tasks 19–23: the conflict-check endpoints are wired in `src/api/events.ts`
+but never called from any UI, tasks cannot be edited after creation (and
+priority can never be set from the UI), a zero-lobby account gets blank
+screens with no onboarding, nothing is usable below ~1024 px, and the
+dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 
 ## Backend API summary
 
@@ -126,6 +137,19 @@ SignInPage, SignUpPage, DashboardPage.
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | DONE |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
 | 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
+| 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | TODO |
+| 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | TODO |
+| 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
+| 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
+| 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
+| 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | TODO |
+| 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
+| 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | TODO |
+| 27 | `feature/ui-27-dashboard-summary` | Adopt `GET /api/dashboard/summary`: one request, accurate lobby-card counts, 404 fallback | [tasks/UI-27-dashboard-summary.md](tasks/UI-27-dashboard-summary.md) | TODO |
+| 28 | `feature/ui-28-lobby-chat` | Lobby Chat tab: polling message list, optimistic send, edit/delete, chat notifications | [tasks/UI-28-lobby-chat.md](tasks/UI-28-lobby-chat.md) | TODO |
+| 29 | `feature/ui-29-lobby-stats` | Lobby Stats tab: time-together tiles, month picker, per-member split bars | [tasks/UI-29-lobby-stats.md](tasks/UI-29-lobby-stats.md) | TODO |
+| 30 | `feature/ui-30-calendar-sync` | Calendar Sync settings: ICS feed link (copy/regenerate/revoke) + .ics import | [tasks/UI-30-calendar-sync.md](tasks/UI-30-calendar-sync.md) | TODO |
+| 31 | `feature/ui-31-event-reminders` | Reminder select on event/reserve modals + EVENT_REMINDER / TASK_DUE inbox types | [tasks/UI-31-event-reminders.md](tasks/UI-31-event-reminders.md) | TODO |
 
 ## Suggested order
 
@@ -137,6 +161,26 @@ and every other task builds on it. Then 1–2 (auth + live sidebar), 3–4
 on 3 and 10; task 14 depends on 12; tasks 16/17 depend on 15; task 18 is
 blocked on the backend gap it flags (`feature/password-reset-flow` in
 `backend/lined/docs/experiment-tasks.md`) and otherwise parallelisable.
+
+**Batch 19–23 (gap analysis, July 2026):** do 20 (task edit) and 19
+(conflict warnings) first — small, independent, high user value. Then 21
+(onboarding/empty states). Land 22 (responsive) last: it touches most
+screens and would conflict with everything else in flight. 23 (dark mode)
+is independent but coordinate its file sweep with 22.
+
+**Batch 24–31 (product expansion, July 2026):** 24 (i18n) and 25 (loading
+system) first — both are sweeps that everything later inherits, so land
+them before new surfaces; they conflict with 22/23 the same way those
+conflict with each other (coordinate). Then 31 (reminders — smallest) and
+27 (dashboard summary), which have merge-before-backend fallbacks. 26
+(checkout), 28 (chat), 29 (stats), 30 (calendar sync) are independent of
+each other and mock-first — order by product priority; each is blocked
+from *real*-API verification on its proposal branch
+(`feature/payment-checkout-api`, `feature/lobby-chat-api`,
+`feature/lobby-statistics-api`, `feature/calendar-ics-integration`,
+`feature/user-locale-preference`, `feature/event-reminder-scheduler`,
+`feature/dashboard-summary-api` — see
+`backend/lined/docs/experiment-tasks.md`).
 
 ## Conventions for every task
 
