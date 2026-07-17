@@ -11,6 +11,7 @@ import { useCreateMenuStore } from '@/store/createMenu';
 export const CreateMenu = () => {
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
+  const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
 
   return (
     <DropdownMenu>
@@ -33,7 +34,7 @@ export const CreateMenu = () => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => openOverlay('reserveSlot')}
+          onClick={() => openReserveSlot()}
           className="gap-2.5 bg-brand-green-light py-2 text-brand-green-dark focus:bg-brand-green-light/80 focus:text-brand-green-dark"
         >
           <Sparkles className="h-4 w-4" />
