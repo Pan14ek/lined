@@ -26,4 +26,17 @@ export const authHandlers = [
       roles: user.roles,
     });
   }),
+
+  http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, { status: 202 })),
+
+  http.post(`${BASE}/auth/password-resets`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    if (body['token'] !== 'valid-token') {
+      return HttpResponse.json(
+        { title: 'Bad Request', detail: 'Invalid or expired reset token' },
+        { status: 400 },
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];
