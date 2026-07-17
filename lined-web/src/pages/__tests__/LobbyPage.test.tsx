@@ -38,11 +38,11 @@ describe('LobbyPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows placeholder copy for the calendar tab', async () => {
+  it('renders the lobby calendar on the calendar tab', async () => {
     expect.assertions(2);
     renderLobbyPage('/lobbies/1?tab=calendar');
 
-    expect(await screen.findByText('Lobby calendar coming soon...')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /new event/i })).toBeInTheDocument();
     expect(screen.queryByText('Plan dinner for Saturday')).not.toBeInTheDocument();
   });
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { EventDto, LobbyDto } from '@/types';
 import {
   addDays,
+  assignEventLanes,
   computeFreeSlots,
   formatDayLabel,
   formatHour,
@@ -13,22 +14,29 @@ import {
   HOUR_HEIGHT,
   isSameDay,
   isToday,
+  type EventLane,
+  type FreeSlot,
 } from '@/lib/calendarUtils';
 
 // ─── Legend ──────────────────────────────────────────────────────────────────
 
-const LEGEND_ITEMS = [
+export interface LegendItem {
+  label: string;
+  color: string;
+}
+
+const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
   { label: 'Couple', color: 'var(--color-lobby-couple)' },
   { label: 'Family', color: 'var(--color-lobby-family)' },
   { label: 'Friends', color: 'var(--color-lobby-friends)' },
   { label: 'Work', color: 'var(--color-lobby-work)' },
   { label: 'Free slot', color: '#B4EBD0' },
-] as const;
+];
 
-function CalendarLegend() {
+function CalendarLegend({ items }: { items: LegendItem[] }) {
   return (
     <div className="flex flex-shrink-0 items-center gap-5 border-t border-border bg-white px-8 py-2">
-      {LEGEND_ITEMS.map(({ label, color }) => (
+      {items.map(({ label, color }) => (
         <div key={label} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
           <span
             className="h-2.5 w-2.5 rounded-full"
@@ -79,20 +87,31 @@ interface CalendarEventProps {
   lobby?: LobbyDto;
   isSelected: boolean;
   onClick: () => void;
+  lane?: number;
+  laneCount?: number;
 }
 
-function CalendarEvent({ event, lobby, isSelected, onClick }: CalendarEventProps) {
+function CalendarEvent({ event, lobby, isSelected, onClick, lane, laneCount }: CalendarEventProps) {
   const top = getEventTop(event.startAt);
   const height = Math.max(getEventHeight(event.startAt, event.endAt), 24);
   const lobbyType = lobby?.lobbyType.toLowerCase() ?? 'couple';
 
+  const horizontal: React.CSSProperties =
+    laneCount != null && laneCount > 1
+      ? {
+          left: `calc(${((lane ?? 0) / laneCount) * 100}% + 2px)`,
+          width: `calc(${100 / laneCount}% - 4px)`,
+        }
+      : { left: 3, right: 3 };
+
   return (
     <button
       onClick={onClick}
-      className="absolute left-[3px] right-[3px] overflow-hidden rounded-[6px] px-[6px] py-1 text-left text-white transition-opacity hover:opacity-100"
+      className="absolute overflow-hidden rounded-[6px] px-[6px] py-1 text-left text-white transition-opacity hover:opacity-100"
       style={{
         top,
         height,
+        ...horizontal,
         backgroundColor: `var(--color-lobby-${lobbyType})`,
         opacity: isSelected ? 1 : 0.92,
         outline: isSelected ? '2px solid white' : 'none',
@@ -133,26 +152,28 @@ function FreeSlotBand({ startHour, endHour }: FreeSlotBandProps) {
 // ─── DayColumn ────────────────────────────────────────────────────────────────
 
 interface DayColumnProps {
-  day: Date;
   events: EventDto[];
   lobbyMap: Map<number, LobbyDto>;
   today: boolean;
   selectedEventId: number | null;
   onEventClick: (id: number) => void;
-  showFreeSlots: boolean;
+  freeSlots: FreeSlot[];
+  lanes?: Map<number, EventLane>;
+  overflowCount?: number;
+  onShowMore?: () => void;
 }
 
 function DayColumn({
-  day: _day,
   events,
   lobbyMap,
   today,
   selectedEventId,
   onEventClick,
-  showFreeSlots,
+  freeSlots,
+  lanes,
+  overflowCount = 0,
+  onShowMore,
 }: DayColumnProps) {
-  const freeSlots = showFreeSlots ? computeFreeSlots(events) : [];
-
   return (
     <div
       className={`relative flex-1 border-l border-border ${today ? 'bg-brand-green-light/25' : ''}`}
@@ -168,15 +189,31 @@ function DayColumn({
       ))}
 
       {/* Events */}
-      {events.map((event) => (
-        <CalendarEvent
-          key={event.id}
-          event={event}
-          lobby={lobbyMap.get(event.lobbyId)}
-          isSelected={event.id === selectedEventId}
-          onClick={() => onEventClick(event.id)}
-        />
-      ))}
+      {events.map((event) => {
+        const laneInfo = lanes?.get(event.id);
+        return (
+          <CalendarEvent
+            key={event.id}
+            event={event}
+            lobby={lobbyMap.get(event.lobbyId)}
+            isSelected={event.id === selectedEventId}
+            onClick={() => onEventClick(event.id)}
+            lane={laneInfo?.lane}
+            laneCount={laneInfo?.laneCount}
+          />
+        );
+      })}
+
+      {/* Overflow pill — opens the day agenda view for the remaining events */}
+      {overflowCount > 0 && onShowMore && (
+        <button
+          type="button"
+          onClick={onShowMore}
+          className="absolute right-1 top-1 z-20 rounded-full bg-text-primary/80 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-text-primary"
+        >
+          +{overflowCount} more
+        </button>
+      )}
 
       {/* Current-time indicator */}
       {today && <NowLine />}
@@ -192,7 +229,23 @@ interface WeekGridProps {
   lobbies: LobbyDto[];
   selectedEventId: number | null;
   onEventClick: (id: number) => void;
+  /** Overrides the default (client-computed) free-slot bands for a day. */
+  getFreeSlotsForDay?: (day: Date, dayEvents: EventDto[]) => FreeSlot[];
+  /** Overrides the default 5-item legend. */
+  legendItems?: LegendItem[];
+  /**
+   * Opt-in: when provided, day headers become clickable, overlapping events
+   * are laid out side-by-side, and days with more than `maxVisibleEvents`
+   * events show a "+N more" pill — all calling back with the day and its
+   * full event list. Omitted by the global calendar to keep it unchanged.
+   */
+  onDayClick?: (day: Date, dayEvents: EventDto[]) => void;
+  /** Only used when `onDayClick` is provided. Defaults to 4. */
+  maxVisibleEvents?: number;
 }
+
+const defaultGetFreeSlotsForDay = (_day: Date, dayEvents: EventDto[]): FreeSlot[] =>
+  dayEvents.length > 0 ? computeFreeSlots(dayEvents) : [];
 
 export function WeekGrid({
   weekStart,
@@ -200,6 +253,10 @@ export function WeekGrid({
   lobbies,
   selectedEventId,
   onEventClick,
+  getFreeSlotsForDay = defaultGetFreeSlotsForDay,
+  legendItems = DEFAULT_LEGEND_ITEMS,
+  onDayClick,
+  maxVisibleEvents = 4,
 }: WeekGridProps) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
@@ -220,14 +277,25 @@ export function WeekGrid({
       <div className="flex flex-shrink-0 border-b border-border bg-white" style={{ paddingLeft: 56 }}>
         {weekDays.map((day) => {
           const today = isToday(day);
+          const dayEvents = events.filter((e) => isSameDay(new Date(e.startAt), day));
           return (
             <div
               key={day.toISOString()}
+              role={onDayClick ? 'button' : undefined}
+              tabIndex={onDayClick ? 0 : undefined}
+              onClick={onDayClick ? () => onDayClick(day, dayEvents) : undefined}
+              onKeyDown={
+                onDayClick
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') onDayClick(day, dayEvents);
+                    }
+                  : undefined
+              }
               className={`relative flex-1 py-2 text-center text-xs select-none ${
                 today
                   ? 'bg-brand-green-light font-semibold text-brand-green-dark'
                   : 'text-text-secondary'
-              }`}
+              } ${onDayClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
             >
               {formatDayLabel(day)}
               {today && (
@@ -258,16 +326,39 @@ export function WeekGrid({
             const dayEvents = events.filter((e) =>
               isSameDay(new Date(e.startAt), day),
             );
+            const freeSlots = getFreeSlotsForDay(day, dayEvents);
+
+            if (!onDayClick) {
+              return (
+                <DayColumn
+                  key={day.toISOString()}
+                  events={dayEvents}
+                  lobbyMap={lobbyMap}
+                  today={isToday(day)}
+                  selectedEventId={selectedEventId}
+                  onEventClick={onEventClick}
+                  freeSlots={freeSlots}
+                />
+              );
+            }
+
+            const sorted = [...dayEvents].sort((a, b) => a.startAt.localeCompare(b.startAt));
+            const visible = sorted.slice(0, maxVisibleEvents);
+            const overflowCount = dayEvents.length - visible.length;
+            const lanes = assignEventLanes(visible);
+
             return (
               <DayColumn
                 key={day.toISOString()}
-                day={day}
-                events={dayEvents}
+                events={visible}
                 lobbyMap={lobbyMap}
                 today={isToday(day)}
                 selectedEventId={selectedEventId}
                 onEventClick={onEventClick}
-                showFreeSlots={dayEvents.length > 0}
+                freeSlots={freeSlots}
+                lanes={lanes}
+                overflowCount={overflowCount}
+                onShowMore={() => onDayClick(day, dayEvents)}
               />
             );
           })}
@@ -275,7 +366,7 @@ export function WeekGrid({
       </div>
 
       {/* Legend */}
-      <CalendarLegend />
+      <CalendarLegend items={legendItems} />
     </div>
   );
 }

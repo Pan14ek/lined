@@ -1,0 +1,120 @@
+import { useState } from 'react';
+import type { LobbyDto } from '@/types';
+import { CalendarTopBar } from '@/components/CalendarTopBar';
+import { CreateEventModal } from '@/components/CreateEventModal';
+import { EventDetailPanel } from '@/components/EventDetailPanel';
+import { WeekGrid, type LegendItem } from '@/components/WeekGrid';
+import { DayAgendaModal } from '@/components/lobby/DayAgendaModal';
+import { useLobbyWeekEvents, useDeleteEvent } from '@/hooks/useEvents';
+import { useLobbyFreeSlots } from '@/hooks/useDashboard';
+import { addDays, getWeekStart, isSameDay } from '@/lib/calendarUtils';
+import { freeSlotsForDay } from '@/lib/freeSlots';
+import type { ViewMode } from '@/store/calendar';
+
+interface LobbyCalendarViewProps {
+  lobby: LobbyDto;
+}
+
+export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
+  const [weekStart, setWeekStart] = useState(() => getWeekStart());
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [agendaDay, setAgendaDay] = useState<Date | null>(null);
+
+  const { data: events, isLoading, isError } = useLobbyWeekEvents(lobby.id, weekStart);
+  const { data: freeSlots } = useLobbyFreeSlots(lobby.id, weekStart);
+  const deleteEvent = useDeleteEvent();
+
+  const selectedEvent =
+    selectedEventId != null ? (events?.find((e) => e.id === selectedEventId) ?? null) : null;
+
+  const legendItems: LegendItem[] = [
+    { label: 'Shared event', color: `var(--color-lobby-${lobby.lobbyType.toLowerCase()})` },
+    { label: 'Free slot (both available)', color: '#B4EBD0' },
+  ];
+
+  function handleDelete() {
+    if (selectedEventId == null) return;
+    deleteEvent.mutate(selectedEventId, {
+      onSuccess: () => setSelectedEventId(null),
+    });
+  }
+
+  return (
+    <div className="relative flex h-[calc(100vh-160px)] flex-col overflow-hidden">
+      <CalendarTopBar
+        weekStart={weekStart}
+        viewMode={viewMode}
+        onPrevWeek={() => setWeekStart((s) => addDays(s, -7))}
+        onNextWeek={() => setWeekStart((s) => addDays(s, 7))}
+        onToday={() => setWeekStart(getWeekStart())}
+        onViewModeChange={setViewMode}
+        onNewEvent={() => setIsCreateModalOpen(true)}
+      />
+
+      {isLoading ? (
+        <div className="flex-1 p-6" data-testid="lobby-calendar-loading">
+          <div className="h-full animate-pulse rounded-xl bg-bg" />
+        </div>
+      ) : isError ? (
+        <p className="p-6 text-sm text-text-secondary">
+          Couldn&apos;t load the calendar. Try again later.
+        </p>
+      ) : (
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          <WeekGrid
+            weekStart={weekStart}
+            events={events ?? []}
+            lobbies={[lobby]}
+            selectedEventId={selectedEventId}
+            onEventClick={setSelectedEventId}
+            getFreeSlotsForDay={(day) => freeSlotsForDay(freeSlots ?? [], day)}
+            legendItems={legendItems}
+            onDayClick={(day) => setAgendaDay(day)}
+            maxVisibleEvents={4}
+          />
+
+          {selectedEvent && (
+            <EventDetailPanel
+              event={selectedEvent}
+              lobby={lobby}
+              onClose={() => setSelectedEventId(null)}
+              onEdit={() => {
+                /* TODO: open edit modal (Task 10) */
+              }}
+              onDelete={handleDelete}
+            />
+          )}
+        </div>
+      )}
+
+      {isCreateModalOpen && (
+        <CreateEventModal
+          lobbies={[lobby]}
+          lockedLobbyId={lobby.id}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreated={(event) => {
+            setIsCreateModalOpen(false);
+            setSelectedEventId(event.id);
+          }}
+        />
+      )}
+
+      {agendaDay && (
+        <DayAgendaModal
+          day={agendaDay}
+          events={(events ?? []).filter((e) => isSameDay(new Date(e.startAt), agendaDay))}
+          freeSlots={freeSlotsForDay(freeSlots ?? [], agendaDay)}
+          lobby={lobby}
+          selectedEventId={selectedEventId}
+          onEventClick={(id) => {
+            setAgendaDay(null);
+            setSelectedEventId(id);
+          }}
+          onClose={() => setAgendaDay(null)}
+        />
+      )}
+    </div>
+  );
+}

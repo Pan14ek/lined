@@ -223,6 +223,87 @@ export function computeFreeSlots(events: EventDto[]): FreeSlot[] {
   return freeSlots;
 }
 
+/** "2–5 PM", "9 AM–12 PM" for a grid-relative hour range. */
+export function formatHourRange(startHour: number, endHour: number): string {
+  const formatHourAmPm = (hour: number): { value: string; ampm: 'AM' | 'PM' } => {
+    const wholeHour = Math.floor(hour);
+    const ampm = wholeHour >= 12 ? 'PM' : 'AM';
+    const h = wholeHour % 12 || 12;
+    const minutes = Math.round((hour - wholeHour) * 60);
+    const value = minutes === 0 ? `${h}` : `${h}:${minutes.toString().padStart(2, '0')}`;
+    return { value, ampm };
+  };
+
+  const start = formatHourAmPm(startHour);
+  const end = formatHourAmPm(endHour);
+
+  return start.ampm === end.ampm
+    ? `${start.value}–${end.value} ${end.ampm}`
+    : `${start.value} ${start.ampm}–${end.value} ${end.ampm}`;
+}
+
+export interface EventLane {
+  lane: number;
+  laneCount: number;
+}
+
+/**
+ * Greedy sweep-line layout: assigns each event to the first lane whose
+ * previous occupant has already ended, opening a new lane otherwise. Events
+ * that overlap in time end up in the same "cluster" and share its lane count.
+ */
+export function assignEventLanes(events: EventDto[]): Map<number, EventLane> {
+  const result = new Map<number, EventLane>();
+  if (events.length === 0) return result;
+
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime(),
+  );
+
+  let clusterEventIds: number[] = [];
+  let clusterLaneCount = 0;
+  let clusterEnd = -Infinity;
+
+  const flushCluster = () => {
+    for (const id of clusterEventIds) {
+      const lane = result.get(id)?.lane ?? 0;
+      result.set(id, { lane, laneCount: clusterLaneCount });
+    }
+  };
+
+  const laneEnds: number[] = [];
+
+  for (const event of sorted) {
+    const start = new Date(event.startAt).getTime();
+    const end = new Date(event.endAt).getTime();
+
+    if (start >= clusterEnd) {
+      flushCluster();
+      clusterEventIds = [];
+      clusterLaneCount = 0;
+      laneEnds.length = 0;
+      clusterEnd = -Infinity;
+    }
+
+    let lane = laneEnds.findIndex((laneEndTime) => laneEndTime <= start);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(end);
+    } else {
+      laneEnds[lane] = end;
+    }
+
+    result.set(event.id, { lane, laneCount: 1 });
+    clusterEventIds.push(event.id);
+    clusterLaneCount = laneEnds.length;
+    clusterEnd = Math.max(clusterEnd, end);
+  }
+
+  flushCluster();
+
+  return result;
+}
+
 /** Format a Date as "YYYY-MM-DDTHH:mm" for datetime-local inputs. */
 export function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => n.toString().padStart(2, '0');

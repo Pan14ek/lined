@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import type { FreeSlotDto } from '@/types';
 import { getFreeSlots } from '@/api/lobbies';
 import { QUERY_KEYS } from '@/lib/constants';
 import { addDays } from '@/lib/calendarUtils';
@@ -62,4 +63,17 @@ export function useFreeSlotBanner(): {
       otherUsername: otherUserQuery.data?.username ?? null,
     },
   };
+}
+
+const LOBBY_FREE_SLOTS_WINDOW_DAYS = 7;
+
+/** Free slots for one lobby over the visible week, used by the lobby calendar tab. */
+export function useLobbyFreeSlots(lobbyId: number, weekStart: Date) {
+  const from = weekStart.toISOString();
+  const to = addDays(weekStart, LOBBY_FREE_SLOTS_WINDOW_DAYS).toISOString();
+
+  return useQuery<FreeSlotDto[]>({
+    queryKey: [...QUERY_KEYS.lobbyFreeSlots(lobbyId), from.slice(0, 10)],
+    queryFn: () => getFreeSlots(lobbyId, from, to),
+  });
 }
