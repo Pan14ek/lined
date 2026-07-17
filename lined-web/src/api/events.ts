@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid, toSearchParams } from './client';
 import type {
   EventDto,
   EventCreateDto,
@@ -13,7 +13,7 @@ export function listEvents(params: {
   to: string;
 }): Promise<EventDto[]> {
   return api
-    .get('calendar/events', { searchParams: params as Record<string, string | number> })
+    .get('calendar/events', { searchParams: toSearchParams(params) })
     .json<EventDto[]>();
 }
 
@@ -26,7 +26,7 @@ export function updateEvent(id: number, data: EventUpdateDto): Promise<EventDto>
 }
 
 export function deleteEvent(id: number): Promise<void> {
-  return api.delete(`calendar/events/${id}`).then(() => undefined);
+  return requestVoid('delete', `calendar/events/${id}`);
 }
 
 export function findConflicts(params: {
@@ -36,7 +36,7 @@ export function findConflicts(params: {
   requesterId: number;
 }): Promise<EventConflictDto[]> {
   return api
-    .get('calendar/conflicts', { searchParams: params as Record<string, string | number> })
+    .get('calendar/conflicts', { searchParams: toSearchParams(params) })
     .json<EventConflictDto[]>();
 }
 
@@ -47,8 +47,6 @@ export function checkUserConflict(params: {
   requesterId: number;
 }): Promise<UserConflictDto> {
   return api
-    .get('calendar/user-conflict', {
-      searchParams: params as Record<string, string | number>,
-    })
+    .get('calendar/user-conflict', { searchParams: toSearchParams(params) })
     .json<UserConflictDto>();
 }

@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid, toSearchParams } from './client';
 import type { TaskDto, TaskCreateDto, TaskUpdateDto } from '@/types';
 
 export function listTasks(params?: {
@@ -7,7 +7,7 @@ export function listTasks(params?: {
   status?: string;
 }): Promise<TaskDto[]> {
   return api
-    .get('tasks', { searchParams: params as Record<string, string | number> })
+    .get('tasks', { searchParams: toSearchParams(params ?? {}) })
     .json<TaskDto[]>();
 }
 
@@ -20,7 +20,7 @@ export function updateTask(id: number, data: TaskUpdateDto): Promise<TaskDto> {
 }
 
 export function deleteTask(id: number): Promise<void> {
-  return api.delete(`tasks/${id}`).then(() => undefined);
+  return requestVoid('delete', `tasks/${id}`);
 }
 
 export function listMyTasks(): Promise<TaskDto[]> {
