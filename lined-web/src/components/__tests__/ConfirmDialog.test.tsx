@@ -98,6 +98,54 @@ describe('ConfirmDialog', () => {
     ).toBeInTheDocument();
   });
 
+  it('disables the confirm button until the typed confirmText matches exactly', async () => {
+    expect.assertions(3);
+    const user = userEvent.setup();
+    render(
+      <ConfirmDialog
+        title="Delete lobby"
+        message="This cannot be undone."
+        confirmLabel="Delete lobby"
+        danger
+        confirmText="Alex & Anastasiia"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const confirmButton = screen.getByRole(ROLES.button, { name: 'Delete lobby' });
+    const input = screen.getByLabelText('Type "Alex & Anastasiia" to confirm');
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(input, 'Alex');
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(input, ' & Anastasiia');
+    expect(confirmButton).toBeEnabled();
+  });
+
+  it('calls onConfirm once confirmText matches and the button is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog
+        title="Delete lobby"
+        message="This cannot be undone."
+        confirmLabel="Delete lobby"
+        danger
+        confirmText="Design Team"
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Type "Design Team" to confirm'), 'Design Team');
+    await user.click(screen.getByRole(ROLES.button, { name: 'Delete lobby' }));
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onCancel when the backdrop is clicked', async () => {
     expect.assertions(1);
     const user = userEvent.setup();

@@ -69,6 +69,12 @@ export const lobbyHandlers = [
       (l) => l.id === Number(params['lobbyId']),
     );
     if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (lobby.ownerId === Number(params['userId'])) {
+      return HttpResponse.json(
+        { code: 'BAD_REQUEST', message: 'Owner cannot be removed from lobby' },
+        { status: 400 },
+      );
+    }
     return HttpResponse.json({
       ...lobby,
       memberIds: lobby.memberIds.filter(

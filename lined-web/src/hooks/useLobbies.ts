@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMyLobbies, getLobby, createLobby, updateLobby, removeMember } from '@/api/lobbies';
+import {
+  getMyLobbies,
+  getLobby,
+  createLobby,
+  updateLobby,
+  removeMember,
+  deleteLobby,
+} from '@/api/lobbies';
 import { QUERY_KEYS } from '@/lib/constants';
-import type { LobbyDto } from '@/types';
+import type { LobbyDto, LobbyUpdateDto } from '@/types';
 
 export function useMyLobbies() {
   return useQuery({
@@ -27,6 +34,27 @@ export function useCreateLobby() {
     },
   });
 }
+
+export const useUpdateLobby = (lobbyId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: LobbyUpdateDto) => updateLobby(lobbyId, data),
+    onSuccess: (lobby) => {
+      queryClient.setQueryData<LobbyDto>(QUERY_KEYS.lobbyDetail(lobbyId), lobby);
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
+    },
+  });
+};
+
+export const useDeleteLobby = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (lobbyId: number) => deleteLobby(lobbyId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
+    },
+  });
+};
 
 export const useUpdateLobbyOwner = (lobbyId: number) => {
   const queryClient = useQueryClient();

@@ -1,6 +1,6 @@
 interface ToggleRowProps {
   label: string;
-  description: string;
+  description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }
@@ -11,7 +11,7 @@ export function ToggleRow({ label, description, checked, onChange }: ToggleRowPr
     <div className="flex items-center justify-between border-b border-border py-3.5">
       <div>
         <div className="text-sm font-medium text-text-primary">{label}</div>
-        <div className="mt-0.5 text-xs text-text-secondary">{description}</div>
+        {description && <div className="mt-0.5 text-xs text-text-secondary">{description}</div>}
       </div>
       <button
         type="button"
