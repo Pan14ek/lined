@@ -9,7 +9,7 @@ import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 describe('AppShell', () => {
   beforeEach(() => {
     useAuthStore.setState({ userId: 1, token: 'token' });
-    useCreateMenuStore.setState({ isCreateLobbyOpen: false, overlay: null });
+    useCreateMenuStore.setState({ isCreateLobbyOpen: false, overlay: null, reserveSlotInitial: null });
   });
 
   function renderShell(initialEntries: string[] = ['/']) {
@@ -70,5 +70,24 @@ describe('AppShell', () => {
 
     expect(await screen.findByRole('heading', { name: 'Add Task' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Lobby')).not.toBeInTheDocument();
+  });
+
+  it('renders the reserve-slot modal when the overlay is "reserveSlot"', async () => {
+    expect.assertions(1);
+    useCreateMenuStore.setState({ overlay: 'reserveSlot', reserveSlotInitial: null });
+    renderShell();
+
+    expect(await screen.findByRole('heading', { name: 'Reserve Free Slot' })).toBeInTheDocument();
+  });
+
+  it('pre-fills the reserve-slot modal from reserveSlotInitial', async () => {
+    expect.assertions(1);
+    useCreateMenuStore.setState({
+      overlay: 'reserveSlot',
+      reserveSlotInitial: { lobbyId: 1, start: '2026-03-29T14:00:00Z', end: '2026-03-29T17:00:00Z' },
+    });
+    renderShell();
+
+    expect(await screen.findByLabelText('What would you like to do?')).toBeInTheDocument();
   });
 });

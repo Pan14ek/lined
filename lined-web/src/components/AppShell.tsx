@@ -4,7 +4,9 @@ import { TopBar } from './TopBar';
 import { CreateLobbyModal } from './CreateLobbyModal';
 import { CreateEventModal } from './CreateEventModal';
 import { AddTaskDrawer } from './AddTaskDrawer';
+import { ReserveSlotModal } from './ReserveSlotModal';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { useCalendarStore } from '@/store/calendar';
 import { useMyLobbies } from '@/hooks/useLobbies';
 
 export function AppShell() {
@@ -15,7 +17,9 @@ export function AppShell() {
   const closeCreateLobby = useCreateMenuStore((s) => s.closeCreateLobby);
   const overlay = useCreateMenuStore((s) => s.overlay);
   const taskInitialStatus = useCreateMenuStore((s) => s.taskInitialStatus);
+  const reserveSlotInitial = useCreateMenuStore((s) => s.reserveSlotInitial);
   const closeOverlay = useCreateMenuStore((s) => s.closeOverlay);
+  const setSelectedEventId = useCalendarStore((s) => s.setSelectedEventId);
   const { data: lobbies = [] } = useMyLobbies();
 
   return (
@@ -46,6 +50,19 @@ export function AppShell() {
               lockedLobbyId={lockedLobbyId}
               initialStatus={taskInitialStatus ?? undefined}
               onClose={closeOverlay}
+            />
+          )}
+
+          {overlay === 'reserveSlot' && (
+            <ReserveSlotModal
+              lobbies={lobbies}
+              initial={reserveSlotInitial}
+              onClose={closeOverlay}
+              onReserved={(event) => {
+                closeOverlay();
+                setSelectedEventId(event.id);
+                navigate('/calendar');
+              }}
             />
           )}
         </main>
