@@ -53,6 +53,30 @@ export const userHandlers = [
     );
   }),
 
+  http.patch(`${BASE}/users/:id`, async ({ params, request }) => {
+    const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
+    if (!user) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body['username'] === 'string' && !body['username'].trim()) {
+      return HttpResponse.json(
+        { code: 'VALIDATION_ERROR', message: 'username must not be blank' },
+        { status: 400 },
+      );
+    }
+    const taken = MOCK_USERS.some(
+      (u) =>
+        u.id !== user.id &&
+        (u.username === body['username'] || u.email === body['email']),
+    );
+    if (taken) {
+      return HttpResponse.json(
+        { code: 'EMAIL_EXISTS', message: 'Username or email already registered' },
+        { status: 409 },
+      );
+    }
+    return HttpResponse.json({ ...user, ...body });
+  }),
+
   http.delete(`${BASE}/users/:id`, ({ params }) => {
     const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
     if (!user) return new HttpResponse(null, { status: 404 });
