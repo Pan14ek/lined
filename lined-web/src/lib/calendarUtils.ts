@@ -1,13 +1,13 @@
 import type { EventDto, TaskStatus } from '@/types';
 
-export const GRID_START_HOUR = 8; // 8 AM
-export const GRID_END_HOUR = 22; // 10 PM
+export const GRID_START_HOUR = 1; // 1 AM
+export const GRID_END_HOUR = 24; // 12 AM (midnight)
 export const HOUR_HEIGHT = 80; // px per hour
 
 export const GRID_HOURS = Array.from(
   { length: GRID_END_HOUR - GRID_START_HOUR },
   (_, i) => i + GRID_START_HOUR,
-); // [8, 9, 10, ..., 21]
+); // [1, 2, 3, ..., 23]
 
 /** Returns the Monday of the week containing `date`. */
 export function getWeekStart(date: Date = new Date()): Date {

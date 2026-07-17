@@ -29,10 +29,12 @@ describe('freeSlotsForDay', () => {
 
   it('clips a slot to the grid start/end bounds', () => {
     expect.assertions(1);
+    // Starts just after midnight (before GRID_START_HOUR) and spills into the
+    // next day (past GRID_END_HOUR, which same-day hours can never exceed).
     const slots: FreeSlotDto[] = [
-      { start: '2026-03-28T06:00:00', end: '2026-03-28T23:00:00' },
+      { start: '2026-03-28T00:30:00', end: '2026-03-29T02:00:00' },
     ];
-    expect(freeSlotsForDay(slots, DAY)).toEqual([{ startHour: 8, endHour: 22 }]);
+    expect(freeSlotsForDay(slots, DAY)).toEqual([{ startHour: 1, endHour: 24 }]);
   });
 
   it('handles multiple slots in the same day', () => {
