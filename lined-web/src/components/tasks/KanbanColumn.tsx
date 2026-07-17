@@ -3,6 +3,7 @@ import type { DragEvent } from 'react';
 import type { LobbyDto, TaskDto, TaskStatus, UserDto } from '@/types';
 import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/lib/constants';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
+import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -16,6 +17,50 @@ interface KanbanColumnProps {
   onQuickAdd: (status: TaskStatus) => void;
   onDropTask: (taskId: number, status: TaskStatus) => void;
 }
+
+interface KanbanCardListProps {
+  status: TaskStatus;
+  tasks: TaskDto[];
+  lobbiesById: Map<number, LobbyDto>;
+  assigneesById: Map<number, UserDto | undefined>;
+  movingTaskId: number | null;
+  moveErrors: Record<number, string>;
+  onMove: KanbanColumnProps['onMove'];
+  onDelete: KanbanColumnProps['onDelete'];
+}
+
+/** The column's card stack, or an empty-state message when it has no tasks. */
+const KanbanCardList = ({
+  status,
+  tasks,
+  lobbiesById,
+  assigneesById,
+  movingTaskId,
+  moveErrors,
+  onMove,
+  onDelete,
+}: KanbanCardListProps) => {
+  if (tasks.length === 0) {
+    return <p className="text-xs text-text-secondary">No tasks in {TASK_STATUS_LABELS[status]}.</p>;
+  }
+
+  return (
+    <>
+      {tasks.map((task) => (
+        <KanbanCard
+          key={task.id}
+          task={task}
+          lobby={lobbiesById.get(task.lobbyId)}
+          assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
+          isMoving={movingTaskId === task.id}
+          moveError={moveErrors[task.id]}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
+      ))}
+    </>
+  );
+};
 
 export const KanbanColumn = ({
   status,
@@ -50,7 +95,7 @@ export const KanbanColumn = ({
       className={`flex min-w-[280px] flex-1 flex-col rounded-lg transition-colors ${
         isDragOver ? 'bg-brand-green-light/60' : ''
       }`}
-      data-testid={`kanban-column-${status}`}
+      data-testid={KANBAN_TEST_IDS.column(status)}
       onDragOver={handleDragOver}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
@@ -65,7 +110,7 @@ export const KanbanColumn = ({
         </span>
         <button
           type="button"
-          aria-label={`Add task to ${TASK_STATUS_LABELS[status]}`}
+          aria-label={KANBAN_LABELS.addTaskToColumn(TASK_STATUS_LABELS[status])}
           onClick={() => onQuickAdd(status)}
           className="ml-auto text-lg leading-none text-text-secondary hover:text-brand-green"
         >
@@ -74,21 +119,16 @@ export const KanbanColumn = ({
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {tasks.length === 0 && (
-          <p className="text-xs text-text-secondary">No tasks in {TASK_STATUS_LABELS[status]}.</p>
-        )}
-        {tasks.map((task) => (
-          <KanbanCard
-            key={task.id}
-            task={task}
-            lobby={lobbiesById.get(task.lobbyId)}
-            assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
-            isMoving={movingTaskId === task.id}
-            moveError={moveErrors[task.id]}
-            onMove={onMove}
-            onDelete={onDelete}
-          />
-        ))}
+        <KanbanCardList
+          status={status}
+          tasks={tasks}
+          lobbiesById={lobbiesById}
+          assigneesById={assigneesById}
+          movingTaskId={movingTaskId}
+          moveErrors={moveErrors}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
       </div>
 
       <button
@@ -96,7 +136,7 @@ export const KanbanColumn = ({
         onClick={() => onQuickAdd(status)}
         className="mt-2.5 w-full rounded-lg border-2 border-dashed border-border py-2 text-xs font-medium text-text-secondary hover:border-brand-green hover:text-brand-green"
       >
-        + Add task
+        {KANBAN_TEXT.addTask}
       </button>
     </div>
   );

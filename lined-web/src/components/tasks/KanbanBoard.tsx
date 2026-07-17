@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { TaskDto, TaskStatus, UserDto } from '@/types';
+import type { LobbyDto, TaskDto, TaskStatus, UserDto } from '@/types';
 import { useMyTasks, useUpdateTaskStatus, useDeleteTask } from '@/hooks/useTasks';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useUsers } from '@/hooks/useUsers';
@@ -8,17 +8,90 @@ import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } fr
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
+import { KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
+
+const SKELETON_COLUMN_COUNT = 3;
+const SKELETON_CARDS_PER_COLUMN = 2;
+
+/** Placeholder columns shown while the first `tasks/mine` fetch is in flight. */
+const KanbanBoardSkeleton = () => (
+  <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-3" data-testid={KANBAN_TEST_IDS.loading}>
+    {Array.from({ length: SKELETON_COLUMN_COUNT }, (_, columnIndex) => (
+      <div key={columnIndex} className="flex flex-col gap-2.5">
+        <div className="h-6 w-24 animate-pulse rounded bg-white" />
+        {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
+          <div key={cardIndex} className="h-20 animate-pulse rounded-lg bg-white" />
+        ))}
+      </div>
+    ))}
+  </div>
+);
+
+interface KanbanBoardContentProps {
+  isLoading: boolean;
+  isError: boolean;
+  grouped: Record<TaskStatus, TaskDto[]>;
+  lobbiesById: Map<number, LobbyDto>;
+  assigneesById: Map<number, UserDto | undefined>;
+  movingTaskId: number | null;
+  moveErrors: Record<number, string>;
+  onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
+  onDelete: (task: TaskDto) => void;
+  onQuickAdd: (status: TaskStatus) => void;
+  onDropTask: (taskId: number, status: TaskStatus) => void;
+}
+
+/** Loading skeleton, error message, or the 3-column board — whichever applies. */
+const KanbanBoardContent = ({
+  isLoading,
+  isError,
+  grouped,
+  lobbiesById,
+  assigneesById,
+  movingTaskId,
+  moveErrors,
+  onMove,
+  onDelete,
+  onQuickAdd,
+  onDropTask,
+}: KanbanBoardContentProps) => {
+  if (isLoading) return <KanbanBoardSkeleton />;
+
+  if (isError) {
+    return <p className="text-sm text-text-secondary">{KANBAN_TEXT.loadError}</p>;
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 overflow-x-auto md:flex-row">
+      {STATUS_ORDER.map((status) => (
+        <KanbanColumn
+          key={status}
+          status={status}
+          tasks={grouped[status]}
+          lobbiesById={lobbiesById}
+          assigneesById={assigneesById}
+          movingTaskId={movingTaskId}
+          moveErrors={moveErrors}
+          onMove={onMove}
+          onDelete={onDelete}
+          onQuickAdd={onQuickAdd}
+          onDropTask={onDropTask}
+        />
+      ))}
+    </div>
+  );
+};
 
 export const KanbanBoard = () => {
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { data: lobbies = [] } = useMyLobbies();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
 
-  const memberIds = Array.from(new Set(lobbies.flatMap((l) => l.memberIds)));
+  const memberIds = Array.from(new Set(lobbies.flatMap((lobby) => lobby.memberIds)));
   const memberQueries = useUsers(memberIds);
   const members = memberQueries.map((q) => q.data).filter((u): u is UserDto => !!u);
   const assigneesById = new Map(memberIds.map((id, i) => [id, memberQueries[i]?.data]));
-  const lobbiesById = new Map(lobbies.map((l) => [l.id, l]));
+  const lobbiesById = new Map(lobbies.map((lobby) => [lobby.id, lobby]));
 
   const [lobbyId, setLobbyId] = useState<number | undefined>(undefined);
   const [memberId, setMemberId] = useState<number | undefined>(undefined);
@@ -50,8 +123,7 @@ export const KanbanBoard = () => {
       { id: task.id, status: nextStatus },
       {
         onSettled: () => setMovingTaskId(null),
-        onError: () =>
-          setMoveErrors((prev) => ({ ...prev, [task.id]: "Couldn't move — try again" })),
+        onError: () => setMoveErrors((prev) => ({ ...prev, [task.id]: KANBAN_TEXT.moveError })),
       },
     );
   };
@@ -69,13 +141,25 @@ export const KanbanBoard = () => {
     moveTaskToStatus(task, status);
   };
 
+  const handleDelete = (task: TaskDto) => {
+    setDeleteError(null);
+    setPendingDelete(task);
+  };
+
+  const handleQuickAdd = (status: TaskStatus) => openOverlay('task', status);
+
   const handleDeleteConfirm = () => {
     if (!pendingDelete) return;
     setDeleteError(null);
     deleteTask.mutate(pendingDelete.id, {
       onSuccess: () => setPendingDelete(null),
-      onError: () => setDeleteError("Couldn't delete this task — please try again"),
+      onError: () => setDeleteError(KANBAN_TEXT.deleteError),
     });
+  };
+
+  const handleDeleteCancel = () => {
+    setPendingDelete(null);
+    setDeleteError(null);
   };
 
   return (
@@ -97,63 +181,34 @@ export const KanbanBoard = () => {
           onClick={() => openOverlay('task')}
           className="ml-auto h-9 rounded-lg bg-brand-green px-4 text-sm font-semibold text-white hover:bg-brand-green-dark"
         >
-          + New task
+          {KANBAN_TEXT.newTask}
         </button>
       </div>
 
-      {tasksLoading && (
-        <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-3" data-testid="kanban-loading">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex flex-col gap-2.5">
-              <div className="h-6 w-24 animate-pulse rounded bg-white" />
-              {[0, 1].map((j) => (
-                <div key={j} className="h-20 animate-pulse rounded-lg bg-white" />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!tasksLoading && tasksError && (
-        <p className="text-sm text-text-secondary">Couldn&apos;t load your tasks. Try again later.</p>
-      )}
-
-      {!tasksLoading && !tasksError && (
-        <div className="flex flex-1 flex-col gap-6 overflow-x-auto md:flex-row">
-          {STATUS_ORDER.map((status) => (
-            <KanbanColumn
-              key={status}
-              status={status}
-              tasks={grouped[status]}
-              lobbiesById={lobbiesById}
-              assigneesById={assigneesById}
-              movingTaskId={movingTaskId}
-              moveErrors={moveErrors}
-              onMove={handleMove}
-              onDelete={(task) => {
-                setDeleteError(null);
-                setPendingDelete(task);
-              }}
-              onQuickAdd={(status) => openOverlay('task', status)}
-              onDropTask={handleDropTask}
-            />
-          ))}
-        </div>
-      )}
+      <KanbanBoardContent
+        isLoading={tasksLoading}
+        isError={tasksError}
+        grouped={grouped}
+        lobbiesById={lobbiesById}
+        assigneesById={assigneesById}
+        movingTaskId={movingTaskId}
+        moveErrors={moveErrors}
+        onMove={handleMove}
+        onDelete={handleDelete}
+        onQuickAdd={handleQuickAdd}
+        onDropTask={handleDropTask}
+      />
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Delete task"
+          title={KANBAN_TEXT.deleteDialogTitle}
           message={`Delete "${pendingDelete.title}"? This can't be undone.`}
-          confirmLabel="Delete"
+          confirmLabel={KANBAN_TEXT.deleteConfirmLabel}
           danger
           isPending={deleteTask.isPending}
           error={deleteError}
           onConfirm={handleDeleteConfirm}
-          onCancel={() => {
-            setPendingDelete(null);
-            setDeleteError(null);
-          }}
+          onCancel={handleDeleteCancel}
         />
       )}
     </div>

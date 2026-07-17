@@ -4,7 +4,8 @@ import type { LobbyDto, TaskDto, UserDto } from '@/types';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
 import { getAdjacentStatus } from '@/lib/taskUtils';
 import { LOBBY_TYPE_BADGE_CLASSES, TASK_PRIORITY_COLORS } from '@/lib/constants';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AssigneeAvatar } from '@/components/AssigneeAvatar';
+import { KANBAN_LABELS, KANBAN_TEST_IDS } from './kanbanConstants';
 
 export const TASK_DRAG_DATA_FORMAT = 'application/x-lined-task-id';
 
@@ -17,6 +18,32 @@ interface KanbanCardProps {
   onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
   onDelete: (task: TaskDto) => void;
 }
+
+interface DueDateOrDoneIndicatorProps {
+  isDone: boolean;
+  dueLabel: string;
+  isUrgent: boolean;
+}
+
+/** Shows a due-date label, or a green checkmark badge once the task is done. */
+const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneIndicatorProps) => {
+  if (isDone) {
+    return (
+      <span
+        aria-label={KANBAN_LABELS.doneBadge}
+        className="flex h-4 w-4 items-center justify-center rounded-full bg-task-done text-[10px] text-white"
+      >
+        ✓
+      </span>
+    );
+  }
+
+  return (
+    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500' : 'text-text-secondary'}`}>
+      Due: {dueLabel}
+    </span>
+  );
+};
 
 export const KanbanCard = ({
   task,
@@ -41,7 +68,7 @@ export const KanbanCard = ({
 
   return (
     <div
-      data-testid={`kanban-card-${task.id}`}
+      data-testid={KANBAN_TEST_IDS.card(task.id)}
       draggable
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
@@ -76,7 +103,7 @@ export const KanbanCard = ({
             {prevStatus && (
               <button
                 type="button"
-                aria-label={`Move "${task.title}" back`}
+                aria-label={KANBAN_LABELS.moveBack(task.title)}
                 disabled={isMoving}
                 onClick={() => onMove(task, 'prev')}
                 className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
@@ -84,24 +111,11 @@ export const KanbanCard = ({
                 ←
               </button>
             )}
-            {isDone ? (
-              <span
-                aria-label="Done"
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-task-done text-[10px] text-white"
-              >
-                ✓
-              </span>
-            ) : (
-              <span
-                className={`text-xs ${due.isUrgent ? 'font-semibold text-red-500' : 'text-text-secondary'}`}
-              >
-                Due: {due.label}
-              </span>
-            )}
+            <DueDateOrDoneIndicator isDone={isDone} dueLabel={due.label} isUrgent={due.isUrgent} />
             {nextStatus && (
               <button
                 type="button"
-                aria-label={`Move "${task.title}" forward`}
+                aria-label={KANBAN_LABELS.moveForward(task.title)}
                 disabled={isMoving}
                 onClick={() => onMove(task, 'next')}
                 className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
@@ -112,22 +126,10 @@ export const KanbanCard = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {assignee ? (
-              <Avatar size="sm">
-                <AvatarFallback className="bg-brand-green text-[10px] font-semibold text-white">
-                  {assignee.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <Avatar size="sm">
-                <AvatarFallback className="bg-gray-300 text-[10px] font-semibold text-white">
-                  ?
-                </AvatarFallback>
-              </Avatar>
-            )}
+            <AssigneeAvatar assignee={assignee} size="sm" fallbackTextClassName="text-[10px]" />
             <button
               type="button"
-              aria-label={`Delete "${task.title}"`}
+              aria-label={KANBAN_LABELS.deleteTask(task.title)}
               onClick={() => onDelete(task)}
               className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500"
             >
