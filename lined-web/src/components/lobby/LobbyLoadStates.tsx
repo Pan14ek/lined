@@ -2,6 +2,7 @@ interface LobbyLoadStatesProps {
   loadingTestId: string;
 }
 
+/** Skeleton shown while a lobby is loading, shared by LobbyPage and LobbySettingsPage. */
 export function LobbyLoadingState({ loadingTestId }: LobbyLoadStatesProps) {
   return (
     <div className="flex-1 overflow-y-auto p-6">
@@ -11,6 +12,7 @@ export function LobbyLoadingState({ loadingTestId }: LobbyLoadStatesProps) {
   );
 }
 
+/** "Not found" message shown when a lobby is missing or inaccessible, shared by LobbyPage and LobbySettingsPage. */
 export function LobbyNotFoundState() {
   return (
     <div className="flex-1 overflow-y-auto p-6">
