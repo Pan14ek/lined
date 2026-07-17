@@ -19,7 +19,6 @@ function getDeleteErrorMessage(error: unknown): string {
 export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
   const navigate = useNavigate();
   const setUserId = useAuthStore((s) => s.setUserId);
-  const setToken = useAuthStore((s) => s.setToken);
   const deleteAccount = useDeleteAccount(userId ?? 0);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -27,7 +26,6 @@ export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
     deleteAccount.mutate(undefined, {
       onSuccess: () => {
         setUserId(null);
-        setToken(null);
         navigate('/sign-in');
       },
     });

@@ -23,7 +23,6 @@ export function SignInPage() {
   const navigate = useNavigate();
   const signIn = useSignIn();
   const setUserId = useAuthStore((s) => s.setUserId);
-  const setToken = useAuthStore((s) => s.setToken);
 
   const [values, setValues] = useState<FormValues>({ identifier: '', password: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
@@ -46,7 +45,6 @@ export function SignInPage() {
     signIn.mutate(values, {
       onSuccess: (res) => {
         setUserId(res.userId);
-        setToken(res.accessToken);
         navigate('/');
       },
     });
