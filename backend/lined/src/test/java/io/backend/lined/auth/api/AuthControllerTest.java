@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.auth.service.AuthService;
+import io.backend.lined.auth.service.PasswordResetService;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,12 +18,14 @@ class AuthControllerTest {
 
   @Mock
   private AuthService authService;
+  @Mock
+  private PasswordResetService passwordResetService;
 
   private AuthController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new AuthController(authService);
+    controller = new AuthController(authService, passwordResetService);
   }
 
   @Test
@@ -36,5 +39,23 @@ class AuthControllerTest {
 
     assertThat(result).isEqualTo(response);
     verify(authService).login(request);
+  }
+
+  @Test
+  void requestPasswordReset_delegatesToPasswordResetService() {
+    var request = new PasswordResetRequestDto("alice@example.com");
+
+    controller.requestPasswordReset(request);
+
+    verify(passwordResetService).requestReset(request);
+  }
+
+  @Test
+  void resetPassword_delegatesToPasswordResetService() {
+    var request = new PasswordResetDto("raw-token", "N3wP@ssword!");
+
+    controller.resetPassword(request);
+
+    verify(passwordResetService).reset(request);
   }
 }
