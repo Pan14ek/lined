@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { SettingsMenu } from '../SettingsMenu';
 
 describe('SettingsMenu', () => {
   it('renders every account, preference, and danger item with an anchor link', () => {
     expect.assertions(6);
-    render(<SettingsMenu />);
+    render(<SettingsMenu />, { wrapper: MemoryRouter });
 
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute('href', '#profile');
     expect(screen.getByRole('link', { name: 'Password & Security' })).toHaveAttribute(
@@ -25,5 +26,15 @@ describe('SettingsMenu', () => {
       '#danger-zone',
     );
     expect(screen.getByText('DANGER')).toBeInTheDocument();
+  });
+
+  it('renders the Subscription item as a route link', () => {
+    expect.assertions(1);
+    render(<SettingsMenu />, { wrapper: MemoryRouter });
+
+    expect(screen.getByRole('link', { name: 'Subscription' })).toHaveAttribute(
+      'href',
+      '/subscription',
+    );
   });
 });

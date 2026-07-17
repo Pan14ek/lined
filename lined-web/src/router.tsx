@@ -9,6 +9,7 @@ import { LobbySettingsPage } from '@/pages/LobbySettingsPage';
 import { CalendarPage } from '@/pages/CalendarPage';
 import { TasksPage } from '@/pages/TasksPage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
+import { SubscriptionPage } from '@/pages/SubscriptionPage';
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'calendar', element: <CalendarPage /> },
           { path: 'tasks', element: <TasksPage /> },
           { path: 'settings', element: <UserSettingsPage /> },
+          { path: 'subscription', element: <SubscriptionPage /> },
         ],
       },
     ],
