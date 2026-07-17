@@ -1,0 +1,78 @@
+import type { UserDto } from '@/types';
+
+interface AssigneePickerProps {
+  members: UserDto[];
+  selectedId: number | undefined;
+  onSelect: (id: number | undefined) => void;
+  isLoading?: boolean;
+}
+
+interface AssigneeOptionProps {
+  label: string;
+  initial: string;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const AssigneeOption = ({ label, initial, isSelected, onClick }: AssigneeOptionProps) => (
+  <button
+    type="button"
+    role="radio"
+    aria-checked={isSelected}
+    aria-label={label}
+    onClick={onClick}
+    className="flex flex-col items-center gap-1"
+  >
+    <div
+      className={`flex h-12 w-12 items-center justify-center rounded-full border-[3px] text-lg font-bold text-white ${
+        isSelected ? 'border-brand-green bg-brand-green' : 'border-border bg-gray-300'
+      }`}
+    >
+      {initial}
+    </div>
+    <span
+      className={`text-[11px] ${
+        isSelected ? 'font-semibold text-brand-green-dark' : 'text-text-secondary'
+      }`}
+    >
+      {label}
+    </span>
+  </button>
+);
+
+export const AssigneePicker = ({
+  members,
+  selectedId,
+  onSelect,
+  isLoading,
+}: AssigneePickerProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex gap-2.5" data-testid="assignee-picker-loading">
+        {[0, 1].map((i) => (
+          <div key={i} className="h-12 w-12 animate-pulse rounded-full bg-gray-200" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div role="radiogroup" aria-label="Assign to" className="flex flex-wrap gap-2.5">
+      <AssigneeOption
+        label="Unassigned"
+        initial="—"
+        isSelected={selectedId == null}
+        onClick={() => onSelect(undefined)}
+      />
+      {members.map((member) => (
+        <AssigneeOption
+          key={member.id}
+          label={member.username}
+          initial={member.username.charAt(0).toUpperCase()}
+          isSelected={selectedId === member.id}
+          onClick={() => onSelect(member.id)}
+        />
+      ))}
+    </div>
+  );
+};
