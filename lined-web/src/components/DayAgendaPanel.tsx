@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
 import { formatClockTime, formatFullDate } from '@/lib/calendarUtils';
+import { lobbyAccentColor } from '@/lib/constants';
 
 interface DayAgendaPanelProps {
   day: Date;
@@ -47,9 +48,7 @@ export function DayAgendaPanel({
           <ul className="flex flex-col gap-2">
             {sorted.map((event) => {
               const lobby = lobbyMap.get(event.lobbyId);
-              const accentColor = lobby
-                ? `var(--color-lobby-${lobby.lobbyType.toLowerCase()})`
-                : 'var(--color-lobby-couple)';
+              const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';
               return (
                 <li key={event.id}>
                   <button

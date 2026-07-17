@@ -19,7 +19,7 @@ import {
   type FreeSlot,
 } from '@/lib/calendarUtils';
 import { CalendarLegend } from '@/components/CalendarLegend';
-import { DEFAULT_LEGEND_ITEMS, type LegendItem } from '@/lib/constants';
+import { DEFAULT_LEGEND_ITEMS, lobbyAccentColor, type LegendItem } from '@/lib/constants';
 
 export type { LegendItem };
 
@@ -81,7 +81,7 @@ function CalendarEvent({
 }: CalendarEventProps) {
   const top = getEventTop(displayStartAt);
   const height = Math.max(getEventHeight(displayStartAt, displayEndAt), 24);
-  const lobbyType = lobby?.lobbyType.toLowerCase() ?? 'couple';
+  const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';
 
   const horizontal: React.CSSProperties =
     laneCount != null && laneCount > 1
@@ -99,7 +99,7 @@ function CalendarEvent({
         top,
         height,
         ...horizontal,
-        backgroundColor: `var(--color-lobby-${lobbyType})`,
+        backgroundColor: accentColor,
         opacity: isSelected ? 1 : 0.92,
         outline: isSelected ? '2px solid white' : 'none',
         outlineOffset: '-2px',

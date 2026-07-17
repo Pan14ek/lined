@@ -1,6 +1,7 @@
 import { X, MapPin, Sparkles } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
 import { formatClockTime, formatFullDate, formatHourRange, type FreeSlot } from '@/lib/calendarUtils';
+import { lobbyAccentColor } from '@/lib/constants';
 
 interface DayAgendaModalProps {
   day: Date;
@@ -22,7 +23,7 @@ export function DayAgendaModal({
   onClose,
 }: DayAgendaModalProps) {
   const sorted = [...events].sort((a, b) => a.startAt.localeCompare(b.startAt));
-  const accentColor = `var(--color-lobby-${lobby.lobbyType.toLowerCase()})`;
+  const accentColor = lobbyAccentColor(lobby.lobbyType);
 
   return (
     /* Backdrop */

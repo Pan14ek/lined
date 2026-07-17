@@ -27,6 +27,11 @@ export const LOBBY_TYPE_COLORS: Record<LobbyType, string> = {
   WORK: 'bg-lobby-work',
 };
 
+/** CSS var for a lobby's accent color, e.g. `var(--color-lobby-couple)`. */
+export function lobbyAccentColor(lobbyType: LobbyType): string {
+  return `var(--color-lobby-${lobbyType.toLowerCase()})`;
+}
+
 export const LOBBY_TYPE_BADGE_CLASSES: Record<LobbyType, string> = {
   COUPLE: 'bg-lobby-couple/10 text-lobby-couple',
   FAMILY: 'bg-lobby-family/10 text-lobby-family',

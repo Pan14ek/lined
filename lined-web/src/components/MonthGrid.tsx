@@ -1,6 +1,7 @@
 import type { EventDto, LobbyDto } from '@/types';
 import { CalendarLegend } from '@/components/CalendarLegend';
 import { getMonthGridDays, isSameDay, isSameMonth, isToday } from '@/lib/calendarUtils';
+import { lobbyAccentColor } from '@/lib/constants';
 
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MAX_VISIBLE_CHIPS = 3;
@@ -42,12 +43,12 @@ function MonthDayCell({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
       <div className="flex w-full flex-col gap-0.5">
         {visible.map((event) => {
           const lobby = lobbyMap.get(event.lobbyId);
-          const lobbyType = lobby?.lobbyType.toLowerCase() ?? 'couple';
+          const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';
           return (
             <span
               key={event.id}
               className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-              style={{ backgroundColor: `var(--color-lobby-${lobbyType})` }}
+              style={{ backgroundColor: accentColor }}
             >
               {event.title}
             </span>

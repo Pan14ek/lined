@@ -17,6 +17,7 @@ import {
   type FreeSlot,
 } from '@/lib/calendarUtils';
 import { freeSlotsForDay } from '@/lib/freeSlots';
+import { lobbyAccentColor } from '@/lib/constants';
 import { useCreateMenuStore } from '@/store/createMenu';
 import type { ViewMode } from '@/store/calendar';
 import type { EventDto } from '@/types';
@@ -55,7 +56,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
     selectedEventId != null ? (events?.find((e) => e.id === selectedEventId) ?? null) : null;
 
   const legendItems: LegendItem[] = [
-    { label: 'Shared event', color: `var(--color-lobby-${lobby.lobbyType.toLowerCase()})` },
+    { label: 'Shared event', color: lobbyAccentColor(lobby.lobbyType) },
     { label: 'Free slot (both available)', color: '#B4EBD0' },
   ];
 
