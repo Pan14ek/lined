@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { TaskDto } from '@/types';
+import type { TaskDto, TaskStatus } from '@/types';
 import {
   STATUS_ORDER,
   getAdjacentStatus,
@@ -28,24 +28,16 @@ function makeTask(overrides: Partial<TaskDto>): TaskDto {
 }
 
 describe('getAdjacentStatus', () => {
-  it('returns the next status in STATUS_ORDER', () => {
+  it.each<[TaskStatus, 'prev' | 'next', TaskStatus | undefined]>([
+    ['TODO', 'next', 'IN_PROGRESS'],
+    ['IN_PROGRESS', 'next', 'DONE'],
+    ['DONE', 'prev', 'IN_PROGRESS'],
+    ['IN_PROGRESS', 'prev', 'TODO'],
+    ['TODO', 'prev', undefined],
+    ['DONE', 'next', undefined],
+  ])('getAdjacentStatus(%s, %s) → %s', (status, direction, expected) => {
     expect.assertions(1);
-    expect(getAdjacentStatus('TODO', 'next')).toBe('IN_PROGRESS');
-  });
-
-  it('returns the previous status in STATUS_ORDER', () => {
-    expect.assertions(1);
-    expect(getAdjacentStatus('DONE', 'prev')).toBe('IN_PROGRESS');
-  });
-
-  it('returns undefined past the start of STATUS_ORDER', () => {
-    expect.assertions(1);
-    expect(getAdjacentStatus('TODO', 'prev')).toBeUndefined();
-  });
-
-  it('returns undefined past the end of STATUS_ORDER', () => {
-    expect.assertions(1);
-    expect(getAdjacentStatus('DONE', 'next')).toBeUndefined();
+    expect(getAdjacentStatus(status, direction)).toBe(expected);
   });
 
   it('exposes STATUS_ORDER as TODO, IN_PROGRESS, DONE', () => {
