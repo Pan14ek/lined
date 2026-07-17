@@ -10,6 +10,7 @@ import {
   type InviteTarget,
 } from '@/api/invites';
 import { QUERY_KEYS } from '@/lib/constants';
+import type { LobbyInviteDto } from '@/types';
 
 export const useLobbyInvites = (lobbyId: number | undefined) =>
   useQuery({
@@ -59,8 +60,10 @@ export const useAcceptInvite = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: number) => acceptInvite(inviteId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myInvites });
+    onSuccess: (_data, inviteId) => {
+      queryClient.setQueryData<LobbyInviteDto[]>(QUERY_KEYS.myInvites, (current) =>
+        current?.filter((invite) => invite.id !== inviteId),
+      );
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
     },
   });
@@ -70,8 +73,10 @@ export const useDeclineInvite = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: number) => declineInvite(inviteId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myInvites });
+    onSuccess: (_data, inviteId) => {
+      queryClient.setQueryData<LobbyInviteDto[]>(QUERY_KEYS.myInvites, (current) =>
+        current?.filter((invite) => invite.id !== inviteId),
+      );
     },
   });
 };
