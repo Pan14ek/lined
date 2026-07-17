@@ -44,12 +44,11 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - **Lobby Calendar tab** — `LobbyCalendarView`, `DayAgendaModal`: week grid scoped to one lobby (events filtered client-side, colored by lobby type), free-slot bands from `GET /api/lobbies/{id}/free-slots`, a simplified 2-item legend, lobby-locked event creation, and day-overflow handling (lane layout for overlapping events, a "+N more" pill past 4 visible events, click-to-open day agenda listing all events + free slots for that day). `WeekGrid` was generalised (prop-driven free slots/legend, opt-in `onDayClick`) without changing the global calendar's behaviour.
 - **Add Task drawer** — `AddTaskDrawer`, `AssigneePicker`: right-side 420px sheet with title, description, assignee picker (reusable circular avatar single-select), due date (past-date warning, non-blocking), status, and notify-assignee toggle. Single-step `POST /api/tasks` create (status/description/priority/notifyAssignee all sent directly, no PATCH follow-up). Opens from the lobby Tasks tab (lobby-locked) and the global "+ Create" menu (lobby selector, since no lobby context exists there).
 - **Global Tasks Board (kanban)** — `KanbanBoard`, `KanbanColumn`, `KanbanCard`, `KanbanFilters`: three status columns (To Do / In Progress / Done) built by client-side grouping of `useMyTasks()` (`GET /api/tasks/mine`), with lobby/member/date (All/Overdue/This Week) filters, priority bars, lobby tags, due dates, assignee avatars, done-card dimming/strikethrough, ←/→ status moves plus native HTML5 drag-and-drop between columns (both optimistic `PATCH`, rollback on error), and delete-with-confirm (`DELETE`). "+ New task" and column "+"/"+ Add task" open `AddTaskDrawer` with the column's status preselected via `useCreateMenuStore`.
+- **Reserve Free Slot modal** — `ReserveSlotModal`: three modes resolved from an optional `ReserveSlotInitial` (lobbyId/start/end) — a full slot (dashboard banner, lobby free-band click) shows a read-only lobby/member card; a time-only slot (global-calendar free-band click, no lobby context) shows an editable lobby select; no slot (create-menu entry) computes per-lobby candidates via `useFreeSlotCandidates` and lets the user pick one. Submits a shared `POST /api/calendar/events` with `notifyMembers`; read-only attendee row (lobby members auto-included). `WeekGrid` gained an opt-in `onFreeSlotClick` to make free bands clickable.
 
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage,
 UserSettingsPage, LobbySettingsPage.
-
-**Not started:** ReserveSlotModal.
 
 ## Backend API summary
 
@@ -87,7 +86,7 @@ UserSettingsPage, LobbySettingsPage.
 | 8 | `feature/ui-08-add-task-drawer` | Add Task drawer (title, assignee picker, due date, status) | [tasks/UI-08-add-task-drawer.md](tasks/UI-08-add-task-drawer.md) | DONE |
 | 9 | `feature/ui-09-tasks-kanban` | Global Tasks Board: 3-column kanban with filters and status transitions | [tasks/UI-09-tasks-kanban.md](tasks/UI-09-tasks-kanban.md) | DONE |
 | 10 | `feature/ui-10-calendar-enhancements` | Calendar polish: edit event, month view, legend | [tasks/UI-10-calendar-enhancements.md](tasks/UI-10-calendar-enhancements.md) | DONE |
-| 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | TODO |
+| 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | DONE |
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | TODO |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | TODO |
 | 14 | `feature/ui-14-subscription-page` | Subscription & Plan page: current plan, available plans, subscribe/cancel, history | [tasks/UI-14-subscription-page.md](tasks/UI-14-subscription-page.md) | TODO |

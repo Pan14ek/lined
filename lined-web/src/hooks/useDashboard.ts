@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import type { FreeSlotDto } from '@/types';
+import { useQuery, useQueries } from '@tanstack/react-query';
+import type { FreeSlotDto, LobbyDto } from '@/types';
 import { getFreeSlots } from '@/api/lobbies';
 import { QUERY_KEYS } from '@/lib/constants';
 import { addDays } from '@/lib/calendarUtils';
@@ -11,6 +11,7 @@ const FREE_SLOT_WINDOW_DAYS = 7;
 const MIN_SLOT_MS = 60 * 60 * 1000; // 1 hour
 
 export interface FreeSlotBannerData {
+  lobbyId: number;
   start: string;
   end: string;
   lobbyName: string;
@@ -57,12 +58,56 @@ export function useFreeSlotBanner(): {
   return {
     isLoading: freeSlotsQuery.isLoading,
     slot: {
+      lobbyId: targetLobby.id,
       start: slot.start,
       end: slot.end,
       lobbyName: targetLobby.name,
       otherUsername: otherUserQuery.data?.username ?? null,
     },
   };
+}
+
+export interface FreeSlotCandidate {
+  lobby: LobbyDto;
+  start: string;
+  end: string;
+}
+
+const CANDIDATE_WINDOW_DAYS = 7;
+const MIN_CANDIDATE_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Earliest ≥1h mutual free slot per multi-member lobby (next 7 days), sorted
+ * soonest-first. Used by ReserveSlotModal when opened with no specific slot
+ * (the "+ Create → Reserve Free Slot" entry point) to offer a picker.
+ */
+export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
+  candidates: FreeSlotCandidate[];
+  isLoading: boolean;
+} {
+  const multiMemberLobbies = lobbies.filter((l) => l.memberIds.length > 1);
+  const from = new Date();
+  const to = addDays(from, CANDIDATE_WINDOW_DAYS);
+  const fromKey = from.toISOString().slice(0, 10);
+
+  const queries = useQueries({
+    queries: multiMemberLobbies.map((lobby) => ({
+      queryKey: [...QUERY_KEYS.lobbyFreeSlots(lobby.id), fromKey],
+      queryFn: () => getFreeSlots(lobby.id, from.toISOString(), to.toISOString()),
+    })),
+  });
+
+  const candidates: FreeSlotCandidate[] = multiMemberLobbies
+    .map((lobby, i) => {
+      const slot = queries[i]?.data?.find(
+        (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_CANDIDATE_MS,
+      );
+      return slot ? { lobby, start: slot.start, end: slot.end } : null;
+    })
+    .filter((c): c is FreeSlotCandidate => c != null)
+    .sort((a, b) => a.start.localeCompare(b.start));
+
+  return { candidates, isLoading: queries.some((q) => q.isLoading) };
 }
 
 const LOBBY_FREE_SLOTS_WINDOW_DAYS = 7;

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { CalendarTopBar } from '@/components/CalendarTopBar';
 import { CreateEventModal } from '@/components/CreateEventModal';
 import { EventDetailPanel } from '@/components/EventDetailPanel';
+import { DayAgendaPanel } from '@/components/DayAgendaPanel';
 import { WeekGrid } from '@/components/WeekGrid';
 import { MonthGrid } from '@/components/MonthGrid';
 import { useWeekEvents, useMonthEvents, useDeleteEvent } from '@/hooks/useEvents';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useCalendarStore } from '@/store/calendar';
-import { formatMonthYear } from '@/lib/calendarUtils';
+import { useCreateMenuStore } from '@/store/createMenu';
+import { formatMonthYear, hourRangeToIso, isSameDay, type FreeSlot } from '@/lib/calendarUtils';
 import type { EventDto } from '@/types';
 
 export function CalendarPage() {
@@ -17,6 +19,7 @@ export function CalendarPage() {
     viewMode,
     selectedEventId,
     isCreateModalOpen,
+    hiddenLobbyIds,
     goToPrevWeek,
     goToNextWeek,
     goToPrevMonth,
@@ -27,15 +30,38 @@ export function CalendarPage() {
     setSelectedEventId,
     openCreateModal,
     closeCreateModal,
+    toggleLobbyVisibility,
   } = useCalendarStore();
 
   const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
+  const [agendaDay, setAgendaDay] = useState<Date | null>(null);
 
-  const { data: weekEvents = [] } = useWeekEvents(weekStart);
-  const { data: monthEvents = [] } = useMonthEvents(monthAnchor);
+  const { data: allWeekEvents = [] } = useWeekEvents(weekStart);
+  const { data: allMonthEvents = [] } = useMonthEvents(monthAnchor);
+  // Lobby-filter dropdown decluttering: same intent as Google/Outlook's
+  // per-calendar checkboxes — hidden lobbies vanish from the grid entirely,
+  // including free-slot detection (a hidden lobby's time isn't "free").
+  const weekEvents = allWeekEvents.filter((e) => !hiddenLobbyIds.includes(e.lobbyId));
+  const monthEvents = allMonthEvents.filter((e) => !hiddenLobbyIds.includes(e.lobbyId));
   const events = viewMode === 'month' ? monthEvents : weekEvents;
   const { data: lobbies = [] } = useMyLobbies();
   const deleteEvent = useDeleteEvent();
+  const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
+
+  function handleFreeSlotClick(day: Date, slot: FreeSlot) {
+    const { start, end } = hourRangeToIso(day, slot.startHour, slot.endHour);
+    openReserveSlot({ start, end });
+  }
+
+  function handleEventClick(id: number) {
+    setAgendaDay(null);
+    setSelectedEventId(id);
+  }
+
+  function handleDayClick(day: Date) {
+    setSelectedEventId(null);
+    setAgendaDay(day);
+  }
 
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
   const selectedEvent =
@@ -64,6 +90,9 @@ export function CalendarPage() {
         onToday={goToToday}
         onViewModeChange={setViewMode}
         onNewEvent={openCreateModal}
+        lobbies={lobbies}
+        hiddenLobbyIds={hiddenLobbyIds}
+        onToggleLobby={toggleLobbyVisibility}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -80,18 +109,34 @@ export function CalendarPage() {
             events={weekEvents}
             lobbies={lobbies}
             selectedEventId={selectedEventId}
-            onEventClick={setSelectedEventId}
+            onEventClick={handleEventClick}
+            onFreeSlotClick={handleFreeSlotClick}
+            onDayClick={handleDayClick}
+            maxVisibleEvents={4}
           />
         )}
 
-        {selectedEvent && selectedLobby && viewMode === 'week' && (
-          <EventDetailPanel
-            event={selectedEvent}
-            lobby={selectedLobby}
-            onClose={() => setSelectedEventId(null)}
-            onEdit={() => setEditingEvent(selectedEvent)}
-            onDelete={handleDelete}
+        {agendaDay && viewMode === 'week' ? (
+          <DayAgendaPanel
+            day={agendaDay}
+            events={weekEvents.filter((e) => isSameDay(new Date(e.startAt), agendaDay))}
+            lobbies={lobbies}
+            selectedEventId={selectedEventId}
+            onEventClick={handleEventClick}
+            onClose={() => setAgendaDay(null)}
           />
+        ) : (
+          selectedEvent &&
+          selectedLobby &&
+          viewMode === 'week' && (
+            <EventDetailPanel
+              event={selectedEvent}
+              lobby={selectedLobby}
+              onClose={() => setSelectedEventId(null)}
+              onEdit={() => setEditingEvent(selectedEvent)}
+              onDelete={handleDelete}
+            />
+          )
         )}
       </div>
 

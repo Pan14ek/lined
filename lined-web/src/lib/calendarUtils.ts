@@ -1,13 +1,13 @@
 import type { EventDto, TaskStatus } from '@/types';
 
-export const GRID_START_HOUR = 8; // 8 AM
-export const GRID_END_HOUR = 22; // 10 PM
+export const GRID_START_HOUR = 1; // 1 AM
+export const GRID_END_HOUR = 24; // 12 AM (midnight)
 export const HOUR_HEIGHT = 80; // px per hour
 
 export const GRID_HOURS = Array.from(
   { length: GRID_END_HOUR - GRID_START_HOUR },
   (_, i) => i + GRID_START_HOUR,
-); // [8, 9, 10, ..., 21]
+); // [1, 2, 3, ..., 23]
 
 /** Returns the Monday of the week containing `date`. */
 export function getWeekStart(date: Date = new Date()): Date {
@@ -209,23 +209,66 @@ export function getEventHeight(startAt: string, endAt: string): number {
   return durationHours * HOUR_HEIGHT;
 }
 
+/** True if an event starts, ends, or spans across the given day. */
+export function eventTouchesDay(event: EventDto, day: Date): boolean {
+  return (
+    isSameDay(new Date(event.startAt), day) || isSameDay(new Date(event.endAt), day)
+  );
+}
+
+/**
+ * Clips an event's start/end to `day`'s midnight-to-midnight bounds, so a
+ * multi-day event (e.g. 11:30 PM–2 AM) renders as two separate segments: a
+ * short block at the bottom of the day it starts, and a continuation at the
+ * top of the day it ends. The portion before GRID_START_HOUR on the
+ * continuation day is clipped by the grid itself, same as free slots.
+ */
+export function clipEventToDay(
+  event: EventDto,
+  day: Date,
+): { startAt: string; endAt: string } {
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = addDays(dayStart, 1);
+
+  const eventStart = new Date(event.startAt);
+  const eventEnd = new Date(event.endAt);
+
+  const start = eventStart < dayStart ? dayStart : eventStart;
+  const end = eventEnd > dayEnd ? dayEnd : eventEnd;
+
+  return { startAt: start.toISOString(), endAt: end.toISOString() };
+}
+
 export interface FreeSlot {
   startHour: number;
   endHour: number;
 }
 
-/** Compute gaps between events within the visible grid range (≥ 30 min). */
-export function computeFreeSlots(events: EventDto[]): FreeSlot[] {
+/**
+ * Compute gaps between events within the visible grid range (>= 30 min), for
+ * one specific day. Events are clipped to that day first — a plain
+ * `.getHours()` read on a midnight-spanning event's real endAt (e.g. 2 AM the
+ * next day) would come back smaller than its own start hour, making the gap
+ * logic below think the day was free again right after the event started.
+ */
+export function computeFreeSlots(events: EventDto[], day: Date): FreeSlot[] {
   if (events.length === 0) return [];
 
   const MIN_SLOT_HOURS = 0.5;
 
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  // Hours elapsed since this day's midnight, rather than getHours(), so a
+  // clipped end exactly at the next day's midnight reads as 24, not 0.
+  const hoursSinceMidnight = (d: Date): number =>
+    (d.getTime() - dayStart.getTime()) / (1000 * 60 * 60);
+
   const ranges = events
-    .map((e) => ({
-      start:
-        new Date(e.startAt).getHours() + new Date(e.startAt).getMinutes() / 60,
-      end:
-        new Date(e.endAt).getHours() + new Date(e.endAt).getMinutes() / 60,
+    .map((e) => clipEventToDay(e, day))
+    .map(({ startAt, endAt }) => ({
+      start: hoursSinceMidnight(new Date(startAt)),
+      end: hoursSinceMidnight(new Date(endAt)),
     }))
     .sort((a, b) => a.start - b.start);
 
@@ -263,6 +306,23 @@ export function formatHourRange(startHour: number, endHour: number): string {
   return start.ampm === end.ampm
     ? `${start.value}–${end.value} ${end.ampm}`
     : `${start.value} ${start.ampm}–${end.value} ${end.ampm}`;
+}
+
+/** Converts a grid-relative hour range on a given day into real ISO timestamps. */
+export function hourRangeToIso(
+  day: Date,
+  startHour: number,
+  endHour: number,
+): { start: string; end: string } {
+  const toDate = (hour: number): Date => {
+    const d = new Date(day);
+    const wholeHour = Math.floor(hour);
+    const minutes = Math.round((hour - wholeHour) * 60);
+    d.setHours(wholeHour, minutes, 0, 0);
+    return d;
+  };
+
+  return { start: toDate(startHour).toISOString(), end: toDate(endHour).toISOString() };
 }
 
 export interface EventLane {

@@ -7,9 +7,13 @@ import {
   formatFreeSlotRange,
   formatTaskDueDate,
   formatHourRange,
+  hourRangeToIso,
   assignEventLanes,
   getMonthGridDays,
   isSameMonth,
+  eventTouchesDay,
+  clipEventToDay,
+  computeFreeSlots,
 } from '../calendarUtils';
 
 afterEach(() => {
@@ -168,6 +172,167 @@ describe('formatHourRange', () => {
   it('includes minutes for a half-hour boundary', () => {
     expect.assertions(1);
     expect(formatHourRange(9.5, 11)).toBe('9:30–11 AM');
+  });
+});
+
+describe('hourRangeToIso', () => {
+  it('converts a whole-hour range on a given day to ISO timestamps', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29); // local midnight, 29 Mar 2026
+    const { start, end } = hourRangeToIso(day, 14, 17);
+    expect(new Date(start).getHours()).toBe(14);
+    expect(new Date(end).getHours()).toBe(17);
+  });
+
+  it('converts a half-hour fraction to minutes', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29);
+    const { start } = hourRangeToIso(day, 9.5, 11);
+    expect(new Date(start).getHours()).toBe(9);
+    expect(new Date(start).getMinutes()).toBe(30);
+  });
+
+  it('handles the midnight edge (hour 0)', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29);
+    const { start, end } = hourRangeToIso(day, 0, 1);
+    expect(new Date(start).getHours()).toBe(0);
+    expect(new Date(end).getHours()).toBe(1);
+  });
+
+  it('does not mutate the day passed in', () => {
+    expect.assertions(1);
+    const day = new Date(2026, 2, 29, 6, 0, 0, 0);
+    hourRangeToIso(day, 14, 17);
+    expect(day.getHours()).toBe(6);
+  });
+});
+
+describe('eventTouchesDay', () => {
+  const makeEvent = (startAt: string, endAt: string): EventDto => ({
+    id: 1,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('is true when the event starts and ends on the same given day', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T09:00:00', '2026-07-18T10:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-18T00:00:00'))).toBe(true);
+  });
+
+  it('is true for the start day of a midnight-spanning event', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-18T00:00:00'))).toBe(true);
+  });
+
+  it('is true for the end day of a midnight-spanning event', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-19T00:00:00'))).toBe(true);
+  });
+
+  it('is false for a day the event does not touch at all', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-20T00:00:00'))).toBe(false);
+  });
+});
+
+describe('clipEventToDay', () => {
+  const makeEvent = (startAt: string, endAt: string): EventDto => ({
+    id: 1,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('leaves a same-day event untouched', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T09:00:00', '2026-07-18T10:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-18T00:00:00'));
+    expect(new Date(clipped.startAt).toISOString()).toBe(new Date('2026-07-18T09:00:00').toISOString());
+    expect(new Date(clipped.endAt).toISOString()).toBe(new Date('2026-07-18T10:00:00').toISOString());
+  });
+
+  it('clips the end to midnight on the start day of a midnight-spanning event', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-18T00:00:00'));
+    expect(new Date(clipped.startAt).toISOString()).toBe(new Date('2026-07-18T23:30:00').toISOString());
+    expect(new Date(clipped.endAt).getHours()).toBe(0);
+  });
+
+  it('clips the start to midnight on the end day of a midnight-spanning event', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-19T00:00:00'));
+    expect(new Date(clipped.startAt).getHours()).toBe(0);
+    expect(new Date(clipped.endAt).toISOString()).toBe(new Date('2026-07-19T02:00:00').toISOString());
+  });
+});
+
+describe('computeFreeSlots', () => {
+  const makeEvent = (id: number, startAt: string, endAt: string): EventDto => ({
+    id,
+    title: `Event ${id}`,
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('caps the free slot before a midnight-spanning event at its real start, not GRID_END_HOUR', () => {
+    expect.assertions(1);
+    // A gap from early evening up to 11:30 PM, when Movie Night starts and
+    // runs past midnight — the bug this guards: raw .getHours() on the 2 AM
+    // end reads smaller than 23.5, so cursor never advances past the event's
+    // start and the loop wrongly reports the day free all the way to 12 AM.
+    const events = [
+      makeEvent(1, '2026-07-18T20:00:00', '2026-07-18T21:00:00'),
+      makeEvent(2, '2026-07-18T23:30:00', '2026-07-19T02:00:00'),
+    ];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    const trailingSlot = slots[slots.length - 1]!;
+    expect(trailingSlot).toEqual({ startHour: 21, endHour: 23.5 });
+  });
+
+  it('reports no free time after a midnight-spanning event that runs to the end of the day', () => {
+    expect.assertions(1);
+    const events = [makeEvent(1, '2026-07-18T23:30:00', '2026-07-19T02:00:00')];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    expect(slots.some((s) => s.endHour === 24)).toBe(false);
+  });
+
+  it('still computes ordinary same-day gaps correctly', () => {
+    expect.assertions(1);
+    const events = [makeEvent(1, '2026-07-18T09:00:00', '2026-07-18T10:00:00')];
+    const slots = computeFreeSlots(events, new Date('2026-07-18T00:00:00'));
+
+    expect(slots).toEqual([
+      { startHour: 1, endHour: 9 },
+      { startHour: 10, endHour: 24 },
+    ]);
   });
 });
 

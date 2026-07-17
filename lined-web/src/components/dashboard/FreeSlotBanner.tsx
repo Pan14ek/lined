@@ -5,9 +5,10 @@ import { formatFreeSlotRange } from '@/lib/calendarUtils';
 interface FreeSlotBannerProps {
   slot: FreeSlotBannerData | null;
   isLoading: boolean;
+  onPlan?: (slot: FreeSlotBannerData) => void;
 }
 
-export function FreeSlotBanner({ slot, isLoading }: FreeSlotBannerProps) {
+export function FreeSlotBanner({ slot, isLoading, onPlan }: FreeSlotBannerProps) {
   if (isLoading || !slot) return null;
 
   return (
@@ -20,9 +21,13 @@ export function FreeSlotBanner({ slot, isLoading }: FreeSlotBannerProps) {
           {formatFreeSlotRange(slot.start, slot.end)}
         </p>
       </div>
-      <span className="flex-shrink-0 text-xs font-semibold text-brand-green-dark">
+      <button
+        type="button"
+        onClick={() => onPlan?.(slot)}
+        className="flex-shrink-0 text-xs font-semibold text-brand-green-dark hover:underline"
+      >
         Plan something →
-      </span>
+      </button>
     </div>
   );
 }

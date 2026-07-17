@@ -3,7 +3,9 @@ import type { EventDto, LobbyDto } from '@/types';
 import {
   addDays,
   assignEventLanes,
+  clipEventToDay,
   computeFreeSlots,
+  eventTouchesDay,
   formatDayLabel,
   formatHour,
   getEventHeight,
@@ -12,7 +14,6 @@ import {
   GRID_HOURS,
   GRID_START_HOUR,
   HOUR_HEIGHT,
-  isSameDay,
   isToday,
   type EventLane,
   type FreeSlot,
@@ -57,6 +58,10 @@ function NowLine() {
 
 interface CalendarEventProps {
   event: EventDto;
+  /** This day's slice of the event's start/end — differs from event.startAt/endAt
+   *  when the event spans midnight, so it renders as two clipped segments. */
+  displayStartAt: string;
+  displayEndAt: string;
   lobby?: LobbyDto;
   isSelected: boolean;
   onClick: () => void;
@@ -64,9 +69,18 @@ interface CalendarEventProps {
   laneCount?: number;
 }
 
-function CalendarEvent({ event, lobby, isSelected, onClick, lane, laneCount }: CalendarEventProps) {
-  const top = getEventTop(event.startAt);
-  const height = Math.max(getEventHeight(event.startAt, event.endAt), 24);
+function CalendarEvent({
+  event,
+  displayStartAt,
+  displayEndAt,
+  lobby,
+  isSelected,
+  onClick,
+  lane,
+  laneCount,
+}: CalendarEventProps) {
+  const top = getEventTop(displayStartAt);
+  const height = Math.max(getEventHeight(displayStartAt, displayEndAt), 24);
   const lobbyType = lobby?.lobbyType.toLowerCase() ?? 'couple';
 
   const horizontal: React.CSSProperties =
@@ -106,11 +120,26 @@ function CalendarEvent({ event, lobby, isSelected, onClick, lane, laneCount }: C
 interface FreeSlotBandProps {
   startHour: number;
   endHour: number;
+  onClick?: () => void;
 }
 
-function FreeSlotBand({ startHour, endHour }: FreeSlotBandProps) {
+function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
   const top = (startHour - GRID_START_HOUR) * HOUR_HEIGHT;
   const height = (endHour - startHour) * HOUR_HEIGHT;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Reserve this free slot"
+        className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark hover:opacity-80"
+        style={{ top, height, backgroundColor: '#B4EBD0', opacity: 0.6 }}
+      >
+        {height >= 40 && 'Free slot'}
+      </button>
+    );
+  }
 
   return (
     <div
@@ -125,24 +154,28 @@ function FreeSlotBand({ startHour, endHour }: FreeSlotBandProps) {
 // ─── DayColumn ────────────────────────────────────────────────────────────────
 
 interface DayColumnProps {
+  day: Date;
   events: EventDto[];
   lobbyMap: Map<number, LobbyDto>;
   today: boolean;
   selectedEventId: number | null;
   onEventClick: (id: number) => void;
   freeSlots: FreeSlot[];
+  onFreeSlotClick?: (slot: FreeSlot) => void;
   lanes?: Map<number, EventLane>;
   overflowCount?: number;
   onShowMore?: () => void;
 }
 
 function DayColumn({
+  day,
   events,
   lobbyMap,
   today,
   selectedEventId,
   onEventClick,
   freeSlots,
+  onFreeSlotClick,
   lanes,
   overflowCount = 0,
   onShowMore,
@@ -151,23 +184,37 @@ function DayColumn({
     <div
       className={`relative flex-1 border-l border-border ${today ? 'bg-brand-green-light/25' : ''}`}
     >
-      {/* Hour grid lines */}
-      {GRID_HOURS.map((h) => (
-        <div key={h} className="h-20 border-b border-border" />
-      ))}
+      {/* Hour grid lines — a single tiled background instead of GRID_HOURS.length
+          separately-bordered divs, so every line renders identically regardless
+          of scroll position or fractional column widths. */}
+      <div
+        className="pointer-events-none"
+        style={{
+          height: GRID_HOURS.length * HOUR_HEIGHT,
+          backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT - 1}px, var(--color-border) ${HOUR_HEIGHT - 1}px, var(--color-border) ${HOUR_HEIGHT}px)`,
+        }}
+      />
 
       {/* Free slot bands (behind events) */}
       {freeSlots.map((slot, i) => (
-        <FreeSlotBand key={i} startHour={slot.startHour} endHour={slot.endHour} />
+        <FreeSlotBand
+          key={i}
+          startHour={slot.startHour}
+          endHour={slot.endHour}
+          onClick={onFreeSlotClick ? () => onFreeSlotClick(slot) : undefined}
+        />
       ))}
 
       {/* Events */}
       {events.map((event) => {
         const laneInfo = lanes?.get(event.id);
+        const { startAt: displayStartAt, endAt: displayEndAt } = clipEventToDay(event, day);
         return (
           <CalendarEvent
             key={event.id}
             event={event}
+            displayStartAt={displayStartAt}
+            displayEndAt={displayEndAt}
             lobby={lobbyMap.get(event.lobbyId)}
             isSelected={event.id === selectedEventId}
             onClick={() => onEventClick(event.id)}
@@ -215,10 +262,12 @@ interface WeekGridProps {
   onDayClick?: (day: Date, dayEvents: EventDto[]) => void;
   /** Only used when `onDayClick` is provided. Defaults to 4. */
   maxVisibleEvents?: number;
+  /** Opt-in: makes green free-slot bands clickable, e.g. to open ReserveSlotModal. */
+  onFreeSlotClick?: (day: Date, slot: FreeSlot) => void;
 }
 
-const defaultGetFreeSlotsForDay = (_day: Date, dayEvents: EventDto[]): FreeSlot[] =>
-  dayEvents.length > 0 ? computeFreeSlots(dayEvents) : [];
+const defaultGetFreeSlotsForDay = (day: Date, dayEvents: EventDto[]): FreeSlot[] =>
+  dayEvents.length > 0 ? computeFreeSlots(dayEvents, day) : [];
 
 export function WeekGrid({
   weekStart,
@@ -230,6 +279,7 @@ export function WeekGrid({
   legendItems = DEFAULT_LEGEND_ITEMS,
   onDayClick,
   maxVisibleEvents = 4,
+  onFreeSlotClick,
 }: WeekGridProps) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
@@ -250,7 +300,7 @@ export function WeekGrid({
       <div className="flex flex-shrink-0 border-b border-border bg-white" style={{ paddingLeft: 56 }}>
         {weekDays.map((day) => {
           const today = isToday(day);
-          const dayEvents = events.filter((e) => isSameDay(new Date(e.startAt), day));
+          const dayEvents = events.filter((e) => eventTouchesDay(e, day));
           return (
             <div
               key={day.toISOString()}
@@ -281,8 +331,12 @@ export function WeekGrid({
 
       {/* Scrollable time grid */}
       <div ref={gridRef} className="flex flex-1 overflow-y-auto bg-white">
-        {/* Hour labels */}
-        <div className="w-14 flex-shrink-0">
+        {/* Hour labels. self-start: without it, the flex row's default
+            align-items:stretch sizes this box to the scroll container's
+            *viewport* height rather than its own (taller) content, which
+            would anchor the absolutely-positioned "12 AM" label below to
+            the wrong, visually-clipped spot. */}
+        <div className="relative w-14 flex-shrink-0 self-start">
           {GRID_HOURS.map((h) => (
             <div
               key={h}
@@ -291,26 +345,31 @@ export function WeekGrid({
               {formatHour(h)}
             </div>
           ))}
+          {/* Closing boundary label for the last row — absolutely positioned so
+              it doesn't add flow height (would desync from the day columns). */}
+          <div className="absolute bottom-0 right-2 text-[11px] text-text-muted">12 AM</div>
         </div>
 
         {/* Day columns */}
         <div className="flex flex-1 min-w-0">
           {weekDays.map((day) => {
-            const dayEvents = events.filter((e) =>
-              isSameDay(new Date(e.startAt), day),
-            );
+            const dayEvents = events.filter((e) => eventTouchesDay(e, day));
             const freeSlots = getFreeSlotsForDay(day, dayEvents);
 
             if (!onDayClick) {
               return (
                 <DayColumn
                   key={day.toISOString()}
+                  day={day}
                   events={dayEvents}
                   lobbyMap={lobbyMap}
                   today={isToday(day)}
                   selectedEventId={selectedEventId}
                   onEventClick={onEventClick}
                   freeSlots={freeSlots}
+                  onFreeSlotClick={
+                    onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
+                  }
                 />
               );
             }
@@ -323,12 +382,16 @@ export function WeekGrid({
             return (
               <DayColumn
                 key={day.toISOString()}
+                day={day}
                 events={visible}
                 lobbyMap={lobbyMap}
                 today={isToday(day)}
                 selectedEventId={selectedEventId}
                 onEventClick={onEventClick}
                 freeSlots={freeSlots}
+                onFreeSlotClick={
+                  onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
+                }
                 lanes={lanes}
                 overflowCount={overflowCount}
                 onShowMore={() => onDayClick(day, dayEvents)}

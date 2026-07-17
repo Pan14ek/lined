@@ -116,6 +116,47 @@ describe('WeekGrid — getFreeSlotsForDay override', () => {
   });
 });
 
+describe('WeekGrid — onFreeSlotClick opt-in', () => {
+  it('renders free-slot bands as non-interactive divs when the prop is omitted', () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        getFreeSlotsForDay={() => [{ startHour: 9, endHour: 10 }]}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /reserve this free slot/i })).not.toBeInTheDocument();
+  });
+
+  it('calls onFreeSlotClick with the day and slot when a band is clicked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    const onFreeSlotClick = vi.fn();
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        getFreeSlotsForDay={() => [{ startHour: 9, endHour: 10 }]}
+        onFreeSlotClick={onFreeSlotClick}
+      />,
+    );
+
+    const [band] = screen.getAllByRole('button', { name: /reserve this free slot/i });
+    await user.click(band!);
+
+    expect(onFreeSlotClick).toHaveBeenCalledTimes(1);
+    expect(onFreeSlotClick).toHaveBeenCalledWith(expect.any(Date), { startHour: 9, endHour: 10 });
+  });
+});
+
 describe('WeekGrid — onDayClick opt-in (lobby calendar behavior)', () => {
   it('caps visible events and shows a "+N more" pill', () => {
     expect.assertions(2);
@@ -196,5 +237,91 @@ describe('WeekGrid — onDayClick opt-in (lobby calendar behavior)', () => {
     const second = screen.getByText('Event 11').closest('button');
     expect(first?.style.width).toBe('calc(50% - 4px)');
     expect(second?.style.width).toBe('calc(50% - 4px)');
+  });
+});
+
+describe('WeekGrid — hour labels', () => {
+  it('shows the grid start hour and a closing "12 AM" label at the end', () => {
+    expect.assertions(2);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 AM')).toBeInTheDocument();
+    expect(screen.getByText('12 AM')).toBeInTheDocument();
+  });
+});
+
+describe('WeekGrid — midnight-spanning events', () => {
+  const midnightSpanning: EventDto = {
+    id: 20,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt: dayAt(0, 23).toISOString(), // Monday 11 PM
+    endAt: new Date(dayAt(1, 2).getTime()).toISOString(), // Tuesday 2 AM
+    timezone: 'UTC',
+    lobbyId: LOBBY.id,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  };
+
+  it('renders a clipped block on both the start day and the end day', () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText('Movie Night')).toHaveLength(2);
+  });
+
+  it("clips the start-day segment's height to midnight, not the full duration", () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    const [mondayBlock] = screen.getAllByText('Movie Night').map((el) => el.closest('button'));
+    // 11 PM -> midnight is 1h = 80px, well under the event's real 3h duration (240px).
+    expect(mondayBlock?.style.height).toBe('80px');
+  });
+
+  it('does not double-count the event when the end day is clicked (onDayClick opt-in)', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    const onDayClick = vi.fn();
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        onDayClick={onDayClick}
+      />,
+    );
+
+    await user.click(screen.getByText('Tue 31'));
+
+    const [, dayEvents] = onDayClick.mock.calls[0] as [Date, EventDto[]];
+    expect(dayEvents).toHaveLength(1);
   });
 });

@@ -10,6 +10,7 @@ import { UpcomingEventsList } from '@/components/dashboard/UpcomingEventsList';
 import { MyTasksList } from '@/components/dashboard/MyTasksList';
 import { FreeSlotBanner } from '@/components/dashboard/FreeSlotBanner';
 import { CreateMenu } from '@/components/CreateMenu';
+import { useCreateMenuStore } from '@/store/createMenu';
 
 export function DashboardPage() {
   const { data: user } = useCurrentUser();
@@ -17,6 +18,7 @@ export function DashboardPage() {
   const { data: events, isLoading: eventsLoading, isError: eventsError } = useUpcomingEvents();
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { slot, isLoading: slotLoading } = useFreeSlotBanner();
+  const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -60,7 +62,11 @@ export function DashboardPage() {
 
           <div>
             <MyTasksList tasks={tasks} isLoading={tasksLoading} isError={tasksError} />
-            <FreeSlotBanner slot={slot} isLoading={slotLoading} />
+            <FreeSlotBanner
+              slot={slot}
+              isLoading={slotLoading}
+              onPlan={(s) => openReserveSlot({ lobbyId: s.lobbyId, start: s.start, end: s.end })}
+            />
           </div>
         </div>
       </div>

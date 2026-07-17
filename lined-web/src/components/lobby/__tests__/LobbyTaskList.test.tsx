@@ -21,7 +21,9 @@ describe('LobbyTaskList', () => {
 
     expect(await screen.findByText('Plan dinner for Saturday')).toBeInTheDocument();
     expect(screen.getByText('Book restaurant reservation')).toBeInTheDocument();
-    expect(screen.getByText('All (2)')).toBeInTheDocument();
+    // Lobby 1 has 3 tasks in the fixtures: "Plan dinner..." (TODO), "Book
+    // restaurant..." (IN_PROGRESS), and "Water the plants" (DONE).
+    expect(screen.getByText('All (3)')).toBeInTheDocument();
     expect(screen.getByText('To Do (1)')).toBeInTheDocument();
   });
 

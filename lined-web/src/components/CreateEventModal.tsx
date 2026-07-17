@@ -5,6 +5,7 @@ import type { EventDto, LobbyDto } from '@/types';
 import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/calendarUtils';
 import { AuthAlert } from '@/components/AuthAlert';
+import { ToggleRow } from '@/components/ToggleRow';
 
 interface CreateEventModalProps {
   lobbies: LobbyDto[];
@@ -286,39 +287,4 @@ function getEventErrorMessage(error: unknown, isEditMode: boolean): string {
   return isEditMode
     ? "Couldn't save changes — please try again"
     : "Couldn't create event — please try again";
-}
-
-// ─── ToggleRow ────────────────────────────────────────────────────────────────
-
-interface ToggleRowProps {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}
-
-function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
-  return (
-    <div className="flex items-center justify-between border-b border-border py-3.5">
-      <div>
-        <div className="text-sm font-medium text-text-primary">{label}</div>
-        <div className="mt-0.5 text-xs text-text-secondary">{description}</div>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-brand-green' : 'bg-border'
-        }`}
-      >
-        <span
-          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-[left] ${
-            checked ? 'left-[23px]' : 'left-[3px]'
-          }`}
-        />
-      </button>
-    </div>
-  );
 }
