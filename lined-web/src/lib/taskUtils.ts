@@ -1,5 +1,5 @@
 import type { TaskDto, TaskStatus } from '@/types';
-import { addDays, getWeekStart } from './calendarUtils';
+import { addDays, getWeekStart, toLocalDateString } from './calendarUtils';
 
 export const STATUS_ORDER: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 
@@ -24,7 +24,7 @@ export const groupTasksByStatus = (tasks: TaskDto[]): Record<TaskStatus, TaskDto
 export const isTaskOverdue = (task: TaskDto, today: Date = new Date()): boolean => {
   if (task.status === 'DONE' || !task.dueDate) return false;
   const dueStr = task.dueDate.slice(0, 10);
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = toLocalDateString(today);
   return dueStr < todayStr;
 };
 

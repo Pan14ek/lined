@@ -42,6 +42,14 @@ export function getDayBounds(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+/** `YYYY-MM-DD` for `date` in the viewer's local timezone (not UTC). */
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
@@ -186,18 +194,17 @@ export function formatTaskDueDate(
   if (!dueDate) return { label: 'No due date', isUrgent: false };
 
   const dueStr = dueDate.slice(0, 10);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toLocalDateString(new Date());
 
   if (dueStr === todayStr) return { label: 'Today', isUrgent: true };
 
-  const due = new Date(`${dueStr}T00:00:00Z`);
-  const today = new Date(`${todayStr}T00:00:00Z`);
+  const due = new Date(`${dueStr}T00:00:00`);
+  const today = new Date(`${todayStr}T00:00:00`);
   const isOverdue = due.getTime() < today.getTime();
 
   const label = due.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
   });
 
   return { label, isUrgent: isOverdue };
