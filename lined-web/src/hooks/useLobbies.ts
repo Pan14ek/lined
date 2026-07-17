@@ -62,6 +62,7 @@ export const useUpdateLobbyOwner = (lobbyId: number) => {
     mutationFn: (ownerId: number) => updateLobby(lobbyId, { ownerId }),
     onSuccess: (lobby) => {
       queryClient.setQueryData<LobbyDto>(QUERY_KEYS.lobbyDetail(lobbyId), lobby);
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
     },
   });
 };
