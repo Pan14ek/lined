@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid, toSearchParams } from './client';
 import type { LobbyInviteDto } from '@/types';
 
 export type InviteTarget = { userId: number } | { userEmail: string };
@@ -8,9 +8,7 @@ export function createInvite(
   target: InviteTarget,
 ): Promise<LobbyInviteDto> {
   return api
-    .post(`lobbies/${lobbyId}/invites`, {
-      searchParams: target as Record<string, string | number>,
-    })
+    .post(`lobbies/${lobbyId}/invites`, { searchParams: toSearchParams(target) })
     .json<LobbyInviteDto>();
 }
 
@@ -28,7 +26,7 @@ export function resendInvite(
 }
 
 export function cancelInvite(lobbyId: number, inviteId: number): Promise<void> {
-  return api.delete(`lobbies/${lobbyId}/invites/${inviteId}`).then(() => undefined);
+  return requestVoid('delete', `lobbies/${lobbyId}/invites/${inviteId}`);
 }
 
 export function myInvites(): Promise<LobbyInviteDto[]> {

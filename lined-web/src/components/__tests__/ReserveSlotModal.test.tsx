@@ -11,7 +11,7 @@ const LOBBY = MOCK_LOBBIES[0]!; // id 1, members [1, 2]
 const OTHER_LOBBY = MOCK_LOBBIES[1]!; // id 2, members [1, 2]
 
 beforeEach(() => {
-  useAuthStore.setState({ userId: 1, token: 'token' });
+  useAuthStore.setState({ userId: 1 });
 });
 
 describe('ReserveSlotModal — mode A (full slot, lobby known)', () => {

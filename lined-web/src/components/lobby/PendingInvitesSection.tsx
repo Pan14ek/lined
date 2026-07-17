@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import type { LobbyInviteDto } from '@/types';
 import { useResendInvite, useCancelInvite } from '@/hooks/useInvites';
+import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { PendingInviteRow } from './PendingInviteRow';
 
 interface PendingInvitesSectionProps {
@@ -18,34 +18,21 @@ export const PendingInvitesSection = ({
 }: PendingInvitesSectionProps) => {
   const resendInvite = useResendInvite(lobbyId);
   const cancelInvite = useCancelInvite(lobbyId);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
-
-  const clearRowError = (inviteId: number) =>
-    setRowErrors((prev) => {
-      if (!(inviteId in prev)) return prev;
-      const next = { ...prev };
-      delete next[inviteId];
-      return next;
-    });
+  const { busyId, errors: rowErrors, start, finish, setError } = useRowMutationState();
 
   const handleResend = (inviteId: number) => {
-    setBusyId(inviteId);
-    clearRowError(inviteId);
+    start(inviteId);
     resendInvite.mutate(inviteId, {
-      onSettled: () => setBusyId(null),
-      onError: () =>
-        setRowErrors((prev) => ({ ...prev, [inviteId]: "Couldn't resend — try again" })),
+      onSettled: finish,
+      onError: () => setError(inviteId, "Couldn't resend — try again"),
     });
   };
 
   const handleCancel = (inviteId: number) => {
-    setBusyId(inviteId);
-    clearRowError(inviteId);
+    start(inviteId);
     cancelInvite.mutate(inviteId, {
-      onSettled: () => setBusyId(null),
-      onError: () =>
-        setRowErrors((prev) => ({ ...prev, [inviteId]: "Couldn't cancel — try again" })),
+      onSettled: finish,
+      onError: () => setError(inviteId, "Couldn't cancel — try again"),
     });
   };
 

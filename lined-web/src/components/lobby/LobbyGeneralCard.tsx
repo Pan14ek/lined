@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { HTTPError } from 'ky';
 import type { LobbyDto, LobbyType } from '@/types';
 import { useUpdateLobby } from '@/hooks/useLobbies';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { LobbyTypePicker } from '@/components/LobbyTypePicker';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '@/components/settings/SettingsRow';
@@ -12,13 +12,14 @@ interface LobbyGeneralCardProps {
 }
 
 function getLobbyUpdateErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 403) {
-    return 'Only the lobby owner can update lobby settings';
-  }
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid lobby name';
-  }
-  return 'Something went wrong — please try again';
+  return getApiErrorMessage(
+    error,
+    {
+      403: 'Only the lobby owner can update lobby settings',
+      400: 'Enter a valid lobby name',
+    },
+    'Something went wrong — please try again',
+  );
 }
 
 export const LobbyGeneralCard = ({ lobby, isOwner }: LobbyGeneralCardProps) => {

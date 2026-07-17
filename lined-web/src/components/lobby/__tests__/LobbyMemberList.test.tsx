@@ -19,7 +19,7 @@ const lobby = MOCK_LOBBIES[0]!; // id 1, ownerId 1, memberIds [1, 2] (Alex owner
 
 describe('LobbyMemberList', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
   });
 
   it('shows a loading state while members are being fetched', () => {
@@ -67,7 +67,7 @@ describe('LobbyMemberList', () => {
 
   it('hides management actions and the Pending Invites section for a non-owner viewer', async () => {
     expect.assertions(3);
-    useAuthStore.setState({ userId: 2, token: 'token' });
+    useAuthStore.setState({ userId: 2 });
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
     expect(await screen.findByText(MEMBER_CARD_TEXT.thatsYou)).toBeInTheDocument();

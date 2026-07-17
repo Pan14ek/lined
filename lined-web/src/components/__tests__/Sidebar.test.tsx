@@ -22,7 +22,7 @@ function renderSidebar() {
 
 describe('Sidebar', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
     useCreateMenuStore.setState({ isCreateLobbyOpen: false });
   });
 
@@ -94,7 +94,7 @@ describe('Sidebar', () => {
   });
 
   it('signs out and redirects to /sign-in when the sign-out button is clicked', async () => {
-    expect.assertions(3);
+    expect.assertions(2);
     const user = userEvent.setup();
     renderSidebar();
     await screen.findByText('alex_johnson');
@@ -103,6 +103,5 @@ describe('Sidebar', () => {
 
     expect(await screen.findByText('Sign In Page')).toBeInTheDocument();
     expect(useAuthStore.getState().userId).toBeNull();
-    expect(useAuthStore.getState().token).toBeNull();
   });
 });

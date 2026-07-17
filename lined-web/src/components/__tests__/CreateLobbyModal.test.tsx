@@ -24,7 +24,7 @@ function renderModal(onClose = vi.fn()) {
 
 describe('CreateLobbyModal', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
   });
 
   it('renders the name field, type picker, and hint text', () => {

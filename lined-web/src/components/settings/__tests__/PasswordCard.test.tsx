@@ -11,7 +11,7 @@ const user = MOCK_USERS[0]!;
 
 describe('PasswordCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: user.id, token: 'token' });
+    useAuthStore.setState({ userId: user.id });
   });
 
   it('keeps Change password disabled until both fields are filled in', async () => {

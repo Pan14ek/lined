@@ -33,6 +33,23 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+/** Midnight-to-midnight bounds of the day containing `date`. */
+export function getDayBounds(date: Date): { start: Date; end: Date } {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+/** `YYYY-MM-DD` for `date` in the viewer's local timezone (not UTC). */
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
@@ -71,22 +88,26 @@ export function formatDayLabel(date: Date): string {
   return `${weekday} ${date.getDate()}`;
 }
 
-/** "9 AM", "12 PM", "2 PM" */
-export function formatHour(hour: number): string {
-  if (hour === 12) return '12 PM';
-  if (hour > 12) return `${hour - 12} PM`;
-  return `${hour} AM`;
+/** Splits a fractional grid hour (e.g. 14.5) into a 12-hour value + AM/PM. */
+function toHourClock(hour: number): { value: string; ampm: 'AM' | 'PM' } {
+  const wholeHour = Math.floor(hour);
+  const ampm = wholeHour >= 12 ? 'PM' : 'AM';
+  const h = wholeHour % 12 || 12;
+  const minutes = Math.round((hour - wholeHour) * 60);
+  const value = minutes === 0 ? `${h}` : `${h}:${minutes.toString().padStart(2, '0')}`;
+  return { value, ampm };
 }
 
-/** "9:00 AM", "12 PM", "2:30 PM" */
+/** "9 AM", "12 PM", "2 PM" */
+export function formatHour(hour: number): string {
+  const { value, ampm } = toHourClock(hour);
+  return `${value} ${ampm}`;
+}
+
+/** "9 AM", "12 PM", "2:30 PM" */
 export function formatClockTime(d: Date): string {
-  const h = d.getHours();
-  const m = d.getMinutes();
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour = h % 12 || 12;
-  return m === 0
-    ? `${hour} ${ampm}`
-    : `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+  const { value, ampm } = toHourClock(d.getHours() + d.getMinutes() / 60);
+  return `${value} ${ampm}`;
 }
 
 /** "Mon 13 Apr · 9:00 – 10:00 AM" */
@@ -150,20 +171,13 @@ export function formatFreeSlotRange(start: string, end: string): string {
       ? 'Tomorrow'
       : startDate.toLocaleDateString('en-US', { weekday: 'long' });
 
-  const formatHour = (d: Date): string => {
-    const h = d.getHours();
-    const m = d.getMinutes();
-    const hour = h % 12 || 12;
-    return m === 0 ? `${hour}` : `${hour}:${m.toString().padStart(2, '0')}`;
-  };
-
-  const startAmPm = startDate.getHours() >= 12 ? 'PM' : 'AM';
-  const endAmPm = endDate.getHours() >= 12 ? 'PM' : 'AM';
+  const startClock = toHourClock(startDate.getHours() + startDate.getMinutes() / 60);
+  const endClock = toHourClock(endDate.getHours() + endDate.getMinutes() / 60);
 
   const range =
-    startAmPm === endAmPm
-      ? `${formatHour(startDate)}–${formatHour(endDate)} ${endAmPm}`
-      : `${formatHour(startDate)} ${startAmPm}–${formatHour(endDate)} ${endAmPm}`;
+    startClock.ampm === endClock.ampm
+      ? `${startClock.value}–${endClock.value} ${endClock.ampm}`
+      : `${startClock.value} ${startClock.ampm}–${endClock.value} ${endClock.ampm}`;
 
   return `${dayLabel} ${range}`;
 }
@@ -177,18 +191,17 @@ export function formatTaskDueDate(
   if (!dueDate) return { label: 'No due date', isUrgent: false };
 
   const dueStr = dueDate.slice(0, 10);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toLocalDateString(new Date());
 
   if (dueStr === todayStr) return { label: 'Today', isUrgent: true };
 
-  const due = new Date(`${dueStr}T00:00:00Z`);
-  const today = new Date(`${todayStr}T00:00:00Z`);
+  const due = new Date(`${dueStr}T00:00:00`);
+  const today = new Date(`${todayStr}T00:00:00`);
   const isOverdue = due.getTime() < today.getTime();
 
   const label = due.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
   });
 
   return { label, isUrgent: isOverdue };
@@ -211,9 +224,10 @@ export function getEventHeight(startAt: string, endAt: string): number {
 
 /** True if an event starts, ends, or spans across the given day. */
 export function eventTouchesDay(event: EventDto, day: Date): boolean {
-  return (
-    isSameDay(new Date(event.startAt), day) || isSameDay(new Date(event.endAt), day)
-  );
+  const { start: dayStart, end: dayEnd } = getDayBounds(day);
+  const eventStart = new Date(event.startAt);
+  const eventEnd = new Date(event.endAt);
+  return eventStart < dayEnd && eventEnd > dayStart;
 }
 
 /**
@@ -291,17 +305,8 @@ export function computeFreeSlots(events: EventDto[], day: Date): FreeSlot[] {
 
 /** "2–5 PM", "9 AM–12 PM" for a grid-relative hour range. */
 export function formatHourRange(startHour: number, endHour: number): string {
-  const formatHourAmPm = (hour: number): { value: string; ampm: 'AM' | 'PM' } => {
-    const wholeHour = Math.floor(hour);
-    const ampm = wholeHour >= 12 ? 'PM' : 'AM';
-    const h = wholeHour % 12 || 12;
-    const minutes = Math.round((hour - wholeHour) * 60);
-    const value = minutes === 0 ? `${h}` : `${h}:${minutes.toString().padStart(2, '0')}`;
-    return { value, ampm };
-  };
-
-  const start = formatHourAmPm(startHour);
-  const end = formatHourAmPm(endHour);
+  const start = toHourClock(startHour);
+  const end = toHourClock(endHour);
 
   return start.ampm === end.ampm
     ? `${start.value}–${end.value} ${end.ampm}`

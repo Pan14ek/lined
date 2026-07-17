@@ -1,6 +1,7 @@
 import { Clock, Link, MapPin, X } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
 import { formatEventTime } from '@/lib/calendarUtils';
+import { lobbyAccentColor } from '@/lib/constants';
 
 interface EventDetailPanelProps {
   event: EventDto;
@@ -8,6 +9,7 @@ interface EventDetailPanelProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  deleteError?: string | null;
 }
 
 export function EventDetailPanel({
@@ -16,9 +18,9 @@ export function EventDetailPanel({
   onClose,
   onEdit,
   onDelete,
+  deleteError,
 }: EventDetailPanelProps) {
-  const lobbyType = lobby.lobbyType.toLowerCase();
-  const accentColor = `var(--color-lobby-${lobbyType})`;
+  const accentColor = lobbyAccentColor(lobby.lobbyType);
 
   return (
     <div className="m-4 ml-0 w-72 flex-shrink-0 self-start overflow-hidden rounded-xl bg-white shadow-[var(--shadow-md)]">
@@ -76,6 +78,10 @@ export function EventDetailPanel({
 
         {/* Divider */}
         <div className="my-3 h-px bg-border" />
+
+        {deleteError && (
+          <p className="mb-2 text-xs font-medium text-red-500">{deleteError}</p>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">

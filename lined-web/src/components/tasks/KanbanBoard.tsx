@@ -3,10 +3,11 @@ import type { LobbyDto, TaskDto, TaskStatus, UserDto } from '@/types';
 import { useMyTasks, useUpdateTaskStatus, useDeleteTask } from '@/hooks/useTasks';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useUsers } from '@/hooks/useUsers';
+import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } from '@/lib/taskUtils';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { KanbanColumn } from './KanbanColumn';
+import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
 import { KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
 
@@ -33,12 +34,8 @@ interface KanbanBoardContentProps {
   grouped: Record<TaskStatus, TaskDto[]>;
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
-  movingTaskId: number | null;
-  moveErrors: Record<number, string>;
-  onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
-  onDelete: (task: TaskDto) => void;
-  onQuickAdd: (status: TaskStatus) => void;
-  onDropTask: (taskId: number, status: TaskStatus) => void;
+  moveState: KanbanMoveState;
+  actions: KanbanActions;
 }
 
 /** Loading skeleton, error message, or the 3-column board — whichever applies. */
@@ -48,12 +45,8 @@ const KanbanBoardContent = ({
   grouped,
   lobbiesById,
   assigneesById,
-  movingTaskId,
-  moveErrors,
-  onMove,
-  onDelete,
-  onQuickAdd,
-  onDropTask,
+  moveState,
+  actions,
 }: KanbanBoardContentProps) => {
   if (isLoading) return <KanbanBoardSkeleton />;
 
@@ -70,12 +63,8 @@ const KanbanBoardContent = ({
           tasks={grouped[status]}
           lobbiesById={lobbiesById}
           assigneesById={assigneesById}
-          movingTaskId={movingTaskId}
-          moveErrors={moveErrors}
-          onMove={onMove}
-          onDelete={onDelete}
-          onQuickAdd={onQuickAdd}
-          onDropTask={onDropTask}
+          moveState={moveState}
+          actions={actions}
         />
       ))}
     </div>
@@ -97,8 +86,7 @@ export const KanbanBoard = () => {
   const [memberId, setMemberId] = useState<number | undefined>(undefined);
   const [dateFilter, setDateFilter] = useState<TaskDateFilter>('ALL');
 
-  const [movingTaskId, setMovingTaskId] = useState<number | null>(null);
-  const [moveErrors, setMoveErrors] = useState<Record<number, string>>({});
+  const { busyId: movingTaskId, errors: moveErrors, start, finish, setError } = useRowMutationState();
   const [pendingDelete, setPendingDelete] = useState<TaskDto | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -111,19 +99,13 @@ export const KanbanBoard = () => {
   const moveTaskToStatus = (task: TaskDto, nextStatus: TaskStatus) => {
     if (nextStatus === task.status) return;
 
-    setMovingTaskId(task.id);
-    setMoveErrors((prev) => {
-      if (!(task.id in prev)) return prev;
-      const next = { ...prev };
-      delete next[task.id];
-      return next;
-    });
+    start(task.id);
 
     updateTaskStatus.mutate(
       { id: task.id, status: nextStatus },
       {
-        onSettled: () => setMovingTaskId(null),
-        onError: () => setMoveErrors((prev) => ({ ...prev, [task.id]: KANBAN_TEXT.moveError })),
+        onSettled: finish,
+        onError: () => setError(task.id, KANBAN_TEXT.moveError),
       },
     );
   };
@@ -191,12 +173,13 @@ export const KanbanBoard = () => {
         grouped={grouped}
         lobbiesById={lobbiesById}
         assigneesById={assigneesById}
-        movingTaskId={movingTaskId}
-        moveErrors={moveErrors}
-        onMove={handleMove}
-        onDelete={handleDelete}
-        onQuickAdd={handleQuickAdd}
-        onDropTask={handleDropTask}
+        moveState={{ movingTaskId, moveErrors }}
+        actions={{
+          onMove: handleMove,
+          onDelete: handleDelete,
+          onQuickAdd: handleQuickAdd,
+          onDropTask: handleDropTask,
+        }}
       />
 
       {pendingDelete && (

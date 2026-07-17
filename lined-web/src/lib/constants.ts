@@ -10,7 +10,7 @@ export const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
   { label: 'Family', color: 'var(--color-lobby-family)' },
   { label: 'Friends', color: 'var(--color-lobby-friends)' },
   { label: 'Work', color: 'var(--color-lobby-work)' },
-  { label: 'Free slot', color: '#B4EBD0' },
+  { label: 'Free slot', color: 'var(--color-free-slot)' },
 ];
 
 export const LOBBY_TYPE_LABELS: Record<LobbyType, string> = {
@@ -26,6 +26,11 @@ export const LOBBY_TYPE_COLORS: Record<LobbyType, string> = {
   FRIENDS: 'bg-lobby-friends',
   WORK: 'bg-lobby-work',
 };
+
+/** CSS var for a lobby's accent color, e.g. `var(--color-lobby-couple)`. */
+export function lobbyAccentColor(lobbyType: LobbyType): string {
+  return `var(--color-lobby-${lobbyType.toLowerCase()})`;
+}
 
 export const LOBBY_TYPE_BADGE_CLASSES: Record<LobbyType, string> = {
   COUPLE: 'bg-lobby-couple/10 text-lobby-couple',

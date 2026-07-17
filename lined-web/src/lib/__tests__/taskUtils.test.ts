@@ -93,6 +93,15 @@ describe('isTaskOverdue', () => {
     expect.assertions(1);
     expect(isTaskOverdue(makeTask({ dueDate: '2026-04-15' }), TODAY)).toBe(false);
   });
+
+  it('uses the local calendar day, not the UTC day, to decide "today"', () => {
+    expect.assertions(1);
+    // Local midnight-thirty on the 16th, which is still the 15th in UTC.
+    const justAfterLocalMidnight = new Date('2026-04-16T00:30:00');
+    expect(
+      isTaskOverdue(makeTask({ dueDate: '2026-04-16' }), justAfterLocalMidnight),
+    ).toBe(false);
+  });
 });
 
 describe('isTaskDueThisWeek', () => {

@@ -142,6 +142,25 @@ describe('LobbyCalendarView', () => {
     expect(screen.queryByRole('button', { name: 'Edit event' })).not.toBeInTheDocument();
   });
 
+  it('shows an inline error and keeps the panel open when the delete request fails', async () => {
+    expect.assertions(1);
+    server.use(
+      http.get(`${BASE}/calendar/events`, () =>
+        HttpResponse.json([makeEvent(1, LOBBY.id, 9, 'Morning Coffee')]),
+      ),
+      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: 500 })),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);
+    await user.click(await screen.findByText('Morning Coffee'));
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(
+      await screen.findByText('Could not delete this event — please try again'),
+    ).toBeInTheDocument();
+  });
+
   it('clicking a free-slot band opens the reserve-slot overlay locked to this lobby', async () => {
     expect.assertions(2);
     const today = new Date();

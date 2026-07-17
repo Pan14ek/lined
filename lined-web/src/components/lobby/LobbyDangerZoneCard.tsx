@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HTTPError } from 'ky';
 import type { LobbyDto } from '@/types';
 import { useRemoveMember, useDeleteLobby } from '@/hooks/useLobbies';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface LobbyDangerZoneCardProps {
@@ -13,10 +13,8 @@ interface LobbyDangerZoneCardProps {
 type PendingAction = 'leave' | 'delete' | null;
 
 function getLeaveErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && (error.response.status === 400 || error.response.status === 409)) {
-    return "You're the lobby owner — transfer ownership or delete the lobby instead of leaving";
-  }
-  return 'Could not leave this lobby — please try again';
+  const message = "You're the lobby owner — transfer ownership or delete the lobby instead of leaving";
+  return getApiErrorMessage(error, { 400: message, 409: message }, 'Could not leave this lobby — please try again');
 }
 
 export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCardProps) => {

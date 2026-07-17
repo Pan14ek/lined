@@ -37,6 +37,14 @@ describe('freeSlotsForDay', () => {
     expect(freeSlotsForDay(slots, DAY)).toEqual([{ startHour: 1, endHour: 24 }]);
   });
 
+  it('reports a full-day slot for a day strictly between the slot start/end days', () => {
+    expect.assertions(1);
+    const slots: FreeSlotDto[] = [
+      { start: '2026-03-27T10:00:00', end: '2026-03-30T10:00:00' },
+    ];
+    expect(freeSlotsForDay(slots, DAY)).toEqual([{ startHour: 1, endHour: 24 }]);
+  });
+
   it('handles multiple slots in the same day', () => {
     expect.assertions(1);
     const slots: FreeSlotDto[] = [

@@ -11,7 +11,7 @@ const user = MOCK_USERS[0]!;
 
 describe('ProfileCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: user.id, token: 'token' });
+    useAuthStore.setState({ userId: user.id });
   });
 
   it('shows a loading skeleton while the user is loading', () => {

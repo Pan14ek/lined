@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HTTPError } from 'ky';
 import type { LobbyDto } from '@/types';
 import { CalendarTopBar } from '@/components/CalendarTopBar';
 import { CreateEventModal } from '@/components/CreateEventModal';
@@ -16,12 +17,20 @@ import {
   type FreeSlot,
 } from '@/lib/calendarUtils';
 import { freeSlotsForDay } from '@/lib/freeSlots';
+import { lobbyAccentColor } from '@/lib/constants';
 import { useCreateMenuStore } from '@/store/createMenu';
 import type { ViewMode } from '@/store/calendar';
 import type { EventDto } from '@/types';
 
 interface LobbyCalendarViewProps {
   lobby: LobbyDto;
+}
+
+function getDeleteEventErrorMessage(error: unknown): string {
+  if (error instanceof HTTPError && error.response.status === 404) {
+    return 'This event was already deleted';
+  }
+  return 'Could not delete this event — please try again';
 }
 
 export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
@@ -31,6 +40,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
   const [agendaDay, setAgendaDay] = useState<Date | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: events, isLoading, isError } = useLobbyWeekEvents(lobby.id, weekStart);
   const { data: freeSlots } = useLobbyFreeSlots(lobby.id, weekStart);
@@ -46,14 +56,16 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
     selectedEventId != null ? (events?.find((e) => e.id === selectedEventId) ?? null) : null;
 
   const legendItems: LegendItem[] = [
-    { label: 'Shared event', color: `var(--color-lobby-${lobby.lobbyType.toLowerCase()})` },
-    { label: 'Free slot (both available)', color: '#B4EBD0' },
+    { label: 'Shared event', color: lobbyAccentColor(lobby.lobbyType) },
+    { label: 'Free slot (both available)', color: 'var(--color-free-slot)' },
   ];
 
   function handleDelete() {
     if (selectedEventId == null) return;
+    setDeleteError(null);
     deleteEvent.mutate(selectedEventId, {
       onSuccess: () => setSelectedEventId(null),
+      onError: (error) => setDeleteError(getDeleteEventErrorMessage(error)),
     });
   }
 
@@ -84,7 +96,10 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
             events={events ?? []}
             lobbies={[lobby]}
             selectedEventId={selectedEventId}
-            onEventClick={setSelectedEventId}
+            onEventClick={(id) => {
+              setDeleteError(null);
+              setSelectedEventId(id);
+            }}
             getFreeSlotsForDay={(day) => freeSlotsForDay(freeSlots ?? [], day)}
             legendItems={legendItems}
             onDayClick={(day) => setAgendaDay(day)}
@@ -96,9 +111,13 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
             <EventDetailPanel
               event={selectedEvent}
               lobby={lobby}
-              onClose={() => setSelectedEventId(null)}
+              onClose={() => {
+                setDeleteError(null);
+                setSelectedEventId(null);
+              }}
               onEdit={() => setEditingEvent(selectedEvent)}
               onDelete={handleDelete}
+              deleteError={deleteError}
             />
           )}
         </div>

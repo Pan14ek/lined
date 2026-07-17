@@ -23,6 +23,9 @@
   --color-lobby-friends: #A78BFA;
   --color-lobby-work: #3FA6FA;
 
+  /* Calendar free-slot band */
+  --color-free-slot: #B4EBD0;
+
   /* Task status */
   --color-task-todo: #94A3B8;
   --color-task-inprog: #3B82F6;

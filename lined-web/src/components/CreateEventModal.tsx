@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { HTTPError } from 'ky';
 import type { EventDto, LobbyDto } from '@/types';
 import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/calendarUtils';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/components/AuthAlert';
 import { ToggleRow } from '@/components/ToggleRow';
 
@@ -281,10 +281,9 @@ export function CreateEventModal({
 }
 
 function getEventErrorMessage(error: unknown, isEditMode: boolean): string {
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid title and time range';
-  }
-  return isEditMode
-    ? "Couldn't save changes — please try again"
-    : "Couldn't create event — please try again";
+  return getApiErrorMessage(
+    error,
+    { 400: 'Enter a valid title and time range' },
+    isEditMode ? "Couldn't save changes — please try again" : "Couldn't create event — please try again",
+  );
 }

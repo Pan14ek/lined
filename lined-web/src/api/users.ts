@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, requestVoid } from './client';
 import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto } from '@/types';
 
 export function getUser(id: number): Promise<UserDto> {
@@ -20,5 +20,5 @@ export function searchUsers(q: string, page = 0, size = 20): Promise<UserPageDto
 }
 
 export function deleteUser(id: number): Promise<void> {
-  return api.delete(`users/${id}`).then(() => undefined);
+  return requestVoid('delete', `users/${id}`);
 }

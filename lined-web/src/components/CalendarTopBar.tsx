@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, ListFilter, Plus } from 'lucide-react';
 import type { ViewMode } from '@/store/calendar';
 import type { LobbyDto } from '@/types';
-import { LOBBY_TYPE_LABELS } from '@/lib/constants';
+import { LOBBY_TYPE_LABELS, lobbyAccentColor } from '@/lib/constants';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -113,7 +113,7 @@ export function CalendarTopBar({
                 >
                   <span
                     className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: `var(--color-lobby-${lobby.lobbyType.toLowerCase()})` }}
+                    style={{ backgroundColor: lobbyAccentColor(lobby.lobbyType) }}
                   />
                   <span className="truncate">{lobby.name}</span>
                   <span className="ml-auto flex-shrink-0 text-xs text-text-muted">

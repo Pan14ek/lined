@@ -20,11 +20,9 @@ export function Sidebar() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
   const setUserId = useAuthStore((s) => s.setUserId);
-  const setToken = useAuthStore((s) => s.setToken);
 
   function handleSignOut() {
     setUserId(null);
-    setToken(null);
     navigate('/sign-in');
   }
 

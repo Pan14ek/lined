@@ -5,6 +5,7 @@ import { LobbyHeader } from '@/components/lobby/LobbyHeader';
 import { LobbyGeneralCard } from '@/components/lobby/LobbyGeneralCard';
 import { LobbyNotificationsCard } from '@/components/lobby/LobbyNotificationsCard';
 import { LobbyDangerZoneCard } from '@/components/lobby/LobbyDangerZoneCard';
+import { LobbyLoadingState, LobbyNotFoundState } from '@/components/lobby/LobbyLoadStates';
 
 export function LobbySettingsPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,25 +15,11 @@ export function LobbySettingsPage() {
   const { data: currentUser } = useCurrentUser();
 
   if (isLoading) {
-    return (
-      <div className="flex-1 overflow-y-auto p-6">
-        <div
-          className="h-24 animate-pulse rounded-xl bg-white"
-          data-testid="lobby-settings-page-loading"
-        />
-        <div className="mt-4 h-10 w-64 animate-pulse rounded-lg bg-white" />
-      </div>
-    );
+    return <LobbyLoadingState loadingTestId="lobby-settings-page-loading" />;
   }
 
   if (isError || !lobby) {
-    return (
-      <div className="flex-1 overflow-y-auto p-6">
-        <p className="text-sm text-text-secondary">
-          Lobby not found. It may have been deleted, or you may not have access to it.
-        </p>
-      </div>
-    );
+    return <LobbyNotFoundState />;
   }
 
   const isOwner = currentUser != null && currentUser.id === lobby.ownerId;

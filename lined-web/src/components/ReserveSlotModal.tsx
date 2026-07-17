@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
-import { HTTPError } from 'ky';
 import type { EventDto, LobbyDto } from '@/types';
 import { useCreateEvent } from '@/hooks/useEvents';
 import { useFreeSlotCandidates, type FreeSlotCandidate } from '@/hooks/useDashboard';
@@ -9,6 +8,7 @@ import { useAuthStore } from '@/store/auth';
 import type { ReserveSlotInitial } from '@/store/createMenu';
 import { toDatetimeLocal, fromDatetimeLocal, formatFreeSlotRange } from '@/lib/calendarUtils';
 import { LOBBY_TYPE_ICONS } from '@/lib/constants';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/components/AuthAlert';
 import { FormField } from '@/components/FormField';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
@@ -100,10 +100,11 @@ interface ReserveSlotFormProps {
 }
 
 function getReserveErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid title and time range';
-  }
-  return "Couldn't reserve this slot — please try again";
+  return getApiErrorMessage(
+    error,
+    { 400: 'Enter a valid title and time range' },
+    "Couldn't reserve this slot — please try again",
+  );
 }
 
 function ReserveSlotForm({ lobbies, slot, onClose, onReserved }: ReserveSlotFormProps) {

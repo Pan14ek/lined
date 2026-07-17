@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { HTTPError } from 'ky';
 import { useUpdateUser } from '@/hooks/useUserSettings';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { SettingsCard } from './SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from './SettingsRow';
 
@@ -11,10 +11,11 @@ interface PasswordCardProps {
 }
 
 function getPasswordErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid password';
-  }
-  return 'Something went wrong — please try again';
+  return getApiErrorMessage(
+    error,
+    { 400: 'Enter a valid password' },
+    'Something went wrong — please try again',
+  );
 }
 
 export const PasswordCard = ({ userId }: PasswordCardProps) => {

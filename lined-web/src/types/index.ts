@@ -202,6 +202,11 @@ export interface SubscriptionDto {
   createdAt: string;
 }
 
+export interface SubscriptionCreateDto {
+  userId: number;
+  planId: number;
+}
+
 // --- Role ---
 
 export interface RoleDto {
