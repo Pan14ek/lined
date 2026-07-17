@@ -4,6 +4,7 @@ import {
   getGreeting,
   formatFullDate,
   formatRelativeEventTime,
+  formatRelativeTimeAgo,
   formatFreeSlotRange,
   formatTaskDueDate,
   formatHourRange,
@@ -74,6 +75,52 @@ describe('formatRelativeEventTime', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:00:00'));
     expect(formatRelativeEventTime('2026-04-03T20:00:00')).toBe('Fri, 3 Apr · 8 PM');
+  });
+});
+
+describe('formatRelativeTimeAgo', () => {
+  it('labels a moment under a minute old as "Just now"', () => {
+    expect.assertions(1);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:00:30'));
+    expect(formatRelativeTimeAgo('2026-03-28T08:00:00')).toBe('Just now');
+  });
+
+  it('pluralises minutes ago', () => {
+    expect.assertions(2);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:10:00'));
+    expect(formatRelativeTimeAgo('2026-03-28T08:09:00')).toBe('1 minute ago');
+    expect(formatRelativeTimeAgo('2026-03-28T08:00:00')).toBe('10 minutes ago');
+  });
+
+  it('pluralises hours ago', () => {
+    expect.assertions(2);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:00:00'));
+    expect(formatRelativeTimeAgo('2026-03-28T07:00:00')).toBe('1 hour ago');
+    expect(formatRelativeTimeAgo('2026-03-28T05:00:00')).toBe('3 hours ago');
+  });
+
+  it('labels a timestamp from the previous calendar day as "Yesterday"', () => {
+    expect.assertions(1);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:00:00'));
+    expect(formatRelativeTimeAgo('2026-03-27T07:00:00')).toBe('Yesterday');
+  });
+
+  it('pluralises days ago for the rest of the week', () => {
+    expect.assertions(1);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:00:00'));
+    expect(formatRelativeTimeAgo('2026-03-25T08:00:00')).toBe('3 days ago');
+  });
+
+  it('falls back to a "D Mon" date once older than a week', () => {
+    expect.assertions(1);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-28T08:00:00'));
+    expect(formatRelativeTimeAgo('2026-03-10T08:00:00')).toBe('10 Mar');
   });
 });
 
