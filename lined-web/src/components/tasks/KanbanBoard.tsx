@@ -35,10 +35,8 @@ export const KanbanBoard = () => {
   const filtered = filterTasks(tasks ?? [], { lobbyId, memberId, dateFilter });
   const grouped = groupTasksByStatus(filtered);
 
-  const handleMove = (task: TaskDto, direction: 'prev' | 'next') => {
-    const nextStatus: TaskStatus | undefined =
-      STATUS_ORDER[STATUS_ORDER.indexOf(task.status) + (direction === 'next' ? 1 : -1)];
-    if (!nextStatus) return;
+  const moveTaskToStatus = (task: TaskDto, nextStatus: TaskStatus) => {
+    if (nextStatus === task.status) return;
 
     setMovingTaskId(task.id);
     setMoveErrors((prev) => {
@@ -56,6 +54,19 @@ export const KanbanBoard = () => {
           setMoveErrors((prev) => ({ ...prev, [task.id]: "Couldn't move — try again" })),
       },
     );
+  };
+
+  const handleMove = (task: TaskDto, direction: 'prev' | 'next') => {
+    const nextStatus: TaskStatus | undefined =
+      STATUS_ORDER[STATUS_ORDER.indexOf(task.status) + (direction === 'next' ? 1 : -1)];
+    if (!nextStatus) return;
+    moveTaskToStatus(task, nextStatus);
+  };
+
+  const handleDropTask = (taskId: number, status: TaskStatus) => {
+    const task = (tasks ?? []).find((t) => t.id === taskId);
+    if (!task) return;
+    moveTaskToStatus(task, status);
   };
 
   const handleDeleteConfirm = () => {
@@ -124,6 +135,7 @@ export const KanbanBoard = () => {
                 setPendingDelete(task);
               }}
               onQuickAdd={(status) => openOverlay('task', status)}
+              onDropTask={handleDropTask}
             />
           ))}
         </div>

@@ -1,8 +1,12 @@
+import { useState } from 'react';
+import type { DragEvent } from 'react';
 import type { LobbyDto, TaskDto, UserDto } from '@/types';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
 import { getAdjacentStatus } from '@/lib/taskUtils';
 import { LOBBY_TYPE_BADGE_CLASSES, TASK_PRIORITY_COLORS } from '@/lib/constants';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+export const TASK_DRAG_DATA_FORMAT = 'application/x-lined-task-id';
 
 interface KanbanCardProps {
   task: TaskDto;
@@ -27,13 +31,23 @@ export const KanbanCard = ({
   const due = formatTaskDueDate(task.dueDate, task.status);
   const prevStatus = getAdjacentStatus(task.status, 'prev');
   const nextStatus = getAdjacentStatus(task.status, 'next');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData(TASK_DRAG_DATA_FORMAT, String(task.id));
+    e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
+  };
 
   return (
     <div
       data-testid={`kanban-card-${task.id}`}
-      className={`flex gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] ${
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={() => setIsDragging(false)}
+      className={`flex cursor-grab gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] active:cursor-grabbing ${
         isDone ? 'opacity-75' : ''
-      }`}
+      } ${isDragging ? 'opacity-40' : ''}`}
     >
       <span
         className={`w-1 self-stretch rounded-full ${TASK_PRIORITY_COLORS[task.priority]}`}

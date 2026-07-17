@@ -1,11 +1,29 @@
 import { describe, it, expect } from 'vitest';
+import { fireEvent, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { KanbanBoard } from '../KanbanBoard';
+import { TASK_DRAG_DATA_FORMAT } from '../KanbanCard';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+
+/** jsdom has no real DataTransfer — a minimal stand-in for HTML5 drag events. */
+function createDataTransferMock() {
+  const store: Record<string, string> = {};
+  const types: string[] = [];
+  return {
+    setData: (format: string, data: string) => {
+      store[format] = data;
+      if (!types.includes(format)) types.push(format);
+    },
+    getData: (format: string) => store[format] ?? '',
+    types,
+    effectAllowed: 'none',
+    dropEffect: 'none',
+  };
+}
 
 describe('KanbanBoard', () => {
   it('shows a loading state while tasks are being fetched', () => {
@@ -130,5 +148,44 @@ describe('KanbanBoard', () => {
     await user.click(screen.getByRole('button', { name: 'Add task to In Progress' }));
 
     expect(useCreateMenuStore.getState().taskInitialStatus).toBe('IN_PROGRESS');
+  });
+
+  it('dragging a card onto another column PATCHes its status and moves it there', async () => {
+    expect.assertions(3);
+    renderWithProviders(<KanbanBoard />);
+    await screen.findByText('Plan dinner for Saturday');
+
+    const card = screen.getByTestId('kanban-card-1');
+    const doneColumn = screen.getByTestId('kanban-column-DONE');
+    const dataTransfer = createDataTransferMock();
+
+    fireEvent.dragStart(card, { dataTransfer });
+    dataTransfer.setData(TASK_DRAG_DATA_FORMAT, '1');
+    fireEvent.dragOver(doneColumn, { dataTransfer });
+    fireEvent.drop(doneColumn, { dataTransfer });
+
+    expect(await within(doneColumn).findByText('Plan dinner for Saturday')).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-column-TODO')).not.toHaveTextContent(
+      'Plan dinner for Saturday',
+    );
+    expect(doneColumn).toHaveTextContent('2');
+  });
+
+  it('dropping a card back onto its own column leaves the board unchanged', async () => {
+    expect.assertions(2);
+    renderWithProviders(<KanbanBoard />);
+    await screen.findByText('Plan dinner for Saturday');
+
+    const card = screen.getByTestId('kanban-card-1');
+    const todoColumn = screen.getByTestId('kanban-column-TODO');
+    const dataTransfer = createDataTransferMock();
+
+    fireEvent.dragStart(card, { dataTransfer });
+    dataTransfer.setData(TASK_DRAG_DATA_FORMAT, '1');
+    fireEvent.dragOver(todoColumn, { dataTransfer });
+    fireEvent.drop(todoColumn, { dataTransfer });
+
+    expect(todoColumn).toHaveTextContent('Plan dinner for Saturday');
+    expect(todoColumn).toHaveTextContent('3');
   });
 });

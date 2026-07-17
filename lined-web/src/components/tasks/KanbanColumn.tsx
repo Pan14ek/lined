@@ -1,6 +1,8 @@
+import { useState } from 'react';
+import type { DragEvent } from 'react';
 import type { LobbyDto, TaskDto, TaskStatus, UserDto } from '@/types';
 import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/lib/constants';
-import { KanbanCard } from './KanbanCard';
+import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -12,6 +14,7 @@ interface KanbanColumnProps {
   onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
   onDelete: (task: TaskDto) => void;
   onQuickAdd: (status: TaskStatus) => void;
+  onDropTask: (taskId: number, status: TaskStatus) => void;
 }
 
 export const KanbanColumn = ({
@@ -24,9 +27,34 @@ export const KanbanColumn = ({
   onMove,
   onDelete,
   onQuickAdd,
+  onDropTask,
 }: KanbanColumnProps) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(TASK_DRAG_DATA_FORMAT)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const taskId = Number(e.dataTransfer.getData(TASK_DRAG_DATA_FORMAT));
+    if (taskId) onDropTask(taskId, status);
+  };
+
   return (
-    <div className="flex min-w-[280px] flex-1 flex-col" data-testid={`kanban-column-${status}`}>
+    <div
+      className={`flex min-w-[280px] flex-1 flex-col rounded-lg transition-colors ${
+        isDragOver ? 'bg-brand-green-light/60' : ''
+      }`}
+      data-testid={`kanban-column-${status}`}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+    >
       <div className="mb-3 flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${TASK_STATUS_COLORS[status]}`} />
         <span className="text-sm font-semibold text-text-primary">{TASK_STATUS_LABELS[status]}</span>
