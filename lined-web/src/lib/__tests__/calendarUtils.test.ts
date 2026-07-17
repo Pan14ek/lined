@@ -7,6 +7,7 @@ import {
   formatFreeSlotRange,
   formatTaskDueDate,
   formatHourRange,
+  hourRangeToIso,
   assignEventLanes,
   getMonthGridDays,
   isSameMonth,
@@ -168,6 +169,39 @@ describe('formatHourRange', () => {
   it('includes minutes for a half-hour boundary', () => {
     expect.assertions(1);
     expect(formatHourRange(9.5, 11)).toBe('9:30–11 AM');
+  });
+});
+
+describe('hourRangeToIso', () => {
+  it('converts a whole-hour range on a given day to ISO timestamps', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29); // local midnight, 29 Mar 2026
+    const { start, end } = hourRangeToIso(day, 14, 17);
+    expect(new Date(start).getHours()).toBe(14);
+    expect(new Date(end).getHours()).toBe(17);
+  });
+
+  it('converts a half-hour fraction to minutes', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29);
+    const { start } = hourRangeToIso(day, 9.5, 11);
+    expect(new Date(start).getHours()).toBe(9);
+    expect(new Date(start).getMinutes()).toBe(30);
+  });
+
+  it('handles the midnight edge (hour 0)', () => {
+    expect.assertions(2);
+    const day = new Date(2026, 2, 29);
+    const { start, end } = hourRangeToIso(day, 0, 1);
+    expect(new Date(start).getHours()).toBe(0);
+    expect(new Date(end).getHours()).toBe(1);
+  });
+
+  it('does not mutate the day passed in', () => {
+    expect.assertions(1);
+    const day = new Date(2026, 2, 29, 6, 0, 0, 0);
+    hourRangeToIso(day, 14, 17);
+    expect(day.getHours()).toBe(6);
   });
 });
 

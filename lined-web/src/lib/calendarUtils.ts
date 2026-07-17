@@ -265,6 +265,23 @@ export function formatHourRange(startHour: number, endHour: number): string {
     : `${start.value} ${start.ampm}–${end.value} ${end.ampm}`;
 }
 
+/** Converts a grid-relative hour range on a given day into real ISO timestamps. */
+export function hourRangeToIso(
+  day: Date,
+  startHour: number,
+  endHour: number,
+): { start: string; end: string } {
+  const toDate = (hour: number): Date => {
+    const d = new Date(day);
+    const wholeHour = Math.floor(hour);
+    const minutes = Math.round((hour - wholeHour) * 60);
+    d.setHours(wholeHour, minutes, 0, 0);
+    return d;
+  };
+
+  return { start: toDate(startHour).toISOString(), end: toDate(endHour).toISOString() };
+}
+
 export interface EventLane {
   lane: number;
   laneCount: number;
