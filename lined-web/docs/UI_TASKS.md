@@ -18,13 +18,15 @@ npx serve -p 4321 mockups/
 # → http://localhost:4321
 ```
 
-The mockup is a single HTML file with 20 screens toggled by the top nav bar.
+The mockup is a single HTML file with 24 screens toggled by the top nav bar.
 Each screen is a `<div class="screen" id="...">`. **Deep links are
 supported**: open `http://localhost:4321/#<screen-id>` directly (e.g.
 `/#calendar-month`); the hash also updates as you click nav tabs. Screens
 exist for every task, including `create-lobby` (task 4), `calendar-month`
 (task 10), `subscription` (task 14), `notifications` (task 16), and
-`invites` (task 17).
+`invites` (task 17). The July 2026 gap-analysis batch added four more:
+`event-conflict` (task 19), `task-detail` (task 20), `dashboard-empty`
+(task 21) and `mobile` (task 22).
 
 ## Current implementation status (July 2026)
 
@@ -79,8 +81,13 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
   and cannot be verified against the real API until that gap ships.
   `SignInPage`'s "Forgot password?" text is now a real `<Link>`.
 
-**Stubs only ("coming soon" placeholders):**
-SignInPage, SignUpPage, DashboardPage.
+All 18 tasks of the original plan are DONE. A gap analysis against the
+mockups and the live app (July 2026) found the remaining holes now tracked
+as tasks 19–23: the conflict-check endpoints are wired in `src/api/events.ts`
+but never called from any UI, tasks cannot be edited after creation (and
+priority can never be set from the UI), a zero-lobby account gets blank
+screens with no onboarding, nothing is usable below ~1024 px, and the
+dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 
 ## Backend API summary
 
@@ -126,6 +133,11 @@ SignInPage, SignUpPage, DashboardPage.
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | DONE |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
 | 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
+| 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | TODO |
+| 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | TODO |
+| 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
+| 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
+| 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
 
 ## Suggested order
 
@@ -137,6 +149,12 @@ and every other task builds on it. Then 1–2 (auth + live sidebar), 3–4
 on 3 and 10; task 14 depends on 12; tasks 16/17 depend on 15; task 18 is
 blocked on the backend gap it flags (`feature/password-reset-flow` in
 `backend/lined/docs/experiment-tasks.md`) and otherwise parallelisable.
+
+**Batch 19–23 (gap analysis, July 2026):** do 20 (task edit) and 19
+(conflict warnings) first — small, independent, high user value. Then 21
+(onboarding/empty states). Land 22 (responsive) last: it touches most
+screens and would conflict with everything else in flight. 23 (dark mode)
+is independent but coordinate its file sweep with 22.
 
 ## Conventions for every task
 
