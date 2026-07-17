@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { HTTPError } from 'ky';
 import type { LobbyDto, TaskDto, TaskStatus } from '@/types';
 import { useCreateTask } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
 import { TASK_STATUS_LABELS } from '@/lib/constants';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/components/AuthAlert';
 import { FormField } from '@/components/FormField';
 import { ToggleRow } from '@/components/ToggleRow';
@@ -27,10 +27,7 @@ function todayStr(): string {
 }
 
 function getCreateTaskErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid title';
-  }
-  return "Couldn't create task — please try again";
+  return getApiErrorMessage(error, { 400: 'Enter a valid title' }, "Couldn't create task — please try again");
 }
 
 export function AddTaskDrawer({

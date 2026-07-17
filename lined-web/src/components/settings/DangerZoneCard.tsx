@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HTTPError } from 'ky';
 import { useDeleteAccount } from '@/hooks/useUserSettings';
 import { useAuthStore } from '@/store/auth';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface DangerZoneCardProps {
@@ -10,10 +10,11 @@ interface DangerZoneCardProps {
 }
 
 function getDeleteErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 409) {
-    return 'You still own one or more lobbies — transfer ownership or delete them first';
-  }
-  return 'Could not delete your account — please try again';
+  return getApiErrorMessage(
+    error,
+    { 409: 'You still own one or more lobbies — transfer ownership or delete them first' },
+    'Could not delete your account — please try again',
+  );
 }
 
 export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {

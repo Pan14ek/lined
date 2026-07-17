@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { HTTPError } from 'ky';
 import type { LobbyType } from '@/types';
 import { useCreateLobby } from '@/hooks/useLobbies';
 import { LobbyTypePicker } from '@/components/LobbyTypePicker';
 import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/components/AuthAlert';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 
 interface CreateLobbyModalProps {
   onClose: () => void;
@@ -112,8 +112,9 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
 };
 
 function getCreateLobbyErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid lobby name';
-  }
-  return 'Something went wrong — please try again';
+  return getApiErrorMessage(
+    error,
+    { 400: 'Enter a valid lobby name' },
+    'Something went wrong — please try again',
+  );
 }

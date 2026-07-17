@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { HTTPError } from 'ky';
 import type { UserDto } from '@/types';
 import { useUpdateUser } from '@/hooks/useUserSettings';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import { SettingsCard } from './SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from './SettingsRow';
 
@@ -11,13 +11,14 @@ interface ProfileCardProps {
 }
 
 function getProfileErrorMessage(error: unknown): string {
-  if (error instanceof HTTPError && error.response.status === 409) {
-    return 'That username or email is already taken';
-  }
-  if (error instanceof HTTPError && error.response.status === 400) {
-    return 'Enter a valid username and email';
-  }
-  return 'Something went wrong — please try again';
+  return getApiErrorMessage(
+    error,
+    {
+      409: 'That username or email is already taken',
+      400: 'Enter a valid username and email',
+    },
+    'Something went wrong — please try again',
+  );
 }
 
 export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
