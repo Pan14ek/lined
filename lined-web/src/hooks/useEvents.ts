@@ -13,6 +13,18 @@ export function useWeekEvents(weekStart: Date) {
   });
 }
 
+/** Week events scoped to one lobby. The backend has no per-lobby filter param, so filter client-side. */
+export function useLobbyWeekEvents(lobbyId: number, weekStart: Date) {
+  const from = weekStart.toISOString();
+  const to = addDays(weekStart, 7).toISOString();
+
+  return useQuery({
+    queryKey: [...QUERY_KEYS.events, 'lobby', lobbyId, from],
+    queryFn: () => listEvents({ from, to }),
+    select: (events) => events.filter((e) => e.lobbyId === lobbyId),
+  });
+}
+
 const UPCOMING_EVENTS_WINDOW_DAYS = 14;
 const UPCOMING_EVENTS_LIMIT = 5;
 
