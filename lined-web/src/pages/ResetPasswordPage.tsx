@@ -52,6 +52,7 @@ export function ResetPasswordPage() {
   if (!token) {
     return <InvalidTokenCard />;
   }
+  const resetToken = token;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +60,7 @@ export function ResetPasswordPage() {
     if (hasErrors) return;
 
     resetPassword.mutate(
-      { token, newPassword: values.newPassword },
+      { token: resetToken, newPassword: values.newPassword },
       { onSuccess: () => navigate('/sign-in?reset=success') },
     );
   }
