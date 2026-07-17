@@ -42,12 +42,13 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - **Lobby detail page** — `LobbyHeader`, `LobbyTabBar`, `LobbyTaskList`, `TaskRow`: type-accent header with resolved member avatars, `?tab=`-synced tab bar, and a live Tasks tab (filter pills with counts, due-date sort, checkbox status toggle).
 - **Lobby Members tab & Add Member modal** — `LobbyMemberList`, `MemberCard`, `PendingInviteRow`, `AddMemberModal`, shared `ConfirmDialog`: role badges, owner-only "Make owner"/"Remove" actions with confirm dialogs, owner-only Pending Invites section (resend/cancel), and debounced user search with already-member/invitable/invite-sent states.
 - **Lobby Calendar tab** — `LobbyCalendarView`, `DayAgendaModal`: week grid scoped to one lobby (events filtered client-side, colored by lobby type), free-slot bands from `GET /api/lobbies/{id}/free-slots`, a simplified 2-item legend, lobby-locked event creation, and day-overflow handling (lane layout for overlapping events, a "+N more" pill past 4 visible events, click-to-open day agenda listing all events + free slots for that day). `WeekGrid` was generalised (prop-driven free slots/legend, opt-in `onDayClick`) without changing the global calendar's behaviour.
+- **Add Task drawer** — `AddTaskDrawer`, `AssigneePicker`: right-side 420px sheet with title, description, assignee picker (reusable circular avatar single-select), due date (past-date warning, non-blocking), status, and notify-assignee toggle. Single-step `POST /api/tasks` create (status/description/priority/notifyAssignee all sent directly, no PATCH follow-up). Opens from the lobby Tasks tab (lobby-locked) and the global "+ Create" menu (lobby selector, since no lobby context exists there).
 
 **Stubs only ("coming soon" placeholders):**
 SignInPage, SignUpPage, DashboardPage, TasksPage,
 UserSettingsPage, LobbySettingsPage.
 
-**Not started:** AddTaskDrawer, ReserveSlotModal, kanban board.
+**Not started:** ReserveSlotModal, kanban board.
 
 ## Backend API summary
 
@@ -82,7 +83,7 @@ UserSettingsPage, LobbySettingsPage.
 | 5 | `feature/ui-05-lobby-tasks-tab` | Lobby detail page: header, tab bar, Tasks tab (filter pills, task rows) | [tasks/UI-05-lobby-tasks-tab.md](tasks/UI-05-lobby-tasks-tab.md) | DONE |
 | 6 | `feature/ui-06-lobby-members` | Lobby Members tab + Add Member modal (user search, invite, remove) | [tasks/UI-06-lobby-members.md](tasks/UI-06-lobby-members.md) | DONE |
 | 7 | `feature/ui-07-lobby-calendar` | Lobby Calendar tab (week grid scoped to lobby, free-slot bands) | [tasks/UI-07-lobby-calendar.md](tasks/UI-07-lobby-calendar.md) | DONE |
-| 8 | `feature/ui-08-add-task-drawer` | Add Task drawer (title, assignee picker, due date, status) | [tasks/UI-08-add-task-drawer.md](tasks/UI-08-add-task-drawer.md) | TODO |
+| 8 | `feature/ui-08-add-task-drawer` | Add Task drawer (title, assignee picker, due date, status) | [tasks/UI-08-add-task-drawer.md](tasks/UI-08-add-task-drawer.md) | DONE |
 | 9 | `feature/ui-09-tasks-kanban` | Global Tasks Board: 3-column kanban with filters and status transitions | [tasks/UI-09-tasks-kanban.md](tasks/UI-09-tasks-kanban.md) | TODO |
 | 10 | `feature/ui-10-calendar-enhancements` | Calendar polish: edit event, month view, legend | [tasks/UI-10-calendar-enhancements.md](tasks/UI-10-calendar-enhancements.md) | TODO |
 | 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | TODO |

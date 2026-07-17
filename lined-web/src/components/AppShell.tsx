@@ -1,13 +1,16 @@
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate, useParams, Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CreateLobbyModal } from './CreateLobbyModal';
 import { CreateEventModal } from './CreateEventModal';
+import { AddTaskDrawer } from './AddTaskDrawer';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { useMyLobbies } from '@/hooks/useLobbies';
 
 export function AppShell() {
   const navigate = useNavigate();
+  const params = useParams<{ id?: string }>();
+  const lockedLobbyId = params.id ? Number(params.id) : undefined;
   const isCreateLobbyOpen = useCreateMenuStore((s) => s.isCreateLobbyOpen);
   const closeCreateLobby = useCreateMenuStore((s) => s.closeCreateLobby);
   const overlay = useCreateMenuStore((s) => s.overlay);
@@ -33,6 +36,14 @@ export function AppShell() {
                 closeOverlay();
                 navigate('/calendar');
               }}
+            />
+          )}
+
+          {overlay === 'task' && (
+            <AddTaskDrawer
+              lobbies={lobbies}
+              lockedLobbyId={lockedLobbyId}
+              onClose={closeOverlay}
             />
           )}
         </main>
