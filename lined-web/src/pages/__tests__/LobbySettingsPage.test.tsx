@@ -19,7 +19,7 @@ function renderSettingsPage(initialEntry: string) {
 
 describe('LobbySettingsPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
   });
 
   it('shows a loading state before the lobby loads', () => {
@@ -58,7 +58,7 @@ describe('LobbySettingsPage', () => {
 
   it('hides the Delete lobby action for a non-owner viewer', async () => {
     expect.assertions(2);
-    useAuthStore.setState({ userId: 2, token: 'token' });
+    useAuthStore.setState({ userId: 2 });
     renderSettingsPage('/lobbies/1/settings');
 
     expect(await screen.findByRole('button', { name: 'Leave' })).toBeInTheDocument();

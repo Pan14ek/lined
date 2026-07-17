@@ -7,7 +7,7 @@ import { useCreateMenuStore } from '@/store/createMenu';
 
 describe('CalendarPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
     useCalendarStore.setState({
       weekStart: useCalendarStore.getState().weekStart,
       monthAnchor: useCalendarStore.getState().monthAnchor,

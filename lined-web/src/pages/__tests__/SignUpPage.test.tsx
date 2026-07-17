@@ -29,7 +29,7 @@ async function fillValidForm(
 
 describe('SignUpPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null, token: null });
+    useAuthStore.setState({ userId: null });
   });
 
   it('creates an account, stores the id, and redirects home', async () => {

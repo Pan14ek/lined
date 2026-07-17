@@ -23,7 +23,7 @@ function renderCard(userId: number | undefined) {
 
 describe('DangerZoneCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: lobbyOwner.id, token: 'token' });
+    useAuthStore.setState({ userId: lobbyOwner.id });
   });
 
   it('renders the Delete account button disabled when there is no user yet', () => {
@@ -74,7 +74,7 @@ describe('DangerZoneCard', () => {
 
   it('signs out and navigates to sign-in on success', async () => {
     expect.assertions(2);
-    useAuthStore.setState({ userId: noLobbyUser.id, token: 'token' });
+    useAuthStore.setState({ userId: noLobbyUser.id });
     const user = userEvent.setup();
     renderCard(noLobbyUser.id);
 

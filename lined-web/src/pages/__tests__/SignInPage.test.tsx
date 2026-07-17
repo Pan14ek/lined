@@ -20,7 +20,7 @@ function renderSignIn() {
 
 describe('SignInPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null, token: null });
+    useAuthStore.setState({ userId: null });
   });
 
   it('signs in with a known identifier and redirects home', async () => {

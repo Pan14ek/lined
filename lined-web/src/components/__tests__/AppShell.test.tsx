@@ -8,7 +8,7 @@ import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 
 describe('AppShell', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1, token: 'token' });
+    useAuthStore.setState({ userId: 1 });
     useCreateMenuStore.setState({ isCreateLobbyOpen: false, overlay: null, reserveSlotInitial: null });
   });
 
