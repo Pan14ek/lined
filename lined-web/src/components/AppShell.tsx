@@ -14,6 +14,7 @@ export function AppShell() {
   const isCreateLobbyOpen = useCreateMenuStore((s) => s.isCreateLobbyOpen);
   const closeCreateLobby = useCreateMenuStore((s) => s.closeCreateLobby);
   const overlay = useCreateMenuStore((s) => s.overlay);
+  const taskInitialStatus = useCreateMenuStore((s) => s.taskInitialStatus);
   const closeOverlay = useCreateMenuStore((s) => s.closeOverlay);
   const { data: lobbies = [] } = useMyLobbies();
 
@@ -43,6 +44,7 @@ export function AppShell() {
             <AddTaskDrawer
               lobbies={lobbies}
               lockedLobbyId={lockedLobbyId}
+              initialStatus={taskInitialStatus ?? undefined}
               onClose={closeOverlay}
             />
           )}
