@@ -7,9 +7,10 @@ import { WeekGrid, type LegendItem } from '@/components/WeekGrid';
 import { DayAgendaModal } from '@/components/lobby/DayAgendaModal';
 import { useLobbyWeekEvents, useDeleteEvent } from '@/hooks/useEvents';
 import { useLobbyFreeSlots } from '@/hooks/useDashboard';
-import { addDays, getWeekStart, isSameDay } from '@/lib/calendarUtils';
+import { addDays, formatMonthYear, getWeekStart, isSameDay } from '@/lib/calendarUtils';
 import { freeSlotsForDay } from '@/lib/freeSlots';
 import type { ViewMode } from '@/store/calendar';
+import type { EventDto } from '@/types';
 
 interface LobbyCalendarViewProps {
   lobby: LobbyDto;
@@ -20,6 +21,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
   const [agendaDay, setAgendaDay] = useState<Date | null>(null);
 
   const { data: events, isLoading, isError } = useLobbyWeekEvents(lobby.id, weekStart);
@@ -44,10 +46,10 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
   return (
     <div className="relative flex h-[calc(100vh-160px)] flex-col overflow-hidden">
       <CalendarTopBar
-        weekStart={weekStart}
+        title={formatMonthYear(weekStart)}
         viewMode={viewMode}
-        onPrevWeek={() => setWeekStart((s) => addDays(s, -7))}
-        onNextWeek={() => setWeekStart((s) => addDays(s, 7))}
+        onPrev={() => setWeekStart((s) => addDays(s, -7))}
+        onNext={() => setWeekStart((s) => addDays(s, 7))}
         onToday={() => setWeekStart(getWeekStart())}
         onViewModeChange={setViewMode}
         onNewEvent={() => setIsCreateModalOpen(true)}
@@ -80,9 +82,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
               event={selectedEvent}
               lobby={lobby}
               onClose={() => setSelectedEventId(null)}
-              onEdit={() => {
-                /* TODO: open edit modal (Task 10) */
-              }}
+              onEdit={() => setEditingEvent(selectedEvent)}
               onDelete={handleDelete}
             />
           )}
@@ -98,6 +98,15 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
             setIsCreateModalOpen(false);
             setSelectedEventId(event.id);
           }}
+        />
+      )}
+
+      {editingEvent && (
+        <CreateEventModal
+          lobbies={[lobby]}
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSaved={() => setEditingEvent(null)}
         />
       )}
 

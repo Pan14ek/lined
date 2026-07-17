@@ -1,22 +1,21 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { formatMonthYear } from '@/lib/calendarUtils';
 import type { ViewMode } from '@/store/calendar';
 
 interface CalendarTopBarProps {
-  weekStart: Date;
+  title: string;
   viewMode: ViewMode;
-  onPrevWeek: () => void;
-  onNextWeek: () => void;
+  onPrev: () => void;
+  onNext: () => void;
   onToday: () => void;
   onViewModeChange: (mode: ViewMode) => void;
   onNewEvent: () => void;
 }
 
 export function CalendarTopBar({
-  weekStart,
+  title,
   viewMode,
-  onPrevWeek,
-  onNextWeek,
+  onPrev,
+  onNext,
   onToday,
   onViewModeChange,
   onNewEvent,
@@ -26,18 +25,18 @@ export function CalendarTopBar({
       {/* Month / week navigation */}
       <div className="flex items-center gap-1">
         <button
-          onClick={onPrevWeek}
-          aria-label="Previous week"
+          onClick={onPrev}
+          aria-label={viewMode === 'month' ? 'Previous month' : 'Previous week'}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-text-secondary hover:bg-gray-100"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="w-40 text-center text-base font-semibold text-text-primary select-none">
-          {formatMonthYear(weekStart)}
+          {title}
         </span>
         <button
-          onClick={onNextWeek}
-          aria-label="Next week"
+          onClick={onNext}
+          aria-label={viewMode === 'month' ? 'Next month' : 'Next week'}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-text-secondary hover:bg-gray-100"
         >
           <ChevronRight className="h-4 w-4" />
