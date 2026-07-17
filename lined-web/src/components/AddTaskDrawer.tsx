@@ -6,6 +6,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { TASK_STATUS_LABELS } from '@/lib/constants';
 import { AuthAlert } from '@/components/AuthAlert';
 import { FormField } from '@/components/FormField';
+import { ToggleRow } from '@/components/ToggleRow';
 import { AssigneePicker } from '@/components/lobby/AssigneePicker';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 
@@ -188,29 +189,12 @@ export function AddTaskDrawer({
               </select>
             </div>
 
-            <div className="flex items-center justify-between border-b border-border pb-1 pt-1">
-              <div>
-                <div className="text-sm font-medium text-text-primary">Notify assignee</div>
-                <div className="mt-0.5 text-xs text-text-secondary">
-                  Send a notification when the task is assigned
-                </div>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={notifyAssignee}
-                onClick={() => setNotifyAssignee((v) => !v)}
-                className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                  notifyAssignee ? 'bg-brand-green' : 'bg-border'
-                }`}
-              >
-                <span
-                  className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-[left] ${
-                    notifyAssignee ? 'left-[23px]' : 'left-[3px]'
-                  }`}
-                />
-              </button>
-            </div>
+            <ToggleRow
+              label="Notify assignee"
+              description="Send a notification when the task is assigned"
+              checked={notifyAssignee}
+              onChange={setNotifyAssignee}
+            />
 
             {createTask.isError && <AuthAlert message={getCreateTaskErrorMessage(createTask.error)} />}
           </div>
