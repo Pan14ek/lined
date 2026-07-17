@@ -168,10 +168,16 @@ function DayColumn({
     <div
       className={`relative flex-1 border-l border-border ${today ? 'bg-brand-green-light/25' : ''}`}
     >
-      {/* Hour grid lines */}
-      {GRID_HOURS.map((h) => (
-        <div key={h} className="h-20 border-b border-border" />
-      ))}
+      {/* Hour grid lines — a single tiled background instead of GRID_HOURS.length
+          separately-bordered divs, so every line renders identically regardless
+          of scroll position or fractional column widths. */}
+      <div
+        className="pointer-events-none"
+        style={{
+          height: GRID_HOURS.length * HOUR_HEIGHT,
+          backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT - 1}px, var(--color-border) ${HOUR_HEIGHT - 1}px, var(--color-border) ${HOUR_HEIGHT}px)`,
+        }}
+      />
 
       {/* Free slot bands (behind events) */}
       {freeSlots.map((slot, i) => (
@@ -306,8 +312,12 @@ export function WeekGrid({
 
       {/* Scrollable time grid */}
       <div ref={gridRef} className="flex flex-1 overflow-y-auto bg-white">
-        {/* Hour labels */}
-        <div className="w-14 flex-shrink-0">
+        {/* Hour labels. self-start: without it, the flex row's default
+            align-items:stretch sizes this box to the scroll container's
+            *viewport* height rather than its own (taller) content, which
+            would anchor the absolutely-positioned "12 AM" label below to
+            the wrong, visually-clipped spot. */}
+        <div className="relative w-14 flex-shrink-0 self-start">
           {GRID_HOURS.map((h) => (
             <div
               key={h}
@@ -316,6 +326,9 @@ export function WeekGrid({
               {formatHour(h)}
             </div>
           ))}
+          {/* Closing boundary label for the last row — absolutely positioned so
+              it doesn't add flow height (would desync from the day columns). */}
+          <div className="absolute bottom-0 right-2 text-[11px] text-text-muted">12 AM</div>
         </div>
 
         {/* Day columns */}

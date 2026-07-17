@@ -239,3 +239,21 @@ describe('WeekGrid — onDayClick opt-in (lobby calendar behavior)', () => {
     expect(second?.style.width).toBe('calc(50% - 4px)');
   });
 });
+
+describe('WeekGrid — hour labels', () => {
+  it('shows the grid start hour and a closing "12 AM" label at the end', () => {
+    expect.assertions(2);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 AM')).toBeInTheDocument();
+    expect(screen.getByText('12 AM')).toBeInTheDocument();
+  });
+});
