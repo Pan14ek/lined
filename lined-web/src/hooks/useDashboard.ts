@@ -18,6 +18,16 @@ export interface FreeSlotBannerData {
   otherUsername: string | null;
 }
 
+/** First slot at least `minMs` long, or null if none qualify. */
+function findEarliestFreeSlot(
+  slots: FreeSlotDto[] | undefined,
+  minMs: number,
+): FreeSlotDto | null {
+  return (
+    slots?.find((s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= minMs) ?? null
+  );
+}
+
 /**
  * Surfaces the earliest ≥1h mutual free slot (next 7 days) for the current
  * user's first multi-member lobby, using the server-side free-slots API.
@@ -43,11 +53,7 @@ export function useFreeSlotBanner(): {
     enabled: targetLobby != null,
   });
 
-  const slot =
-    freeSlotsQuery.data?.find(
-      (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_FREE_SLOT_MS,
-    ) ?? null;
-
+  const slot = findEarliestFreeSlot(freeSlotsQuery.data, MIN_FREE_SLOT_MS);
   const otherMemberId = targetLobby?.memberIds.find((id) => id !== currentUserId);
   const otherUserQuery = useUser(slot ? otherMemberId : undefined);
 
@@ -96,9 +102,7 @@ export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
 
   const candidates: FreeSlotCandidate[] = multiMemberLobbies
     .map((lobby, i) => {
-      const slot = queries[i]?.data?.find(
-        (s) => new Date(s.end).getTime() - new Date(s.start).getTime() >= MIN_FREE_SLOT_MS,
-      );
+      const slot = findEarliestFreeSlot(queries[i]?.data, MIN_FREE_SLOT_MS);
       return slot ? { lobby, start: slot.start, end: slot.end } : null;
     })
     .filter((c): c is FreeSlotCandidate => c != null)
