@@ -2,10 +2,11 @@
 
 **Branch:** `feature/users-me-endpoint`
 **Status:** Proposed
-**Motivation:** `docs/api.md` already documents this endpoint ("Get Current
-User"), but no controller implements it — the docs are ahead of the code.
-The web client currently resolves the profile with `GET /api/users/{id}`
-using the id stored at sign-in.
+**Motivation:** The web client still resolves the profile with
+`GET /api/users/{id}` using the id stored at sign-in, because no controller
+implements a caller-scoped `GET /api/users/me` endpoint yet. This proposal
+keeps that future endpoint documented without putting it in the implemented API
+surface.
 
 ## What the API should do
 
@@ -29,7 +30,8 @@ not resolve to an account (e.g. deleted account with a stale token/header).
 
 - Removes the last place the client must send its own user id explicitly,
   which is a prerequisite for retiring the `X-User-Id` header.
-- Fixes the `docs/api.md` drift (documented-but-missing endpoint).
+- Keeps `docs/api.md` controller-faithful while preserving the intended
+  caller-scoped profile contract as a proposal.
 - The web `useCurrentUser()` hook switches from `users/{id}` to `users/me`
   with no other client change.
 

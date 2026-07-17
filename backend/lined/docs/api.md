@@ -1,218 +1,17 @@
-# 📘 Lined Backend API Specification
+# Lined Backend API
 
-Version: **0.1.0**  
-Base URL: **http://localhost:8080**
+Version: `0.1.0`
+Base URL: `http://localhost:8080`
 
----
+This document describes the API surface implemented by the current Spring Boot
+controllers under `src/main/java/io/backend/lined/**/api/*Controller.java`.
+Planned endpoints are listed separately so the main sections stay controller
+faithful.
 
-## 🔑 Authentication
+## Authentication
 
-`POST /api/auth/login` verifies a user's password and returns a short-lived
-Bearer-style token plus the authenticated user identity.
-
-```http
-Authorization: Bearer <access_token>
-```
-
-The rest of the backend still accepts the MVP `X-User-Id: <Long>` caller
-identity header on endpoints that require a user id. Treat that header path as
-deprecated transitional auth while request filtering is moved to the login
-token.
-
----
-
-## 🧍‍♂️ Users API
-
-### Create User
-
-`POST /api/users`
-
-Create a new user with unique username and email.
-
-**Request Body**
-
-```json
-{
-  "username": "alex",
-  "email": "alex@example.com",
-  "password": "P@ssw0rd!"
-}
-```
-
-**Response 201**
-
-```json
-{
-  "id": 42,
-  "username": "alex",
-  "email": "alex@example.com",
-  "createdAt": "2024-01-01T12:00:00Z",
-  "roles": [
-    "ROLE_USER"
-  ],
-  "activePlan": null,
-  "activeUntil": null
-}
-```
-
----
-
-### Get User by ID
-
-`GET /api/users/{id}`
-
-Retrieve user information by ID.
-
-**Path Parameter**
-| Name | Type | Example | Description |
-|------|------|----------|-------------|
-| `id` | Long | `1` | User ID |
-
-**Response 200**
-
-```json
-{
-  "id": 1,
-  "username": "pan14ek",
-  "email": "user@example.com",
-  "roles": [
-    "ROLE_USER"
-  ],
-  "activePlan": "pro",
-  "activeUntil": "2024-01-01T12:00:00Z"
-}
-```
-
----
-
-### Update User
-
-`PATCH /api/users/{id}`
-
-Partially update existing user fields.
-
-**Request Body**
-
-```json
-{
-  "email": "new.mail@example.com",
-  "password": "N3wP@ss!"
-}
-```
-
-**Response 200**
-
-```json
-{
-  "id": 1,
-  "username": "pan14ek",
-  "email": "new.mail@example.com",
-  "roles": [
-    "ROLE_USER"
-  ],
-  "activePlan": "pro"
-}
-```
-
----
-
-### List Users
-
-`GET /api/users?page=0&size=10`
-
-Get paginated list of users. Admin-only endpoint.
-
-**Query Parameters**
-| Name | Type | Default | Description |
-|------|------|----------|-------------|
-| `page` | int | 0 | Page number |
-| `size` | int | 10 | Page size |
-
-**Response 200**
-
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "username": "alex",
-      "email": "alex@example.com"
-    },
-    {
-      "id": 2,
-      "username": "pan14ek",
-      "email": "user@example.com"
-    }
-  ],
-  "pageable": {
-    "pageNumber": 0,
-    "pageSize": 10
-  },
-  "totalElements": 2
-}
-```
-
----
-
-### Delete User
-
-`DELETE /api/users/{id}`
-
-Deletes the caller's own account. The temporary MVP `X-User-Id` header must
-match `{id}`. An account that owns one or more lobbies cannot be deleted until
-the caller transfers lobby ownership or deletes those lobbies.
-
-**Response 204** – User deleted successfully.
-
-Deleting a non-lobby-owner account removes its subscriptions, roles, lobby
-memberships, lobby invites, notification preferences, notifications and their
-deliveries, tasks it created, and events it owns. Lobbies owned by other users
-remain; tasks created by other users remain with the deleted account cleared as
-their assignee.
-
-**Errors**
-
-- `400 Bad Request` when `X-User-Id` is missing or invalid.
-- `403 Forbidden` when the header identifies a different user.
-- `404 Not Found` when `{id}` does not identify an account.
-- `409 Conflict` when the account owns one or more lobbies.
-
----
-
-### Get Current User
-
-`GET /api/users/me`
-
-Returns the currently authenticated user's profile.
-
-**Response 200**
-
-```json
-{
-  "id": 42,
-  "username": "alex",
-  "email": "alex@example.com",
-  "roles": [
-    "ROLE_USER"
-  ],
-  "activePlan": "starter",
-  "activeUntil": "2024-06-01T12:00:00Z"
-}
-```
-
----
-
-## 🔐 Auth API
-
-### Login
-
-`POST /api/auth/login`
-
-Verify a password for an existing user and return a token plus the user identity
-needed by the current web auth store. The identifier can be an email address or
-username.
-
-**Request**
+`POST /api/auth/login` verifies a password and returns a token-shaped response
+plus the authenticated user identity.
 
 ```json
 {
@@ -221,7 +20,8 @@ username.
 }
 ```
 
-**Response 200**
+The request may also supply `email` or `username` instead of `identifier`.
+Successful responses use this shape:
 
 ```json
 {
@@ -231,36 +31,115 @@ username.
   "userId": 42,
   "username": "alex",
   "email": "alex@example.com",
-  "roles": [
-    "ROLE_USER"
-  ]
+  "roles": ["ROLE_USER"]
 }
 ```
 
-**Response 401**
+Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header.
+`SecurityConfig` currently only provides password encoding; the backend does
+not yet install a request filter that enforces the login response as Bearer
+authentication automatically.
 
-Returned when the identifier does not exist or the password does not match.
+## Users
 
----
+### `POST /api/users`
 
-### Legacy / Planned Auth Endpoints
+Register a new user.
 
-`POST /api/auth/refresh`, `POST /api/auth/register`, and `POST /api/auth/logout`
-are not implemented yet. Registration currently uses `POST /api/users`.
+```json
+{
+  "username": "alex",
+  "email": "alex@example.com",
+  "password": "P@ssw0rd!"
+}
+```
 
----
+Response: `200 OK` with `UserDto`.
 
-## 👥 Lobbies API
+### `PATCH /api/users/{id}`
 
-### Update Lobby
+Partially update a user.
 
-`PATCH /api/lobbies/{id}`
+```json
+{
+  "email": "new.mail@example.com",
+  "password": "N3wP@ss!"
+}
+```
 
-The current lobby owner can partially update the name, type, and ownership.
-The `X-User-Id` header identifies the owner for the current MVP authentication
-path. An ownership-transfer target must already be a member of the lobby.
+Response: `200 OK` with `UserDto`.
 
-**Request Body**
+### `GET /api/users/{id}`
+
+Return one user by id.
+
+Response: `200 OK` with `UserDto`.
+
+### `DELETE /api/users/{id}`
+
+Delete the caller's own account. The `X-User-Id` header must match `{id}`.
+Deleting an account that still owns a lobby returns `409 Conflict`.
+
+Response: `204 No Content`.
+
+### `GET /api/users/search?q={query}&page={page}&size={size}`
+
+Search users by free-text query. Defaults: `page=0`, `size=20`.
+
+Response: `200 OK` with `UserPageDto`.
+
+### `GET /api/users/by-role?role={role}&page={page}&size={size}`
+
+Search users by role name. Defaults: `page=0`, `size=20`.
+
+Response: `200 OK` with `UserPageDto`.
+
+## Lobbies
+
+### `POST /api/lobbies`
+
+Create a lobby. The caller becomes owner and initial member.
+
+```json
+{
+  "name": "Our Family",
+  "lobbyType": "FAMILY"
+}
+```
+
+Response: `200 OK` with `LobbyDto`.
+
+### `GET /api/lobbies/mine`
+
+Return lobbies where the caller is a member.
+
+Response: `200 OK` with `List<LobbyDto>`.
+
+### `GET /api/lobbies/{id}`
+
+Return one lobby by id.
+
+Response: `200 OK` with `LobbyDto`.
+
+### `GET /api/lobbies/{id}/free-slots?from={timestamp}&to={timestamp}`
+
+Return time windows where every current lobby member is free. The caller must
+be a lobby member. The response does not expose private event details.
+
+```json
+[
+  {
+    "start": "2026-01-01T09:00:00Z",
+    "end": "2026-01-01T11:00:00Z"
+  }
+]
+```
+
+Response: `200 OK` with `List<FreeSlotDto>`.
+
+### `PATCH /api/lobbies/{id}`
+
+Partially update lobby name, type, or owner. Owner-only.
 
 ```json
 {
@@ -270,354 +149,127 @@ path. An ownership-transfer target must already be a member of the lobby.
 }
 ```
 
-All fields are optional; omitted fields remain unchanged.
+`ownerId` must already identify an existing lobby member.
 
-**Response 200**
+Response: `200 OK` with `LobbyDto`.
 
-```json
-{
-  "id": 101,
-  "name": "Weekend Crew",
-  "lobbyType": "FRIENDS",
-  "ownerId": 77,
-  "memberIds": [42, 77]
-}
-```
+### `DELETE /api/lobbies/{id}/members/{userId}`
 
-**Errors**
+Remove a member from a lobby. Owner-only. The owner cannot remove themself
+through this endpoint.
 
-- `403 Forbidden` when the caller is not the current owner.
-- `409 Conflict` when `ownerId` is not an existing lobby member.
+Response: `200 OK` with `LobbyDto`.
 
-### Lobby Invites
+### `DELETE /api/lobbies/{id}`
 
-Lobby owners invite a specific existing user instead of adding that user to the
-lobby immediately. The invited user becomes a member only after accepting.
-Invite links and notification delivery are not part of this API.
+Delete a lobby. Owner-only.
 
-#### Create Invite
+Response: `200 OK` with an empty body.
 
-`POST /api/lobbies/{lobbyId}/invites?userId={userId}`
+## Lobby Invites
 
-`POST /api/lobbies/{lobbyId}/invites?userEmail={userEmail}`
+### `POST /api/lobbies/{lobbyId}/invites?userId={userId}`
+### `POST /api/lobbies/{lobbyId}/invites?userEmail={userEmail}`
 
-The caller must be the lobby owner. Returns a pending `LobbyInviteDto`; it does
-not change the lobby's `memberIds`. Supply exactly one target selector. An
-email selector resolves to an existing account; it does not send an email.
+Create a pending invite for an existing user. The caller must be the lobby
+owner. Supply exactly one target selector.
 
-#### List and Manage Pending Invites
+Response: `200 OK` with `LobbyInviteDto`.
 
-`GET /api/lobbies/{lobbyId}/invites`
+### `GET /api/lobbies/{lobbyId}/invites`
 
-`POST /api/lobbies/{lobbyId}/invites/{inviteId}/resend`
+List pending invites for a lobby. Owner-only.
 
-`DELETE /api/lobbies/{lobbyId}/invites/{inviteId}`
+Response: `200 OK` with `List<LobbyInviteDto>`.
 
-All three endpoints are owner-only. Listing returns only pending invitations.
-Resend renews `sentAt`; it does not send email or push notifications. Delete
-marks the invitation cancelled.
+### `POST /api/lobbies/{lobbyId}/invites/{inviteId}/resend`
 
-#### Respond to an Invite
+Renew an invite's `sentAt` timestamp. Owner-only.
 
-`GET /api/lobby-invites/mine`
+Response: `200 OK` with `LobbyInviteDto`.
 
-`POST /api/lobby-invites/{inviteId}/accept`
+### `DELETE /api/lobbies/{lobbyId}/invites/{inviteId}`
 
-`POST /api/lobby-invites/{inviteId}/decline`
+Cancel an invite. Owner-only.
 
-`mine` returns the current user's pending invitations. Only the invitee can
-accept or decline; accept adds the invitee to the lobby and marks the invite
-`ACCEPTED`, while decline marks it `DECLINED`.
+Response: `200 OK` with `LobbyInviteDto`.
 
-```json
-{
-  "id": 501,
-  "lobbyId": 101,
-  "inviterId": 42,
-  "inviteeId": 77,
-  "status": "PENDING",
-  "sentAt": "2026-07-16T10:00:00Z",
-  "createdAt": "2026-07-16T10:00:00Z",
-  "updatedAt": "2026-07-16T10:00:00Z"
-}
-```
+### `GET /api/lobby-invites/mine`
 
-These endpoints return `403 Forbidden` for a caller without the required owner
-or invitee role, `404 Not Found` for missing resources, and `409 Conflict` for
-an existing member, duplicate pending invite, or terminal invite action.
+List the caller's pending invites.
 
-`POST /api/lobbies/{id}/members` is no longer available; clients must create
-an invitation and wait for the recipient to accept it.
+Response: `200 OK` with `List<LobbyInviteDto>`.
 
-### Find Common Free Slots
+### `POST /api/lobby-invites/{inviteId}/accept`
+### `POST /api/lobby-invites/{inviteId}/decline`
 
-`GET /api/lobbies/{id}/free-slots?from={timestamp}&to={timestamp}`
+Only the invitee may accept or decline an invite.
 
-Returns the portions of the requested half-open time window where every current lobby member
-is available. The current caller must be a lobby member and is identified by the temporary
-`X-User-Id` header.
+Response: `200 OK` with `LobbyInviteDto`.
 
-Private events block only their owner; shared events block every current member of the event's
-lobby. The response deliberately contains no event metadata, so a caller can discover mutual
-availability without seeing another member's private calendar details.
+## Tasks
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | Long | Lobby ID path parameter. |
-| `from` | OffsetDateTime | Inclusive availability-window start. |
-| `to` | OffsetDateTime | Exclusive availability-window end. |
+### `POST /api/tasks`
 
-Timestamps use ISO-8601 with an explicit UTC designator or numeric offset, for example
-`2026-01-01T09:00:00Z` and `2026-01-01T11:00:00+02:00`. In a raw URL, encode the plus sign as
-`%2B`. Offset-less local timestamps are rejected because the API has no timezone context with
-which to interpret them safely.
-
-**Response 200**
-
-```json
-[
-  {
-    "start": "2026-01-01T09:00:00Z",
-    "end": "2026-01-01T11:00:00Z"
-  },
-  {
-    "start": "2026-01-01T13:00:00Z",
-    "end": "2026-01-01T22:00:00Z"
-  }
-]
-```
-
-**Errors**
-
-- `400 Bad Request` when `from` and `to` do not define a non-empty time window.
-- `403 Forbidden` when the caller is not a lobby member.
-- `404 Not Found` when the lobby does not exist.
-
----
-
-## ✅ Tasks API
-
-### Create Task
-
-`POST /api/tasks`
-
-Create a task in a lobby. `description`, `priority`, and `status` are optional;
-priority defaults to `MEDIUM` and status defaults to `TODO`.
+Create a task in a lobby.
 
 ```json
 {
   "title": "Buy groceries",
   "lobbyId": 101,
+  "assigneeId": 77,
+  "dueDate": "2025-11-20",
   "description": "Pick up milk and bread",
-  "priority": "HIGH",
-  "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
+  "status": "TODO",
   "notifyAssignee": true
 }
 ```
 
-### Update Task
+Response: `200 OK` with `TaskDto`.
 
-`PATCH /api/tasks/{id}`
+### `PATCH /api/tasks/{id}`
 
-Partially update task metadata. Valid priority values are `HIGH`, `MEDIUM`, and
-`LOW`. Omitted fields remain unchanged; an empty or whitespace-only
-`description` clears the stored description.
-
-### List My Tasks
-
-`GET /api/tasks/mine`
-
-Returns every task in lobbies where the caller is a member. The caller is
-identified by the temporary `X-User-Id` request header. This endpoint is
-intended for the global task board and does not accept filters; clients apply
-lobby, member, and date filters locally.
-
-Tasks from lobbies where the caller is not a member are never returned.
-
----
-
-## 🛡️ Roles API
-
-### Get All Roles
-
-`GET /api/roles`
-
-**Response 200**
-
-```json
-[
-  {
-    "id": 1,
-    "name": "ROLE_USER"
-  },
-  {
-    "id": 2,
-    "name": "ROLE_ADMIN"
-  }
-]
-```
-
----
-
-### Add Role to User
-
-`POST /api/roles/user/{userId}/add`
-
-Assign an existing role to a user.
-
-**Request**
+Partially update a task.
 
 ```json
 {
-  "roleName": "ROLE_ADMIN"
+  "status": "IN_PROGRESS",
+  "assigneeId": 77,
+  "dueDate": "2025-11-25",
+  "description": "Pick up milk and bread",
+  "priority": "HIGH"
 }
 ```
 
-**Response 200**
+Response: `200 OK` with `TaskDto`.
 
-```json
-{
-  "userId": 1,
-  "roles": [
-    "ROLE_USER",
-    "ROLE_ADMIN"
-  ]
-}
-```
+### `GET /api/tasks?lobbyId={id}&assigneeId={id}&status={status}`
 
----
+List tasks with optional filters. All query parameters are optional.
 
-### Remove Role from User
+Response: `200 OK` with `List<TaskDto>`.
 
-`POST /api/roles/user/{userId}/remove`
+### `GET /api/tasks/mine`
 
-Remove a specific role from user.
+Return tasks across all lobbies where the caller is a member.
 
-**Request**
+Response: `200 OK` with `List<TaskDto>`.
 
-```json
-{
-  "roleName": "ROLE_USER"
-}
-```
+### `DELETE /api/tasks/{id}`
 
-**Response 200**
+Delete a task. Accessible to the relevant lobby owner or member according to
+service rules.
 
-```json
-{
-  "userId": 1,
-  "roles": [
-    "ROLE_ADMIN"
-  ]
-}
-```
+Response: `200 OK` with an empty body.
 
----
+## Calendar
 
-### Replace All User Roles
+All calendar endpoints use the `/api/calendar` base path.
 
-`PUT /api/roles/user/{userId}`
+### `POST /api/calendar/events`
 
-Replace all roles assigned to a user.
-
-**Request**
-
-```json
-{
-  "roles": [
-    "ROLE_USER",
-    "ROLE_MANAGER"
-  ]
-}
-```
-
-**Response 200**
-
-```json
-{
-  "userId": 1,
-  "roles": [
-    "ROLE_USER",
-    "ROLE_MANAGER"
-  ]
-}
-```
-
----
-
-## 💳 Plans API
-
-### Get All Plans
-
-`GET /api/plans`
-
-List all available subscription plans.
-
-**Response 200**
-
-```json
-[
-  {
-    "id": 1,
-    "name": "starter",
-    "price": 0,
-    "durationDays": 30
-  },
-  {
-    "id": 2,
-    "name": "pro",
-    "price": 9.99,
-    "durationDays": 30
-  }
-]
-```
-
----
-
-### Subscribe to Plan
-
-`POST /api/plans/{planId}/subscribe`
-
-Subscribe the current user to a plan.
-
-**Response 200**
-
-```json
-{
-  "plan": "pro",
-  "status": "active",
-  "activeUntil": "2024-06-01T12:00:00Z"
-}
-```
-
----
-
-### Cancel Subscription
-
-`POST /api/plans/{planId}/cancel`
-
-Cancel the active subscription.
-
-**Response 200**
-
-```json
-{
-  "plan": "pro",
-  "status": "cancelled",
-  "activeUntil": "2024-06-01T12:00:00Z"
-}
-```
-
----
-
-## 📅 Calendar Events API
-
-Calendar event endpoints require the MVP `X-User-Id` header. An event location
-is optional, free-form text limited to 255 characters.
-
-### Create Event
-
-`POST /api/calendar/events`
+Create an event.
 
 ```json
 {
@@ -632,52 +284,181 @@ is optional, free-form text limited to 255 characters.
 }
 ```
 
-### Update Event
+Response: `200 OK` with `EventDto`.
 
-`PATCH /api/calendar/events/{id}`
+### `PATCH /api/calendar/events/{id}`
 
-Send a nonblank `location` to set it. Omit `location` to preserve its current
-value; send an empty or whitespace-only string to clear it.
+Partially update an event. Blank `location` clears the stored location.
+
+Response: `200 OK` with `EventDto`.
+
+### `GET /api/calendar/events?lobbyId={id}&from={timestamp}&to={timestamp}`
+
+List events overlapping the requested time window.
+
+Response: `200 OK` with `List<EventDto>`.
+
+### `DELETE /api/calendar/events/{id}`
+
+Delete an event.
+
+Response: `200 OK` with an empty body.
+
+### `GET /api/calendar/conflicts?lobbyId={id}&start={timestamp}&end={timestamp}&requesterId={id}`
+
+Return event conflicts for the specified lobby and time window. `requesterId`
+must match the caller's `X-User-Id` header.
+
+Response: `200 OK` with `List<EventConflictDto>`.
+
+### `GET /api/calendar/user-conflict?userId={id}&start={timestamp}&end={timestamp}&requesterId={id}`
+
+Return whether the specified user has a conflict in the requested window.
+`requesterId` must match the caller's `X-User-Id` header.
+
+Response: `200 OK` with `UserConflictDto`.
+
+## Roles
+
+### `GET /api/roles`
+
+Return all roles.
+
+Response: `200 OK` with `List<RoleDto>`.
+
+### `GET /api/roles/names`
+
+Return only role names.
+
+Response: `200 OK` with `Set<RoleNameDto>`.
+
+### `POST /api/roles/{roleName}`
+
+Ensure a role exists. Returns `201 Created`.
+
+Response: `201 Created` with an empty body.
+
+### `PUT /api/roles/user/{userId}`
+### `POST /api/roles/user/{userId}/add`
+### `POST /api/roles/user/{userId}/remove`
+
+All three endpoints accept the same request shape:
 
 ```json
 {
-  "location": "Central Park"
+  "roles": ["ROLE_USER", "ROLE_ADMIN"]
 }
 ```
 
-### Event Response
+- `PUT` replaces the user's roles.
+- `POST /add` adds the supplied roles.
+- `POST /remove` removes the supplied roles.
 
-Create, update, list, and conflict responses return `EventDto`, including the
-nullable `location` field.
+Response: `200 OK` with `Set<String>`.
+
+## Plans
+
+### `GET /api/plans`
+
+List all plans.
+
+Response: `200 OK` with `List<PlanDto>`.
+
+### `GET /api/plans/{id}`
+
+Return one plan by id.
+
+Response: `200 OK` with `PlanDto`.
+
+### `GET /api/plans/by-name?name={planName}`
+
+Return one plan by unique plan name.
+
+Response: `200 OK` with `PlanDto`.
+
+### `POST /api/plans`
+
+Create a plan.
 
 ```json
 {
-  "id": 9001,
-  "title": "Dinner together",
-  "location": "Whole Foods Market",
-  "shared": true,
-  "startAt": "2025-11-20T17:00:00Z",
-  "endAt": "2025-11-20T19:00:00Z",
-  "timezone": "Europe/Kyiv",
-  "lobbyId": 101,
-  "ownerId": 42,
-  "createdAt": "2025-11-13T10:00:00Z"
+  "name": "PRO_MONTHLY",
+  "priceUsd": 9.99,
+  "durationDays": 30
 }
 ```
 
----
+Response: `201 Created` with `PlanDto`.
 
-## 🔔 Notifications API
+### `PUT /api/plans/{id}`
 
-All notification endpoints use the temporary `X-User-Id` header. Preference
-updates are partial: omitted fields keep their current value. Every preference
-defaults to `true` until the user saves an explicit choice.
+Update a plan.
 
-### Global Preferences
+Response: `200 OK` with `PlanDto`.
 
-`GET /api/notifications/preferences`
+### `DELETE /api/plans/{id}`
 
-`PATCH /api/notifications/preferences`
+Delete a plan.
+
+Response: `204 No Content`.
+
+## Subscriptions
+
+### `POST /api/subscriptions`
+
+Start a subscription for a user.
+
+```json
+{
+  "userId": 1,
+  "planId": 2,
+  "startDate": null,
+  "endDate": null,
+  "active": true
+}
+```
+
+Response: `201 Created` with `SubscriptionDto`.
+
+### `POST /api/subscriptions/{userId}/cancel-active`
+
+Cancel the current active subscription for one user.
+
+Response: `200 OK` with `SubscriptionDto`.
+
+### `GET /api/subscriptions/{userId}/active`
+
+Return the user's active subscription if one exists.
+
+Response: `200 OK` with `SubscriptionDto`, or `404` when absent.
+
+### `GET /api/subscriptions/{userId}/history`
+
+Return the user's subscription history ordered by service rules.
+
+Response: `200 OK` with `List<SubscriptionDto>`.
+
+Subscription responses use this shape:
+
+```json
+{
+  "id": 10,
+  "userId": 1,
+  "planId": 2,
+  "planName": "PRO_MONTHLY",
+  "startDate": "2025-01-01T10:00:00Z",
+  "endDate": "2025-01-31T10:00:00Z",
+  "active": true,
+  "createdAt": "2025-01-01T10:00:00Z"
+}
+```
+
+## Notifications
+
+### `GET /api/notifications/preferences`
+### `PATCH /api/notifications/preferences`
+
+Read or partially update global notification preferences.
 
 ```json
 {
@@ -689,107 +470,84 @@ defaults to `true` until the user saves an explicit choice.
 }
 ```
 
-### Per-Lobby Preferences
+Response: `200 OK` with `NotificationPreferencesDto`.
 
-`GET /api/lobbies/{lobbyId}/notification-preferences`
+### `GET /api/lobbies/{lobbyId}/notification-preferences`
+### `PATCH /api/lobbies/{lobbyId}/notification-preferences`
 
-`PATCH /api/lobbies/{lobbyId}/notification-preferences`
+Read or partially update the caller's per-lobby preferences.
 
 ```json
 {
+  "lobbyId": 101,
   "newEventsEnabled": true,
   "taskUpdatesEnabled": true,
   "freeSlotsEnabled": true
 }
 ```
 
-The caller must be a member of the lobby. A notification is emitted only when
-both its global and per-lobby preference are enabled.
+Response: `200 OK` with `LobbyNotificationPreferencesDto`.
 
-### Inbox
+### `GET /api/notifications/mine`
 
-`GET /api/notifications/mine`
+Return the caller's notification inbox.
 
-`PATCH /api/notifications/{id}/read`
+Response: `200 OK` with `List<NotificationDto>`.
 
-Inbox records are visible only to their recipient. Each record contains an
-immediately delivered `IN_APP` delivery and pending `EMAIL` and `PUSH`
-delivery intents. This backend does not yet send external email or push
-messages.
+### `PATCH /api/notifications/{id}/read`
 
----
+Mark one notification as read.
 
-## ❤️ Health API
+Response: `200 OK` with `NotificationDto`.
 
-### Check Health
-
-`GET /api/health`
-
-Simple health and uptime information.
-
-**Response 200**
+Inbox entries use this shape:
 
 ```json
 {
-  "status": "UP",
-  "service": "lined-backend",
-  "version": "0.1.0"
+  "id": 9001,
+  "type": "TASK_ASSIGNED",
+  "title": "Task assigned",
+  "message": "Buy groceries was assigned to you",
+  "lobbyId": 101,
+  "taskId": 555,
+  "eventId": null,
+  "readAt": null,
+  "createdAt": "2026-07-17T08:00:00Z",
+  "deliveries": []
 }
 ```
 
----
+## Planned / Proposal-Only Endpoints
 
-## ⚠️ Common Error Responses
+The following endpoints are not implemented by the current controllers:
 
-| Status | Meaning               | Example                                                             |
-|:-------|:----------------------|:--------------------------------------------------------------------|
-| 400    | Bad Request           | `{ "code": "VALIDATION_ERROR", "message": "Invalid email" }`        |
-| 401    | Unauthorized          | `{ "title": "Unauthorized", "detail": "Invalid email, username, or password" }` |
-| 403    | Forbidden             | `{ "code": "FORBIDDEN", "message": "Access denied" }`               |
-| 404    | Not Found             | `{ "code": "NOT_FOUND", "message": "User not found" }`              |
-| 409    | Conflict              | `{ "code": "EMAIL_EXISTS", "message": "Email already registered" }` |
-| 500    | Internal Server Error | `{ "code": "SERVER_ERROR", "message": "Unexpected exception" }`     |
+- `GET /api/users/me`
+  See [docs/api-proposals/users-me-endpoint.md](api-proposals/users-me-endpoint.md).
+- `POST /api/plans/{planId}/subscribe`
+  Use `POST /api/subscriptions` instead.
+- `POST /api/plans/{planId}/cancel`
+  Use `POST /api/subscriptions/{userId}/cancel-active` instead.
+- `POST /api/auth/refresh`
+- `POST /api/auth/register`
+- `POST /api/auth/logout`
 
----
+`GET /api/health` is also not implemented by a dedicated controller in this
+backend codebase.
 
-## 📄 Schemas
+## Common Error Responses
 
-### UserDto
+The backend uses RFC 7807 `ProblemDetail` responses through the application
+exception layer.
 
-```json
-{
-  "id": 42,
-  "username": "pan14ek",
-  "email": "user@example.com",
-  "createdAt": "2023-01-01T12:00:00Z",
-  "roles": [
-    "ROLE_USER",
-    "ROLE_ADMIN"
-  ],
-  "activePlan": "pro",
-  "activeUntil": "2024-01-01T12:00:00Z"
-}
-```
+Typical status codes:
 
-### ApiError
+- `400 Bad Request` for validation failures or malformed caller input.
+- `401 Unauthorized` for login failures.
+- `403 Forbidden` for owner/member/requester mismatches.
+- `404 Not Found` for missing domain entities.
+- `409 Conflict` for duplicate state or blocked transitions.
 
-```json
-{
-  "code": "NOT_FOUND",
-  "message": "User not found",
-  "path": "/api/users/42"
-}
-```
+## OpenAPI
 
----
-
-## 🧾 OpenAPI Specification
-
-- **Swagger UI:** [http://localhost:8080/swagger-ui](http://localhost:8080/swagger-ui)
-- **JSON Docs:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
-
----
-
-## © 2025 Lined Backend
-
-Developed by **Pan14ek**
+- Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
