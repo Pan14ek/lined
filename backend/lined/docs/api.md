@@ -40,6 +40,42 @@ Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header.
 not yet install a request filter that enforces the login response as Bearer
 authentication automatically.
 
+### `POST /api/auth/password-reset-requests`
+
+Requests a password reset for a signed-out user, identified by email or
+username. Always returns `202 Accepted` with an empty body, whether or not
+the identifier matches an account — this avoids revealing which identifiers
+are registered.
+
+```json
+{
+  "identifier": "alex@example.com"
+}
+```
+
+When the identifier matches an account, a single-use, random, high-entropy
+token is generated (30-minute expiry) and only its HMAC-SHA256 hash is
+persisted. Until real email/push delivery exists, the raw token is logged
+server-side (MVP shortcut) for manual/dev redemption.
+
+### `POST /api/auth/password-resets`
+
+Redeems a reset token and sets a new password. Returns `204 No Content` on
+success.
+
+```json
+{
+  "token": "<opaque-token-from-the-request-step>",
+  "newPassword": "N3wP@ssw0rd!"
+}
+```
+
+An unknown, expired, or already-used token returns a generic
+`400 Bad Request` (`"Invalid or expired reset token"`) — the three cases are
+not distinguished, for the same enumeration-avoidance reasoning as the
+request step. On success, the token is marked used and every other
+outstanding reset token for that user is invalidated.
+
 ## Users
 
 ### `POST /api/users`
