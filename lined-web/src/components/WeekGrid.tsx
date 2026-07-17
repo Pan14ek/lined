@@ -17,37 +17,10 @@ import {
   type EventLane,
   type FreeSlot,
 } from '@/lib/calendarUtils';
+import { CalendarLegend } from '@/components/CalendarLegend';
+import { DEFAULT_LEGEND_ITEMS, type LegendItem } from '@/lib/constants';
 
-// ─── Legend ──────────────────────────────────────────────────────────────────
-
-export interface LegendItem {
-  label: string;
-  color: string;
-}
-
-const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
-  { label: 'Couple', color: 'var(--color-lobby-couple)' },
-  { label: 'Family', color: 'var(--color-lobby-family)' },
-  { label: 'Friends', color: 'var(--color-lobby-friends)' },
-  { label: 'Work', color: 'var(--color-lobby-work)' },
-  { label: 'Free slot', color: '#B4EBD0' },
-];
-
-function CalendarLegend({ items }: { items: LegendItem[] }) {
-  return (
-    <div className="flex flex-shrink-0 items-center gap-5 border-t border-border bg-white px-8 py-2">
-      {items.map(({ label, color }) => (
-        <div key={label} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          {label}
-        </div>
-      ))}
-    </div>
-  );
-}
+export type { LegendItem };
 
 // ─── NowLine ─────────────────────────────────────────────────────────────────
 

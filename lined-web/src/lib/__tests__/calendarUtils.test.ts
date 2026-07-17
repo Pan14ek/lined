@@ -8,6 +8,8 @@ import {
   formatTaskDueDate,
   formatHourRange,
   assignEventLanes,
+  getMonthGridDays,
+  isSameMonth,
 } from '../calendarUtils';
 
 afterEach(() => {
@@ -232,5 +234,61 @@ describe('assignEventLanes', () => {
     const lanes = assignEventLanes(events);
     expect(lanes.get(1)?.laneCount).toBe(2);
     expect(lanes.get(3)).toEqual({ lane: 0, laneCount: 1 });
+  });
+});
+
+describe('isSameMonth', () => {
+  it('returns true for two dates in the same month and year', () => {
+    expect.assertions(1);
+    expect(
+      isSameMonth(new Date('2026-03-01T00:00:00'), new Date('2026-03-28T23:00:00')),
+    ).toBe(true);
+  });
+
+  it('returns false for dates in different months', () => {
+    expect.assertions(1);
+    expect(
+      isSameMonth(new Date('2026-03-31T00:00:00'), new Date('2026-04-01T00:00:00')),
+    ).toBe(false);
+  });
+
+  it('returns false for the same month/day in different years', () => {
+    expect.assertions(1);
+    expect(
+      isSameMonth(new Date('2025-03-15T00:00:00'), new Date('2026-03-15T00:00:00')),
+    ).toBe(false);
+  });
+});
+
+describe('getMonthGridDays', () => {
+  it('returns exactly 42 days (a 6x7 grid)', () => {
+    expect.assertions(1);
+    expect(getMonthGridDays(new Date('2026-03-15T00:00:00'))).toHaveLength(42);
+  });
+
+  it('starts the grid on the Monday on/before the 1st of the month', () => {
+    expect.assertions(2);
+    // March 2026: the 1st is a Sunday, so the grid should start Mon 23 Feb.
+    const days = getMonthGridDays(new Date('2026-03-15T00:00:00'));
+    expect(days[0]!.getDay()).toBe(1); // Monday
+    expect(days[0]!.toDateString()).toBe(new Date('2026-02-23T00:00:00').toDateString());
+  });
+
+  it('includes leading and trailing days from adjacent months', () => {
+    expect.assertions(2);
+    const monthAnchor = new Date('2026-03-15T00:00:00');
+    const days = getMonthGridDays(monthAnchor);
+    expect(isSameMonth(days[0]!, monthAnchor)).toBe(false);
+    expect(isSameMonth(days[days.length - 1]!, monthAnchor)).toBe(false);
+  });
+
+  it('covers every day of the anchor month', () => {
+    expect.assertions(31);
+    const monthAnchor = new Date('2026-03-01T00:00:00');
+    const days = getMonthGridDays(monthAnchor);
+    const monthDays = days.filter((d) => isSameMonth(d, monthAnchor));
+    for (let i = 0; i < 31; i++) {
+      expect(monthDays[i]!.getDate()).toBe(i + 1);
+    }
   });
 });

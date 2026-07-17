@@ -1,27 +1,39 @@
+import { useState } from 'react';
 import { CalendarTopBar } from '@/components/CalendarTopBar';
 import { CreateEventModal } from '@/components/CreateEventModal';
 import { EventDetailPanel } from '@/components/EventDetailPanel';
 import { WeekGrid } from '@/components/WeekGrid';
-import { useWeekEvents, useDeleteEvent } from '@/hooks/useEvents';
+import { MonthGrid } from '@/components/MonthGrid';
+import { useWeekEvents, useMonthEvents, useDeleteEvent } from '@/hooks/useEvents';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useCalendarStore } from '@/store/calendar';
+import { formatMonthYear } from '@/lib/calendarUtils';
+import type { EventDto } from '@/types';
 
 export function CalendarPage() {
   const {
     weekStart,
+    monthAnchor,
     viewMode,
     selectedEventId,
     isCreateModalOpen,
     goToPrevWeek,
     goToNextWeek,
+    goToPrevMonth,
+    goToNextMonth,
     goToToday,
+    goToWeekOf,
     setViewMode,
     setSelectedEventId,
     openCreateModal,
     closeCreateModal,
   } = useCalendarStore();
 
-  const { data: events = [] } = useWeekEvents(weekStart);
+  const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
+
+  const { data: weekEvents = [] } = useWeekEvents(weekStart);
+  const { data: monthEvents = [] } = useMonthEvents(monthAnchor);
+  const events = viewMode === 'month' ? monthEvents : weekEvents;
   const { data: lobbies = [] } = useMyLobbies();
   const deleteEvent = useDeleteEvent();
 
@@ -45,32 +57,39 @@ export function CalendarPage() {
     // h-full fills the flex-1 main area; overflow-hidden so the grid controls its own scroll
     <div className="relative flex h-full flex-col overflow-hidden">
       <CalendarTopBar
-        weekStart={weekStart}
+        title={formatMonthYear(viewMode === 'month' ? monthAnchor : weekStart)}
         viewMode={viewMode}
-        onPrevWeek={goToPrevWeek}
-        onNextWeek={goToNextWeek}
+        onPrev={viewMode === 'month' ? goToPrevMonth : goToPrevWeek}
+        onNext={viewMode === 'month' ? goToNextMonth : goToNextWeek}
         onToday={goToToday}
         onViewModeChange={setViewMode}
         onNewEvent={openCreateModal}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <WeekGrid
-          weekStart={weekStart}
-          events={events}
-          lobbies={lobbies}
-          selectedEventId={selectedEventId}
-          onEventClick={setSelectedEventId}
-        />
+        {viewMode === 'month' ? (
+          <MonthGrid
+            monthAnchor={monthAnchor}
+            events={monthEvents}
+            lobbies={lobbies}
+            onDayClick={goToWeekOf}
+          />
+        ) : (
+          <WeekGrid
+            weekStart={weekStart}
+            events={weekEvents}
+            lobbies={lobbies}
+            selectedEventId={selectedEventId}
+            onEventClick={setSelectedEventId}
+          />
+        )}
 
-        {selectedEvent && selectedLobby && (
+        {selectedEvent && selectedLobby && viewMode === 'week' && (
           <EventDetailPanel
             event={selectedEvent}
             lobby={selectedLobby}
             onClose={() => setSelectedEventId(null)}
-            onEdit={() => {
-              /* TODO: open edit modal */
-            }}
+            onEdit={() => setEditingEvent(selectedEvent)}
             onDelete={handleDelete}
           />
         )}
@@ -84,6 +103,15 @@ export function CalendarPage() {
             closeCreateModal();
             setSelectedEventId(event.id);
           }}
+        />
+      )}
+
+      {editingEvent && (
+        <CreateEventModal
+          lobbies={lobbies}
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSaved={() => setEditingEvent(null)}
         />
       )}
     </div>

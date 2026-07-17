@@ -1,16 +1,20 @@
 import { create } from 'zustand';
-import { getWeekStart, addDays } from '@/lib/calendarUtils';
+import { getWeekStart, getMonthStart, addDays } from '@/lib/calendarUtils';
 
 export type ViewMode = 'week' | 'month';
 
 interface CalendarState {
   weekStart: Date;
+  monthAnchor: Date;
   viewMode: ViewMode;
   selectedEventId: number | null;
   isCreateModalOpen: boolean;
   goToPrevWeek: () => void;
   goToNextWeek: () => void;
+  goToPrevMonth: () => void;
+  goToNextMonth: () => void;
   goToToday: () => void;
+  goToWeekOf: (day: Date) => void;
   setViewMode: (mode: ViewMode) => void;
   setSelectedEventId: (id: number | null) => void;
   openCreateModal: () => void;
@@ -19,13 +23,19 @@ interface CalendarState {
 
 export const useCalendarStore = create<CalendarState>()((set) => ({
   weekStart: getWeekStart(),
+  monthAnchor: getMonthStart(new Date()),
   viewMode: 'week',
   selectedEventId: null,
   isCreateModalOpen: false,
 
   goToPrevWeek: () => set((s) => ({ weekStart: addDays(s.weekStart, -7) })),
   goToNextWeek: () => set((s) => ({ weekStart: addDays(s.weekStart, 7) })),
-  goToToday: () => set({ weekStart: getWeekStart() }),
+  goToPrevMonth: () =>
+    set((s) => ({ monthAnchor: getMonthStart(addDays(s.monthAnchor, -1)) })),
+  goToNextMonth: () =>
+    set((s) => ({ monthAnchor: getMonthStart(addDays(s.monthAnchor, 32)) })),
+  goToToday: () => set({ weekStart: getWeekStart(), monthAnchor: getMonthStart(new Date()) }),
+  goToWeekOf: (day) => set({ weekStart: getWeekStart(day), viewMode: 'week' }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setSelectedEventId: (id) => set({ selectedEventId: id }),
   openCreateModal: () => set({ isCreateModalOpen: true }),

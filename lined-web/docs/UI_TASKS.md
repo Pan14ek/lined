@@ -34,7 +34,7 @@ exist for every task, including `create-lobby` (task 4), `calendar-month`
 - TypeScript types mirroring all backend DTOs (`src/types/index.ts`)
 - `AppShell` + `Sidebar` layout (sidebar shows real lobbies + real current user
   from the API, with loading/empty states and sign-out)
-- **Global Calendar page (week view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands), `EventDetailPanel`, `CreateEventModal`, delete event. Missing: month view, edit event, legend.
+- **Global Calendar page (week + month view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands, legend, now-line), `MonthGrid` (6-week grid, day-click drills into that week), `EventDetailPanel` (with location row), `CreateEventModal` (create + edit modes), delete event.
 - **"+ Create" dropdown & Create Lobby modal** — `CreateMenu`, `CreateLobbyModal`, `LobbyTypePicker`, `useCreateLobby`; New Task / Reserve Free Slot only flip store state until Tasks 8/11 land.
 - Zustand stores: `auth` (persisted userId), `calendar` (view state), `createMenu` (create-lobby + event/task/reserveSlot overlay state)
 - Hooks: `useMyLobbies`, `useLobby`, `useCreateLobby`, `useUpdateLobbyOwner`, `useRemoveMember`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`, `useUsers`, `useUserSearch`, `useLobbyTasks`, `useUpdateTask`, `useLobbyInvites`, `useCreateInvite`, `useResendInvite`, `useCancelInvite`
@@ -86,7 +86,7 @@ UserSettingsPage, LobbySettingsPage.
 | 7 | `feature/ui-07-lobby-calendar` | Lobby Calendar tab (week grid scoped to lobby, free-slot bands) | [tasks/UI-07-lobby-calendar.md](tasks/UI-07-lobby-calendar.md) | DONE |
 | 8 | `feature/ui-08-add-task-drawer` | Add Task drawer (title, assignee picker, due date, status) | [tasks/UI-08-add-task-drawer.md](tasks/UI-08-add-task-drawer.md) | DONE |
 | 9 | `feature/ui-09-tasks-kanban` | Global Tasks Board: 3-column kanban with filters and status transitions | [tasks/UI-09-tasks-kanban.md](tasks/UI-09-tasks-kanban.md) | DONE |
-| 10 | `feature/ui-10-calendar-enhancements` | Calendar polish: edit event, month view, legend | [tasks/UI-10-calendar-enhancements.md](tasks/UI-10-calendar-enhancements.md) | TODO |
+| 10 | `feature/ui-10-calendar-enhancements` | Calendar polish: edit event, month view, legend | [tasks/UI-10-calendar-enhancements.md](tasks/UI-10-calendar-enhancements.md) | DONE |
 | 11 | `feature/ui-11-reserve-slot` | Free-slot detection surfacing + Reserve Free Slot modal | [tasks/UI-11-reserve-slot.md](tasks/UI-11-reserve-slot.md) | TODO |
 | 12 | `feature/ui-12-user-settings` | User Settings page: profile, notifications, appearance, danger zone | [tasks/UI-12-user-settings.md](tasks/UI-12-user-settings.md) | TODO |
 | 13 | `feature/ui-13-lobby-settings` | Lobby Settings page: general, notifications, leave/delete lobby | [tasks/UI-13-lobby-settings.md](tasks/UI-13-lobby-settings.md) | TODO |

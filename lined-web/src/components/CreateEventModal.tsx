@@ -2,16 +2,21 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { HTTPError } from 'ky';
 import type { EventDto, LobbyDto } from '@/types';
-import { useCreateEvent } from '@/hooks/useEvents';
+import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/calendarUtils';
 import { AuthAlert } from '@/components/AuthAlert';
 
 interface CreateEventModalProps {
   lobbies: LobbyDto[];
   onClose: () => void;
-  onCreated: (event: EventDto) => void;
+  /** Called after a successful create. Required unless `event` is set (edit mode). */
+  onCreated?: (event: EventDto) => void;
   /** When set, the lobby field is locked to this id and shown as read-only. */
   lockedLobbyId?: number;
+  /** When set, the modal opens in edit mode, pre-filled from this event. */
+  event?: EventDto;
+  /** Called after a successful edit-mode save. Required when `event` is set. */
+  onSaved?: (event: EventDto) => void;
 }
 
 interface FormState {
@@ -19,6 +24,7 @@ interface FormState {
   lobbyId: string;
   startAt: string;
   endAt: string;
+  location: string;
   shared: boolean;
 }
 
@@ -27,10 +33,17 @@ export function CreateEventModal({
   onClose,
   onCreated,
   lockedLobbyId,
+  event,
+  onSaved,
 }: CreateEventModalProps) {
+  const isEditMode = event != null;
   const createEvent = useCreateEvent();
+  const updateEvent = useUpdateEvent();
+  const lockedLobbyIdResolved = isEditMode ? event.lobbyId : lockedLobbyId;
   const lockedLobby =
-    lockedLobbyId != null ? lobbies.find((l) => l.id === lockedLobbyId) : undefined;
+    lockedLobbyIdResolved != null
+      ? lobbies.find((l) => l.id === lockedLobbyIdResolved)
+      : undefined;
 
   // Default: start = now rounded to next hour, end = +1h
   const defaultStart = (() => {
@@ -41,17 +54,32 @@ export function CreateEventModal({
   })();
   const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000);
 
-  const [form, setForm] = useState<FormState>({
-    title: '',
-    lobbyId: String(lockedLobbyId ?? lobbies[0]?.id ?? ''),
-    startAt: toDatetimeLocal(defaultStart),
-    endAt: toDatetimeLocal(defaultEnd),
-    shared: true,
-  });
+  const initialLocation = event?.location ?? '';
+  const [form, setForm] = useState<FormState>(() =>
+    event
+      ? {
+          title: event.title,
+          lobbyId: String(event.lobbyId),
+          startAt: toDatetimeLocal(new Date(event.startAt)),
+          endAt: toDatetimeLocal(new Date(event.endAt)),
+          location: initialLocation,
+          shared: event.shared,
+        }
+      : {
+          title: '',
+          lobbyId: String(lockedLobbyId ?? lobbies[0]?.id ?? ''),
+          startAt: toDatetimeLocal(defaultStart),
+          endAt: toDatetimeLocal(defaultEnd),
+          location: '',
+          shared: true,
+        },
+  );
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  const mutation = isEditMode ? updateEvent : createEvent;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,6 +87,26 @@ export function CreateEventModal({
 
     const startDate = fromDatetimeLocal(form.startAt);
     const endDate = fromDatetimeLocal(form.endAt);
+    const trimmedLocation = form.location.trim();
+
+    if (isEditMode) {
+      updateEvent.mutate(
+        {
+          id: event.id,
+          data: {
+            title: form.title.trim(),
+            startAt: startDate.toISOString(),
+            endAt: endDate.toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            shared: form.shared,
+            // Only send location if it changed — omitting preserves the current value.
+            ...(trimmedLocation !== initialLocation ? { location: trimmedLocation } : {}),
+          },
+        },
+        { onSuccess: (updated) => onSaved?.(updated) },
+      );
+      return;
+    }
 
     createEvent.mutate(
       {
@@ -68,10 +116,11 @@ export function CreateEventModal({
         endAt: endDate.toISOString(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         shared: form.shared,
+        ...(trimmedLocation ? { location: trimmedLocation } : {}),
       },
       {
-        onSuccess: (event) => {
-          onCreated(event);
+        onSuccess: (createdEvent) => {
+          onCreated?.(createdEvent);
         },
       },
     );
@@ -89,7 +138,9 @@ export function CreateEventModal({
       <div className="w-[520px] max-w-[90vw] overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="text-lg font-bold text-text-primary">New Event</h2>
+          <h2 className="text-lg font-bold text-text-primary">
+            {isEditMode ? 'Edit Event' : 'New Event'}
+          </h2>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -170,6 +221,20 @@ export function CreateEventModal({
               </div>
             </div>
 
+            {/* Location */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                Location (optional)
+              </label>
+              <input
+                type="text"
+                value={form.location}
+                onChange={(e) => set('location', e.target.value)}
+                placeholder="e.g. Home, Central Park…"
+                className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
+              />
+            </div>
+
             {/* Shared toggle */}
             <ToggleRow
               label="Shared event"
@@ -178,8 +243,10 @@ export function CreateEventModal({
               onChange={(v) => set('shared', v)}
             />
 
-            {createEvent.isError && (
-              <AuthAlert message={getCreateEventErrorMessage(createEvent.error)} />
+            {mutation.isError && (
+              <AuthAlert
+                message={getEventErrorMessage(mutation.error, isEditMode)}
+              />
             )}
           </div>
 
@@ -194,10 +261,16 @@ export function CreateEventModal({
             </button>
             <button
               type="submit"
-              disabled={createEvent.isPending}
+              disabled={mutation.isPending}
               className="h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors"
             >
-              {createEvent.isPending ? 'Creating…' : 'Create Event'}
+              {isEditMode
+                ? mutation.isPending
+                  ? 'Saving…'
+                  : 'Save changes'
+                : mutation.isPending
+                  ? 'Creating…'
+                  : 'Create Event'}
             </button>
           </div>
         </form>
@@ -206,11 +279,13 @@ export function CreateEventModal({
   );
 }
 
-function getCreateEventErrorMessage(error: unknown): string {
+function getEventErrorMessage(error: unknown, isEditMode: boolean): string {
   if (error instanceof HTTPError && error.response.status === 400) {
     return 'Enter a valid title and time range';
   }
-  return "Couldn't create event — please try again";
+  return isEditMode
+    ? "Couldn't save changes — please try again"
+    : "Couldn't create event — please try again";
 }
 
 // ─── ToggleRow ────────────────────────────────────────────────────────────────

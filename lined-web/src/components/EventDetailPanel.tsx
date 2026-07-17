@@ -1,4 +1,4 @@
-import { Clock, Link, X } from 'lucide-react';
+import { Clock, Link, MapPin, X } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
 import { formatEventTime } from '@/lib/calendarUtils';
 
@@ -57,6 +57,14 @@ export function EventDetailPanel({
           <Clock className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
           <span>{formatEventTime(event.startAt, event.endAt)}</span>
         </div>
+
+        {/* Location */}
+        {event.location && (
+          <div className="mb-2 flex items-center gap-2 text-sm text-text-primary">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
+            <span>{event.location}</span>
+          </div>
+        )}
 
         {/* Shared badge */}
         {event.shared && (
