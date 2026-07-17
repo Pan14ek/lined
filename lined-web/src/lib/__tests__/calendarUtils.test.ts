@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { EventDto } from '@/types';
 import {
   getGreeting,
   formatFullDate,
   formatRelativeEventTime,
   formatFreeSlotRange,
   formatTaskDueDate,
+  formatHourRange,
+  assignEventLanes,
 } from '../calendarUtils';
 
 afterEach(() => {
@@ -146,5 +149,88 @@ describe('formatTaskDueDate', () => {
     const result = formatTaskDueDate('2026-04-01', 'TODO');
     expect(result.label).toBe('Apr 1');
     expect(result.isUrgent).toBe(false);
+  });
+});
+
+describe('formatHourRange', () => {
+  it('formats a same-AM/PM whole-hour range', () => {
+    expect.assertions(1);
+    expect(formatHourRange(14, 17)).toBe('2–5 PM');
+  });
+
+  it('formats a range crossing AM to PM', () => {
+    expect.assertions(1);
+    expect(formatHourRange(9, 12)).toBe('9 AM–12 PM');
+  });
+
+  it('includes minutes for a half-hour boundary', () => {
+    expect.assertions(1);
+    expect(formatHourRange(9.5, 11)).toBe('9:30–11 AM');
+  });
+});
+
+describe('assignEventLanes', () => {
+  const makeEvent = (id: number, startAt: string, endAt: string): EventDto => ({
+    id,
+    title: `Event ${id}`,
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('returns an empty map for no events', () => {
+    expect.assertions(1);
+    expect(assignEventLanes([]).size).toBe(0);
+  });
+
+  it('assigns lane 0 with laneCount 1 to non-overlapping events', () => {
+    expect.assertions(2);
+    const events = [
+      makeEvent(1, '2026-03-28T09:00:00Z', '2026-03-28T10:00:00Z'),
+      makeEvent(2, '2026-03-28T11:00:00Z', '2026-03-28T12:00:00Z'),
+    ];
+    const lanes = assignEventLanes(events);
+    expect(lanes.get(1)).toEqual({ lane: 0, laneCount: 1 });
+    expect(lanes.get(2)).toEqual({ lane: 0, laneCount: 1 });
+  });
+
+  it('assigns two lanes to a pair of overlapping events', () => {
+    expect.assertions(2);
+    const events = [
+      makeEvent(1, '2026-03-28T09:00:00Z', '2026-03-28T10:30:00Z'),
+      makeEvent(2, '2026-03-28T10:00:00Z', '2026-03-28T11:00:00Z'),
+    ];
+    const lanes = assignEventLanes(events);
+    expect(lanes.get(1)).toEqual({ lane: 0, laneCount: 2 });
+    expect(lanes.get(2)).toEqual({ lane: 1, laneCount: 2 });
+  });
+
+  it('assigns three lanes to a three-way overlap', () => {
+    expect.assertions(1);
+    const events = [
+      makeEvent(1, '2026-03-28T09:00:00Z', '2026-03-28T12:00:00Z'),
+      makeEvent(2, '2026-03-28T10:00:00Z', '2026-03-28T11:00:00Z'),
+      makeEvent(3, '2026-03-28T10:30:00Z', '2026-03-28T13:00:00Z'),
+    ];
+    const lanes = assignEventLanes(events);
+    const laneCounts = [1, 2, 3].map((id) => lanes.get(id)?.laneCount);
+    expect(laneCounts).toEqual([3, 3, 3]);
+  });
+
+  it('starts a fresh lane cluster once the previous cluster fully ends', () => {
+    expect.assertions(2);
+    const events = [
+      makeEvent(1, '2026-03-28T09:00:00Z', '2026-03-28T10:00:00Z'),
+      makeEvent(2, '2026-03-28T09:00:00Z', '2026-03-28T10:00:00Z'),
+      makeEvent(3, '2026-03-28T12:00:00Z', '2026-03-28T13:00:00Z'),
+    ];
+    const lanes = assignEventLanes(events);
+    expect(lanes.get(1)?.laneCount).toBe(2);
+    expect(lanes.get(3)).toEqual({ lane: 0, laneCount: 1 });
   });
 });
