@@ -74,4 +74,31 @@ describe('CalendarPage', () => {
     expect(useCreateMenuStore.getState().overlay).toBe('reserveSlot');
     expect(useCreateMenuStore.getState().reserveSlotInitial?.lobbyId).toBeUndefined();
   });
+
+  it('opens the day agenda panel listing that day\'s events when a day header is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+    await screen.findByText('Morning Coffee');
+
+    const todayLabel = `${new Date().toLocaleDateString('en-US', { weekday: 'short' })} ${new Date().getDate()}`;
+    await user.click(screen.getByRole('button', { name: todayLabel }));
+
+    expect(await screen.findAllByText('Morning Coffee')).toHaveLength(2); // grid event + agenda row
+  });
+
+  it('selects the event and shows its detail panel when an agenda row is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+    await screen.findByText('Morning Coffee');
+
+    const todayLabel = `${new Date().toLocaleDateString('en-US', { weekday: 'short' })} ${new Date().getDate()}`;
+    await user.click(screen.getByRole('button', { name: todayLabel }));
+
+    const [, agendaRow] = await screen.findAllByText('Morning Coffee');
+    await user.click(agendaRow!);
+
+    expect(await screen.findByRole('button', { name: 'Edit event' })).toBeInTheDocument();
+  });
 });
