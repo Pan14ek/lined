@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HTTPError } from 'ky';
 import { CalendarTopBar } from '@/components/CalendarTopBar';
 import { CreateEventModal } from '@/components/CreateEventModal';
 import { EventDetailPanel } from '@/components/EventDetailPanel';
@@ -11,6 +12,13 @@ import { useCalendarStore } from '@/store/calendar';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { formatMonthYear, hourRangeToIso, isSameDay, type FreeSlot } from '@/lib/calendarUtils';
 import type { EventDto } from '@/types';
+
+function getDeleteEventErrorMessage(error: unknown): string {
+  if (error instanceof HTTPError && error.response.status === 404) {
+    return 'This event was already deleted';
+  }
+  return 'Could not delete this event — please try again';
+}
 
 export function CalendarPage() {
   const {
@@ -35,6 +43,7 @@ export function CalendarPage() {
 
   const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
   const [agendaDay, setAgendaDay] = useState<Date | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: allWeekEvents = [] } = useWeekEvents(weekStart);
   const { data: allMonthEvents = [] } = useMonthEvents(monthAnchor);
@@ -55,6 +64,7 @@ export function CalendarPage() {
 
   function handleEventClick(id: number) {
     setAgendaDay(null);
+    setDeleteError(null);
     setSelectedEventId(id);
   }
 
@@ -74,8 +84,10 @@ export function CalendarPage() {
 
   function handleDelete() {
     if (selectedEventId == null) return;
+    setDeleteError(null);
     deleteEvent.mutate(selectedEventId, {
       onSuccess: () => setSelectedEventId(null),
+      onError: (error) => setDeleteError(getDeleteEventErrorMessage(error)),
     });
   }
 
@@ -132,9 +144,13 @@ export function CalendarPage() {
             <EventDetailPanel
               event={selectedEvent}
               lobby={selectedLobby}
-              onClose={() => setSelectedEventId(null)}
+              onClose={() => {
+                setDeleteError(null);
+                setSelectedEventId(null);
+              }}
               onEdit={() => setEditingEvent(selectedEvent)}
               onDelete={handleDelete}
+              deleteError={deleteError}
             />
           )
         )}

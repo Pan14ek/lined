@@ -8,6 +8,7 @@ interface EventDetailPanelProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  deleteError?: string | null;
 }
 
 export function EventDetailPanel({
@@ -16,6 +17,7 @@ export function EventDetailPanel({
   onClose,
   onEdit,
   onDelete,
+  deleteError,
 }: EventDetailPanelProps) {
   const lobbyType = lobby.lobbyType.toLowerCase();
   const accentColor = `var(--color-lobby-${lobbyType})`;
@@ -76,6 +78,10 @@ export function EventDetailPanel({
 
         {/* Divider */}
         <div className="my-3 h-px bg-border" />
+
+        {deleteError && (
+          <p className="mb-2 text-xs font-medium text-red-500">{deleteError}</p>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">

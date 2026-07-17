@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
+import { server } from '@/test/server';
 import { CalendarPage } from '../CalendarPage';
 import { useAuthStore } from '@/store/auth';
 import { useCalendarStore } from '@/store/calendar';
 import { useCreateMenuStore } from '@/store/createMenu';
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 describe('CalendarPage', () => {
   beforeEach(() => {
@@ -114,6 +118,23 @@ describe('CalendarPage', () => {
 
     await waitFor(() => expect(screen.queryByText('Morning Coffee')).not.toBeInTheDocument());
     expect(screen.getByText('Team Lunch')).toBeInTheDocument(); // a different lobby, still visible
+  });
+
+  it('shows an inline error and keeps the event when the delete request fails', async () => {
+    expect.assertions(2);
+    server.use(
+      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: 500 })),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+
+    await user.click(await screen.findByText('Morning Coffee'));
+    await user.click(await screen.findByRole('button', { name: 'Delete' }));
+
+    expect(
+      await screen.findByText('Could not delete this event — please try again'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Morning Coffee').length).toBeGreaterThan(0);
   });
 
   it('reflects a hidden lobby as unchecked and re-shows its events once re-checked', async () => {

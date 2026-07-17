@@ -94,4 +94,22 @@ describe('EventDetailPanel', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a delete error message when deleteError is set', () => {
+    expect.assertions(1);
+    render(
+      <EventDetailPanel
+        event={BASE_EVENT}
+        lobby={LOBBY}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        deleteError="Could not delete this event — please try again"
+      />,
+    );
+
+    expect(
+      screen.getByText('Could not delete this event — please try again'),
+    ).toBeInTheDocument();
+  });
 });
