@@ -7,8 +7,16 @@ import { WeekGrid, type LegendItem } from '@/components/WeekGrid';
 import { DayAgendaModal } from '@/components/lobby/DayAgendaModal';
 import { useLobbyWeekEvents, useDeleteEvent } from '@/hooks/useEvents';
 import { useLobbyFreeSlots } from '@/hooks/useDashboard';
-import { addDays, formatMonthYear, getWeekStart, isSameDay } from '@/lib/calendarUtils';
+import {
+  addDays,
+  formatMonthYear,
+  getWeekStart,
+  isSameDay,
+  hourRangeToIso,
+  type FreeSlot,
+} from '@/lib/calendarUtils';
 import { freeSlotsForDay } from '@/lib/freeSlots';
+import { useCreateMenuStore } from '@/store/createMenu';
 import type { ViewMode } from '@/store/calendar';
 import type { EventDto } from '@/types';
 
@@ -27,6 +35,12 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
   const { data: events, isLoading, isError } = useLobbyWeekEvents(lobby.id, weekStart);
   const { data: freeSlots } = useLobbyFreeSlots(lobby.id, weekStart);
   const deleteEvent = useDeleteEvent();
+  const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
+
+  function handleFreeSlotClick(day: Date, slot: FreeSlot) {
+    const { start, end } = hourRangeToIso(day, slot.startHour, slot.endHour);
+    openReserveSlot({ lobbyId: lobby.id, start, end });
+  }
 
   const selectedEvent =
     selectedEventId != null ? (events?.find((e) => e.id === selectedEventId) ?? null) : null;
@@ -75,6 +89,7 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
             legendItems={legendItems}
             onDayClick={(day) => setAgendaDay(day)}
             maxVisibleEvents={4}
+            onFreeSlotClick={handleFreeSlotClick}
           />
 
           {selectedEvent && (

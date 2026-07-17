@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/test/data';
 import type { EventDto } from '@/types';
+import { useCreateMenuStore } from '@/store/createMenu';
 import { LobbyCalendarView } from '../LobbyCalendarView';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -139,5 +140,26 @@ describe('LobbyCalendarView', () => {
       if (screen.queryByRole('button', { name: 'Edit event' })) throw new Error('still open');
     });
     expect(screen.queryByRole('button', { name: 'Edit event' })).not.toBeInTheDocument();
+  });
+
+  it('clicking a free-slot band opens the reserve-slot overlay locked to this lobby', async () => {
+    expect.assertions(2);
+    const today = new Date();
+    today.setUTCHours(14, 0, 0, 0);
+    const start = today.toISOString();
+    today.setUTCHours(17);
+    const end = today.toISOString();
+    server.use(
+      http.get(`${BASE}/calendar/events`, () => HttpResponse.json([])),
+      http.get(`${BASE}/lobbies/:id/free-slots`, () => HttpResponse.json([{ start, end }])),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);
+
+    const [band] = await screen.findAllByRole('button', { name: /reserve this free slot/i });
+    await user.click(band!);
+
+    expect(useCreateMenuStore.getState().overlay).toBe('reserveSlot');
+    expect(useCreateMenuStore.getState().reserveSlotInitial?.lobbyId).toBe(LOBBY.id);
   });
 });

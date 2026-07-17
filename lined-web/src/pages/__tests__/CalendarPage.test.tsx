@@ -3,6 +3,7 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { CalendarPage } from '../CalendarPage';
 import { useAuthStore } from '@/store/auth';
 import { useCalendarStore } from '@/store/calendar';
+import { useCreateMenuStore } from '@/store/createMenu';
 
 describe('CalendarPage', () => {
   beforeEach(() => {
@@ -60,5 +61,17 @@ describe('CalendarPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Week' })).toHaveClass('bg-brand-green'),
     );
+  });
+
+  it('opens the reserve-slot overlay without a lobbyId when a free-slot band is clicked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+
+    const [band] = await screen.findAllByRole('button', { name: /reserve this free slot/i });
+    await user.click(band!);
+
+    expect(useCreateMenuStore.getState().overlay).toBe('reserveSlot');
+    expect(useCreateMenuStore.getState().reserveSlotInitial?.lobbyId).toBeUndefined();
   });
 });

@@ -7,7 +7,8 @@ import { MonthGrid } from '@/components/MonthGrid';
 import { useWeekEvents, useMonthEvents, useDeleteEvent } from '@/hooks/useEvents';
 import { useMyLobbies } from '@/hooks/useLobbies';
 import { useCalendarStore } from '@/store/calendar';
-import { formatMonthYear } from '@/lib/calendarUtils';
+import { useCreateMenuStore } from '@/store/createMenu';
+import { formatMonthYear, hourRangeToIso, type FreeSlot } from '@/lib/calendarUtils';
 import type { EventDto } from '@/types';
 
 export function CalendarPage() {
@@ -36,6 +37,12 @@ export function CalendarPage() {
   const events = viewMode === 'month' ? monthEvents : weekEvents;
   const { data: lobbies = [] } = useMyLobbies();
   const deleteEvent = useDeleteEvent();
+  const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
+
+  function handleFreeSlotClick(day: Date, slot: FreeSlot) {
+    const { start, end } = hourRangeToIso(day, slot.startHour, slot.endHour);
+    openReserveSlot({ start, end });
+  }
 
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
   const selectedEvent =
@@ -81,6 +88,7 @@ export function CalendarPage() {
             lobbies={lobbies}
             selectedEventId={selectedEventId}
             onEventClick={setSelectedEventId}
+            onFreeSlotClick={handleFreeSlotClick}
           />
         )}
 
