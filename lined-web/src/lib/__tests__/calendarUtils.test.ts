@@ -11,6 +11,8 @@ import {
   assignEventLanes,
   getMonthGridDays,
   isSameMonth,
+  eventTouchesDay,
+  clipEventToDay,
 } from '../calendarUtils';
 
 afterEach(() => {
@@ -202,6 +204,84 @@ describe('hourRangeToIso', () => {
     const day = new Date(2026, 2, 29, 6, 0, 0, 0);
     hourRangeToIso(day, 14, 17);
     expect(day.getHours()).toBe(6);
+  });
+});
+
+describe('eventTouchesDay', () => {
+  const makeEvent = (startAt: string, endAt: string): EventDto => ({
+    id: 1,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('is true when the event starts and ends on the same given day', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T09:00:00', '2026-07-18T10:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-18T00:00:00'))).toBe(true);
+  });
+
+  it('is true for the start day of a midnight-spanning event', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-18T00:00:00'))).toBe(true);
+  });
+
+  it('is true for the end day of a midnight-spanning event', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-19T00:00:00'))).toBe(true);
+  });
+
+  it('is false for a day the event does not touch at all', () => {
+    expect.assertions(1);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    expect(eventTouchesDay(event, new Date('2026-07-20T00:00:00'))).toBe(false);
+  });
+});
+
+describe('clipEventToDay', () => {
+  const makeEvent = (startAt: string, endAt: string): EventDto => ({
+    id: 1,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt,
+    endAt,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('leaves a same-day event untouched', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T09:00:00', '2026-07-18T10:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-18T00:00:00'));
+    expect(new Date(clipped.startAt).toISOString()).toBe(new Date('2026-07-18T09:00:00').toISOString());
+    expect(new Date(clipped.endAt).toISOString()).toBe(new Date('2026-07-18T10:00:00').toISOString());
+  });
+
+  it('clips the end to midnight on the start day of a midnight-spanning event', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-18T00:00:00'));
+    expect(new Date(clipped.startAt).toISOString()).toBe(new Date('2026-07-18T23:30:00').toISOString());
+    expect(new Date(clipped.endAt).getHours()).toBe(0);
+  });
+
+  it('clips the start to midnight on the end day of a midnight-spanning event', () => {
+    expect.assertions(2);
+    const event = makeEvent('2026-07-18T23:30:00', '2026-07-19T02:00:00');
+    const clipped = clipEventToDay(event, new Date('2026-07-19T00:00:00'));
+    expect(new Date(clipped.startAt).getHours()).toBe(0);
+    expect(new Date(clipped.endAt).toISOString()).toBe(new Date('2026-07-19T02:00:00').toISOString());
   });
 });
 

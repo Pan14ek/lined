@@ -209,6 +209,37 @@ export function getEventHeight(startAt: string, endAt: string): number {
   return durationHours * HOUR_HEIGHT;
 }
 
+/** True if an event starts, ends, or spans across the given day. */
+export function eventTouchesDay(event: EventDto, day: Date): boolean {
+  return (
+    isSameDay(new Date(event.startAt), day) || isSameDay(new Date(event.endAt), day)
+  );
+}
+
+/**
+ * Clips an event's start/end to `day`'s midnight-to-midnight bounds, so a
+ * multi-day event (e.g. 11:30 PM–2 AM) renders as two separate segments: a
+ * short block at the bottom of the day it starts, and a continuation at the
+ * top of the day it ends. The portion before GRID_START_HOUR on the
+ * continuation day is clipped by the grid itself, same as free slots.
+ */
+export function clipEventToDay(
+  event: EventDto,
+  day: Date,
+): { startAt: string; endAt: string } {
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = addDays(dayStart, 1);
+
+  const eventStart = new Date(event.startAt);
+  const eventEnd = new Date(event.endAt);
+
+  const start = eventStart < dayStart ? dayStart : eventStart;
+  const end = eventEnd > dayEnd ? dayEnd : eventEnd;
+
+  return { startAt: start.toISOString(), endAt: end.toISOString() };
+}
+
 export interface FreeSlot {
   startHour: number;
   endHour: number;

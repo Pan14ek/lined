@@ -257,3 +257,71 @@ describe('WeekGrid — hour labels', () => {
     expect(screen.getByText('12 AM')).toBeInTheDocument();
   });
 });
+
+describe('WeekGrid — midnight-spanning events', () => {
+  const midnightSpanning: EventDto = {
+    id: 20,
+    title: 'Movie Night',
+    location: null,
+    shared: true,
+    startAt: dayAt(0, 23).toISOString(), // Monday 11 PM
+    endAt: new Date(dayAt(1, 2).getTime()).toISOString(), // Tuesday 2 AM
+    timezone: 'UTC',
+    lobbyId: LOBBY.id,
+    ownerId: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  };
+
+  it('renders a clipped block on both the start day and the end day', () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText('Movie Night')).toHaveLength(2);
+  });
+
+  it("clips the start-day segment's height to midnight, not the full duration", () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    const [mondayBlock] = screen.getAllByText('Movie Night').map((el) => el.closest('button'));
+    // 11 PM -> midnight is 1h = 80px, well under the event's real 3h duration (240px).
+    expect(mondayBlock?.style.height).toBe('80px');
+  });
+
+  it('does not double-count the event when the end day is clicked (onDayClick opt-in)', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    const onDayClick = vi.fn();
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[midnightSpanning]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        onDayClick={onDayClick}
+      />,
+    );
+
+    await user.click(screen.getByText('Tue 31'));
+
+    const [, dayEvents] = onDayClick.mock.calls[0] as [Date, EventDto[]];
+    expect(dayEvents).toHaveLength(1);
+  });
+});

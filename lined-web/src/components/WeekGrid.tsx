@@ -3,7 +3,9 @@ import type { EventDto, LobbyDto } from '@/types';
 import {
   addDays,
   assignEventLanes,
+  clipEventToDay,
   computeFreeSlots,
+  eventTouchesDay,
   formatDayLabel,
   formatHour,
   getEventHeight,
@@ -12,7 +14,6 @@ import {
   GRID_HOURS,
   GRID_START_HOUR,
   HOUR_HEIGHT,
-  isSameDay,
   isToday,
   type EventLane,
   type FreeSlot,
@@ -57,6 +58,10 @@ function NowLine() {
 
 interface CalendarEventProps {
   event: EventDto;
+  /** This day's slice of the event's start/end — differs from event.startAt/endAt
+   *  when the event spans midnight, so it renders as two clipped segments. */
+  displayStartAt: string;
+  displayEndAt: string;
   lobby?: LobbyDto;
   isSelected: boolean;
   onClick: () => void;
@@ -64,9 +69,18 @@ interface CalendarEventProps {
   laneCount?: number;
 }
 
-function CalendarEvent({ event, lobby, isSelected, onClick, lane, laneCount }: CalendarEventProps) {
-  const top = getEventTop(event.startAt);
-  const height = Math.max(getEventHeight(event.startAt, event.endAt), 24);
+function CalendarEvent({
+  event,
+  displayStartAt,
+  displayEndAt,
+  lobby,
+  isSelected,
+  onClick,
+  lane,
+  laneCount,
+}: CalendarEventProps) {
+  const top = getEventTop(displayStartAt);
+  const height = Math.max(getEventHeight(displayStartAt, displayEndAt), 24);
   const lobbyType = lobby?.lobbyType.toLowerCase() ?? 'couple';
 
   const horizontal: React.CSSProperties =
@@ -140,6 +154,7 @@ function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
 // ─── DayColumn ────────────────────────────────────────────────────────────────
 
 interface DayColumnProps {
+  day: Date;
   events: EventDto[];
   lobbyMap: Map<number, LobbyDto>;
   today: boolean;
@@ -153,6 +168,7 @@ interface DayColumnProps {
 }
 
 function DayColumn({
+  day,
   events,
   lobbyMap,
   today,
@@ -192,10 +208,13 @@ function DayColumn({
       {/* Events */}
       {events.map((event) => {
         const laneInfo = lanes?.get(event.id);
+        const { startAt: displayStartAt, endAt: displayEndAt } = clipEventToDay(event, day);
         return (
           <CalendarEvent
             key={event.id}
             event={event}
+            displayStartAt={displayStartAt}
+            displayEndAt={displayEndAt}
             lobby={lobbyMap.get(event.lobbyId)}
             isSelected={event.id === selectedEventId}
             onClick={() => onEventClick(event.id)}
@@ -281,7 +300,7 @@ export function WeekGrid({
       <div className="flex flex-shrink-0 border-b border-border bg-white" style={{ paddingLeft: 56 }}>
         {weekDays.map((day) => {
           const today = isToday(day);
-          const dayEvents = events.filter((e) => isSameDay(new Date(e.startAt), day));
+          const dayEvents = events.filter((e) => eventTouchesDay(e, day));
           return (
             <div
               key={day.toISOString()}
@@ -334,15 +353,14 @@ export function WeekGrid({
         {/* Day columns */}
         <div className="flex flex-1 min-w-0">
           {weekDays.map((day) => {
-            const dayEvents = events.filter((e) =>
-              isSameDay(new Date(e.startAt), day),
-            );
+            const dayEvents = events.filter((e) => eventTouchesDay(e, day));
             const freeSlots = getFreeSlotsForDay(day, dayEvents);
 
             if (!onDayClick) {
               return (
                 <DayColumn
                   key={day.toISOString()}
+                  day={day}
                   events={dayEvents}
                   lobbyMap={lobbyMap}
                   today={isToday(day)}
@@ -364,6 +382,7 @@ export function WeekGrid({
             return (
               <DayColumn
                 key={day.toISOString()}
+                day={day}
                 events={visible}
                 lobbyMap={lobbyMap}
                 today={isToday(day)}
