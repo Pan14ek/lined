@@ -106,11 +106,26 @@ function CalendarEvent({ event, lobby, isSelected, onClick, lane, laneCount }: C
 interface FreeSlotBandProps {
   startHour: number;
   endHour: number;
+  onClick?: () => void;
 }
 
-function FreeSlotBand({ startHour, endHour }: FreeSlotBandProps) {
+function FreeSlotBand({ startHour, endHour, onClick }: FreeSlotBandProps) {
   const top = (startHour - GRID_START_HOUR) * HOUR_HEIGHT;
   const height = (endHour - startHour) * HOUR_HEIGHT;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Reserve this free slot"
+        className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark hover:opacity-80"
+        style={{ top, height, backgroundColor: '#B4EBD0', opacity: 0.6 }}
+      >
+        {height >= 40 && 'Free slot'}
+      </button>
+    );
+  }
 
   return (
     <div
@@ -131,6 +146,7 @@ interface DayColumnProps {
   selectedEventId: number | null;
   onEventClick: (id: number) => void;
   freeSlots: FreeSlot[];
+  onFreeSlotClick?: (slot: FreeSlot) => void;
   lanes?: Map<number, EventLane>;
   overflowCount?: number;
   onShowMore?: () => void;
@@ -143,6 +159,7 @@ function DayColumn({
   selectedEventId,
   onEventClick,
   freeSlots,
+  onFreeSlotClick,
   lanes,
   overflowCount = 0,
   onShowMore,
@@ -158,7 +175,12 @@ function DayColumn({
 
       {/* Free slot bands (behind events) */}
       {freeSlots.map((slot, i) => (
-        <FreeSlotBand key={i} startHour={slot.startHour} endHour={slot.endHour} />
+        <FreeSlotBand
+          key={i}
+          startHour={slot.startHour}
+          endHour={slot.endHour}
+          onClick={onFreeSlotClick ? () => onFreeSlotClick(slot) : undefined}
+        />
       ))}
 
       {/* Events */}
@@ -215,6 +237,8 @@ interface WeekGridProps {
   onDayClick?: (day: Date, dayEvents: EventDto[]) => void;
   /** Only used when `onDayClick` is provided. Defaults to 4. */
   maxVisibleEvents?: number;
+  /** Opt-in: makes green free-slot bands clickable, e.g. to open ReserveSlotModal. */
+  onFreeSlotClick?: (day: Date, slot: FreeSlot) => void;
 }
 
 const defaultGetFreeSlotsForDay = (_day: Date, dayEvents: EventDto[]): FreeSlot[] =>
@@ -230,6 +254,7 @@ export function WeekGrid({
   legendItems = DEFAULT_LEGEND_ITEMS,
   onDayClick,
   maxVisibleEvents = 4,
+  onFreeSlotClick,
 }: WeekGridProps) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
@@ -311,6 +336,9 @@ export function WeekGrid({
                   selectedEventId={selectedEventId}
                   onEventClick={onEventClick}
                   freeSlots={freeSlots}
+                  onFreeSlotClick={
+                    onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
+                  }
                 />
               );
             }
@@ -329,6 +357,9 @@ export function WeekGrid({
                 selectedEventId={selectedEventId}
                 onEventClick={onEventClick}
                 freeSlots={freeSlots}
+                onFreeSlotClick={
+                  onFreeSlotClick ? (slot) => onFreeSlotClick(day, slot) : undefined
+                }
                 lanes={lanes}
                 overflowCount={overflowCount}
                 onShowMore={() => onDayClick(day, dayEvents)}

@@ -116,6 +116,47 @@ describe('WeekGrid — getFreeSlotsForDay override', () => {
   });
 });
 
+describe('WeekGrid — onFreeSlotClick opt-in', () => {
+  it('renders free-slot bands as non-interactive divs when the prop is omitted', () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        getFreeSlotsForDay={() => [{ startHour: 9, endHour: 10 }]}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /reserve this free slot/i })).not.toBeInTheDocument();
+  });
+
+  it('calls onFreeSlotClick with the day and slot when a band is clicked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    const onFreeSlotClick = vi.fn();
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+        getFreeSlotsForDay={() => [{ startHour: 9, endHour: 10 }]}
+        onFreeSlotClick={onFreeSlotClick}
+      />,
+    );
+
+    const [band] = screen.getAllByRole('button', { name: /reserve this free slot/i });
+    await user.click(band!);
+
+    expect(onFreeSlotClick).toHaveBeenCalledTimes(1);
+    expect(onFreeSlotClick).toHaveBeenCalledWith(expect.any(Date), { startHour: 9, endHour: 10 });
+  });
+});
+
 describe('WeekGrid — onDayClick opt-in (lobby calendar behavior)', () => {
   it('caps visible events and shows a "+N more" pill', () => {
     expect.assertions(2);
