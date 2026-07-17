@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HTTPError } from 'ky';
 import { AuthCard } from '@/components/AuthCard';
 import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/components/AuthAlert';
 import { useSignIn } from '@/hooks/useAuth';
+import { useFormState } from '@/hooks/useFormState';
 import { useAuthStore } from '@/store/auth';
 
 interface FormValues {
@@ -24,23 +24,15 @@ export function SignInPage() {
   const signIn = useSignIn();
   const setUserId = useAuthStore((s) => s.setUserId);
 
-  const [values, setValues] = useState<FormValues>({ identifier: '', password: '' });
-  const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
-
-  const errors = validate(values);
-
-  function set<K extends keyof FormValues>(key: K, value: FormValues[K]) {
-    setValues((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function markTouched(key: keyof FormValues) {
-    setTouched((prev) => ({ ...prev, [key]: true }));
-  }
+  const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
+    { identifier: '', password: '' },
+    validate,
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setTouched({ identifier: true, password: true });
-    if (Object.keys(errors).length > 0) return;
+    markAllTouched();
+    if (hasErrors) return;
 
     signIn.mutate(values, {
       onSuccess: (res) => {
