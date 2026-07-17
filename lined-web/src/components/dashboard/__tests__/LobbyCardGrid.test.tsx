@@ -24,7 +24,7 @@ describe('LobbyCardGrid', () => {
     expect(screen.getByText('Alex & Anastasiia')).toBeInTheDocument();
     expect(screen.getByText('Johnson Family')).toBeInTheDocument();
     expect(screen.getByText('Weekend Crew')).toBeInTheDocument();
-    // Lobby 1 has 2 members, 2 events (ids 1,4), and 2 tasks (ids 1,2) in the fixtures.
+    // Lobby 1 has 2 members in the fixtures, so its "2 members" stat renders.
     expect(screen.getAllByText('2').length).toBeGreaterThan(0);
   });
 

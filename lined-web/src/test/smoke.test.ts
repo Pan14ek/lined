@@ -3,17 +3,18 @@ import { MOCK_USERS, MOCK_LOBBIES, MOCK_TASKS, MOCK_EVENTS } from './data';
 
 describe('Mock data', () => {
   it('has users matching mockup personas, including invitable non-members', () => {
-    expect(MOCK_USERS).toHaveLength(4);
+    expect(MOCK_USERS).toHaveLength(8);
     expect(MOCK_USERS[0]?.username).toBe('alex_johnson');
     expect(MOCK_USERS[1]?.username).toBe('nastia_k');
   });
 
-  it('has three lobbies covering each type', () => {
-    expect(MOCK_LOBBIES).toHaveLength(3);
+  it('has lobbies covering each type', () => {
+    expect(MOCK_LOBBIES).toHaveLength(4);
     const types = MOCK_LOBBIES.map((l) => l.lobbyType);
     expect(types).toContain('COUPLE');
     expect(types).toContain('FAMILY');
     expect(types).toContain('FRIENDS');
+    expect(types).toContain('WORK');
   });
 
   it('has tasks with valid statuses', () => {

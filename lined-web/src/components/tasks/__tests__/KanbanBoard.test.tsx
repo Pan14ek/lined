@@ -39,9 +39,10 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
 
     expect(await screen.findByText('Plan dinner for Saturday')).toBeInTheDocument();
-    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('3');
-    expect(screen.getByTestId(KANBAN_TEST_IDS.column('IN_PROGRESS'))).toHaveTextContent('2');
-    expect(screen.getByTestId(KANBAN_TEST_IDS.column('DONE'))).toHaveTextContent('1');
+    // Fixture totals across all lobbies: 6 TODO, 3 IN_PROGRESS, 2 DONE.
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('6');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('IN_PROGRESS'))).toHaveTextContent('3');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('DONE'))).toHaveTextContent('2');
   });
 
   it('shows an error message when the tasks request fails', async () => {
@@ -177,7 +178,7 @@ describe('KanbanBoard', () => {
     expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).not.toHaveTextContent(
       'Plan dinner for Saturday',
     );
-    expect(doneColumn).toHaveTextContent('2');
+    expect(doneColumn).toHaveTextContent('3'); // 2 fixture DONE tasks + the one just moved
   });
 
   it('dropping a card back onto its own column leaves the board unchanged', async () => {
@@ -195,6 +196,6 @@ describe('KanbanBoard', () => {
     fireEvent.drop(todoColumn, { dataTransfer });
 
     expect(todoColumn).toHaveTextContent('Plan dinner for Saturday');
-    expect(todoColumn).toHaveTextContent('3');
+    expect(todoColumn).toHaveTextContent('6');
   });
 });

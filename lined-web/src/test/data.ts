@@ -45,6 +45,42 @@ export const MOCK_USERS: UserDto[] = [
     activePlan: null,
     activeUntil: null,
   },
+  {
+    id: 5,
+    username: 'maria_garcia',
+    email: 'maria@lined.app',
+    createdAt: '2025-09-03T10:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: 'PRO_MONTHLY',
+    activeUntil: '2026-06-03T10:00:00Z',
+  },
+  {
+    id: 6,
+    username: 'james_lee',
+    email: 'james@lined.app',
+    createdAt: '2025-09-15T14:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: null,
+    activeUntil: null,
+  },
+  {
+    id: 7,
+    username: 'sophia_chen',
+    email: 'sophia@lined.app',
+    createdAt: '2025-10-01T09:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: null,
+    activeUntil: null,
+  },
+  {
+    id: 8,
+    username: 'ryan_patel',
+    email: 'ryan@lined.app',
+    createdAt: '2025-10-20T11:00:00Z',
+    roles: ['ROLE_USER'],
+    activePlan: 'PRO_MONTHLY',
+    activeUntil: '2026-07-20T11:00:00Z',
+  },
 ];
 
 export const MOCK_LOBBIES: LobbyDto[] = [
@@ -69,6 +105,13 @@ export const MOCK_LOBBIES: LobbyDto[] = [
     ownerId: 1,
     memberIds: [1, 2],
   },
+  {
+    id: 4,
+    name: 'Design Team',
+    lobbyType: 'WORK',
+    ownerId: 1,
+    memberIds: [1, 5, 6, 7],
+  },
 ];
 
 const today = new Date();
@@ -80,6 +123,18 @@ const dayAfter = new Date(today);
 dayAfter.setDate(dayAfter.getDate() + 2);
 const dayAfterStr = dayAfter.toISOString().slice(0, 10);
 const inThreeDaysStr = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+const inFourDaysStr = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+const inTenDaysStr = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+const yesterdayStr = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+const dayAfterPlusOneStr = new Date(dayAfter.getTime() + 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
 
@@ -162,6 +217,66 @@ export const MOCK_TASKS: TaskDto[] = [
     dueDate: null,
     createdAt: '2026-04-10T11:00:00Z',
   },
+  {
+    id: 7,
+    title: 'Finalize onboarding flow mockups',
+    description: 'Incorporate feedback from the last design review',
+    priority: 'HIGH',
+    status: 'IN_PROGRESS',
+    lobbyId: 4,
+    creatorId: 1,
+    assigneeId: 5,
+    dueDate: tomorrowStr,
+    createdAt: '2026-04-11T09:00:00Z',
+  },
+  {
+    id: 8,
+    title: 'Review pull requests',
+    description: null,
+    priority: 'MEDIUM',
+    status: 'TODO',
+    lobbyId: 4,
+    creatorId: 1,
+    assigneeId: 6,
+    dueDate: todayStr,
+    createdAt: '2026-04-11T10:00:00Z',
+  },
+  {
+    id: 9,
+    title: 'Submit expense report',
+    description: 'Overdue since last week',
+    priority: 'MEDIUM',
+    status: 'TODO',
+    lobbyId: 4,
+    creatorId: 7,
+    assigneeId: 7,
+    dueDate: yesterdayStr,
+    createdAt: '2026-04-05T08:00:00Z',
+  },
+  {
+    id: 10,
+    title: 'Prepare quarterly roadmap deck',
+    description: null,
+    priority: 'HIGH',
+    status: 'TODO',
+    lobbyId: 4,
+    creatorId: 1,
+    assigneeId: 1,
+    dueDate: inTenDaysStr,
+    createdAt: '2026-04-11T12:00:00Z',
+  },
+  {
+    id: 11,
+    title: 'Water the plants',
+    description: null,
+    priority: 'LOW',
+    status: 'DONE',
+    lobbyId: 1,
+    creatorId: 2,
+    assigneeId: 2,
+    dueDate: yesterdayStr,
+    createdAt: '2026-04-06T08:00:00Z',
+  },
 ];
 
 export const MOCK_EVENTS: EventDto[] = [
@@ -225,6 +340,107 @@ export const MOCK_EVENTS: EventDto[] = [
     ownerId: 1,
     createdAt: '2026-04-10T07:00:00Z',
   },
+  {
+    id: 6,
+    title: 'Morning Run',
+    location: 'Riverside Park',
+    shared: true,
+    startAt: `${todayStr}T06:00:00Z`,
+    endAt: `${todayStr}T07:00:00Z`,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 1,
+    createdAt: '2026-04-11T06:00:00Z',
+  },
+  {
+    id: 7,
+    title: 'Design Standup',
+    location: null,
+    shared: true,
+    startAt: `${todayStr}T15:00:00Z`,
+    endAt: `${todayStr}T15:30:00Z`,
+    timezone: 'UTC',
+    lobbyId: 4,
+    ownerId: 1,
+    createdAt: '2026-04-11T07:00:00Z',
+  },
+  {
+    id: 8,
+    // Deliberately overlaps "Team Lunch" (lobby 3, same day, 12:00-13:00) by
+    // 30 minutes across two different lobbies -- exercises side-by-side lane
+    // layout and the lobby-visibility filter on the global calendar.
+    title: 'Design Sync',
+    location: null,
+    shared: true,
+    startAt: `${todayStr}T12:30:00Z`,
+    endAt: `${todayStr}T13:30:00Z`,
+    timezone: 'UTC',
+    lobbyId: 4,
+    ownerId: 1,
+    createdAt: '2026-04-11T07:15:00Z',
+  },
+  {
+    id: 9,
+    title: '1:1 with Manager',
+    location: null,
+    shared: true,
+    startAt: `${tomorrowStr}T14:00:00Z`,
+    endAt: `${tomorrowStr}T14:30:00Z`,
+    timezone: 'UTC',
+    lobbyId: 4,
+    ownerId: 1,
+    createdAt: '2026-04-11T07:30:00Z',
+  },
+  {
+    id: 10,
+    // A second midnight-spanning event (different lobby than "Movie Night")
+    // -- regression coverage for the day-column clipping/split rendering.
+    title: 'Family Game Night',
+    location: 'Home',
+    shared: true,
+    startAt: `${dayAfterStr}T22:00:00Z`,
+    endAt: `${dayAfterPlusOneStr}T01:00:00Z`,
+    timezone: 'UTC',
+    lobbyId: 2,
+    ownerId: 1,
+    createdAt: '2026-04-10T08:00:00Z',
+  },
+  {
+    id: 11,
+    title: 'Design Team Offsite',
+    location: 'Lakeside Retreat Center',
+    shared: true,
+    startAt: `${dayAfterStr}T08:00:00Z`,
+    endAt: `${dayAfterStr}T20:00:00Z`,
+    timezone: 'UTC',
+    lobbyId: 4,
+    ownerId: 1,
+    createdAt: '2026-04-10T09:00:00Z',
+  },
+  {
+    id: 12,
+    title: 'Quarterly Roadmap Review',
+    location: null,
+    shared: true,
+    startAt: `${inTenDaysStr}T16:00:00Z`,
+    endAt: `${inTenDaysStr}T17:30:00Z`,
+    timezone: 'UTC',
+    lobbyId: 4,
+    ownerId: 1,
+    createdAt: '2026-04-11T08:00:00Z',
+  },
+  {
+    id: 13,
+    title: 'Anniversary Dinner',
+    location: 'Le Petit Bistro',
+    shared: true,
+    startAt: `${inFourDaysStr}T19:00:00Z`,
+    endAt: `${inFourDaysStr}T21:00:00Z`,
+    timezone: 'UTC',
+    lobbyId: 1,
+    ownerId: 2,
+    createdAt: '2026-04-10T10:00:00Z',
+  },
 ];
 
 export const MOCK_LOBBY_INVITES: LobbyInviteDto[] = [
@@ -247,6 +463,16 @@ export const MOCK_LOBBY_INVITES: LobbyInviteDto[] = [
     sentAt: '2026-03-27T10:00:00Z',
     createdAt: '2026-03-27T10:00:00Z',
     updatedAt: '2026-03-27T10:00:00Z',
+  },
+  {
+    id: 3,
+    lobbyId: 4,
+    inviterId: 1,
+    inviteeId: 8,
+    status: 'PENDING',
+    sentAt: '2026-07-16T09:00:00Z',
+    createdAt: '2026-07-16T09:00:00Z',
+    updatedAt: '2026-07-16T09:00:00Z',
   },
 ];
 
@@ -292,6 +518,25 @@ export const MOCK_NOTIFICATIONS: NotificationDto[] = [
         status: 'DELIVERED',
         queuedAt: '2026-07-15T11:00:00Z',
         deliveredAt: '2026-07-15T11:00:00Z',
+      },
+    ],
+  },
+  {
+    id: 3,
+    type: 'TASK_ASSIGNED',
+    title: 'New task assigned',
+    message: 'You were assigned "Prepare quarterly roadmap deck"',
+    lobbyId: 4,
+    taskId: 10,
+    eventId: null,
+    readAt: null,
+    createdAt: '2026-07-16T08:00:00Z',
+    deliveries: [
+      {
+        channel: 'IN_APP',
+        status: 'DELIVERED',
+        queuedAt: '2026-07-16T08:00:00Z',
+        deliveredAt: '2026-07-16T08:00:00Z',
       },
     ],
   },
