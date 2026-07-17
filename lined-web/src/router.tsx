@@ -3,6 +3,8 @@ import { AppShell } from '@/components/AppShell';
 import { RequireAuth, RedirectIfAuthed } from '@/components/RequireAuth';
 import { SignInPage } from '@/pages/SignInPage';
 import { SignUpPage } from '@/pages/SignUpPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { LobbyPage } from '@/pages/LobbyPage';
 import { LobbySettingsPage } from '@/pages/LobbySettingsPage';
@@ -25,6 +27,22 @@ export const router = createBrowserRouter([
     element: (
       <RedirectIfAuthed>
         <SignUpPage />
+      </RedirectIfAuthed>
+    ),
+  },
+  {
+    path: '/forgot-password',
+    element: (
+      <RedirectIfAuthed>
+        <ForgotPasswordPage />
+      </RedirectIfAuthed>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <RedirectIfAuthed>
+        <ResetPasswordPage />
       </RedirectIfAuthed>
     ),
   },
