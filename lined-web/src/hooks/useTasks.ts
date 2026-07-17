@@ -3,12 +3,11 @@ import { createTask, deleteTask, listMyTasks, listTasks, updateTask } from '@/ap
 import { QUERY_KEYS } from '@/lib/constants';
 import type { TaskDto, TaskStatus, TaskUpdateDto } from '@/types';
 
-export function useMyTasks() {
-  return useQuery({
+export const useMyTasks = () =>
+  useQuery({
     queryKey: QUERY_KEYS.myTasks,
     queryFn: listMyTasks,
   });
-}
 
 export const useLobbyTasks = (lobbyId: number | undefined) =>
   useQuery({
@@ -17,7 +16,7 @@ export const useLobbyTasks = (lobbyId: number | undefined) =>
     enabled: lobbyId != null,
   });
 
-export function useCreateTask() {
+export const useCreateTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createTask,
@@ -25,7 +24,7 @@ export function useCreateTask() {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks });
     },
   });
-}
+};
 
 export const useUpdateTask = (lobbyId: number) => {
   const queryClient = useQueryClient();
@@ -44,7 +43,7 @@ interface UpdateTaskStatusContext {
   previous: TaskDto[] | undefined;
 }
 
-export function useUpdateTaskStatus() {
+export const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation<TaskDto, unknown, { id: number; status: TaskStatus }, UpdateTaskStatusContext>({
     mutationFn: ({ id, status }) => updateTask(id, { status }),
@@ -65,9 +64,9 @@ export function useUpdateTaskStatus() {
       if (context?.previous) queryClient.setQueryData(QUERY_KEYS.myTasks, context.previous);
     },
   });
-}
+};
 
-export function useDeleteTask() {
+export const useDeleteTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteTask(id),
@@ -77,4 +76,4 @@ export function useDeleteTask() {
       );
     },
   });
-}
+};
