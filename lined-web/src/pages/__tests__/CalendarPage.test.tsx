@@ -14,6 +14,7 @@ describe('CalendarPage', () => {
       viewMode: 'week',
       selectedEventId: null,
       isCreateModalOpen: false,
+      hiddenLobbyIds: [],
     });
   });
 
@@ -100,5 +101,32 @@ describe('CalendarPage', () => {
     await user.click(agendaRow!);
 
     expect(await screen.findByRole('button', { name: 'Edit event' })).toBeInTheDocument();
+  });
+
+  it('hides a lobby\'s events from the grid when it is unchecked in the Filters dropdown', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+    await screen.findByText('Morning Coffee'); // lobby 1 (Alex & Anastasiia)
+
+    await user.click(screen.getByRole('button', { name: /filters/i }));
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /Alex & Anastasiia/ }));
+
+    await waitFor(() => expect(screen.queryByText('Morning Coffee')).not.toBeInTheDocument());
+    expect(screen.getByText('Team Lunch')).toBeInTheDocument(); // a different lobby, still visible
+  });
+
+  it('reflects a hidden lobby as unchecked and re-shows its events once re-checked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    useCalendarStore.setState({ hiddenLobbyIds: [1] });
+    renderWithProviders(<CalendarPage />);
+
+    await waitFor(() => expect(screen.queryByText('Morning Coffee')).not.toBeInTheDocument());
+
+    await user.click(await screen.findByRole('button', { name: /filters/i }));
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /Alex & Anastasiia/ }));
+
+    expect(await screen.findByText('Morning Coffee')).toBeInTheDocument();
   });
 });

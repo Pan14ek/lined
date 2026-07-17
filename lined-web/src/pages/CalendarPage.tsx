@@ -19,6 +19,7 @@ export function CalendarPage() {
     viewMode,
     selectedEventId,
     isCreateModalOpen,
+    hiddenLobbyIds,
     goToPrevWeek,
     goToNextWeek,
     goToPrevMonth,
@@ -29,13 +30,19 @@ export function CalendarPage() {
     setSelectedEventId,
     openCreateModal,
     closeCreateModal,
+    toggleLobbyVisibility,
   } = useCalendarStore();
 
   const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
   const [agendaDay, setAgendaDay] = useState<Date | null>(null);
 
-  const { data: weekEvents = [] } = useWeekEvents(weekStart);
-  const { data: monthEvents = [] } = useMonthEvents(monthAnchor);
+  const { data: allWeekEvents = [] } = useWeekEvents(weekStart);
+  const { data: allMonthEvents = [] } = useMonthEvents(monthAnchor);
+  // Lobby-filter dropdown decluttering: same intent as Google/Outlook's
+  // per-calendar checkboxes — hidden lobbies vanish from the grid entirely,
+  // including free-slot detection (a hidden lobby's time isn't "free").
+  const weekEvents = allWeekEvents.filter((e) => !hiddenLobbyIds.includes(e.lobbyId));
+  const monthEvents = allMonthEvents.filter((e) => !hiddenLobbyIds.includes(e.lobbyId));
   const events = viewMode === 'month' ? monthEvents : weekEvents;
   const { data: lobbies = [] } = useMyLobbies();
   const deleteEvent = useDeleteEvent();
@@ -83,6 +90,9 @@ export function CalendarPage() {
         onToday={goToToday}
         onViewModeChange={setViewMode}
         onNewEvent={openCreateModal}
+        lobbies={lobbies}
+        hiddenLobbyIds={hiddenLobbyIds}
+        onToggleLobby={toggleLobbyVisibility}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">

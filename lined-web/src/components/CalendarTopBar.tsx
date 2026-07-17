@@ -1,5 +1,15 @@
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListFilter, Plus } from 'lucide-react';
 import type { ViewMode } from '@/store/calendar';
+import type { LobbyDto } from '@/types';
+import { LOBBY_TYPE_LABELS } from '@/lib/constants';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuGroup,
+} from '@/components/ui/dropdown-menu';
 
 interface CalendarTopBarProps {
   title: string;
@@ -9,6 +19,11 @@ interface CalendarTopBarProps {
   onToday: () => void;
   onViewModeChange: (mode: ViewMode) => void;
   onNewEvent: () => void;
+  /** Opt-in: when there's more than one lobby to filter, shows a "Filters"
+   *  dropdown of lobby-visibility checkboxes (omitted on the single-lobby view). */
+  lobbies?: LobbyDto[];
+  hiddenLobbyIds?: number[];
+  onToggleLobby?: (lobbyId: number) => void;
 }
 
 export function CalendarTopBar({
@@ -19,7 +34,11 @@ export function CalendarTopBar({
   onToday,
   onViewModeChange,
   onNewEvent,
+  lobbies,
+  hiddenLobbyIds = [],
+  onToggleLobby,
 }: CalendarTopBarProps) {
+  const showLobbyFilter = lobbies != null && onToggleLobby != null && lobbies.length > 1;
   return (
     <div className="flex h-16 flex-shrink-0 items-center gap-4 border-b border-border bg-white px-8 shadow-[var(--shadow-sm)]">
       {/* Month / week navigation */}
@@ -69,6 +88,43 @@ export function CalendarTopBar({
       </div>
 
       <div className="flex-1" />
+
+      {/* Lobby filter — hide/show individual lobbies' events, like Google/Outlook's calendar checklists */}
+      {showLobbyFilter && (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 text-sm text-text-secondary hover:bg-gray-50">
+            <ListFilter className="h-4 w-4" />
+            Filters
+            {hiddenLobbyIds.length > 0 && (
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-semibold text-white">
+                {hiddenLobbyIds.length}
+              </span>
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Show lobbies</DropdownMenuLabel>
+              {lobbies!.map((lobby) => (
+                <DropdownMenuCheckboxItem
+                  key={lobby.id}
+                  checked={!hiddenLobbyIds.includes(lobby.id)}
+                  onCheckedChange={() => onToggleLobby!(lobby.id)}
+                  className="gap-2.5"
+                >
+                  <span
+                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: `var(--color-lobby-${lobby.lobbyType.toLowerCase()})` }}
+                  />
+                  <span className="truncate">{lobby.name}</span>
+                  <span className="ml-auto flex-shrink-0 text-xs text-text-muted">
+                    {LOBBY_TYPE_LABELS[lobby.lobbyType]}
+                  </span>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* + New event */}
       <button

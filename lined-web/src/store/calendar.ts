@@ -9,6 +9,9 @@ interface CalendarState {
   viewMode: ViewMode;
   selectedEventId: number | null;
   isCreateModalOpen: boolean;
+  /** Lobby ids excluded from the global calendar grid — mirrors Google/Outlook's
+   *  per-calendar visibility checkboxes, so a busy user can declutter overlap. */
+  hiddenLobbyIds: number[];
   goToPrevWeek: () => void;
   goToNextWeek: () => void;
   goToPrevMonth: () => void;
@@ -19,6 +22,7 @@ interface CalendarState {
   setSelectedEventId: (id: number | null) => void;
   openCreateModal: () => void;
   closeCreateModal: () => void;
+  toggleLobbyVisibility: (lobbyId: number) => void;
 }
 
 export const useCalendarStore = create<CalendarState>()((set) => ({
@@ -27,6 +31,7 @@ export const useCalendarStore = create<CalendarState>()((set) => ({
   viewMode: 'week',
   selectedEventId: null,
   isCreateModalOpen: false,
+  hiddenLobbyIds: [],
 
   goToPrevWeek: () => set((s) => ({ weekStart: addDays(s.weekStart, -7) })),
   goToNextWeek: () => set((s) => ({ weekStart: addDays(s.weekStart, 7) })),
@@ -40,4 +45,10 @@ export const useCalendarStore = create<CalendarState>()((set) => ({
   setSelectedEventId: (id) => set({ selectedEventId: id }),
   openCreateModal: () => set({ isCreateModalOpen: true }),
   closeCreateModal: () => set({ isCreateModalOpen: false }),
+  toggleLobbyVisibility: (lobbyId) =>
+    set((s) => ({
+      hiddenLobbyIds: s.hiddenLobbyIds.includes(lobbyId)
+        ? s.hiddenLobbyIds.filter((id) => id !== lobbyId)
+        : [...s.hiddenLobbyIds, lobbyId],
+    })),
 }));
