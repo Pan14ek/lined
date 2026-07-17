@@ -1,5 +1,18 @@
 import type { LobbyType, TaskPriority, TaskStatus } from '@/types';
 
+export interface LegendItem {
+  label: string;
+  color: string;
+}
+
+export const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
+  { label: 'Couple', color: 'var(--color-lobby-couple)' },
+  { label: 'Family', color: 'var(--color-lobby-family)' },
+  { label: 'Friends', color: 'var(--color-lobby-friends)' },
+  { label: 'Work', color: 'var(--color-lobby-work)' },
+  { label: 'Free slot', color: '#B4EBD0' },
+];
+
 export const LOBBY_TYPE_LABELS: Record<LobbyType, string> = {
   COUPLE: 'Couple',
   FAMILY: 'Family',

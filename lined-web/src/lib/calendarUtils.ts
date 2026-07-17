@@ -37,6 +37,29 @@ export function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
 
+export function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+/** First-of-month for the month containing `date`. */
+export function getMonthStart(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(1);
+  return d;
+}
+
+/**
+ * The 42 (6×7) Monday-start days spanning the full weeks that contain
+ * `monthAnchor`'s month, including leading/trailing days from adjacent
+ * months.
+ */
+export function getMonthGridDays(monthAnchor: Date): Date[] {
+  const monthStart = getMonthStart(monthAnchor);
+  const gridStart = getWeekStart(monthStart);
+  return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+}
+
 /** "April 2026" */
 export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
