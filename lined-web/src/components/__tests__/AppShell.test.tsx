@@ -12,14 +12,15 @@ describe('AppShell', () => {
     useCreateMenuStore.setState({ isCreateLobbyOpen: false, overlay: null });
   });
 
-  function renderShell() {
+  function renderShell(initialEntries: string[] = ['/']) {
     return renderWithProviders(
       <Routes>
         <Route path="/" element={<AppShell />}>
           <Route index element={<div>Page Content</div>} />
+          <Route path="lobbies/:id" element={<div>Lobby Page Content</div>} />
         </Route>
       </Routes>,
-      { initialEntries: ['/'] },
+      { initialEntries },
     );
   }
 
@@ -53,12 +54,21 @@ describe('AppShell', () => {
     expect(await screen.findByText(CREATE_MENU_TEXT.newEvent)).toBeInTheDocument();
   });
 
-  it('renders nothing extra when the overlay is "task" (Task 8 not implemented yet)', async () => {
+  it('renders the add-task drawer with a lobby select when the overlay is "task" outside a lobby route', async () => {
     expect.assertions(2);
     useCreateMenuStore.setState({ overlay: 'task' });
     renderShell();
 
-    expect(await screen.findByText('Page Content')).toBeInTheDocument();
-    expect(screen.queryByText(CREATE_MENU_TEXT.newTask)).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Add Task' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Lobby')).toBeInTheDocument();
+  });
+
+  it('locks the add-task drawer to the current lobby when opened from a lobby route', async () => {
+    expect.assertions(2);
+    useCreateMenuStore.setState({ overlay: 'task' });
+    renderShell(['/lobbies/1']);
+
+    expect(await screen.findByRole('heading', { name: 'Add Task' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Lobby')).not.toBeInTheDocument();
   });
 });
