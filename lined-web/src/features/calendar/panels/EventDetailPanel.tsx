@@ -24,7 +24,7 @@ export const EventDetailPanel = ({
   const accentColor = lobbyAccentColor(lobby.lobbyType);
 
   return (
-    <div className="m-4 ml-0 w-72 flex-shrink-0 self-start overflow-hidden rounded-xl bg-white shadow-[var(--shadow-md)]">
+    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[70vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-[var(--shadow-md)] md:relative md:inset-auto md:z-auto md:m-4 md:ml-0 md:max-h-none md:w-72 md:flex-shrink-0 md:self-start md:overflow-hidden md:rounded-xl">
       {/* Coloured accent bar */}
       <div className="h-1" style={{ backgroundColor: accentColor }} />
 

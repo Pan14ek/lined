@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskPriority, TaskStatus, TaskUpdateDto } from '@/features/tasks/model';
 import { useCreateTask, useUpdateTask, useDeleteTask } from '@/features/tasks/hooks/useTasks';
@@ -80,6 +81,8 @@ export const TaskDrawer = ({
   task,
 }: TaskDrawerProps) => {
   const isEditMode = task != null;
+  // Right-side sheet on tablet/desktop, bottom sheet on phones.
+  const isPhone = useMediaQuery('(max-width: 767px)');
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -148,7 +151,10 @@ export const TaskDrawer = ({
   return (
     <>
       <Sheet open onOpenChange={(open) => !open && onClose()}>
-        <SheetContent className="w-full gap-0 p-0 sm:max-w-[420px]" side="right">
+        <SheetContent
+          className="w-full gap-0 p-0 sm:max-w-[420px] max-md:h-[85vh] max-md:rounded-t-2xl"
+          side={isPhone ? 'bottom' : 'right'}
+        >
           <SheetHeader className="border-b border-border px-6 py-5">
             <SheetTitle>{isEditMode ? 'Task details' : 'Add Task'}</SheetTitle>
             {isEditMode && (
