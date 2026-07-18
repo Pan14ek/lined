@@ -108,6 +108,20 @@ priority can never be set from the UI), a zero-lobby account gets blank
 screens with no onboarding, nothing is usable below ~1024 px, and the
 dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 
+- **Event conflict warnings** — `ConflictBanner`, `useConflictCheck` /
+  `useEventConflicts` (`src/hooks/useEvents.ts`), `useNextFreeSlotHint`
+  (`src/hooks/useDashboard.ts`): `CreateEventModal` (create and edit) and
+  `ReserveSlotModal` now debounce-call the previously-unused `GET
+  /api/calendar/conflicts` once lobby/start/end are set, and render a
+  non-blocking amber banner naming the busy lobby member and their
+  conflicting event when it returns a pair; edit mode filters out the event
+  being edited by id. A "Next slot when everyone is free" hint (from `GET
+  /api/lobbies/{id}/free-slots`) rewrites the start/end fields with the same
+  duration on click. `CreateEventModal`'s primary button swaps to "Create
+  Anyway"/"Save Anyway" while a conflict is shown; `ReserveSlotModal` shows
+  the banner only, per spec. The check fails open: a loading or failed
+  conflicts request never blocks submission or shows a banner.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -152,7 +166,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 16 | `feature/ui-16-notifications-center` | Notification bell + inbox (unread count, mark read) and backend-persisted notification preferences | [tasks/UI-16-notifications-center.md](tasks/UI-16-notifications-center.md) | DONE |
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
 | 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
-| 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | TODO |
+| 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | DONE |
 | 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | DONE |
 | 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
