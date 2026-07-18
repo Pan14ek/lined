@@ -41,7 +41,25 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
       >
         {day.getDate()}
       </div>
-      <div className="flex w-full flex-col gap-0.5">
+      {/* Tablet (<lg): compact colored dots instead of full title chips — a
+          day cell is too narrow at that width to fit readable text. */}
+      <div className="flex w-full flex-wrap gap-1 lg:hidden">
+        {visible.map((event) => {
+          const lobby = lobbyMap.get(event.lobbyId);
+          const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';
+          return (
+            <span
+              key={event.id}
+              aria-label={event.title}
+              className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
+          );
+        })}
+        {overflowCount > 0 && <span className="text-[9px] font-medium text-text-muted">+{overflowCount}</span>}
+      </div>
+
+      <div className="hidden w-full flex-col gap-0.5 lg:flex">
         {visible.map((event) => {
           const lobby = lobbyMap.get(event.lobbyId);
           const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';

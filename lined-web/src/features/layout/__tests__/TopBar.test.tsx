@@ -1,8 +1,23 @@
-import { describe, it, expect } from 'vitest';
-import { renderWithProviders, screen } from '@/test/utils';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { TopBar } from '../TopBar';
+import { useUiStore } from '@/store/ui';
 
 describe('TopBar', () => {
+  beforeEach(() => {
+    useUiStore.setState({ isSidebarDrawerOpen: false });
+  });
+
+  it('opens the sidebar drawer when the menu button is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    renderWithProviders(<TopBar />, { initialEntries: ['/'] });
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+
+    expect(useUiStore.getState().isSidebarDrawerOpen).toBe(true);
+  });
+
   it('shows "Dashboard" for the root route', () => {
     expect.assertions(1);
     renderWithProviders(<TopBar />, { initialEntries: ['/'] });

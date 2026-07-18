@@ -7,6 +7,9 @@ interface CalendarState {
   weekStart: Date;
   monthAnchor: Date;
   viewMode: ViewMode;
+  /** The single day shown by the phone-only day view (forced under `md`,
+   *  not a user-selectable ViewMode — see CalendarPage). */
+  dayAnchor: Date;
   selectedEventId: number | null;
   isCreateModalOpen: boolean;
   /** Lobby ids excluded from the global calendar grid — mirrors Google/Outlook's
@@ -16,6 +19,9 @@ interface CalendarState {
   goToNextWeek: () => void;
   goToPrevMonth: () => void;
   goToNextMonth: () => void;
+  goToPrevDay: () => void;
+  goToNextDay: () => void;
+  goToDay: (day: Date) => void;
   goToToday: () => void;
   goToWeekOf: (day: Date) => void;
   setViewMode: (mode: ViewMode) => void;
@@ -29,6 +35,7 @@ export const useCalendarStore = create<CalendarState>()((set) => ({
   weekStart: getWeekStart(),
   monthAnchor: getMonthStart(new Date()),
   viewMode: 'week',
+  dayAnchor: new Date(new Date().setHours(0, 0, 0, 0)),
   selectedEventId: null,
   isCreateModalOpen: false,
   hiddenLobbyIds: [],
@@ -39,7 +46,15 @@ export const useCalendarStore = create<CalendarState>()((set) => ({
     set((s) => ({ monthAnchor: getMonthStart(addDays(s.monthAnchor, -1)) })),
   goToNextMonth: () =>
     set((s) => ({ monthAnchor: getMonthStart(addDays(s.monthAnchor, 32)) })),
-  goToToday: () => set({ weekStart: getWeekStart(), monthAnchor: getMonthStart(new Date()) }),
+  goToPrevDay: () => set((s) => ({ dayAnchor: addDays(s.dayAnchor, -1) })),
+  goToNextDay: () => set((s) => ({ dayAnchor: addDays(s.dayAnchor, 1) })),
+  goToDay: (day) => set({ dayAnchor: day }),
+  goToToday: () =>
+    set({
+      weekStart: getWeekStart(),
+      monthAnchor: getMonthStart(new Date()),
+      dayAnchor: new Date(new Date().setHours(0, 0, 0, 0)),
+    }),
   goToWeekOf: (day) => set({ weekStart: getWeekStart(day), viewMode: 'week' }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setSelectedEventId: (id) => set({ selectedEventId: id }),

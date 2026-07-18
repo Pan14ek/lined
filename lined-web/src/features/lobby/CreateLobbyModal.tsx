@@ -44,8 +44,8 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Dialog */}
-      <div className="w-[460px] max-w-[90vw] overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-lg)]">
+      {/* Dialog — full-screen sheet under md, centered card at md and above */}
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-white md:h-auto md:max-h-[90vh] md:w-[460px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="text-lg font-bold text-text-primary">New Lobby</h2>

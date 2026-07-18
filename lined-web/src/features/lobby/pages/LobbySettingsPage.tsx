@@ -28,7 +28,7 @@ export const LobbySettingsPage = () => {
     <div className="flex-1 overflow-y-auto">
       <LobbyHeader lobby={lobby} />
 
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-text-secondary">
           <Link to={`/lobbies/${lobby.id}`} className="text-brand-green hover:underline">
             ← Back to lobby

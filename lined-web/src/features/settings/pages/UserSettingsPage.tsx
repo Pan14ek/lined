@@ -10,9 +10,9 @@ export const UserSettingsPage = () => {
   const { data: user, isLoading } = useCurrentUser();
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
       <SettingsMenu />
-      <div className="flex-1 overflow-y-auto bg-bg p-8">
+      <div className="flex-1 overflow-y-auto bg-bg p-4 md:p-8">
         <ProfileCard user={user} isLoading={isLoading} />
         <PasswordCard userId={user?.id} />
         <NotificationsCard />
