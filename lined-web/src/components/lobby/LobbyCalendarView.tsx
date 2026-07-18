@@ -18,6 +18,7 @@ import {
 } from '@/lib/calendarUtils';
 import { freeSlotsForDay } from '@/lib/freeSlots';
 import { lobbyAccentColor } from '@/lib/constants';
+import { WeekEmptyBanner } from '@/components/calendar/WeekEmptyBanner';
 import { useCreateMenuStore } from '@/store/createMenu';
 import type { ViewMode } from '@/store/calendar';
 import type { EventDto } from '@/types';
@@ -90,36 +91,45 @@ export function LobbyCalendarView({ lobby }: LobbyCalendarViewProps) {
           Couldn&apos;t load the calendar. Try again later.
         </p>
       ) : (
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <WeekGrid
-            weekStart={weekStart}
-            events={events ?? []}
-            lobbies={[lobby]}
-            selectedEventId={selectedEventId}
-            onEventClick={(id) => {
-              setDeleteError(null);
-              setSelectedEventId(id);
-            }}
-            getFreeSlotsForDay={(day) => freeSlotsForDay(freeSlots ?? [], day)}
-            legendItems={legendItems}
-            onDayClick={(day) => setAgendaDay(day)}
-            maxVisibleEvents={4}
-            onFreeSlotClick={handleFreeSlotClick}
-          />
-
-          {selectedEvent && (
-            <EventDetailPanel
-              event={selectedEvent}
-              lobby={lobby}
-              onClose={() => {
-                setDeleteError(null);
-                setSelectedEventId(null);
-              }}
-              onEdit={() => setEditingEvent(selectedEvent)}
-              onDelete={handleDelete}
-              deleteError={deleteError}
+        <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+          {(events ?? []).length === 0 && (
+            <WeekEmptyBanner
+              message="No events yet."
+              action={{ label: 'Invite someone', to: `/lobbies/${lobby.id}?tab=members` }}
             />
           )}
+
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <WeekGrid
+              weekStart={weekStart}
+              events={events ?? []}
+              lobbies={[lobby]}
+              selectedEventId={selectedEventId}
+              onEventClick={(id) => {
+                setDeleteError(null);
+                setSelectedEventId(id);
+              }}
+              getFreeSlotsForDay={(day) => freeSlotsForDay(freeSlots ?? [], day)}
+              legendItems={legendItems}
+              onDayClick={(day) => setAgendaDay(day)}
+              maxVisibleEvents={4}
+              onFreeSlotClick={handleFreeSlotClick}
+            />
+
+            {selectedEvent && (
+              <EventDetailPanel
+                event={selectedEvent}
+                lobby={lobby}
+                onClose={() => {
+                  setDeleteError(null);
+                  setSelectedEventId(null);
+                }}
+                onEdit={() => setEditingEvent(selectedEvent)}
+                onDelete={handleDelete}
+                deleteError={deleteError}
+              />
+            )}
+          </div>
         </div>
       )}
 
