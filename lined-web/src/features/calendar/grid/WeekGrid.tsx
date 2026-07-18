@@ -249,6 +249,9 @@ const DayColumn = ({
 
 interface WeekGridProps {
   weekStart: Date;
+  /** Overrides the default 7-day week — a 1-length array renders the same
+   *  hour-grid/free-slot/event internals as a single day column (phone day view). */
+  days?: Date[];
   events: EventDto[];
   lobbies: LobbyDto[];
   selectedEventId: number | null;
@@ -275,6 +278,7 @@ const defaultGetFreeSlotsForDay = (day: Date, dayEvents: EventDto[]): FreeSlot[]
 
 export const WeekGrid = ({
   weekStart,
+  days,
   events,
   lobbies,
   selectedEventId,
@@ -285,7 +289,7 @@ export const WeekGrid = ({
   maxVisibleEvents = 4,
   onFreeSlotClick,
 }: WeekGridProps) => {
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekDays = days ?? Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
 
   // Auto-scroll to current time on mount

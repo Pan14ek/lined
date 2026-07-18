@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
@@ -6,8 +6,33 @@ import { CalendarPage } from '../CalendarPage';
 import { useAuthStore } from '@/store/auth';
 import { useCalendarStore } from '@/store/calendar';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { MOCK_EVENTS } from '@/features/calendar/api/mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+
+/** "Morning Coffee"'s local calendar day — deriving it from the mock event
+ *  (rather than assuming it equals `new Date()`) keeps these tests stable
+ *  regardless of the machine's timezone/time-of-day relative to the mock
+ *  data's UTC-sliced "today" fixture. */
+const morningCoffeeLocalDay = (): Date => {
+  const day = new Date(MOCK_EVENTS[0]!.startAt);
+  day.setHours(0, 0, 0, 0);
+  return day;
+};
+
+/** Forces useMediaQuery('(max-width: 767px)') to report a phone width. */
+const mockPhoneViewport = () => {
+  vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
+    matches: query === '(max-width: 767px)',
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));
+};
 
 describe('CalendarPage', () => {
   beforeEach(() => {
@@ -172,5 +197,49 @@ describe('CalendarPage', () => {
     await user.click(await screen.findByRole('menuitemcheckbox', { name: /Alex & Anastasiia/ }));
 
     expect(await screen.findByText('Morning Coffee')).toBeInTheDocument();
+  });
+
+  describe('phone viewport', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('renders a single-day view with a day-chip strip instead of the week/month toggle', async () => {
+      expect.assertions(3);
+      mockPhoneViewport();
+      useCalendarStore.setState({ dayAnchor: morningCoffeeLocalDay() });
+      renderWithProviders(<CalendarPage />);
+
+      expect(await screen.findByText('Morning Coffee')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Week' })).not.toBeInTheDocument();
+      expect(screen.getByRole('tablist', { name: 'Select day' })).toBeInTheDocument();
+    });
+
+    it('shows a floating "+" button that opens the create-event modal', async () => {
+      expect.assertions(1);
+      mockPhoneViewport();
+      useCalendarStore.setState({ dayAnchor: morningCoffeeLocalDay() });
+      const user = userEvent.setup();
+      renderWithProviders(<CalendarPage />);
+      await screen.findByText('Morning Coffee');
+
+      await user.click(screen.getByRole('button', { name: 'New event' }));
+
+      expect(useCalendarStore.getState().isCreateModalOpen).toBe(true);
+    });
+
+    it('moves to the next day when the next-day chevron is clicked', async () => {
+      expect.assertions(1);
+      mockPhoneViewport();
+      useCalendarStore.setState({ dayAnchor: morningCoffeeLocalDay() });
+      const user = userEvent.setup();
+      const initialDay = useCalendarStore.getState().dayAnchor;
+      renderWithProviders(<CalendarPage />);
+      await screen.findByText('Morning Coffee');
+
+      await user.click(screen.getByRole('button', { name: 'Next day' }));
+
+      expect(useCalendarStore.getState().dayAnchor.getTime()).toBeGreaterThan(initialDay.getTime());
+    });
   });
 });
