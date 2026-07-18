@@ -7,6 +7,7 @@ import { LobbyTypePicker } from '@/components/LobbyTypePicker';
 import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/components/AuthAlert';
 import { getApiErrorMessage } from '@/lib/apiErrors';
+import { useCreateMenuStore } from '@/store/createMenu';
 
 interface CreateLobbyModalProps {
   onClose: () => void;
@@ -15,9 +16,10 @@ interface CreateLobbyModalProps {
 export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
   const navigate = useNavigate();
   const createLobby = useCreateLobby();
+  const lobbyTypeInitial = useCreateMenuStore((s) => s.lobbyTypeInitial);
 
   const [name, setName] = useState('');
-  const [lobbyType, setLobbyType] = useState<LobbyType>('COUPLE');
+  const [lobbyType, setLobbyType] = useState<LobbyType>(lobbyTypeInitial ?? 'COUPLE');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

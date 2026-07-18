@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { TaskDto, TaskStatus } from '@/types';
+import type { LobbyType, TaskDto, TaskStatus } from '@/types';
 
 export type CreateOverlay = 'event' | 'task' | 'reserveSlot' | null;
 
@@ -13,7 +13,9 @@ export interface ReserveSlotInitial {
 
 interface CreateMenuState {
   isCreateLobbyOpen: boolean;
-  openCreateLobby: () => void;
+  /** Preselected type for the create-lobby modal, e.g. from the dashboard onboarding hero. */
+  lobbyTypeInitial: LobbyType | null;
+  openCreateLobby: (lobbyType?: LobbyType) => void;
   closeCreateLobby: () => void;
   overlay: CreateOverlay;
   /** Preselected status for the 'task' overlay, e.g. when opened from a kanban column. */
@@ -30,8 +32,9 @@ interface CreateMenuState {
 
 export const useCreateMenuStore = create<CreateMenuState>()((set) => ({
   isCreateLobbyOpen: false,
-  openCreateLobby: () => set({ isCreateLobbyOpen: true }),
-  closeCreateLobby: () => set({ isCreateLobbyOpen: false }),
+  lobbyTypeInitial: null,
+  openCreateLobby: (lobbyType) => set({ isCreateLobbyOpen: true, lobbyTypeInitial: lobbyType ?? null }),
+  closeCreateLobby: () => set({ isCreateLobbyOpen: false, lobbyTypeInitial: null }),
   overlay: null,
   taskInitialStatus: null,
   editingTask: null,

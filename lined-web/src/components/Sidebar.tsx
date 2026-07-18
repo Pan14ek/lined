@@ -7,6 +7,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LOBBY_TYPE_COLORS } from '@/lib/constants';
+import { EmptyState } from '@/components/EmptyState';
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -64,7 +65,7 @@ export function Sidebar() {
           </span>
           <button
             type="button"
-            onClick={openCreateLobby}
+            onClick={() => openCreateLobby()}
             className="text-xs font-medium text-brand-green hover:underline"
           >
             + New
@@ -83,16 +84,14 @@ export function Sidebar() {
         )}
 
         {!lobbiesLoading && lobbies?.length === 0 && (
-          <p className="px-3 py-2 text-sm text-text-muted">
-            No lobbies yet —{' '}
-            <button
-              type="button"
-              onClick={openCreateLobby}
-              className="text-brand-green hover:underline"
-            >
-              + New
-            </button>
-          </p>
+          <div className="px-3 py-2">
+            <EmptyState
+              variant="inline"
+              message="No lobbies yet"
+              action={{ label: '+ New', onClick: () => openCreateLobby() }}
+              className="text-text-muted"
+            />
+          </div>
         )}
 
         {!lobbiesLoading &&
