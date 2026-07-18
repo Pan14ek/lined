@@ -1,5 +1,4 @@
-/** "28 Mar 2026" */
-export function formatShortDate(iso: string): string {
+export const formatShortDate = (iso: string): string => {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -7,7 +6,6 @@ export function formatShortDate(iso: string): string {
   });
 }
 
-/** "Free" for a $0 plan, else "$9.99". */
-export function formatPlanPrice(priceUsd: number): string {
+export const formatPlanPrice = (priceUsd: number): string => {
   return priceUsd === 0 ? 'Free' : `$${priceUsd.toFixed(2)}`;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import type { EventDto } from '@/types';
+import type { EventDto } from '@/features/calendar/model';
 import {
   getGreeting,
   formatFullDate,

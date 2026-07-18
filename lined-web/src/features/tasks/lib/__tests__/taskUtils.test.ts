@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { TaskDto, TaskStatus } from '@/types';
+import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import {
   STATUS_ORDER,
   getAdjacentStatus,
@@ -11,7 +11,7 @@ import {
 
 const TODAY = new Date('2026-04-15T12:00:00'); // Wednesday
 
-function makeTask(overrides: Partial<TaskDto>): TaskDto {
+const makeTask = (overrides: Partial<TaskDto>): TaskDto => {
   return {
     id: 1,
     title: 'Task',

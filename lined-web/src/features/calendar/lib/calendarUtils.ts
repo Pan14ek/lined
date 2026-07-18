@@ -1,4 +1,5 @@
-import type { EventDto, TaskStatus } from '@/types';
+import type { EventDto } from '@/features/calendar/model';
+import type { TaskStatus } from '@/features/tasks/model';
 
 export const GRID_START_HOUR = 1; // 1 AM
 export const GRID_END_HOUR = 24; // 12 AM (midnight)
@@ -9,8 +10,7 @@ export const GRID_HOURS = Array.from(
   (_, i) => i + GRID_START_HOUR,
 ); // [1, 2, 3, ..., 23]
 
-/** Returns the Monday of the week containing `date`. */
-export function getWeekStart(date: Date = new Date()): Date {
+export const getWeekStart = (date: Date = new Date()): Date => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   const day = d.getDay(); // 0=Sun, 1=Mon, …
@@ -19,13 +19,13 @@ export function getWeekStart(date: Date = new Date()): Date {
   return d;
 }
 
-export function addDays(date: Date, days: number): Date {
+export const addDays = (date: Date, days: number): Date => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 }
 
-export function isSameDay(a: Date, b: Date): boolean {
+export const isSameDay = (a: Date, b: Date): boolean => {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -33,8 +33,7 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-/** Midnight-to-midnight bounds of the day containing `date`. */
-export function getDayBounds(date: Date): { start: Date; end: Date } {
+export const getDayBounds = (date: Date): { start: Date; end: Date } => {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
@@ -42,54 +41,44 @@ export function getDayBounds(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
-/** `YYYY-MM-DD` for `date` in the viewer's local timezone (not UTC). */
-export function toLocalDateString(date: Date): string {
+export const toLocalDateString = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
-export function isToday(date: Date): boolean {
+export const isToday = (date: Date): boolean => {
   return isSameDay(date, new Date());
 }
 
-export function isSameMonth(a: Date, b: Date): boolean {
+export const isSameMonth = (a: Date, b: Date): boolean => {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-/** First-of-month for the month containing `date`. */
-export function getMonthStart(date: Date): Date {
+export const getMonthStart = (date: Date): Date => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   d.setDate(1);
   return d;
 }
 
-/**
- * The 42 (6×7) Monday-start days spanning the full weeks that contain
- * `monthAnchor`'s month, including leading/trailing days from adjacent
- * months.
- */
-export function getMonthGridDays(monthAnchor: Date): Date[] {
+export const getMonthGridDays = (monthAnchor: Date): Date[] => {
   const monthStart = getMonthStart(monthAnchor);
   const gridStart = getWeekStart(monthStart);
   return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 }
 
-/** "April 2026" */
-export function formatMonthYear(date: Date): string {
+export const formatMonthYear = (date: Date): string => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
-/** "Mon 13" */
-export function formatDayLabel(date: Date): string {
+export const formatDayLabel = (date: Date): string => {
   const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
   return `${weekday} ${date.getDate()}`;
 }
 
-/** Splits a fractional grid hour (e.g. 14.5) into a 12-hour value + AM/PM. */
-function toHourClock(hour: number): { value: string; ampm: 'AM' | 'PM' } {
+const toHourClock = (hour: number): { value: string; ampm: 'AM' | 'PM' } => {
   const wholeHour = Math.floor(hour);
   const ampm = wholeHour >= 12 ? 'PM' : 'AM';
   const h = wholeHour % 12 || 12;
@@ -98,20 +87,17 @@ function toHourClock(hour: number): { value: string; ampm: 'AM' | 'PM' } {
   return { value, ampm };
 }
 
-/** "9 AM", "12 PM", "2 PM" */
-export function formatHour(hour: number): string {
+export const formatHour = (hour: number): string => {
   const { value, ampm } = toHourClock(hour);
   return `${value} ${ampm}`;
 }
 
-/** "9 AM", "12 PM", "2:30 PM" */
-export function formatClockTime(d: Date): string {
+export const formatClockTime = (d: Date): string => {
   const { value, ampm } = toHourClock(d.getHours() + d.getMinutes() / 60);
   return `${value} ${ampm}`;
 }
 
-/** "Mon 13 Apr · 9:00 – 10:00 AM" */
-export function formatEventTime(startAt: string, endAt: string): string {
+export const formatEventTime = (startAt: string, endAt: string): string => {
   const start = new Date(startAt);
   const end = new Date(endAt);
 
@@ -124,16 +110,14 @@ export function formatEventTime(startAt: string, endAt: string): string {
   return `${dateStr} · ${formatClockTime(start)} – ${formatClockTime(end)}`;
 }
 
-/** "Good morning" / "Good afternoon" / "Good evening" based on the hour. */
-export function getGreeting(date: Date = new Date()): string {
+export const getGreeting = (date: Date = new Date()): string => {
   const hour = date.getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
 
-/** "Saturday, 28 March 2026" */
-export function formatFullDate(date: Date): string {
+export const formatFullDate = (date: Date): string => {
   return date.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
@@ -142,8 +126,7 @@ export function formatFullDate(date: Date): string {
   });
 }
 
-/** "Today · 5:00 PM", "Tomorrow · 7:00 PM", "Sun, 29 Mar · 7:00 PM" */
-export function formatRelativeEventTime(startAt: string): string {
+export const formatRelativeEventTime = (startAt: string): string => {
   const start = new Date(startAt);
   const now = new Date();
   const timeStr = formatClockTime(start);
@@ -159,13 +142,11 @@ export function formatRelativeEventTime(startAt: string): string {
   return `${weekday}, ${dayMonth} · ${timeStr}`;
 }
 
-/** "12 Jul" */
-export function formatShortDate(date: Date): string {
+export const formatShortDate = (date: Date): string => {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-/** "Just now", "10 minutes ago", "2 hours ago", "Yesterday", "3 days ago" */
-export function formatRelativeTimeAgo(iso: string): string {
+export const formatRelativeTimeAgo = (iso: string): string => {
   const then = new Date(iso);
   const now = new Date();
   const seconds = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
@@ -186,8 +167,7 @@ export function formatRelativeTimeAgo(iso: string): string {
   return formatShortDate(then);
 }
 
-/** "Today 2–5 PM", "Tomorrow 2–5 PM", "Sunday 2–5 PM" */
-export function formatFreeSlotRange(start: string, end: string): string {
+export const formatFreeSlotRange = (start: string, end: string): string => {
   const startDate = new Date(start);
   const endDate = new Date(end);
   const now = new Date();
@@ -209,11 +189,7 @@ export function formatFreeSlotRange(start: string, end: string): string {
   return `${dayLabel} ${range}`;
 }
 
-/** Due-date label + urgency flag for a task row ("Today"/overdue are urgent). */
-export function formatTaskDueDate(
-  dueDate: string | null,
-  status: TaskStatus,
-): { label: string; isUrgent: boolean } {
+export const formatTaskDueDate = (dueDate: string | null, status: TaskStatus): { label: string; isUrgent: boolean } => {
   if (status === 'DONE') return { label: 'Done', isUrgent: false };
   if (!dueDate) return { label: 'No due date', isUrgent: false };
 
@@ -234,40 +210,27 @@ export function formatTaskDueDate(
   return { label, isUrgent: isOverdue };
 }
 
-/** Pixel offset from the top of the time grid. */
-export function getEventTop(startAt: string): number {
+export const getEventTop = (startAt: string): number => {
   const d = new Date(startAt);
   const hours = d.getHours() + d.getMinutes() / 60;
   return (hours - GRID_START_HOUR) * HOUR_HEIGHT;
 }
 
-/** Pixel height of the event block. */
-export function getEventHeight(startAt: string, endAt: string): number {
+export const getEventHeight = (startAt: string, endAt: string): number => {
   const start = new Date(startAt);
   const end = new Date(endAt);
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
   return durationHours * HOUR_HEIGHT;
 }
 
-/** True if an event starts, ends, or spans across the given day. */
-export function eventTouchesDay(event: EventDto, day: Date): boolean {
+export const eventTouchesDay = (event: EventDto, day: Date): boolean => {
   const { start: dayStart, end: dayEnd } = getDayBounds(day);
   const eventStart = new Date(event.startAt);
   const eventEnd = new Date(event.endAt);
   return eventStart < dayEnd && eventEnd > dayStart;
 }
 
-/**
- * Clips an event's start/end to `day`'s midnight-to-midnight bounds, so a
- * multi-day event (e.g. 11:30 PM–2 AM) renders as two separate segments: a
- * short block at the bottom of the day it starts, and a continuation at the
- * top of the day it ends. The portion before GRID_START_HOUR on the
- * continuation day is clipped by the grid itself, same as free slots.
- */
-export function clipEventToDay(
-  event: EventDto,
-  day: Date,
-): { startAt: string; endAt: string } {
+export const clipEventToDay = (event: EventDto, day: Date): { startAt: string; endAt: string } => {
   const dayStart = new Date(day);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = addDays(dayStart, 1);
@@ -286,14 +249,7 @@ export interface FreeSlot {
   endHour: number;
 }
 
-/**
- * Compute gaps between events within the visible grid range (>= 30 min), for
- * one specific day. Events are clipped to that day first — a plain
- * `.getHours()` read on a midnight-spanning event's real endAt (e.g. 2 AM the
- * next day) would come back smaller than its own start hour, making the gap
- * logic below think the day was free again right after the event started.
- */
-export function computeFreeSlots(events: EventDto[], day: Date): FreeSlot[] {
+export const computeFreeSlots = (events: EventDto[], day: Date): FreeSlot[] => {
   if (events.length === 0) return [];
 
   const MIN_SLOT_HOURS = 0.5;
@@ -330,8 +286,7 @@ export function computeFreeSlots(events: EventDto[], day: Date): FreeSlot[] {
   return freeSlots;
 }
 
-/** "2–5 PM", "9 AM–12 PM" for a grid-relative hour range. */
-export function formatHourRange(startHour: number, endHour: number): string {
+export const formatHourRange = (startHour: number, endHour: number): string => {
   const start = toHourClock(startHour);
   const end = toHourClock(endHour);
 
@@ -340,12 +295,7 @@ export function formatHourRange(startHour: number, endHour: number): string {
     : `${start.value} ${start.ampm}–${end.value} ${end.ampm}`;
 }
 
-/** Converts a grid-relative hour range on a given day into real ISO timestamps. */
-export function hourRangeToIso(
-  day: Date,
-  startHour: number,
-  endHour: number,
-): { start: string; end: string } {
+export const hourRangeToIso = (day: Date, startHour: number, endHour: number): { start: string; end: string } => {
   const toDate = (hour: number): Date => {
     const d = new Date(day);
     const wholeHour = Math.floor(hour);
@@ -362,12 +312,7 @@ export interface EventLane {
   laneCount: number;
 }
 
-/**
- * Greedy sweep-line layout: assigns each event to the first lane whose
- * previous occupant has already ended, opening a new lane otherwise. Events
- * that overlap in time end up in the same "cluster" and share its lane count.
- */
-export function assignEventLanes(events: EventDto[]): Map<number, EventLane> {
+export const assignEventLanes = (events: EventDto[]): Map<number, EventLane> => {
   const result = new Map<number, EventLane>();
   if (events.length === 0) return result;
 
@@ -419,13 +364,11 @@ export function assignEventLanes(events: EventDto[]): Map<number, EventLane> {
   return result;
 }
 
-/** Format a Date as "YYYY-MM-DDTHH:mm" for datetime-local inputs. */
-export function toDatetimeLocal(date: Date): string {
+export const toDatetimeLocal = (date: Date): string => {
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/** Parse a "YYYY-MM-DDTHH:mm" string into a local Date. */
-export function fromDatetimeLocal(value: string): Date {
+export const fromDatetimeLocal = (value: string): Date => {
   return new Date(value);
 }

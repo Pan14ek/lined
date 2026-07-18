@@ -1,5 +1,5 @@
-import type { TaskDto, TaskStatus } from '@/types';
-import { addDays, getWeekStart, toLocalDateString } from './calendarUtils';
+import type { TaskDto, TaskStatus } from '@/features/tasks/model';
+import { addDays, getWeekStart, toLocalDateString } from '@/features/calendar/lib/calendarUtils';
 
 export const STATUS_ORDER: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 

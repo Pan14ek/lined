@@ -1,4 +1,4 @@
-import type { FreeSlotDto } from '@/types';
+import type { FreeSlotDto } from '@/features/lobby/model';
 import {
   GRID_END_HOUR,
   GRID_START_HOUR,
@@ -9,11 +9,7 @@ import {
 
 const toHour = (d: Date): number => d.getHours() + d.getMinutes() / 60;
 
-/**
- * Converts server-side ISO-range free slots into grid-relative hour ranges
- * for a single calendar day, clipped to the visible grid bounds.
- */
-export function freeSlotsForDay(slots: FreeSlotDto[], day: Date): FreeSlot[] {
+export const freeSlotsForDay = (slots: FreeSlotDto[], day: Date): FreeSlot[] => {
   const result: FreeSlot[] = [];
 
   for (const slot of slots) {

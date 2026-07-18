@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { FreeSlotDto } from '@/types';
+import type { FreeSlotDto } from '@/features/lobby/model';
 import { freeSlotsForDay } from '../freeSlots';
 
 const DAY = new Date('2026-03-28T00:00:00');
