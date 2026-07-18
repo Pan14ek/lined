@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import { MOCK_USERS, MOCK_LOBBIES } from '../data';
+import { MOCK_USERS } from './mockData';
+import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 

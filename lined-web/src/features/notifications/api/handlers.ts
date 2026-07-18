@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { MOCK_NOTIFICATIONS } from '../data';
+import { MOCK_NOTIFICATIONS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -13,7 +13,7 @@ let mockPreferences = {
 
 const mockLobbyPreferences = new Map<number, Record<string, boolean | number>>();
 
-function getLobbyPreferences(lobbyId: number) {
+const getLobbyPreferences = (lobbyId: number) => {
   return (
     mockLobbyPreferences.get(lobbyId) ?? {
       lobbyId,

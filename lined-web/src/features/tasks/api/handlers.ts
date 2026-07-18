@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { MOCK_TASKS } from '../data';
+import { MOCK_TASKS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 

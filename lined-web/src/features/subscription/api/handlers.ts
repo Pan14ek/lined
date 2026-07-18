@@ -1,15 +1,21 @@
 import { http, HttpResponse } from 'msw';
-import { MOCK_SUBSCRIPTIONS, MOCK_PLANS } from '../data';
-import type { SubscriptionDto } from '@/types';
+import { MOCK_SUBSCRIPTIONS, MOCK_PLANS } from './mockData';
+import type { SubscriptionDto } from '@/features/subscription/model';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 let mockSubscriptions: SubscriptionDto[] = [...MOCK_SUBSCRIPTIONS];
 let nextSubscriptionId = 101;
 
-function findActive(userId: number): SubscriptionDto | undefined {
+const findActive = (userId: number): SubscriptionDto | undefined => {
   return mockSubscriptions.find((s) => s.userId === userId && s.active);
 }
+
+export const planHandlers = [
+  http.get(`${BASE}/plans`, () => {
+    return HttpResponse.json(MOCK_PLANS);
+  }),
+];
 
 export const subscriptionHandlers = [
   http.get(`${BASE}/subscriptions/:userId/active`, ({ params }) => {

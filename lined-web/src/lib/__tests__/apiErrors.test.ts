@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HTTPError } from 'ky';
 import { getApiErrorMessage } from '../apiErrors';
 
-function makeHttpError(status: number): HTTPError {
+const makeHttpError = (status: number): HTTPError => {
   const response = new Response(null, { status });
   return new HTTPError(response, new Request('http://localhost/'), {} as never);
 }
