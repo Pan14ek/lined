@@ -135,7 +135,7 @@ const FreeSlotBand = ({ startHour, endHour, onClick }: FreeSlotBandProps) => {
         type="button"
         onClick={onClick}
         aria-label="Reserve this free slot"
-        className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark hover:opacity-80"
+        className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark dark:text-brand-green hover:opacity-80"
         style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
       >
         {height >= 40 && 'Free slot'}
@@ -145,7 +145,7 @@ const FreeSlotBand = ({ startHour, endHour, onClick }: FreeSlotBandProps) => {
 
   return (
     <div
-      className="pointer-events-none absolute left-[2px] right-[2px] rounded-[6px] flex items-center justify-center text-[10px] font-semibold text-brand-green-dark"
+      className="pointer-events-none absolute left-[2px] right-[2px] rounded-[6px] flex items-center justify-center text-[10px] font-semibold text-brand-green-dark dark:text-brand-green"
       style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
     >
       {height >= 40 && 'Free slot'}
@@ -324,7 +324,7 @@ export const WeekGrid = ({
               }
               className={`relative flex-1 py-2 text-center text-xs select-none ${
                 today
-                  ? 'bg-brand-green-light font-semibold text-brand-green-dark'
+                  ? 'bg-brand-green-light font-semibold text-brand-green-dark dark:text-brand-green'
                   : 'text-text-secondary'
               } ${onDayClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
             >

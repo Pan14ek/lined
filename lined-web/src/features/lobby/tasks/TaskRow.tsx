@@ -67,7 +67,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
         {task.description && (
           <p className="mt-0.5 truncate text-xs text-text-secondary">{task.description}</p>
         )}
-        {updateError && <p className="mt-0.5 text-xs text-red-500">{updateError}</p>}
+        {updateError && <p className="mt-0.5 text-xs text-red-500 dark:text-red-400">{updateError}</p>}
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-3">
@@ -75,7 +75,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
         <AssigneeAvatar assignee={assignee} size="sm" />
         <span
           className={`w-16 text-right text-xs ${
-            due.isUrgent ? 'font-semibold text-red-500' : isDone ? 'text-text-muted' : 'text-text-secondary'
+            due.isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : isDone ? 'text-text-muted' : 'text-text-secondary'
           }`}
         >
           {due.label}

@@ -50,7 +50,7 @@ export const InviteCard = ({
           {inviterName} invited you to <strong>{lobbyName}</strong>
         </p>
         <p className="mt-0.5 text-xs text-text-secondary">{subLine}</p>
-        {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </div>
       <div className="ml-auto flex flex-shrink-0 gap-2">
         <button
@@ -65,7 +65,7 @@ export const InviteCard = ({
           type="button"
           onClick={onDecline}
           disabled={isPending}
-          className="h-8 rounded-lg border border-red-300 px-3.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+          className="h-8 rounded-lg border border-red-300 px-3.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
         >
           {isDeclining ? 'Declining…' : 'Decline'}
         </button>

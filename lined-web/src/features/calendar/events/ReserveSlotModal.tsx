@@ -54,7 +54,7 @@ export const ReserveSlotModal = ({ lobbies, initial, onClose, onReserved }: Rese
           <div>
             <h2 className="text-lg font-bold text-text-primary">Reserve Free Slot</h2>
             {resolved && (
-              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-1 text-xs font-semibold text-brand-green-dark">
+              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-1 text-xs font-semibold text-brand-green-dark dark:text-brand-green">
                 <Sparkles className="h-3 w-3" />
                 {formatFreeSlotRange(resolved.start, resolved.end)} · Both free
               </span>
@@ -184,10 +184,10 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           <div className="flex items-center gap-2.5 rounded-lg bg-brand-green-light p-3">
             <span className="text-xl">{LOBBY_TYPE_ICONS[lobby.lobbyType]}</span>
             <div>
-              <div className="text-sm font-semibold text-brand-green-dark">
+              <div className="text-sm font-semibold text-brand-green-dark dark:text-brand-green">
                 {lobby.name} are both free
               </div>
-              <div className="mt-0.5 text-xs text-brand-green-dark">
+              <div className="mt-0.5 text-xs text-brand-green-dark dark:text-brand-green">
                 {formatFreeSlotRange(slot.start, slot.end)}
               </div>
             </div>

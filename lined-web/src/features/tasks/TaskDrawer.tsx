@@ -240,7 +240,7 @@ export const TaskDrawer = ({
                     onChange={setDueDate}
                   />
                   {isPastDue && (
-                    <p className="mt-1.5 text-xs text-amber-600">
+                    <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
                       This date is in the past — the task will start off overdue.
                     </p>
                   )}
@@ -308,7 +308,7 @@ export const TaskDrawer = ({
                 <button
                   type="button"
                   onClick={() => setIsConfirmingDelete(true)}
-                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
                 >
                   Delete
                 </button>

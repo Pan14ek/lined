@@ -60,7 +60,7 @@ export const MemberCard = ({
             <button
               type="button"
               onClick={onRemove}
-              className="h-8 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50"
+              className="h-8 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
             >
               Remove
             </button>

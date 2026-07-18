@@ -35,9 +35,9 @@ export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
   return (
     <section
       id="danger-zone"
-      className="mb-5 scroll-mt-6 overflow-hidden rounded-xl border-[1.5px] border-red-200 bg-red-50"
+      className="mb-5 scroll-mt-6 overflow-hidden rounded-xl border-[1.5px] border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
     >
-      <div className="border-b border-red-200 px-6 py-3.5 text-sm font-bold text-red-600">
+      <div className="border-b border-red-200 px-6 py-3.5 text-sm font-bold text-red-600 dark:border-red-900/50 dark:text-red-400">
         ⚠ Danger Zone
       </div>
       <div className="flex items-center justify-between px-6 py-4">

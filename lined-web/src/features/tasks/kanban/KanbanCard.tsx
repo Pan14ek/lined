@@ -43,7 +43,7 @@ const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneInd
   }
 
   return (
-    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500' : 'text-text-secondary'}`}>
+    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : 'text-text-secondary'}`}>
       Due: {dueLabel}
     </span>
   );
@@ -155,14 +155,14 @@ export const KanbanCard = ({
                 e.stopPropagation();
                 onDelete(task);
               }}
-              className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500"
+              className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
             >
               ✕
             </button>
           </div>
         </div>
 
-        {moveError && <p className="mt-1.5 text-xs text-red-500">{moveError}</p>}
+        {moveError && <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{moveError}</p>}
       </div>
     </div>
   );

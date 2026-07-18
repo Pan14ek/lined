@@ -13,10 +13,10 @@ export const FreeSlotBanner = ({ slot, isLoading, onPlan }: FreeSlotBannerProps)
 
   return (
     <div className="mt-4 flex items-center gap-3 rounded-xl bg-brand-green-light p-4">
-      <Sparkles className="h-5 w-5 flex-shrink-0 text-brand-green-dark" />
+      <Sparkles className="h-5 w-5 flex-shrink-0 text-brand-green-dark dark:text-brand-green" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-brand-green-dark">Free time found!</p>
-        <p className="text-xs text-brand-green-dark">
+        <p className="text-sm font-semibold text-brand-green-dark dark:text-brand-green">Free time found!</p>
+        <p className="text-xs text-brand-green-dark dark:text-brand-green">
           You &amp; {slot.otherUsername ?? slot.lobbyName} are both free{' '}
           {formatFreeSlotRange(slot.start, slot.end)}
         </p>
@@ -24,7 +24,7 @@ export const FreeSlotBanner = ({ slot, isLoading, onPlan }: FreeSlotBannerProps)
       <button
         type="button"
         onClick={() => onPlan?.(slot)}
-        className="flex-shrink-0 text-xs font-semibold text-brand-green-dark hover:underline"
+        className="flex-shrink-0 text-xs font-semibold text-brand-green-dark dark:text-brand-green hover:underline"
       >
         Plan something →
       </button>

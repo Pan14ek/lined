@@ -56,7 +56,7 @@ export const ConfirmDialog = ({
           </div>
         )}
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <button

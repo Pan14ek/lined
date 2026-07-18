@@ -77,7 +77,7 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
                 <span
                   className={`flex-shrink-0 text-xs ${
                     due.isUrgent
-                      ? 'font-semibold text-red-500'
+                      ? 'font-semibold text-red-500 dark:text-red-400'
                       : isDone
                         ? 'text-text-muted'
                         : 'text-text-secondary'

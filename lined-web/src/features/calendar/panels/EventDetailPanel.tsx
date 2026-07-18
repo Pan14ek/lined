@@ -81,7 +81,7 @@ export const EventDetailPanel = ({
         <div className="my-3 h-px bg-border" />
 
         {deleteError && (
-          <p className="mb-2 text-xs font-medium text-red-500">{deleteError}</p>
+          <p className="mb-2 text-xs font-medium text-red-500 dark:text-red-400">{deleteError}</p>
         )}
 
         {/* Actions */}
@@ -94,7 +94,7 @@ export const EventDetailPanel = ({
           </button>
           <button
             onClick={onDelete}
-            className="flex-1 h-9 rounded-lg border border-red-500 bg-surface text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="flex-1 h-9 rounded-lg border border-red-500 bg-surface text-sm font-medium text-red-500 hover:bg-red-50 transition-colors dark:border-red-500/60 dark:text-red-400 dark:hover:bg-red-950/40"
           >
             Delete
           </button>

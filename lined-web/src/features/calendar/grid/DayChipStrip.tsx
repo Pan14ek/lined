@@ -31,7 +31,7 @@ export const DayChipStrip = ({ selectedDay, onSelectDay }: DayChipStripProps) =>
               selected
                 ? 'bg-brand-green text-white'
                 : today
-                  ? 'bg-brand-green-light text-brand-green-dark'
+                  ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
                   : 'text-text-secondary hover:bg-bg'
             }`}
           >

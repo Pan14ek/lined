@@ -61,7 +61,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
                 onClick={() => startSubscription.mutate(plan.id)}
                 className={`mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
                   isCurrent
-                    ? 'bg-brand-green-light text-brand-green-dark'
+                    ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
                     : 'bg-brand-green text-white hover:bg-brand-green-dark'
                 }`}
               >
@@ -72,7 +72,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
         })}
       </div>
       {startSubscription.isError && (
-        <p className="mt-3 text-sm text-red-600">
+        <p className="mt-3 text-sm text-red-600 dark:text-red-400">
           {getSubscribeErrorMessage(startSubscription.error)}
         </p>
       )}

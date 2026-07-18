@@ -25,13 +25,13 @@ export const FormField = ({ id, label, value, onChange, error, ...rest }: FormFi
         aria-describedby={error ? errorId : undefined}
         className={`h-12 w-full rounded-lg border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:outline-none ${
           error
-            ? 'border-red-500 focus:border-red-500'
+            ? 'border-red-500 focus:border-red-500 dark:border-red-500/70 dark:focus:border-red-500/70'
             : 'border-border focus:border-brand-green'
         }`}
         {...rest}
       />
       {error && (
-        <p id={errorId} className="mt-1.5 text-xs text-red-600" role="alert">
+        <p id={errorId} className="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">
           {error}
         </p>
       )}

@@ -32,7 +32,7 @@ const AssigneeOption = ({ label, initial, isSelected, onClick }: AssigneeOptionP
     </div>
     <span
       className={`text-[11px] ${
-        isSelected ? 'font-semibold text-brand-green-dark' : 'text-text-secondary'
+        isSelected ? 'font-semibold text-brand-green-dark dark:text-brand-green' : 'text-text-secondary'
       }`}
     >
       {label}

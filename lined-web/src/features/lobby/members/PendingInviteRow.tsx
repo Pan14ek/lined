@@ -35,7 +35,7 @@ export const PendingInviteRow = ({
           {isLoading ? 'Loading…' : (invitee?.username ?? `User #${invite.inviteeId}`)}
         </p>
         <p className="mt-0.5 text-xs text-text-secondary">Invite sent · {sentAt}</p>
-        {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </div>
       <button
         type="button"
@@ -49,7 +49,7 @@ export const PendingInviteRow = ({
         type="button"
         onClick={onCancel}
         disabled={isResending || isCancelling}
-        className="h-8 flex-shrink-0 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+        className="h-8 flex-shrink-0 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
       >
         {isCancelling ? 'Cancelling…' : 'Cancel'}
       </button>

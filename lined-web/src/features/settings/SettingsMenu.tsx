@@ -29,7 +29,7 @@ const SECTIONS: SettingsMenuSection[] = [
 
 const menuItemClass = (danger?: boolean): string => {
   return `block border-l-[3px] border-transparent px-5 py-2.5 text-sm ${
-    danger ? 'text-red-600' : 'text-text-secondary hover:text-text-primary'
+    danger ? 'text-red-600 dark:text-red-400' : 'text-text-secondary hover:text-text-primary'
   }`;
 }
 
