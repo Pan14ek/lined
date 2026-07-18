@@ -3,6 +3,7 @@ import { Users, Calendar, CheckSquare } from 'lucide-react';
 import type { LobbyDto } from '@/features/lobby/model';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
+import { cn } from '@/lib/utils';
 
 interface LobbyCardProps {
   lobby: LobbyDto;
@@ -16,7 +17,7 @@ export const LobbyCard = ({ lobby, eventCount, taskCount }: LobbyCardProps) => {
       to={`/lobbies/${lobby.id}`}
       className="flex w-56 flex-shrink-0 flex-col overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
     >
-      <div className={`h-1.5 w-full ${LOBBY_TYPE_COLORS[lobby.lobbyType]}`} />
+      <div className={cn('h-1.5 w-full', LOBBY_TYPE_COLORS[lobby.lobbyType])} />
       <div className="flex flex-col gap-2 p-4">
         <LobbyTypeBadge type={lobby.lobbyType} />
         <p className="truncate text-sm font-semibold text-text-primary">{lobby.name}</p>

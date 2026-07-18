@@ -2,6 +2,7 @@ import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice } from '@/features/subscription/lib/subscriptionUtils';
+import { cn } from '@/lib/utils';
 
 interface PlanCardsProps {
   userId: number;
@@ -39,9 +40,10 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
           return (
             <div
               key={plan.id}
-              className={`relative rounded-xl border-[1.5px] bg-surface p-5 ${
-                isCurrent ? 'border-brand-green' : 'border-border'
-              }`}
+              className={cn(
+                'relative rounded-xl border-[1.5px] bg-surface p-5',
+                isCurrent ? 'border-brand-green' : 'border-border',
+              )}
             >
               {isCurrent && (
                 <span className="absolute right-4 top-4 rounded-full bg-brand-green px-2 py-0.5 text-[10px] font-bold text-white">
@@ -59,11 +61,12 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
                 type="button"
                 disabled={isCurrent || startSubscription.isPending}
                 onClick={() => startSubscription.mutate(plan.id)}
-                className={`mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+                className={cn(
+                  'mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60',
                   isCurrent
                     ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
-                    : 'bg-brand-green text-white hover:bg-brand-green-dark'
-                }`}
+                    : 'bg-brand-green text-white hover:bg-brand-green-dark',
+                )}
               >
                 {isCurrent ? 'Your plan' : 'Subscribe'}
               </button>

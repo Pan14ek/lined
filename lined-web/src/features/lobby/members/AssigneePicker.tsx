@@ -1,4 +1,5 @@
 import type { UserDto } from '@/features/users/model';
+import { cn } from '@/lib/utils';
 
 interface AssigneePickerProps {
   members: UserDto[];
@@ -24,16 +25,18 @@ const AssigneeOption = ({ label, initial, isSelected, onClick }: AssigneeOptionP
     className="flex flex-col items-center gap-1"
   >
     <div
-      className={`flex h-12 w-12 items-center justify-center rounded-full border-[3px] text-lg font-bold text-white ${
-        isSelected ? 'border-brand-green bg-brand-green' : 'border-border bg-muted-foreground'
-      }`}
+      className={cn(
+        'flex h-12 w-12 items-center justify-center rounded-full border-[3px] text-lg font-bold text-white',
+        isSelected ? 'border-brand-green bg-brand-green' : 'border-border bg-muted-foreground',
+      )}
     >
       {initial}
     </div>
     <span
-      className={`text-[11px] ${
-        isSelected ? 'font-semibold text-brand-green-dark dark:text-brand-green' : 'text-text-secondary'
-      }`}
+      className={cn(
+        'text-[11px]',
+        isSelected ? 'font-semibold text-brand-green-dark dark:text-brand-green' : 'text-text-secondary',
+      )}
     >
       {label}
     </span>
