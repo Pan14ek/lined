@@ -3,6 +3,12 @@
 A map of `src/`, and the naming rules to follow when adding files. See
 [ARCHITECTURE.md](ARCHITECTURE.md) first for *why* it's organized this way.
 
+> Every top-level folder under `src/` (each `features/{feature}/` and each
+> of `components/`, `hooks/`, `lib/`, `store/`, `test/`) has its own
+> `CONTEXT.md` — purpose, structure, API surface, and cross-folder
+> dependencies for that folder specifically. Read the relevant one before
+> working in a folder; this document is the map, `CONTEXT.md` is the detail.
+
 ## Top level
 
 ```
