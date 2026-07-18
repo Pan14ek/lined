@@ -52,11 +52,12 @@ npm run build
 ## Always Check Before Changing Web Code
 
 0. **Task plan:** UI feature work is driven by `lined-web/docs/UI_TASKS.md` — one task per branch/PR, branch names from the table, workflow in `lined-web/AGENTS.md`.
-1. **Data fetching:** Only through TanStack Query hooks in `src/hooks/` — never direct `ky` calls in components.
+0.5. **Architecture:** Read `lined-web/docs/ARCHITECTURE.md`, `lined-web/docs/PROJECT_STRUCTURE.md`, and `lined-web/docs/TESTING.md` before adding a file — the app is organized feature-first (`src/features/{feature}/`), not by technical layer.
+1. **Data fetching:** Only through TanStack Query hooks in a feature's `hooks/` (or shared `src/hooks/` for domain-agnostic hooks) — never direct `ky` calls in components.
 2. **State split:** Server data → TanStack Query. UI state → Zustand.
 3. **Colours:** Only Tailwind tokens from `tailwind.config.ts` — no hard-coded hex values.
-4. **Components:** Never modify `src/components/ui/` (shadcn-owned). Wrap in `src/components/`.
-5. **Tests:** Use MSW v2 for API mocking — never mock `ky` directly.
+4. **Components:** Never modify `src/components/ui/` (shadcn-owned). Wrap in `src/components/` (if domain-agnostic) or the owning feature's folder.
+5. **Tests:** Use MSW v2 for API mocking — never mock `ky` directly. Every component/util file needs a test with positive + negative coverage.
 6. **Node version:** 22 LTS (`.nvmrc` — run `nvm use` first).
 
 ## Key Conventions (Backend)
@@ -71,7 +72,8 @@ npm run build
 
 - Path alias: `@/` → `src/`
 - TypeScript: strict mode, no `any`
-- API client: `ky` in `src/api/`, configured with `X-User-Id` interceptor
+- Organization: feature-first (`src/features/{feature}/model|api|hooks|lib|pages`); see `lined-web/docs/ARCHITECTURE.md`
+- API client: shared `ky` instance in `src/lib/apiClient.ts`; each feature's `api/prod.ts`+`dev.ts`+`index.ts`
 - Route files: `{Domain}Page.tsx` in `src/features/{feature}/pages/`
 
 ## CI/CD
