@@ -7,23 +7,23 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Sheet({ ...props }: SheetPrimitive.Root.Props) {
+export const Sheet = ({ ...props }: SheetPrimitive.Root.Props) => {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
 
-function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
+export const SheetTrigger = ({ ...props }: SheetPrimitive.Trigger.Props) => {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
-function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
+export const SheetClose = ({ ...props }: SheetPrimitive.Close.Props) => {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
+const SheetPortal = ({ ...props }: SheetPrimitive.Portal.Props) => {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
-function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+const SheetOverlay = ({ className, ...props }: SheetPrimitive.Backdrop.Props) => {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -36,7 +36,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   )
 }
 
-function SheetContent({
+export const SheetContent = ({
   className,
   children,
   side = "right",
@@ -45,7 +45,7 @@ function SheetContent({
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
-}) {
+}) => {
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -80,7 +80,7 @@ function SheetContent({
   )
 }
 
-function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+export const SheetHeader = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="sheet-header"
@@ -90,7 +90,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+export const SheetFooter = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="sheet-footer"
@@ -100,7 +100,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
+export const SheetTitle = ({ className, ...props }: SheetPrimitive.Title.Props) => {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
@@ -113,10 +113,10 @@ function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   )
 }
 
-function SheetDescription({
+export const SheetDescription = ({
   className,
   ...props
-}: SheetPrimitive.Description.Props) {
+}: SheetPrimitive.Description.Props) => {
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
@@ -126,13 +126,3 @@ function SheetDescription({
   )
 }
 
-export {
-  Sheet,
-  SheetTrigger,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
-}

@@ -5,13 +5,13 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 
 import { cn } from "@/lib/utils"
 
-function Avatar({
+export const Avatar = ({
   className,
   size = "default",
   ...props
 }: AvatarPrimitive.Root.Props & {
   size?: "default" | "sm" | "lg"
-}) {
+}) => {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
@@ -25,7 +25,7 @@ function Avatar({
   )
 }
 
-function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
+export const AvatarImage = ({ className, ...props }: AvatarPrimitive.Image.Props) => {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -38,10 +38,10 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   )
 }
 
-function AvatarFallback({
+export const AvatarFallback = ({
   className,
   ...props
-}: AvatarPrimitive.Fallback.Props) {
+}: AvatarPrimitive.Fallback.Props) => {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -54,7 +54,7 @@ function AvatarFallback({
   )
 }
 
-function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
+export const AvatarBadge = ({ className, ...props }: React.ComponentProps<"span">) => {
   return (
     <span
       data-slot="avatar-badge"
@@ -70,7 +70,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
-function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
+export const AvatarGroup = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="avatar-group"
@@ -83,10 +83,10 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function AvatarGroupCount({
+export const AvatarGroupCount = ({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="avatar-group-count"
@@ -99,11 +99,3 @@ function AvatarGroupCount({
   )
 }
 
-export {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  AvatarGroup,
-  AvatarGroupCount,
-  AvatarBadge,
-}

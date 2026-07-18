@@ -72,7 +72,7 @@ npm run build
 - Path alias: `@/` → `src/`
 - TypeScript: strict mode, no `any`
 - API client: `ky` in `src/api/`, configured with `X-User-Id` interceptor
-- Route files: `{Domain}Page.tsx` in `src/pages/`
+- Route files: `{Domain}Page.tsx` in `src/features/{feature}/pages/`
 
 ## CI/CD
 

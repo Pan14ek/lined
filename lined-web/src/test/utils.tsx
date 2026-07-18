@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement, ReactNode } from 'react';
 
-function createTestQueryClient() {
+const createTestQueryClient = () => {
   return new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -12,7 +12,7 @@ function createTestQueryClient() {
   });
 }
 
-function createProviders(initialEntries: string[]) {
+const createProviders = (initialEntries: string[]) => {
   return function AllProviders({ children }: { children: ReactNode }) {
     const queryClient = createTestQueryClient();
     return (
@@ -23,10 +23,7 @@ function createProviders(initialEntries: string[]) {
   };
 }
 
-export function renderWithProviders(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] },
-) {
+export const renderWithProviders = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] }) => {
   const { initialEntries = ['/'], ...renderOptions } = options ?? {};
   return render(ui, { wrapper: createProviders(initialEntries), ...renderOptions });
 }

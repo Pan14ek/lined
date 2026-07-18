@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { App } from './App';
 
-async function enableMocking() {
+const enableMocking = async () => {
   if (import.meta.env.VITE_ENABLE_MSW !== 'true') {
     return;
   }
