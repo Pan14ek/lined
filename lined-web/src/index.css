@@ -45,6 +45,8 @@
   --color-border: #E5E7EB;
   --color-input-bg: #F9F9FB;
   --color-bg: #F4F4F7;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F9FAFB;
 
   /* Shadows */
   --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -168,6 +170,18 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Custom brand/surface/text tokens — dark equivalents */
+  --color-bg: #10231A;
+  --color-surface: #16281E;
+  --color-surface-hover: #1E3327;
+  --color-input-bg: #1C2E23;
+  --color-text-primary: #EAF3EC;
+  --color-text-secondary: #A9BDB0;
+  --color-text-muted: #7C9187;
+  --color-text-light: #4E6459;
+  --color-brand-beige: #1C2E23;
+  --color-brand-beige-dark: #24382C;
 }
 
 @layer base {
@@ -179,5 +193,9 @@ body {
   }
   html {
     @apply font-sans;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
 }
