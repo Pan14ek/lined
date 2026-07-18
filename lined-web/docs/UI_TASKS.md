@@ -122,6 +122,26 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
   the banner only, per spec. The check fails open: a loading or failed
   conflicts request never blocks submission or shows a banner.
 
+- **First-run onboarding & empty states** — `EmptyState` (`src/components/EmptyState.tsx`,
+  card/inline variants with an optional icon and a button-or-`Link` action),
+  `DashboardHero` (`src/components/dashboard/DashboardHero.tsx`): when
+  `useMyLobbies()` and `useMyInvites()` both resolve empty, `DashboardPage`
+  swaps the "My Lobbies" section for a welcome hero with the four lobby-type
+  cards (each opens `CreateLobbyModal` with that type preselected via a new
+  `openCreateLobby(lobbyType?)` / `lobbyTypeInitial` field on
+  `useCreateMenuStore`) and a primary "+ Create your first lobby" CTA
+  (opens with no type preselected); a pending invite always wins and keeps
+  the normal empty "My Lobbies" text below the invites banner instead.
+  Swept every other bare "nothing here" text onto the same primitive:
+  `LobbyCardGrid`, `UpcomingEventsList`, `MyTasksList`, `Sidebar`'s "No
+  lobbies yet", kanban's per-column "No tasks in {status}", and the lobby
+  `LobbyTaskList` empty state (now with an "Invite someone" link to the
+  Members tab). Added a same-pattern empty-state banner (previously
+  missing entirely) above the grid when a week has zero events, in both
+  the lobby `LobbyCalendarView` ("Invite someone") and the global
+  `CalendarPage` ("Create event"); `WeekGrid`/`MonthGrid` themselves are
+  unchanged since a blank day cell is normal even in a populated week.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -168,7 +188,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
 | 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | DONE |
 | 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | DONE |
-| 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
+| 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | DONE |
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
 | 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | TODO |
