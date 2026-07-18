@@ -1,5 +1,6 @@
 import type { EventDto, LobbyDto, TaskDto } from '@/types';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { EmptyState } from '@/components/EmptyState';
 import { LobbyCard } from './LobbyCard';
 
 interface LobbyCardGridProps {
@@ -41,16 +42,11 @@ export function LobbyCardGrid({
       )}
 
       {!isLoading && !isError && lobbies?.length === 0 && (
-        <p className="text-sm text-text-secondary">
-          No lobbies yet —{' '}
-          <button
-            type="button"
-            onClick={openCreateLobby}
-            className="text-brand-green hover:underline"
-          >
-            + Create lobby
-          </button>
-        </p>
+        <EmptyState
+          variant="inline"
+          message="No lobbies yet"
+          action={{ label: '+ Create lobby', onClick: () => openCreateLobby() }}
+        />
       )}
 
       {!isLoading && !isError && lobbies != null && lobbies.length > 0 && (

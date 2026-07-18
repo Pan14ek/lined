@@ -3,6 +3,7 @@ import type { TaskDto } from '@/types';
 import { TASK_STATUS_COLORS } from '@/lib/constants';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
 import { sortTasksByDueDate } from '@/lib/taskUtils';
+import { EmptyState } from '@/components/EmptyState';
 import { StatusBadge } from './StatusBadge';
 
 const MAX_TASKS_SHOWN = 5;
@@ -44,7 +45,10 @@ export function MyTasksList({ tasks, isLoading, isError }: MyTasksListProps) {
       )}
 
       {!isLoading && !isError && tasks?.length === 0 && (
-        <p className="text-sm text-text-secondary">No tasks assigned to you.</p>
+        <EmptyState
+          icon="✅"
+          message="No tasks yet — tasks you create or get assigned will appear here."
+        />
       )}
 
       {!isLoading && !isError && tasks != null && tasks.length > 0 && (

@@ -47,12 +47,16 @@ describe('LobbyTaskList', () => {
     expect(await screen.findByText("Couldn't load tasks. Try again later.")).toBeInTheDocument();
   });
 
-  it('shows an empty state when the lobby has no tasks', async () => {
-    expect.assertions(1);
+  it('shows an empty state with an invite link when the lobby has no tasks', async () => {
+    expect.assertions(2);
     server.use(http.get(`${BASE}/tasks`, () => HttpResponse.json([])));
     renderWithProviders(<LobbyTaskList lobbyId={1} />);
 
     expect(await screen.findByText('No tasks yet.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Invite someone' })).toHaveAttribute(
+      'href',
+      '/lobbies/1?tab=members',
+    );
   });
 
   it('checking a row PATCHes the status and moves it to Done styling', async () => {
