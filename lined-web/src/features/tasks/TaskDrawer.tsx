@@ -7,6 +7,7 @@ import { useCreateTask, useUpdateTask, useDeleteTask } from '@/features/tasks/ho
 import { useUser, useUsers } from '@/features/users/hooks/useUsers';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_PRIORITY_OPTIONS } from '@/features/tasks/lib/constants';
 import { getApiErrorMessage } from '@/lib/apiErrors';
+import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/features/calendar/lib/calendarUtils';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { FormField } from '@/components/FormField';
@@ -316,18 +317,20 @@ export const TaskDrawer = ({
               <button
                 type="button"
                 onClick={onClose}
-                className={`h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover ${
-                  isEditMode ? 'ml-auto' : 'flex-1'
-                }`}
+                className={cn(
+                  'h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover',
+                  isEditMode ? 'ml-auto' : 'flex-1',
+                )}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className={`h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors ${
-                  isEditMode ? '' : 'flex-[2]'
-                }`}
+                className={cn(
+                  'h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors',
+                  !isEditMode && 'flex-[2]',
+                )}
               >
                 {isEditMode
                   ? mutation.isPending

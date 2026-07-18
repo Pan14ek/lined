@@ -5,6 +5,7 @@ import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { formatRelativeEventTime } from '@/features/calendar/lib/calendarUtils';
 import { EmptyState } from '@/components/EmptyState';
+import { cn } from '@/lib/utils';
 
 interface UpcomingEventsListProps {
   events: EventDto[] | undefined;
@@ -61,7 +62,7 @@ export const UpcomingEventsList = ({
                 key={event.id}
                 className="flex items-center gap-3 overflow-hidden rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)]"
               >
-                <span className={`h-8 w-1 flex-shrink-0 rounded-full ${LOBBY_TYPE_COLORS[lobbyType]}`} />
+                <span className={cn('h-8 w-1 flex-shrink-0 rounded-full', LOBBY_TYPE_COLORS[lobbyType])} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-text-primary">
                     {event.title}

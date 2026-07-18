@@ -1,6 +1,7 @@
 import type { SubscriptionDto } from '@/features/subscription/model';
 import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/subscriptionUtils';
 import { SettingsCard } from '@/features/settings/SettingsCard';
+import { cn } from '@/lib/utils';
 
 interface SubscriptionHistoryCardProps {
   history: SubscriptionDto[] | undefined;
@@ -42,9 +43,10 @@ export const SubscriptionHistoryCard = ({
               </div>
             </div>
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                sub.active ? 'bg-task-done/10 text-task-done' : 'bg-task-todo/10 text-task-todo'
-              }`}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                sub.active ? 'bg-task-done/10 text-task-done' : 'bg-task-todo/10 text-task-todo',
+              )}
             >
               {sub.active ? 'ACTIVE' : 'ENDED'}
             </span>

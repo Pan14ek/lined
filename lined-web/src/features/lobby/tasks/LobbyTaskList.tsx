@@ -8,6 +8,7 @@ import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
 import { EmptyState } from '@/components/EmptyState';
+import { cn } from '@/lib/utils';
 import { TaskRow } from './TaskRow';
 
 type FilterId = 'ALL' | TaskStatus;
@@ -134,21 +135,25 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   return (
     <div className="p-6">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => setFilter(f.id)}
-            aria-pressed={filter === f.id}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f.id
-                ? 'bg-brand-green text-white'
-                : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
-            {f.label} ({counts[f.id]})
-          </button>
-        ))}
+        {FILTERS.map((filterOption) => {
+          const isSelected = filter === filterOption.id;
+          return (
+            <button
+              key={filterOption.id}
+              type="button"
+              onClick={() => setFilter(filterOption.id)}
+              aria-pressed={isSelected}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                isSelected
+                  ? 'bg-brand-green text-white'
+                  : 'bg-surface text-text-secondary hover:bg-surface-hover',
+              )}
+            >
+              {filterOption.label} ({counts[filterOption.id]})
+            </button>
+          );
+        })}
         <span className="ml-auto text-xs text-text-secondary">Sort: Due date</span>
       </div>
 

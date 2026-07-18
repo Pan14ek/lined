@@ -8,6 +8,7 @@ import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
+import { cn } from '@/lib/utils';
 
 export interface KanbanMoveState {
   movingTaskId: number | null;
@@ -98,16 +99,17 @@ export const KanbanColumn = ({
 
   return (
     <div
-      className={`flex min-w-full flex-1 flex-col snap-center rounded-lg transition-colors md:min-w-[280px] md:snap-align-none ${
-        isDragOver ? 'bg-brand-green-light/60' : ''
-      }`}
+      className={cn(
+        'flex min-w-full flex-1 flex-col snap-center rounded-lg transition-colors md:min-w-[280px] md:snap-align-none',
+        isDragOver && 'bg-brand-green-light/60',
+      )}
       data-testid={KANBAN_TEST_IDS.column(status)}
       onDragOver={handleDragOver}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
     >
       <div className="mb-3 flex items-center gap-2">
-        <span className={`h-2.5 w-2.5 rounded-full ${TASK_STATUS_COLORS[status]}`} />
+        <span className={cn('h-2.5 w-2.5 rounded-full', TASK_STATUS_COLORS[status])} />
         <span className="text-sm font-semibold text-text-primary">{TASK_STATUS_LABELS[status]}</span>
         <TaskStatusBadge status={status} size="count">{tasks.length}</TaskStatusBadge>
         <button

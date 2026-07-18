@@ -1,6 +1,7 @@
 import type { UserDto } from '@/features/users/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatMonthYear } from '@/features/calendar/lib/calendarUtils';
+import { cn } from '@/lib/utils';
 
 interface MemberCardProps {
   member: UserDto;
@@ -32,9 +33,10 @@ export const MemberCard = ({
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-text-primary">{member.username}</p>
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              isOwner ? 'bg-brand-green/10 text-brand-green' : 'bg-surface-hover text-text-secondary'
-            }`}
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              isOwner ? 'bg-brand-green/10 text-brand-green' : 'bg-surface-hover text-text-secondary',
+            )}
           >
             {isOwner ? 'Owner' : 'Member'}
           </span>

@@ -9,6 +9,7 @@ import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { TASK_PRIORITY_COLORS } from '@/features/tasks/lib/constants';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 import { KANBAN_LABELS, KANBAN_TEST_IDS } from './kanbanConstants';
+import { cn } from '@/lib/utils';
 
 export const TASK_DRAG_DATA_FORMAT = 'application/x-lined-task-id';
 
@@ -43,7 +44,7 @@ const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneInd
   }
 
   return (
-    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : 'text-text-secondary'}`}>
+    <span className={cn('text-xs', isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : 'text-text-secondary')}>
       Due: {dueLabel}
     </span>
   );
@@ -87,20 +88,20 @@ export const KanbanCard = ({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`flex cursor-grab gap-2.5 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
-        isDone ? 'opacity-75' : ''
-      } ${isDragging ? 'opacity-40' : ''}`}
+      className={cn(
+        'flex cursor-grab gap-2.5 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing',
+        isDone && 'opacity-75',
+        isDragging && 'opacity-40',
+      )}
     >
       <span
-        className={`w-1 self-stretch rounded-full ${TASK_PRIORITY_COLORS[task.priority]}`}
+        className={cn('w-1 self-stretch rounded-full', TASK_PRIORITY_COLORS[task.priority])}
         aria-hidden="true"
       />
 
       <div className="min-w-0 flex-1">
         <p
-          className={`text-sm font-medium ${
-            isDone ? 'text-text-muted line-through' : 'text-text-primary'
-          }`}
+          className={cn('text-sm font-medium', isDone ? 'text-text-muted line-through' : 'text-text-primary')}
         >
           {task.title}
         </p>

@@ -6,6 +6,7 @@ import { LOBBY_TYPE_BORDER_CLASSES, LOBBY_TYPE_ICONS } from '@/features/lobby/li
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { AddMemberModal } from '../members/AddMemberModal';
+import { cn } from '@/lib/utils';
 
 const MAX_AVATARS_SHOWN = 4;
 
@@ -19,7 +20,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
   return (
-    <div className={`border-t-4 bg-surface ${LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType]}`}>
+    <div className={cn('border-t-4 bg-surface', LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType])}>
       <div className="flex flex-col items-start gap-4 p-4 md:flex-row md:items-center md:justify-between md:p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover text-2xl">

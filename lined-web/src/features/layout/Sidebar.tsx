@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { EmptyState } from '@/components/EmptyState';
+import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from './navItems';
 
 interface SidebarProps {
@@ -110,7 +111,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
               }
             >
               <span
-                className={`h-2.5 w-2.5 rounded-full ${LOBBY_TYPE_COLORS[lobby.lobbyType]}`}
+                className={cn('h-2.5 w-2.5 rounded-full', LOBBY_TYPE_COLORS[lobby.lobbyType])}
               />
               {lobby.name}
             </NavLink>

@@ -2,6 +2,7 @@ import { CheckCircle2, CalendarPlus, Bell as BellIcon } from 'lucide-react';
 import type { LobbyDto, LobbyInviteDto } from '@/features/lobby/model';
 import type { NotificationDto, NotificationType } from '@/features/notifications/model';
 import { formatRelativeTimeAgo } from '@/features/calendar/lib/calendarUtils';
+import { cn } from '@/lib/utils';
 import { InviteCard } from '../InviteCard';
 
 const TYPE_ICONS: Record<NotificationType, typeof CheckCircle2> = {
@@ -104,9 +105,10 @@ export const NotificationInbox = ({
                   <button
                     type="button"
                     onClick={() => onRowClick(notification)}
-                    className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-surface-hover ${
-                      isUnread ? 'bg-brand-green-light/40' : ''
-                    }`}
+                    className={cn(
+                      'flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-surface-hover',
+                      isUnread && 'bg-brand-green-light/40',
+                    )}
                   >
                     <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-text-secondary" />
                     <div className="min-w-0 flex-1">

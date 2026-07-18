@@ -5,6 +5,7 @@ import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
 import { EmptyState } from '@/components/EmptyState';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
+import { cn } from '@/lib/utils';
 
 const MAX_TASKS_SHOWN = 5;
 
@@ -62,26 +63,28 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
                 className="flex items-center gap-3 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)]"
               >
                 <span
-                  className={`h-2 w-2 flex-shrink-0 rounded-full ${TASK_STATUS_COLORS[task.status]}`}
+                  className={cn('h-2 w-2 flex-shrink-0 rounded-full', TASK_STATUS_COLORS[task.status])}
                 />
                 <div className="min-w-0 flex-1">
                   <p
-                    className={`truncate text-sm font-medium ${
-                      isDone ? 'text-text-muted line-through' : 'text-text-primary'
-                    }`}
+                    className={cn(
+                      'truncate text-sm font-medium',
+                      isDone ? 'text-text-muted line-through' : 'text-text-primary',
+                    )}
                   >
                     {task.title}
                   </p>
                   <TaskStatusBadge status={task.status} />
                 </div>
                 <span
-                  className={`flex-shrink-0 text-xs ${
+                  className={cn(
+                    'flex-shrink-0 text-xs',
                     due.isUrgent
                       ? 'font-semibold text-red-500 dark:text-red-400'
                       : isDone
                         ? 'text-text-muted'
-                        : 'text-text-secondary'
-                  }`}
+                        : 'text-text-secondary',
+                  )}
                 >
                   {due.label}
                 </span>
