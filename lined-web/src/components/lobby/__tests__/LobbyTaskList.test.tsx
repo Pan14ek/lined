@@ -99,4 +99,17 @@ describe('LobbyTaskList', () => {
 
     expect(useCreateMenuStore.getState().overlay).toBe('task');
   });
+
+  it('opens the task-detail drawer for a row when it is clicked', async () => {
+    expect.assertions(2);
+    useCreateMenuStore.setState({ overlay: null, editingTask: null });
+    const user = userEvent.setup();
+    renderWithProviders(<LobbyTaskList lobbyId={1} />);
+    await screen.findByText('Plan dinner for Saturday');
+
+    await user.click(screen.getByText('Plan dinner for Saturday'));
+
+    expect(useCreateMenuStore.getState().overlay).toBe('task');
+    expect(useCreateMenuStore.getState().editingTask?.title).toBe('Plan dinner for Saturday');
+  });
 });

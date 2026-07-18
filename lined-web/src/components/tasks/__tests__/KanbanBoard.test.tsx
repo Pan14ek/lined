@@ -160,6 +160,19 @@ describe('KanbanBoard', () => {
     expect(useCreateMenuStore.getState().taskInitialStatus).toBe('IN_PROGRESS');
   });
 
+  it('opens the task-detail drawer for a card when it is clicked', async () => {
+    expect.assertions(2);
+    useCreateMenuStore.setState({ overlay: null, editingTask: null });
+    const user = userEvent.setup();
+    renderWithProviders(<KanbanBoard />);
+    await screen.findByText('Plan dinner for Saturday');
+
+    await user.click(screen.getByText('Plan dinner for Saturday'));
+
+    expect(useCreateMenuStore.getState().overlay).toBe('task');
+    expect(useCreateMenuStore.getState().editingTask?.title).toBe('Plan dinner for Saturday');
+  });
+
   it('dragging a card onto another column PATCHes its status and moves it there', async () => {
     expect.assertions(3);
     renderWithProviders(<KanbanBoard />);

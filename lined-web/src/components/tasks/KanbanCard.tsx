@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { LobbyDto, TaskDto, UserDto } from '@/types';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
-import { getAdjacentStatus } from '@/lib/taskUtils';
+import { getAdjacentStatus, taskDetailsLabel } from '@/lib/taskUtils';
 import { LOBBY_TYPE_BADGE_CLASSES, TASK_PRIORITY_COLORS } from '@/lib/constants';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 import { KANBAN_LABELS, KANBAN_TEST_IDS } from './kanbanConstants';
@@ -17,6 +17,7 @@ interface KanbanCardProps {
   moveError?: string;
   onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
   onDelete: (task: TaskDto) => void;
+  onOpen: (task: TaskDto) => void;
 }
 
 interface DueDateOrDoneIndicatorProps {
@@ -53,6 +54,7 @@ export const KanbanCard = ({
   moveError,
   onMove,
   onDelete,
+  onOpen,
 }: KanbanCardProps) => {
   const isDone = task.status === 'DONE';
   const due = formatTaskDueDate(task.dueDate, task.status);
@@ -69,10 +71,20 @@ export const KanbanCard = ({
   return (
     <div
       data-testid={KANBAN_TEST_IDS.card(task.id)}
+      role="button"
+      tabIndex={0}
+      aria-label={taskDetailsLabel(task.title)}
+      onClick={() => onOpen(task)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(task);
+        }
+      }}
       draggable
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`flex cursor-grab gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] active:cursor-grabbing ${
+      className={`flex cursor-grab gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
         isDone ? 'opacity-75' : ''
       } ${isDragging ? 'opacity-40' : ''}`}
     >
@@ -105,7 +117,10 @@ export const KanbanCard = ({
                 type="button"
                 aria-label={KANBAN_LABELS.moveBack(task.title)}
                 disabled={isMoving}
-                onClick={() => onMove(task, 'prev')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(task, 'prev');
+                }}
                 className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
               >
                 ←
@@ -117,7 +132,10 @@ export const KanbanCard = ({
                 type="button"
                 aria-label={KANBAN_LABELS.moveForward(task.title)}
                 disabled={isMoving}
-                onClick={() => onMove(task, 'next')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(task, 'next');
+                }}
                 className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
               >
                 →
@@ -130,7 +148,10 @@ export const KanbanCard = ({
             <button
               type="button"
               aria-label={KANBAN_LABELS.deleteTask(task.title)}
-              onClick={() => onDelete(task)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task);
+              }}
               className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500"
             >
               ✕
