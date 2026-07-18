@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listEvents, createEvent, updateEvent, deleteEvent, findConflicts } from '@/api/events';
-import type { EventConflictDto, EventDto, EventUpdateDto } from '@/types';
-import { QUERY_KEYS } from '@/lib/constants';
-import { addDays, fromDatetimeLocal, getMonthGridDays } from '@/lib/calendarUtils';
-import { useDebouncedValue } from './useDebouncedValue';
-import { useNextFreeSlotHint } from './useDashboard';
+import { listEvents, createEvent, updateEvent, deleteEvent, findConflicts } from '@/features/calendar/api';
+import type { EventConflictDto, EventDto, EventUpdateDto } from '@/features/calendar/model';
+import { QUERY_KEYS } from '@/features/calendar/lib/constants';
+import { addDays, fromDatetimeLocal, getMonthGridDays } from '@/features/calendar/lib/calendarUtils';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useNextFreeSlotHint } from '@/features/dashboard/hooks/useDashboard';
 
-/** Generic date-range event query, keyed by the ISO range so distinct ranges cache separately. */
-export function useRangeEvents(from: Date, to: Date) {
+export const useRangeEvents = (from: Date, to: Date) => {
   const fromIso = from.toISOString();
   const toIso = to.toISOString();
 
@@ -17,20 +16,18 @@ export function useRangeEvents(from: Date, to: Date) {
   });
 }
 
-export function useWeekEvents(weekStart: Date) {
+export const useWeekEvents = (weekStart: Date) => {
   return useRangeEvents(weekStart, addDays(weekStart, 7));
 }
 
-/** Events for the full 6-week grid a month view renders (may spill into adjacent months). */
-export function useMonthEvents(monthAnchor: Date) {
+export const useMonthEvents = (monthAnchor: Date) => {
   const gridDays = getMonthGridDays(monthAnchor);
   const from = gridDays[0]!;
   const to = addDays(gridDays[gridDays.length - 1]!, 1);
   return useRangeEvents(from, to);
 }
 
-/** Week events scoped to one lobby. The backend has no per-lobby filter param, so filter client-side. */
-export function useLobbyWeekEvents(lobbyId: number, weekStart: Date) {
+export const useLobbyWeekEvents = (lobbyId: number, weekStart: Date) => {
   const from = weekStart.toISOString();
   const to = addDays(weekStart, 7).toISOString();
 
@@ -44,8 +41,7 @@ export function useLobbyWeekEvents(lobbyId: number, weekStart: Date) {
 const UPCOMING_EVENTS_WINDOW_DAYS = 14;
 const UPCOMING_EVENTS_LIMIT = 5;
 
-/** Next 5 events across all lobbies over the coming 2 weeks, soonest first. */
-export function useUpcomingEvents() {
+export const useUpcomingEvents = () => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const from = startOfToday.toISOString();
@@ -61,7 +57,7 @@ export function useUpcomingEvents() {
   });
 }
 
-export function useCreateEvent() {
+export const useCreateEvent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createEvent,
@@ -71,7 +67,7 @@ export function useCreateEvent() {
   });
 }
 
-export function useUpdateEvent() {
+export const useUpdateEvent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EventUpdateDto }) => updateEvent(id, data),
@@ -85,11 +81,7 @@ export function useUpdateEvent() {
   });
 }
 
-/** Overlapping event pairs in a lobby's time window; disabled unless every param is present. */
-export function useEventConflicts(
-  params: { lobbyId: number | null; start: string | null; end: string | null; requesterId: number | null },
-  enabled: boolean,
-) {
+export const useEventConflicts = (params: { lobbyId: number | null; start: string | null; end: string | null; requesterId: number | null }, enabled: boolean) => {
   const { lobbyId, start, end, requesterId } = params;
   const queryEnabled = enabled && lobbyId != null && !!start && !!end && requesterId != null;
 
@@ -106,19 +98,13 @@ export interface ConflictCheckResult {
   suggestion: { start: string; end: string } | null;
 }
 
-/**
- * Debounced scheduling-conflict check for an event/reserve-slot form, plus a
- * same-duration "next free slot" suggestion once a conflict is found. Fails
- * open: loading or a failed check never blocks the form, they just resolve
- * to no conflicts.
- */
-export function useConflictCheck(params: {
+export const useConflictCheck = (params: {
   lobbyId: number | null;
   startAt: string | null; // datetime-local value
   endAt: string | null; // datetime-local value
   currentUserId: number | null;
   excludeEventId?: number;
-}): ConflictCheckResult {
+}): ConflictCheckResult => {
   const { lobbyId, startAt, endAt, currentUserId, excludeEventId } = params;
   const debouncedStartAt = useDebouncedValue(startAt);
   const debouncedEndAt = useDebouncedValue(endAt);
@@ -156,7 +142,7 @@ export function useConflictCheck(params: {
   return { conflicts, suggestion };
 }
 
-export function useDeleteEvent() {
+export const useDeleteEvent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteEvent(id),

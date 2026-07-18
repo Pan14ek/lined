@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteUser, updateUser } from '@/api/users';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { UserDto, UserUpdateDto } from '@/types';
+import { deleteUser, updateUser } from '@/features/users/api';
+import { QUERY_KEYS } from '@/features/users/lib/constants';
+import type { UserDto, UserUpdateDto } from '@/features/users/model';
 
 export const useUpdateUser = (id: number) => {
   const queryClient = useQueryClient();

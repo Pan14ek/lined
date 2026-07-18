@@ -4,19 +4,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { server } from '@/test/server';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { LobbyInviteDto } from '@/types';
+import { QUERY_KEYS } from '@/features/lobby/lib/constants';
+import type { LobbyInviteDto } from '@/features/lobby/model';
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from '../useInvites';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
-function makeWrapper(queryClient: QueryClient) {
+const makeWrapper = (queryClient: QueryClient) => {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 }
 
-function makeQueryClient() {
+const makeQueryClient = () => {
   return new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -25,7 +25,7 @@ function makeQueryClient() {
 // waitFor polls its callback until it stops throwing; asserting with `expect`
 // directly inside it would inflate expect.assertions() by one call per poll,
 // so settle on a plain predicate first and assert once afterwards.
-async function waitUntilSettled(result: { current: { isSuccess: boolean; isError: boolean } }) {
+const waitUntilSettled = async (result: { current: { isSuccess: boolean; isError: boolean } }) => {
   await waitFor(() => {
     if (!result.current.isSuccess && !result.current.isError) {
       throw new Error('not settled yet');

@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { HTTPError } from 'ky';
-import { listPlans } from '@/api/plans';
+import { getErrorStatus } from '@/lib/apiClient';
 import {
+  listPlans,
   getActiveSubscription,
   getSubscriptionHistory,
   startSubscription,
   cancelSubscription,
-} from '@/api/subscriptions';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { SubscriptionDto } from '@/types';
+} from '@/features/subscription/api';
+import { QUERY_KEYS } from '@/features/subscription/lib/constants';
+import type { SubscriptionDto } from '@/features/subscription/model';
 
 export const usePlans = () =>
   useQuery({
@@ -24,7 +24,7 @@ export const useActivePlan = (userId: number | undefined) =>
       try {
         return await getActiveSubscription(userId!);
       } catch (error) {
-        if (error instanceof HTTPError && error.response.status === 404) return null;
+        if (getErrorStatus(error) === 404) return null;
         throw error;
       }
     },

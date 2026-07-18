@@ -7,7 +7,7 @@ interface Values {
   age: string;
 }
 
-function validate(values: Values): Partial<Record<keyof Values, string>> {
+const validate = (values: Values): Partial<Record<keyof Values, string>> => {
   const errors: Partial<Record<keyof Values, string>> = {};
   if (!values.name.trim()) errors.name = 'Name is required';
   return errors;

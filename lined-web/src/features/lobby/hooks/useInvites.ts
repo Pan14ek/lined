@@ -8,9 +8,9 @@ import {
   acceptInvite,
   declineInvite,
   type InviteTarget,
-} from '@/api/invites';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { LobbyInviteDto } from '@/types';
+} from '@/features/lobby/api';
+import { QUERY_KEYS } from '@/features/lobby/lib/constants';
+import type { LobbyInviteDto } from '@/features/lobby/model';
 
 export const useLobbyInvites = (lobbyId: number | undefined) =>
   useQuery({

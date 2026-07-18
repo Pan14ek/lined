@@ -1,8 +1,8 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { getUser, searchUsers } from '@/api/users';
-import { QUERY_KEYS } from '@/lib/constants';
+import { getUser, searchUsers } from '@/features/users/api';
+import { QUERY_KEYS } from '@/features/users/lib/constants';
 
-export function useUser(id: number | undefined) {
+export const useUser = (id: number | undefined) => {
   return useQuery({
     queryKey: QUERY_KEYS.user(id ?? 0),
     queryFn: () => getUser(id!),

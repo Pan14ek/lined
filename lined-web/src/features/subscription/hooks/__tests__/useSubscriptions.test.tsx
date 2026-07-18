@@ -14,19 +14,19 @@ import {
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
-function makeWrapper(queryClient: QueryClient) {
+const makeWrapper = (queryClient: QueryClient) => {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 }
 
-function makeQueryClient() {
+const makeQueryClient = () => {
   return new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 }
 
-async function waitUntilSettled(result: { current: { isSuccess: boolean; isError: boolean } }) {
+const waitUntilSettled = async (result: { current: { isSuccess: boolean; isError: boolean } }) => {
   await waitFor(() => {
     if (!result.current.isSuccess && !result.current.isError) {
       throw new Error('not settled yet');

@@ -6,18 +6,18 @@ import {
   updateLobby,
   removeMember,
   deleteLobby,
-} from '@/api/lobbies';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { LobbyDto, LobbyUpdateDto } from '@/types';
+} from '@/features/lobby/api';
+import { QUERY_KEYS } from '@/features/lobby/lib/constants';
+import type { LobbyDto, LobbyUpdateDto } from '@/features/lobby/model';
 
-export function useMyLobbies() {
+export const useMyLobbies = () => {
   return useQuery({
     queryKey: QUERY_KEYS.lobbies,
     queryFn: getMyLobbies,
   });
 }
 
-export function useLobby(id: number | undefined) {
+export const useLobby = (id: number | undefined) => {
   return useQuery({
     queryKey: QUERY_KEYS.lobbyDetail(id ?? 0),
     queryFn: () => getLobby(id!),
@@ -25,7 +25,7 @@ export function useLobby(id: number | undefined) {
   });
 }
 
-export function useCreateLobby() {
+export const useCreateLobby = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createLobby,

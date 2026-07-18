@@ -6,16 +6,10 @@ import {
   updateLobbyPreferences,
   myNotifications,
   markRead,
-} from '@/api/notifications';
-import { QUERY_KEYS } from '@/lib/constants';
-import { useOptimisticPatchMutation } from './useOptimisticPatchMutation';
-import type {
-  NotificationPreferencesDto,
-  NotificationPreferencesUpdateDto,
-  LobbyNotificationPreferencesDto,
-  LobbyNotificationPreferencesUpdateDto,
-  NotificationDto,
-} from '@/types';
+} from '@/features/notifications/api';
+import { QUERY_KEYS } from '@/features/notifications/lib/constants';
+import { useOptimisticPatchMutation } from '@/hooks/useOptimisticPatchMutation';
+import type { NotificationPreferencesDto, NotificationPreferencesUpdateDto, LobbyNotificationPreferencesDto, LobbyNotificationPreferencesUpdateDto, NotificationDto } from '@/features/notifications/model';
 
 const NOTIFICATIONS_POLL_INTERVAL_MS = 60_000;
 

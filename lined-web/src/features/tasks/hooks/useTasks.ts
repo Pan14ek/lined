@@ -5,9 +5,9 @@ import {
   type QueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
-import { createTask, deleteTask, listMyTasks, listTasks, updateTask } from '@/api/tasks';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { TaskDto, TaskStatus, TaskUpdateDto } from '@/types';
+import { createTask, deleteTask, listMyTasks, listTasks, updateTask } from '@/features/tasks/api';
+import { QUERY_KEYS } from '@/features/tasks/lib/constants';
+import type { TaskDto, TaskStatus, TaskUpdateDto } from '@/features/tasks/model';
 
 export const useMyTasks = () =>
   useQuery({
@@ -36,25 +36,18 @@ interface TaskCacheSnapshot {
   previous: Array<[QueryKey, TaskDto[] | undefined]>;
 }
 
-/**
- * Optimistic-update plumbing shared by every task mutation below: `tasks/mine`
- * and every cached `tasks/lobby/{id}` list all share the `['tasks', ...]`
- * query-key prefix, so a single `{queryKey: QUERY_KEYS.tasks}` filter
- * snapshots/patches/rolls back all of them at once without knowing which
- * lobby a task belongs to.
- */
-async function snapshotTaskCaches(queryClient: QueryClient): Promise<TaskCacheSnapshot> {
+const snapshotTaskCaches = async (queryClient: QueryClient): Promise<TaskCacheSnapshot> => {
   await queryClient.cancelQueries({ queryKey: QUERY_KEYS.tasks });
   return { previous: queryClient.getQueriesData<TaskDto[]>({ queryKey: QUERY_KEYS.tasks }) };
 }
 
-function patchTaskCaches(queryClient: QueryClient, id: number, patch: Partial<TaskDto>) {
+const patchTaskCaches = (queryClient: QueryClient, id: number, patch: Partial<TaskDto>) => {
   queryClient.setQueriesData<TaskDto[]>({ queryKey: QUERY_KEYS.tasks }, (old) =>
     old?.map((t) => (t.id === id ? { ...t, ...patch } : t)),
   );
 }
 
-function rollbackTaskCaches(queryClient: QueryClient, snapshot: TaskCacheSnapshot | undefined) {
+const rollbackTaskCaches = (queryClient: QueryClient, snapshot: TaskCacheSnapshot | undefined) => {
   snapshot?.previous.forEach(([key, data]) => queryClient.setQueryData(key, data));
 }
 

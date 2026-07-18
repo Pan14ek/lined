@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { server } from '@/test/server';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { TaskDto } from '@/types';
+import { QUERY_KEYS } from '@/features/tasks/lib/constants';
+import type { TaskDto } from '@/features/tasks/model';
 import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '../useTasks';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -24,7 +24,7 @@ const makeTask = (overrides: Partial<TaskDto>): TaskDto => ({
   ...overrides,
 });
 
-function makeWrapper(queryClient: QueryClient) {
+const makeWrapper = (queryClient: QueryClient) => {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };

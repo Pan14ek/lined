@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useSignIn, useSignUp } from '../useAuth';
 
-function createWrapper() {
+const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
@@ -16,7 +16,7 @@ function createWrapper() {
 // waitFor polls its callback until it stops throwing; asserting with `expect`
 // directly inside it would inflate expect.assertions() by one call per poll,
 // so settle on a plain predicate first and assert once afterwards.
-async function waitUntilSettled(result: { current: { isSuccess: boolean; isError: boolean } }) {
+const waitUntilSettled = async (result: { current: { isSuccess: boolean; isError: boolean } }) => {
   await waitFor(() => {
     if (!result.current.isSuccess && !result.current.isError) {
       throw new Error('mutation has not settled yet');
