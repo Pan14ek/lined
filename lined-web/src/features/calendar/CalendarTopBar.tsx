@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface CalendarTopBarProps {
   title: string;
@@ -72,19 +73,23 @@ export const CalendarTopBar = ({
 
       {/* Week / Month toggle */}
       <div className="flex overflow-hidden rounded-lg border border-border">
-        {(['week', 'month'] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => onViewModeChange(mode)}
-            className={`px-4 py-1.5 text-sm font-[inherit] capitalize transition-colors ${
-              viewMode === mode
-                ? 'bg-brand-green font-semibold text-white'
-                : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
-            {mode.charAt(0).toUpperCase() + mode.slice(1)}
-          </button>
-        ))}
+        {(['week', 'month'] as const).map((mode) => {
+          const isSelected = viewMode === mode;
+          return (
+            <button
+              key={mode}
+              onClick={() => onViewModeChange(mode)}
+              className={cn(
+                'px-4 py-1.5 text-sm font-[inherit] capitalize transition-colors',
+                isSelected
+                  ? 'bg-brand-green font-semibold text-white'
+                  : 'bg-surface text-text-secondary hover:bg-surface-hover',
+              )}
+            >
+              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex-1" />

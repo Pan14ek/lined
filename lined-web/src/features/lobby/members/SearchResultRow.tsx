@@ -1,4 +1,5 @@
 import type { UserSearchResultDto } from '@/features/users/model';
+import { cn } from '@/lib/utils';
 
 interface SearchResultRowProps {
   user: UserSearchResultDto;
@@ -19,7 +20,7 @@ export const SearchResultRow = ({
 }: SearchResultRowProps) => {
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg p-2.5 ${isMember ? 'bg-brand-green-light' : ''}`}
+      className={cn('flex items-center gap-3 rounded-lg p-2.5', isMember && 'bg-brand-green-light')}
     >
       <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-green text-sm font-bold text-white">
         {user.username.charAt(0).toUpperCase()}

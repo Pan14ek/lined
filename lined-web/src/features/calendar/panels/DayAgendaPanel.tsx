@@ -1,8 +1,9 @@
 import { X } from 'lucide-react';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
-import { formatClockTime, formatFullDate } from '@/features/calendar/lib/calendarUtils';
+import { formatFullDate } from '@/features/calendar/lib/calendarUtils';
 import { lobbyAccentColor } from '@/features/lobby/lib/constants';
+import { AgendaEventRow } from './AgendaEventRow';
 
 interface DayAgendaPanelProps {
   day: Date;
@@ -47,28 +48,13 @@ export const DayAgendaPanel = ({
               const accentColor = lobby ? lobbyAccentColor(lobby.lobbyType) : 'var(--color-lobby-couple)';
               return (
                 <li key={event.id}>
-                  <button
-                    type="button"
-                    onClick={() => onEventClick(event.id)}
-                    className={`w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors hover:bg-surface-hover ${
-                      event.id === selectedEventId ? 'border-brand-green' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 flex-shrink-0 rounded-full"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                      <span className="text-sm font-semibold text-text-primary">
-                        {formatClockTime(new Date(event.startAt))} –{' '}
-                        {formatClockTime(new Date(event.endAt))}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-sm text-text-primary">{event.title}</div>
-                    {lobby && (
-                      <div className="mt-0.5 text-xs text-text-secondary">{lobby.name}</div>
-                    )}
-                  </button>
+                  <AgendaEventRow
+                    event={event}
+                    accentColor={accentColor}
+                    isSelected={event.id === selectedEventId}
+                    secondaryContent={lobby && <div className="mt-0.5 text-xs text-text-secondary">{lobby.name}</div>}
+                    onClick={onEventClick}
+                  />
                 </li>
               );
             })}
