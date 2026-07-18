@@ -161,6 +161,31 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
   siblings next to the grid) become fixed bottom sheets under `md` and stay
   in-flow at `md` and above. Desktop (`≥lg`) is unchanged.
 
+- **Dark mode audit & polish** — `useThemeSync` (`src/hooks/`): fixed a real
+  bug where the theme-application effect lived inside `AppearanceCard`
+  (Settings-page-only), so the `dark` class was never applied outside that
+  page and the System `matchMedia` listener was torn down on navigating
+  away; moved to a hook mounted once at the app root (`App.tsx`), which
+  also now sets `color-scheme` and a `<meta name="theme-color">`. Added a
+  dark token layer in `src/index.css` for every custom brand/surface/text
+  token that previously had no dark value (`--color-bg`, new
+  `--color-surface`/`--color-surface-hover`, `--color-input-bg`,
+  `--color-text-primary/secondary/muted/light`, `--color-brand-beige*`,
+  `--color-brand-green-light`), then swept `bg-white` → `bg-surface` and
+  `bg-gray-50`/`bg-gray-100` → `bg-surface-hover` across ~45 files.
+  Hard-coded red/amber danger/warning colours (danger zones, inline
+  validation errors, the conflict-warning banner) and the
+  brand-green-light/brand-green-dark tint+text pairing got `dark:` variants
+  at each call site instead, since some of those same shades are also used
+  on solid buttons/badges that must stay theme-invariant. See
+  `docs/mockups.md`'s "Dark mode (Task 23)" section for the full token
+  table. Screen-by-screen audit (auth, dashboard + bell, calendar
+  week/month + event panel, lobby tabs, kanban, both settings pages,
+  subscription, all modals/drawers/confirm dialogs) found and fixed the
+  Danger Zone cards as the only broken-beyond-illegible screens; lobby/
+  status/priority accent hues and the free-slot band opacity overlay were
+  left unchanged as already legible in both themes.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -209,7 +234,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | DONE |
 | 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | DONE |
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | DONE |
-| 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
+| 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | DONE |
 | 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | TODO |
 | 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
 | 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | TODO |

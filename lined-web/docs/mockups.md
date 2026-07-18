@@ -176,6 +176,39 @@ The mockup uses CSS variables. Map them to Tailwind tokens in `tailwind.config.t
 | `--friends` `#A78BFA` | `lobby.friends` | Friends lobby accent |
 | `--work` `#3FA6FA` | `lobby.work` | Work lobby accent |
 
+### Dark mode (Task 23)
+
+No dedicated dark mockup screen exists — the mapping below is the source of
+truth, defined once in `src/index.css`'s `.dark { … }` block. Lobby/status/
+priority accent hues are unchanged between themes (kept for brand
+recognition); only surfaces, text, and the brand-green tint/text pair get
+dark values. Danger (red) and warning (amber) colours that were previously
+hard-coded Tailwind shades (`red-50`, `amber-50`, …) get a `dark:` variant
+at each call site instead of a token, since they're also used as solid
+buttons/badges that must stay theme-invariant.
+
+| Token | Light value | Dark value | Usage |
+|---|---|---|---|
+| `--color-bg` | `#F4F4F7` | `#10231A` | Page background |
+| `--color-surface` | `#FFFFFF` | `#16281E` | Cards, modals, panels (replaces raw `bg-white`) |
+| `--color-surface-hover` | `#F9FAFB` | `#1E3327` | Hover/secondary surfaces (replaces `bg-gray-50`/`bg-gray-100`) |
+| `--color-input-bg` | `#F9F9FB` | `#1C2E23` | Text inputs, textareas |
+| `--color-text-primary` | `#1A1A2E` | `#EAF3EC` | Headings, primary body text |
+| `--color-text-secondary` | `#6B7280` | `#A9BDB0` | Secondary body text |
+| `--color-text-muted` | `#9CA3AF` | `#7C9187` | Placeholder/disabled text |
+| `--color-text-light` | `#C8D4C9` | `#4E6459` | Lightest text tier (sidebar sub-labels) |
+| `--color-brand-beige` | `#F7F3ED` | `#1C2E23` | Auth card / tip-box background |
+| `--color-brand-beige-dark` | `#EDE7DC` | `#24382C` | Auth card secondary background |
+| `--color-brand-green-light` | `#E8F5EE` | `rgba(91,155,107,0.18)` | Tinted selected/highlight backgrounds |
+
+`--color-brand-green-dark` (`#3D7050`) is intentionally **not** overridden —
+it's shared between a text-on-tint role (paired with
+`--color-brand-green-light`, which now gets `dark:text-brand-green` inline
+at each of those ~15 call sites) and a solid-button hover shade
+(`bg-brand-green` → `hover:bg-brand-green-dark`, white text, unaffected by
+theme). Overriding it globally would have broken the solid-button hover
+state.
+
 ---
 
 ## Personas in Mockups
