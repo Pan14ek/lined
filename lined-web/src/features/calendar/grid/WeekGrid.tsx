@@ -22,6 +22,7 @@ import {
 import { CalendarLegend } from './CalendarLegend';
 import { DEFAULT_LEGEND_ITEMS, type LegendItem } from '@/features/calendar/lib/constants';
 import { lobbyAccentColor } from '@/features/lobby/lib/constants';
+import { cn } from '@/lib/utils';
 
 export type { LegendItem };
 
@@ -186,7 +187,7 @@ const DayColumn = ({
 }: DayColumnProps) => {
   return (
     <div
-      className={`relative flex-1 border-l border-border ${today ? 'bg-brand-green-light/25' : ''}`}
+      className={cn('relative flex-1 border-l border-border', today && 'bg-brand-green-light/25')}
     >
       {/* Hour grid lines — a single tiled background instead of GRID_HOURS.length
           separately-bordered divs, so every line renders identically regardless
@@ -322,11 +323,13 @@ export const WeekGrid = ({
                     }
                   : undefined
               }
-              className={`relative flex-1 py-2 text-center text-xs select-none ${
+              className={cn(
+                'relative flex-1 py-2 text-center text-xs select-none',
                 today
                   ? 'bg-brand-green-light font-semibold text-brand-green-dark dark:text-brand-green'
-                  : 'text-text-secondary'
-              } ${onDayClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
+                  : 'text-text-secondary',
+                onDayClick && 'cursor-pointer hover:bg-surface-hover',
+              )}
             >
               {formatDayLabel(day)}
               {today && (

@@ -3,6 +3,7 @@ import type { LobbyDto } from '@/features/lobby/model';
 import { CalendarLegend } from './CalendarLegend';
 import { getMonthGridDays, isSameDay, isSameMonth, isToday } from '@/features/calendar/lib/calendarUtils';
 import { lobbyAccentColor } from '@/features/lobby/lib/constants';
+import { cn } from '@/lib/utils';
 
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MAX_VISIBLE_CHIPS = 3;
@@ -26,18 +27,20 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
     <button
       type="button"
       onClick={() => onDayClick(day)}
-      className={`flex min-h-0 flex-col items-start gap-1 overflow-hidden border-b border-l border-border p-1.5 text-left ${
-        inCurrentMonth ? 'bg-surface' : 'bg-surface-hover'
-      } hover:bg-surface-hover`}
+      className={cn(
+        'flex min-h-0 flex-col items-start gap-1 overflow-hidden border-b border-l border-border p-1.5 text-left hover:bg-surface-hover',
+        inCurrentMonth ? 'bg-surface' : 'bg-surface-hover',
+      )}
     >
       <div
-        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] ${
+        className={cn(
+          'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px]',
           today
             ? 'bg-brand-green font-semibold text-white'
             : inCurrentMonth
               ? 'text-text-primary'
-              : 'text-text-muted'
-        }`}
+              : 'text-text-muted',
+        )}
       >
         {day.getDate()}
       </div>

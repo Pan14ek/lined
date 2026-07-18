@@ -1,8 +1,9 @@
 import { X, MapPin, Sparkles } from 'lucide-react';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
-import { formatClockTime, formatFullDate, formatHourRange, type FreeSlot } from '@/features/calendar/lib/calendarUtils';
+import { formatFullDate, formatHourRange, type FreeSlot } from '@/features/calendar/lib/calendarUtils';
 import { lobbyAccentColor } from '@/features/lobby/lib/constants';
+import { AgendaEventRow } from '@/features/calendar/panels/AgendaEventRow';
 
 interface DayAgendaModalProps {
   day: Date;
@@ -55,31 +56,18 @@ export const DayAgendaModal = ({
             <ul className="flex flex-col gap-2">
               {sorted.map((event) => (
                 <li key={event.id}>
-                  <button
-                    type="button"
-                    onClick={() => onEventClick(event.id)}
-                    className={`w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors hover:bg-surface-hover ${
-                      event.id === selectedEventId ? 'border-brand-green' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 flex-shrink-0 rounded-full"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                      <span className="text-sm font-semibold text-text-primary">
-                        {formatClockTime(new Date(event.startAt))} –{' '}
-                        {formatClockTime(new Date(event.endAt))}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-sm text-text-primary">{event.title}</div>
-                    {event.location && (
+                  <AgendaEventRow
+                    event={event}
+                    accentColor={accentColor}
+                    isSelected={event.id === selectedEventId}
+                    secondaryContent={event.location && (
                       <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         {event.location}
                       </div>
                     )}
-                  </button>
+                    onClick={onEventClick}
+                  />
                 </li>
               ))}
             </ul>

@@ -244,7 +244,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 30 | `feature/ui-30-calendar-sync` | Calendar Sync settings: ICS feed link (copy/regenerate/revoke) + .ics import | [tasks/UI-30-calendar-sync.md](tasks/UI-30-calendar-sync.md) | TODO |
 | 31 | `feature/ui-31-event-reminders` | Reminder select on event/reserve modals + EVENT_REMINDER / TASK_DUE inbox types | [tasks/UI-31-event-reminders.md](tasks/UI-31-event-reminders.md) | TODO |
 | 32 | `feature/ui-32-style-foundations` | Styling foundations: semantic task/lobby badges and shared `cn()` cleanup | [tasks/UI-32-style-foundations.md](tasks/UI-32-style-foundations.md) | DONE |
-| 33 | `feature/ui-33-calendar-lobby-style-cleanup` | Calendar/lobby selection styling cleanup and shared agenda event row | [tasks/UI-33-calendar-lobby-style-cleanup.md](tasks/UI-33-calendar-lobby-style-cleanup.md) | TODO |
+| 33 | `feature/ui-33-calendar-lobby-style-cleanup` | Calendar/lobby selection styling cleanup and shared agenda event row | [tasks/UI-33-calendar-lobby-style-cleanup.md](tasks/UI-33-calendar-lobby-style-cleanup.md) | DONE |
 | 34 | `feature/ui-34-feature-style-cleanup` | Feature-local conditional Tailwind cleanup across tasks, dashboard, subscription, notifications, and layout | [tasks/UI-34-feature-style-cleanup.md](tasks/UI-34-feature-style-cleanup.md) | TODO |
 
 ## Suggested order

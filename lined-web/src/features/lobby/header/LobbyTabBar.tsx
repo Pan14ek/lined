@@ -1,5 +1,6 @@
 import type { LobbyType } from '@/features/lobby/model';
 import { LOBBY_TYPE_BORDER_CLASSES } from '@/features/lobby/lib/constants';
+import { cn } from '@/lib/utils';
 
 export type LobbyTab = 'calendar' | 'tasks' | 'members';
 
@@ -27,11 +28,12 @@ export const LobbyTabBar = ({ lobbyType, activeTab, onTabChange }: LobbyTabBarPr
             role="tab"
             aria-selected={isActive}
             onClick={() => onTabChange(tab.id)}
-            className={`border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
+            className={cn(
+              'border-b-2 px-1 py-3 text-sm font-medium transition-colors',
               isActive
-                ? `${LOBBY_TYPE_BORDER_CLASSES[lobbyType]} text-text-primary`
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+                ? [LOBBY_TYPE_BORDER_CLASSES[lobbyType], 'text-text-primary']
+                : 'border-transparent text-text-secondary hover:text-text-primary',
+            )}
           >
             {tab.emoji} {tab.label}
           </button>
