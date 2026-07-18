@@ -73,4 +73,60 @@ describe('DashboardPage', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+
+  describe('first-run hero', () => {
+    beforeEach(() => {
+      server.use(
+        http.get(`${BASE}/lobbies/mine`, () => HttpResponse.json([])),
+        http.get(`${BASE}/lobby-invites/mine`, () => HttpResponse.json([])),
+      );
+    });
+
+    it('renders the welcome hero instead of "My Lobbies" when there are no lobbies or invites', async () => {
+      expect.assertions(2);
+      renderWithProviders(<DashboardPage />);
+
+      expect(await screen.findByText(/welcome to lined/i)).toBeInTheDocument();
+      expect(screen.queryByText('My Lobbies')).not.toBeInTheDocument();
+    });
+
+    it('opens the create-lobby overlay with the clicked type preselected', async () => {
+      expect.assertions(2);
+      const user = userEvent.setup();
+      renderWithProviders(<DashboardPage />);
+
+      await user.click(await screen.findByText('Family'));
+
+      expect(useCreateMenuStore.getState().isCreateLobbyOpen).toBe(true);
+      expect(useCreateMenuStore.getState().lobbyTypeInitial).toBe('FAMILY');
+    });
+
+    it('opens the create-lobby overlay with no type preselected from the primary CTA', async () => {
+      expect.assertions(2);
+      const user = userEvent.setup();
+      renderWithProviders(<DashboardPage />);
+
+      await user.click(await screen.findByRole('button', { name: /create your first lobby/i }));
+
+      expect(useCreateMenuStore.getState().isCreateLobbyOpen).toBe(true);
+      expect(useCreateMenuStore.getState().lobbyTypeInitial).toBeNull();
+    });
+  });
+
+  it('does not render the hero when lobbies exist', async () => {
+    expect.assertions(1);
+    renderWithProviders(<DashboardPage />);
+
+    await screen.findByText('My Lobbies');
+    expect(screen.queryByText(/welcome to lined/i)).not.toBeInTheDocument();
+  });
+
+  it('renders the pending invites banner instead of the hero when the account has invites but no lobbies', async () => {
+    expect.assertions(2);
+    server.use(http.get(`${BASE}/lobbies/mine`, () => HttpResponse.json([])));
+    renderWithProviders(<DashboardPage />);
+
+    expect(await screen.findByText('Pending Invites · 3')).toBeInTheDocument();
+    expect(screen.queryByText(/welcome to lined/i)).not.toBeInTheDocument();
+  });
 });

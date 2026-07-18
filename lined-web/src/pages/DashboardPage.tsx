@@ -1,10 +1,12 @@
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMyLobbies } from '@/hooks/useLobbies';
+import { useMyInvites } from '@/hooks/useInvites';
 import { useUpcomingEvents } from '@/hooks/useEvents';
 import { useMyTasks } from '@/hooks/useTasks';
 import { useFreeSlotBanner } from '@/hooks/useDashboard';
 import { getGreeting, formatFullDate } from '@/lib/calendarUtils';
 import { LobbyCardGrid } from '@/components/dashboard/LobbyCardGrid';
+import { DashboardHero } from '@/components/dashboard/DashboardHero';
 import { UpcomingEventsList } from '@/components/dashboard/UpcomingEventsList';
 import { MyTasksList } from '@/components/dashboard/MyTasksList';
 import { FreeSlotBanner } from '@/components/dashboard/FreeSlotBanner';
@@ -16,10 +18,15 @@ import { useCreateMenuStore } from '@/store/createMenu';
 export function DashboardPage() {
   const { data: user } = useCurrentUser();
   const { data: lobbies, isLoading: lobbiesLoading, isError: lobbiesError } = useMyLobbies();
+  const { data: invites, isLoading: invitesLoading, isError: invitesError } = useMyInvites();
   const { data: events, isLoading: eventsLoading, isError: eventsError } = useUpcomingEvents();
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { slot, isLoading: slotLoading } = useFreeSlotBanner();
   const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
+
+  const noLobbies = !lobbiesLoading && !lobbiesError && lobbies?.length === 0;
+  const noInvites = !invitesLoading && !invitesError && (invites?.length ?? 0) === 0;
+  const showHero = noLobbies && noInvites;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -41,13 +48,17 @@ export function DashboardPage() {
       <div className="flex flex-col gap-6 p-6">
         <PendingInvitesBanner />
 
-        <LobbyCardGrid
-          lobbies={lobbies}
-          upcomingEvents={events}
-          myTasks={tasks}
-          isLoading={lobbiesLoading}
-          isError={lobbiesError}
-        />
+        {showHero ? (
+          <DashboardHero username={user?.username ?? 'there'} />
+        ) : (
+          <LobbyCardGrid
+            lobbies={lobbies}
+            upcomingEvents={events}
+            myTasks={tasks}
+            isLoading={lobbiesLoading}
+            isError={lobbiesError}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           <UpcomingEventsList
