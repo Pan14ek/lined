@@ -137,6 +137,29 @@ describe('CalendarPage', () => {
     expect(screen.getAllByText('Morning Coffee').length).toBeGreaterThan(0);
   });
 
+  it('shows an empty-week state with a "Create event" action when there are no events', async () => {
+    expect.assertions(2);
+    server.use(http.get(`${BASE}/calendar/events`, () => HttpResponse.json([])));
+    const user = userEvent.setup();
+    renderWithProviders(<CalendarPage />);
+
+    expect(
+      await screen.findByText('No events this week — create one.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Create event' }));
+
+    expect(useCalendarStore.getState().isCreateModalOpen).toBe(true);
+  });
+
+  it('does not show the empty-week state when events exist', async () => {
+    expect.assertions(1);
+    renderWithProviders(<CalendarPage />);
+    await screen.findByText('Morning Coffee');
+
+    expect(screen.queryByText('No events this week — create one.')).not.toBeInTheDocument();
+  });
+
   it('reflects a hidden lobby as unchecked and re-shows its events once re-checked', async () => {
     expect.assertions(2);
     const user = userEvent.setup();

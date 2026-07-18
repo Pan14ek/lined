@@ -6,6 +6,7 @@ import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/lib/constants';
 import { sortTasksByDueDate } from '@/lib/taskUtils';
+import { EmptyState } from '@/components/EmptyState';
 import { TaskRow } from './TaskRow';
 
 type FilterId = 'ALL' | TaskStatus;
@@ -18,6 +19,7 @@ const FILTERS: { id: FilterId; label: string }[] = [
 ];
 
 interface TaskListContentProps {
+  lobbyId: number;
   isLoading: boolean;
   isError: boolean;
   tasks: TaskDto[] | undefined;
@@ -30,6 +32,7 @@ interface TaskListContentProps {
 }
 
 const TaskListContent = ({
+  lobbyId,
   isLoading,
   isError,
   tasks,
@@ -57,11 +60,17 @@ const TaskListContent = ({
   }
 
   if (tasks != null && tasks.length === 0) {
-    return <p className="text-sm text-text-secondary">No tasks yet.</p>;
+    return (
+      <EmptyState
+        icon="✅"
+        message="No tasks yet."
+        action={{ label: 'Invite someone', to: `/lobbies/${lobbyId}?tab=members` }}
+      />
+    );
   }
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-text-secondary">No tasks match this filter.</p>;
+    return <EmptyState message="No tasks match this filter." />;
   }
 
   return (
@@ -143,6 +152,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
       </div>
 
       <TaskListContent
+        lobbyId={lobbyId}
         isLoading={isLoading}
         isError={isError}
         tasks={tasks}

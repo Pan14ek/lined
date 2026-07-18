@@ -28,7 +28,7 @@ export const CreateMenu = () => {
           <ListPlus className="h-4 w-4" />
           New Task
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={openCreateLobby} className="gap-2.5 py-2">
+        <DropdownMenuItem onClick={() => openCreateLobby()} className="gap-2.5 py-2">
           <Users className="h-4 w-4" />
           New Lobby
         </DropdownMenuItem>

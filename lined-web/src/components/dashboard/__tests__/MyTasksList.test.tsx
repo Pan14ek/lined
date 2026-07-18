@@ -84,7 +84,7 @@ describe('MyTasksList', () => {
     expect.assertions(1);
     renderWithProviders(<MyTasksList tasks={[]} isLoading={false} isError={false} />);
 
-    expect(screen.getByText(/no tasks assigned to you/i)).toBeInTheDocument();
+    expect(screen.getByText(/no tasks yet/i)).toBeInTheDocument();
   });
 
   it('shows an inline error message when tasks fail to load', () => {

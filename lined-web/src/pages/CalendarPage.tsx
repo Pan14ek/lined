@@ -11,6 +11,7 @@ import { useMyLobbies } from '@/hooks/useLobbies';
 import { useCalendarStore } from '@/store/calendar';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { formatMonthYear, hourRangeToIso, isSameDay, type FreeSlot } from '@/lib/calendarUtils';
+import { WeekEmptyBanner } from '@/components/calendar/WeekEmptyBanner';
 import type { EventDto } from '@/types';
 
 function getDeleteEventErrorMessage(error: unknown): string {
@@ -106,6 +107,13 @@ export function CalendarPage() {
         hiddenLobbyIds={hiddenLobbyIds}
         onToggleLobby={toggleLobbyVisibility}
       />
+
+      {viewMode === 'week' && weekEvents.length === 0 && (
+        <WeekEmptyBanner
+          message="No events this week — create one."
+          action={{ label: 'Create event', onClick: openCreateModal }}
+        />
+      )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {viewMode === 'month' ? (

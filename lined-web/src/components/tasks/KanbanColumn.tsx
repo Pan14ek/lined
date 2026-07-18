@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { LobbyDto, TaskDto, TaskStatus, UserDto } from '@/types';
 import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/lib/constants';
+import { EmptyState } from '@/components/EmptyState';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
 
@@ -46,7 +47,7 @@ const KanbanCardList = ({
   actions,
 }: KanbanCardListProps) => {
   if (tasks.length === 0) {
-    return <p className="text-xs text-text-secondary">No tasks in {TASK_STATUS_LABELS[status]}.</p>;
+    return <EmptyState variant="inline" message={`No tasks in ${TASK_STATUS_LABELS[status]}.`} />;
   }
 
   return (

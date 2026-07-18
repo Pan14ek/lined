@@ -38,7 +38,7 @@ describe('UpcomingEventsList', () => {
       <UpcomingEventsList events={[]} lobbies={MOCK_LOBBIES} isLoading={false} isError={false} />,
     );
 
-    expect(screen.getByText(/no upcoming events/i)).toBeInTheDocument();
+    expect(screen.getByText(/no events yet/i)).toBeInTheDocument();
   });
 
   it('shows an inline error message when events fail to load', () => {

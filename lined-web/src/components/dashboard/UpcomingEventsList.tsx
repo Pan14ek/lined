@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { EventDto, LobbyDto } from '@/types';
 import { LOBBY_TYPE_BADGE_CLASSES, LOBBY_TYPE_COLORS } from '@/lib/constants';
 import { formatRelativeEventTime } from '@/lib/calendarUtils';
+import { EmptyState } from '@/components/EmptyState';
 
 interface UpcomingEventsListProps {
   events: EventDto[] | undefined;
@@ -42,7 +43,10 @@ export function UpcomingEventsList({
       )}
 
       {!isLoading && !isError && events?.length === 0 && (
-        <p className="text-sm text-text-secondary">No upcoming events.</p>
+        <EmptyState
+          icon="📅"
+          message="No events yet — once you have a lobby, your shared calendar shows up here."
+        />
       )}
 
       {!isLoading && !isError && events != null && events.length > 0 && (

@@ -161,6 +161,31 @@ describe('LobbyCalendarView', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows an empty state with an invite link when the lobby has no events this week', async () => {
+    expect.assertions(2);
+    server.use(http.get(`${BASE}/calendar/events`, () => HttpResponse.json([])));
+    renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);
+
+    expect(await screen.findByText('No events yet.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Invite someone' })).toHaveAttribute(
+      'href',
+      `/lobbies/${LOBBY.id}?tab=members`,
+    );
+  });
+
+  it('does not show the empty state when the lobby has events this week', async () => {
+    expect.assertions(1);
+    server.use(
+      http.get(`${BASE}/calendar/events`, () =>
+        HttpResponse.json([makeEvent(1, LOBBY.id, 9, 'Morning Coffee')]),
+      ),
+    );
+    renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);
+    await screen.findByText('Morning Coffee');
+
+    expect(screen.queryByText('No events yet.')).not.toBeInTheDocument();
+  });
+
   it('clicking a free-slot band opens the reserve-slot overlay locked to this lobby', async () => {
     expect.assertions(2);
     const today = new Date();
