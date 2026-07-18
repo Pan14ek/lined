@@ -142,6 +142,25 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
   `CalendarPage` ("Create event"); `WeekGrid`/`MonthGrid` themselves are
   unchanged since a blank day cell is normal even in a populated week.
 
+- **Responsive layout (mobile & tablet)** — `useMediaQuery` (`src/hooks/`),
+  `useUiStore` (`src/store/ui.ts`), `BottomTabBar`, `DayChipStrip`:
+  `AppShell`/`Sidebar` gain an off-canvas drawer under `lg` (☰ trigger in
+  `TopBar`, body-scroll-locked, closes on backdrop click or nav) plus a
+  phone-only `BottomTabBar`; dashboard/settings/lobby pages stack to one
+  column under `md`. Calendar forces a single-day view under `md` (day-chip
+  strip + a floating "+ New event" button), reusing `WeekGrid`'s hour-grid
+  internals via a new optional `days` prop instead of a parallel component;
+  `MonthGrid` shows dots-per-day below `lg`. The kanban board's columns
+  become full-width horizontal scroll-snap panes under `md` (drag-and-drop
+  stays desktop-only; the move buttons now meet a 44px touch target).
+  `CreateEventModal`, `CreateLobbyModal`, `ReserveSlotModal` and
+  `ConfirmDialog` become edge-to-edge full-height sheets under `md`;
+  `TaskDrawer` (shadcn `Sheet`) swaps `side="right"` for `side="bottom"` on
+  phones via its own prop rather than editing the shadcn-owned
+  `sheet.tsx`; `EventDetailPanel`/`DayAgendaPanel` (previously inline flex
+  siblings next to the grid) become fixed bottom sheets under `md` and stay
+  in-flow at `md` and above. Desktop (`≥lg`) is unchanged.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -189,7 +208,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | DONE |
 | 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | DONE |
 | 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | DONE |
-| 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
+| 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | DONE |
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |
 | 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | TODO |
 | 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
