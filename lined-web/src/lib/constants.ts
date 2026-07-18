@@ -96,6 +96,8 @@ export const QUERY_KEYS = {
   myTasks: ['tasks', 'mine'] as const,
   lobbyTasks: (lobbyId: number) => ['tasks', 'lobby', lobbyId] as const,
   events: ['events'] as const,
+  eventConflicts: (lobbyId: number, start: string, end: string) =>
+    ['calendar', 'conflicts', lobbyId, start, end] as const,
   lobbyInvites: (lobbyId: number) => ['lobby-invites', lobbyId] as const,
   myInvites: ['lobby-invites', 'mine'] as const,
   notificationPreferences: ['notifications', 'preferences'] as const,
