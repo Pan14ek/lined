@@ -18,9 +18,12 @@ const SKELETON_CARDS_PER_COLUMN = 2;
 
 /** Placeholder columns shown while the first `tasks/mine` fetch is in flight. */
 const KanbanBoardSkeleton = () => (
-  <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-3" data-testid={KANBAN_TEST_IDS.loading}>
+  <div
+    className="flex flex-1 snap-x snap-mandatory gap-6 overflow-x-auto pb-2 md:snap-none"
+    data-testid={KANBAN_TEST_IDS.loading}
+  >
     {Array.from({ length: SKELETON_COLUMN_COUNT }, (_, columnIndex) => (
-      <div key={columnIndex} className="flex flex-col gap-2.5">
+      <div key={columnIndex} className="flex min-w-full flex-col gap-2.5 snap-center md:min-w-0 md:flex-1 md:snap-align-none">
         <div className="h-6 w-24 animate-pulse rounded bg-white" />
         {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
           <div key={cardIndex} className="h-20 animate-pulse rounded-lg bg-white" />
@@ -57,7 +60,7 @@ const KanbanBoardContent = ({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-x-auto md:flex-row">
+    <div className="flex flex-1 snap-x snap-mandatory gap-6 overflow-x-auto pb-2 md:snap-none">
       {STATUS_ORDER.map((status) => (
         <KanbanColumn
           key={status}

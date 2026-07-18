@@ -97,7 +97,7 @@ export const KanbanColumn = ({
 
   return (
     <div
-      className={`flex min-w-[280px] flex-1 flex-col rounded-lg transition-colors ${
+      className={`flex min-w-full flex-1 flex-col snap-center rounded-lg transition-colors md:min-w-[280px] md:snap-align-none ${
         isDragOver ? 'bg-brand-green-light/60' : ''
       }`}
       data-testid={KANBAN_TEST_IDS.column(status)}

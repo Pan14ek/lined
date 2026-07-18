@@ -124,7 +124,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'prev');
                 }}
-                className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 ←
               </button>
@@ -139,7 +139,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'next');
                 }}
-                className="rounded px-1 text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 →
               </button>
