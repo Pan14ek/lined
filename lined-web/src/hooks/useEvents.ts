@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listEvents, createEvent, updateEvent, deleteEvent } from '@/api/events';
-import type { EventDto, EventUpdateDto } from '@/types';
+import { listEvents, createEvent, updateEvent, deleteEvent, findConflicts } from '@/api/events';
+import type { EventConflictDto, EventDto, EventUpdateDto } from '@/types';
 import { QUERY_KEYS } from '@/lib/constants';
-import { addDays, getMonthGridDays } from '@/lib/calendarUtils';
+import { addDays, fromDatetimeLocal, getMonthGridDays } from '@/lib/calendarUtils';
+import { useDebouncedValue } from './useDebouncedValue';
+import { useNextFreeSlotHint } from './useDashboard';
 
 /** Generic date-range event query, keyed by the ISO range so distinct ranges cache separately. */
 export function useRangeEvents(from: Date, to: Date) {
@@ -81,6 +83,77 @@ export function useUpdateEvent() {
       );
     },
   });
+}
+
+/** Overlapping event pairs in a lobby's time window; disabled unless every param is present. */
+export function useEventConflicts(
+  params: { lobbyId: number | null; start: string | null; end: string | null; requesterId: number | null },
+  enabled: boolean,
+) {
+  const { lobbyId, start, end, requesterId } = params;
+  const queryEnabled = enabled && lobbyId != null && !!start && !!end && requesterId != null;
+
+  return useQuery({
+    queryKey: QUERY_KEYS.eventConflicts(lobbyId ?? 0, start ?? '', end ?? ''),
+    queryFn: () => findConflicts({ lobbyId: lobbyId!, start: start!, end: end!, requesterId: requesterId! }),
+    enabled: queryEnabled,
+    retry: false,
+  });
+}
+
+export interface ConflictCheckResult {
+  conflicts: EventConflictDto[];
+  suggestion: { start: string; end: string } | null;
+}
+
+/**
+ * Debounced scheduling-conflict check for an event/reserve-slot form, plus a
+ * same-duration "next free slot" suggestion once a conflict is found. Fails
+ * open: loading or a failed check never blocks the form, they just resolve
+ * to no conflicts.
+ */
+export function useConflictCheck(params: {
+  lobbyId: number | null;
+  startAt: string | null; // datetime-local value
+  endAt: string | null; // datetime-local value
+  currentUserId: number | null;
+  excludeEventId?: number;
+}): ConflictCheckResult {
+  const { lobbyId, startAt, endAt, currentUserId, excludeEventId } = params;
+  const debouncedStartAt = useDebouncedValue(startAt);
+  const debouncedEndAt = useDebouncedValue(endAt);
+
+  let startIso: string | null = null;
+  let endIso: string | null = null;
+  if (debouncedStartAt && debouncedEndAt) {
+    const start = fromDatetimeLocal(debouncedStartAt);
+    const end = fromDatetimeLocal(debouncedEndAt);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start < end) {
+      startIso = start.toISOString();
+      endIso = end.toISOString();
+    }
+  }
+
+  const conflictsQuery = useEventConflicts(
+    { lobbyId, start: startIso, end: endIso, requesterId: currentUserId },
+    startIso != null,
+  );
+
+  const conflicts = (conflictsQuery.data ?? []).filter(
+    (c) => c.first.id !== excludeEventId && c.second.id !== excludeEventId,
+  );
+  const hasConflicts = conflicts.length > 0;
+
+  const durationMs =
+    startIso && endIso ? new Date(endIso).getTime() - new Date(startIso).getTime() : 0;
+  const { slot } = useNextFreeSlotHint(lobbyId, startIso, durationMs, hasConflicts);
+
+  const suggestion =
+    slot != null
+      ? { start: slot.start, end: new Date(new Date(slot.start).getTime() + durationMs).toISOString() }
+      : null;
+
+  return { conflicts, suggestion };
 }
 
 export function useDeleteEvent() {

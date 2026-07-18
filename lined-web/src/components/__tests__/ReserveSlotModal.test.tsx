@@ -2,13 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
-import { MOCK_LOBBIES, MOCK_FREE_SLOT } from '@/test/data';
+import { MOCK_LOBBIES, MOCK_FREE_SLOT, MOCK_EVENTS } from '@/test/data';
+import type { EventConflictDto } from '@/types';
 import { useAuthStore } from '@/store/auth';
 import { ReserveSlotModal } from '../ReserveSlotModal';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const LOBBY = MOCK_LOBBIES[0]!; // id 1, members [1, 2]
 const OTHER_LOBBY = MOCK_LOBBIES[1]!; // id 2, members [1, 2]
+const YOGA = MOCK_EVENTS[3]!; // id 4, lobbyId 1, ownerId 2, "Movie Night"
+const MINE = MOCK_EVENTS[0]!; // id 1, lobbyId 1, ownerId 1
+
+function mockConflict(overrides: Partial<EventConflictDto> = {}): EventConflictDto {
+  return { first: YOGA, second: MINE, overlapStart: YOGA.startAt, overlapEnd: YOGA.endAt, ...overrides };
+}
 
 beforeEach(() => {
   useAuthStore.setState({ userId: 1 });
@@ -185,5 +192,61 @@ describe('ReserveSlotModal — mode C (no slot, candidate picker)', () => {
     await user.click(screen.getByText(LOBBY.name));
 
     expect(await screen.findByText(`${LOBBY.name} are both free`)).toBeInTheDocument();
+  });
+});
+
+describe('ReserveSlotModal — conflict warnings', () => {
+  it('shows a conflict banner naming the busy member, without relabeling the button', async () => {
+    expect.assertions(3);
+    server.use(http.get(`${BASE}/calendar/conflicts`, () => HttpResponse.json([mockConflict()])));
+    renderWithProviders(
+      <ReserveSlotModal
+        lobbies={MOCK_LOBBIES}
+        initial={{ lobbyId: LOBBY.id, start: MOCK_FREE_SLOT.start, end: MOCK_FREE_SLOT.end }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('status')).toHaveTextContent('nastia_k');
+    expect(screen.getByRole('status')).toHaveTextContent(YOGA.title);
+    expect(screen.getByRole('button', { name: /reserve slot/i })).toBeInTheDocument();
+  });
+
+  it('shows no banner when the conflicts endpoint returns none', async () => {
+    expect.assertions(1);
+    renderWithProviders(
+      <ReserveSlotModal
+        lobbies={MOCK_LOBBIES}
+        initial={{ lobbyId: LOBBY.id, start: MOCK_FREE_SLOT.start, end: MOCK_FREE_SLOT.end }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByText(`${LOBBY.name} are both free`);
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('does not block submission or show a banner when the conflicts check fails (fail open)', async () => {
+    expect.assertions(2);
+    server.use(http.get(`${BASE}/calendar/conflicts`, () => new HttpResponse(null, { status: 500 })));
+    const user = userEvent.setup();
+    const onReserved = vi.fn();
+    renderWithProviders(
+      <ReserveSlotModal
+        lobbies={MOCK_LOBBIES}
+        initial={{ lobbyId: LOBBY.id, start: MOCK_FREE_SLOT.start, end: MOCK_FREE_SLOT.end }}
+        onClose={vi.fn()}
+        onReserved={onReserved}
+      />,
+    );
+
+    await user.type(
+      await screen.findByLabelText('What would you like to do?'),
+      'Walk in the park',
+    );
+    await user.click(screen.getByRole('button', { name: /reserve slot/i }));
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    await waitFor(() => expect(onReserved).toHaveBeenCalledTimes(1));
   });
 });

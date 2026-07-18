@@ -19,7 +19,7 @@ export interface FreeSlotBannerData {
 }
 
 /** First slot at least `minMs` long, or null if none qualify. */
-function findEarliestFreeSlot(
+export function findEarliestFreeSlot(
   slots: FreeSlotDto[] | undefined,
   minMs: number,
 ): FreeSlotDto | null {
@@ -109,6 +109,33 @@ export function useFreeSlotCandidates(lobbies: LobbyDto[]): {
     .sort((a, b) => a.start.localeCompare(b.start));
 
   return { candidates, isLoading: queries.some((q) => q.isLoading) };
+}
+
+/**
+ * Earliest ≥`minDurationMs` mutual free slot for one lobby, starting from
+ * `afterIso` (next 7 days). Used to suggest a better time once a scheduling
+ * conflict is shown in an event/reserve-slot form.
+ */
+export function useNextFreeSlotHint(
+  lobbyId: number | null,
+  afterIso: string | null,
+  minDurationMs: number,
+  enabled: boolean,
+): { slot: FreeSlotDto | null; isLoading: boolean } {
+  const from = afterIso ? new Date(afterIso) : null;
+  const to = from ? addDays(from, FREE_SLOTS_WINDOW_DAYS) : null;
+  const queryEnabled = enabled && lobbyId != null && from != null;
+
+  const query = useQuery({
+    queryKey: [...QUERY_KEYS.lobbyFreeSlots(lobbyId ?? 0), 'hint', afterIso ?? ''],
+    queryFn: () => getFreeSlots(lobbyId!, from!.toISOString(), to!.toISOString()),
+    enabled: queryEnabled,
+  });
+
+  return {
+    slot: queryEnabled ? findEarliestFreeSlot(query.data, minDurationMs) : null,
+    isLoading: query.isLoading,
+  };
 }
 
 /** Free slots for one lobby over the visible week, used by the lobby calendar tab. */

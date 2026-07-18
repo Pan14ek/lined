@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
-import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
+import { useCreateEvent, useUpdateEvent, useConflictCheck } from '@/hooks/useEvents';
+import { useAuthStore } from '@/store/auth';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/calendarUtils';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/components/AuthAlert';
+import { ConflictBanner } from '@/components/ConflictBanner';
 import { ToggleRow } from '@/components/ToggleRow';
 
 interface CreateEventModalProps {
@@ -40,6 +42,7 @@ export function CreateEventModal({
   const isEditMode = event != null;
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const currentUserId = useAuthStore((s) => s.userId);
   const lockedLobbyIdResolved = isEditMode ? event.lobbyId : lockedLobbyId;
   const lockedLobby =
     lockedLobbyIdResolved != null
@@ -81,6 +84,15 @@ export function CreateEventModal({
   }
 
   const mutation = isEditMode ? updateEvent : createEvent;
+
+  const { conflicts, suggestion } = useConflictCheck({
+    lobbyId: form.lobbyId ? Number(form.lobbyId) : null,
+    startAt: form.startAt,
+    endAt: form.endAt,
+    currentUserId,
+    excludeEventId: event?.id,
+  });
+  const hasConflicts = conflicts.length > 0;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -222,6 +234,16 @@ export function CreateEventModal({
               </div>
             </div>
 
+            <ConflictBanner
+              conflicts={conflicts}
+              currentUserId={currentUserId}
+              suggestion={suggestion}
+              onPickSuggestion={(start, end) => {
+                set('startAt', toDatetimeLocal(new Date(start)));
+                set('endAt', toDatetimeLocal(new Date(end)));
+              }}
+            />
+
             {/* Location */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
@@ -268,10 +290,14 @@ export function CreateEventModal({
               {isEditMode
                 ? mutation.isPending
                   ? 'Saving…'
-                  : 'Save changes'
+                  : hasConflicts
+                    ? 'Save Anyway'
+                    : 'Save changes'
                 : mutation.isPending
                   ? 'Creating…'
-                  : 'Create Event'}
+                  : hasConflicts
+                    ? 'Create Anyway'
+                    : 'Create Event'}
             </button>
           </div>
         </form>
