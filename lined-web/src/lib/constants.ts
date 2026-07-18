@@ -13,6 +13,8 @@ export const DEFAULT_LEGEND_ITEMS: LegendItem[] = [
   { label: 'Free slot', color: 'var(--color-free-slot)' },
 ];
 
+export const LOBBY_TYPES: LobbyType[] = ['COUPLE', 'FAMILY', 'FRIENDS', 'WORK'];
+
 export const LOBBY_TYPE_LABELS: Record<LobbyType, string> = {
   COUPLE: 'Couple',
   FAMILY: 'Family',
@@ -51,6 +53,13 @@ export const LOBBY_TYPE_ICONS: Record<LobbyType, string> = {
   FAMILY: '👨‍👩‍👧‍👦',
   FRIENDS: '🎉',
   WORK: '💼',
+};
+
+export const LOBBY_TYPE_TAGLINES: Record<LobbyType, string> = {
+  COUPLE: 'Just the two of you',
+  FAMILY: 'Household & kids',
+  FRIENDS: 'Your crew',
+  WORK: 'Team planning',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

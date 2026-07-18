@@ -1,12 +1,10 @@
 import type { LobbyType } from '@/types';
-import { LOBBY_TYPE_ICONS, LOBBY_TYPE_LABELS } from '@/lib/constants';
+import { LOBBY_TYPE_ICONS, LOBBY_TYPE_LABELS, LOBBY_TYPES } from '@/lib/constants';
 
 interface LobbyTypePickerProps {
   value: LobbyType;
   onChange: (type: LobbyType) => void;
 }
-
-const LOBBY_TYPES: LobbyType[] = ['COUPLE', 'FAMILY', 'FRIENDS', 'WORK'];
 
 export const LobbyTypePicker = ({ value, onChange }: LobbyTypePickerProps) => {
   return (
