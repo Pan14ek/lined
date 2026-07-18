@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, screen } from '@/test/utils';
+import { MOCK_TASKS } from '@/test/data';
 import { AppShell } from '../AppShell';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
@@ -9,7 +10,12 @@ import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 describe('AppShell', () => {
   beforeEach(() => {
     useAuthStore.setState({ userId: 1 });
-    useCreateMenuStore.setState({ isCreateLobbyOpen: false, overlay: null, reserveSlotInitial: null });
+    useCreateMenuStore.setState({
+      isCreateLobbyOpen: false,
+      overlay: null,
+      editingTask: null,
+      reserveSlotInitial: null,
+    });
   });
 
   function renderShell(initialEntries: string[] = ['/']) {
@@ -70,6 +76,16 @@ describe('AppShell', () => {
 
     expect(await screen.findByRole('heading', { name: 'Add Task' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Lobby')).not.toBeInTheDocument();
+  });
+
+  it('renders the task drawer in edit mode, pre-filled, when editingTask is set', async () => {
+    expect.assertions(2);
+    const task = MOCK_TASKS[0]!;
+    useCreateMenuStore.setState({ overlay: 'task', editingTask: task });
+    renderShell();
+
+    expect(await screen.findByRole('heading', { name: 'Task details' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue(task.title)).toBeInTheDocument();
   });
 
   it('renders the reserve-slot modal when the overlay is "reserveSlot"', async () => {

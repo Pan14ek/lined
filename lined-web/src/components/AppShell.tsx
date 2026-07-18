@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CreateLobbyModal } from './CreateLobbyModal';
 import { CreateEventModal } from './CreateEventModal';
-import { AddTaskDrawer } from './AddTaskDrawer';
+import { TaskDrawer } from './TaskDrawer';
 import { ReserveSlotModal } from './ReserveSlotModal';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { useCalendarStore } from '@/store/calendar';
@@ -17,6 +17,7 @@ export function AppShell() {
   const closeCreateLobby = useCreateMenuStore((s) => s.closeCreateLobby);
   const overlay = useCreateMenuStore((s) => s.overlay);
   const taskInitialStatus = useCreateMenuStore((s) => s.taskInitialStatus);
+  const editingTask = useCreateMenuStore((s) => s.editingTask);
   const reserveSlotInitial = useCreateMenuStore((s) => s.reserveSlotInitial);
   const closeOverlay = useCreateMenuStore((s) => s.closeOverlay);
   const setSelectedEventId = useCalendarStore((s) => s.setSelectedEventId);
@@ -45,10 +46,11 @@ export function AppShell() {
           )}
 
           {overlay === 'task' && (
-            <AddTaskDrawer
+            <TaskDrawer
               lobbies={lobbies}
-              lockedLobbyId={lockedLobbyId}
+              lockedLobbyId={editingTask ? editingTask.lobbyId : lockedLobbyId}
               initialStatus={taskInitialStatus ?? undefined}
+              task={editingTask ?? undefined}
               onClose={closeOverlay}
             />
           )}
