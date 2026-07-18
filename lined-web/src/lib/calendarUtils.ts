@@ -159,6 +159,11 @@ export function formatRelativeEventTime(startAt: string): string {
   return `${weekday}, ${dayMonth} · ${timeStr}`;
 }
 
+/** "12 Jul" */
+export function formatShortDate(date: Date): string {
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 /** "Just now", "10 minutes ago", "2 hours ago", "Yesterday", "3 days ago" */
 export function formatRelativeTimeAgo(iso: string): string {
   const then = new Date(iso);
@@ -178,7 +183,7 @@ export function formatRelativeTimeAgo(iso: string): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
 
-  return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return formatShortDate(then);
 }
 
 /** "Today 2–5 PM", "Tomorrow 2–5 PM", "Sunday 2–5 PM" */

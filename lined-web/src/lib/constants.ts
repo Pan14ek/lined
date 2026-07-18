@@ -77,6 +77,14 @@ export const TASK_PRIORITY_COLORS: Record<TaskPriority, string> = {
   LOW: 'bg-task-done',
 };
 
+export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+};
+
+export const TASK_PRIORITY_OPTIONS: TaskPriority[] = ['HIGH', 'MEDIUM', 'LOW'];
+
 export const QUERY_KEYS = {
   users: ['users'] as const,
   user: (id: number) => ['users', id] as const,
