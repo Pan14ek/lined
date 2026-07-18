@@ -104,7 +104,7 @@ export const NotificationInbox = ({
                   <button
                     type="button"
                     onClick={() => onRowClick(notification)}
-                    className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-gray-50 ${
+                    className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-surface-hover ${
                       isUnread ? 'bg-brand-green-light/40' : ''
                     }`}
                   >

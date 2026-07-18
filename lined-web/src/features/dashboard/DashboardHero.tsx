@@ -9,7 +9,7 @@ export const DashboardHero = ({ username }: DashboardHeroProps) => {
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
 
   return (
-    <section className="flex flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border bg-white px-8 py-10 text-center">
+    <section className="flex flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border bg-surface px-8 py-10 text-center">
       <span className="text-4xl leading-none">🌱</span>
       <div>
         <h2 className="text-xl font-bold text-text-primary">Welcome to Lined, {username}!</h2>
@@ -25,7 +25,7 @@ export const DashboardHero = ({ username }: DashboardHeroProps) => {
             key={type}
             type="button"
             onClick={() => openCreateLobby(type)}
-            className="cursor-pointer rounded-lg border-2 border-border bg-white px-3 py-3.5 text-center transition-colors hover:bg-gray-50"
+            className="cursor-pointer rounded-lg border-2 border-border bg-surface px-3 py-3.5 text-center transition-colors hover:bg-surface-hover"
           >
             <div className="mb-1.5 text-xl leading-none">{LOBBY_TYPE_ICONS[type]}</div>
             <div className="text-sm font-semibold text-text-primary">

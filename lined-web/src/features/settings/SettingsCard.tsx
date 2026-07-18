@@ -11,7 +11,7 @@ interface SettingsCardProps {
 export const SettingsCard = ({ id, title, children, footer }: SettingsCardProps) => (
   <section
     id={id}
-    className="mb-5 scroll-mt-6 overflow-hidden rounded-xl bg-white shadow-[var(--shadow-sm)]"
+    className="mb-5 scroll-mt-6 overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-sm)]"
   >
     <div className="border-b border-border px-6 py-3.5 text-sm font-bold text-text-primary">
       {title}

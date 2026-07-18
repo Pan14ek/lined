@@ -32,7 +32,7 @@ export const LobbyCardGrid = ({
       {isLoading && (
         <div className="flex gap-4" data-testid="lobby-cards-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 w-56 flex-shrink-0 animate-pulse rounded-xl bg-white" />
+            <div key={i} className="h-24 w-56 flex-shrink-0 animate-pulse rounded-xl bg-surface" />
           ))}
         </div>
       )}

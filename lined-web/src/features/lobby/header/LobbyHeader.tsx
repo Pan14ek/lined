@@ -18,10 +18,10 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
   return (
-    <div className={`border-t-4 bg-white ${LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType]}`}>
+    <div className={`border-t-4 bg-surface ${LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType]}`}>
       <div className="flex flex-col items-start gap-4 p-4 md:flex-row md:items-center md:justify-between md:p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl">
+          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover text-2xl">
             {LOBBY_TYPE_ICONS[lobby.lobbyType]}
           </div>
           <div>
@@ -29,9 +29,9 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
             <div className="mt-1 flex items-center gap-2">
               <div className="flex -space-x-2" data-testid="lobby-member-avatars">
                 {shown.map((query, i) => (
-                  <Avatar key={lobby.memberIds[i]} size="sm" className="ring-2 ring-white">
+                  <Avatar key={lobby.memberIds[i]} size="sm" className="ring-2 ring-surface">
                     {query.isLoading && (
-                      <AvatarFallback className="animate-pulse bg-gray-200" />
+                      <AvatarFallback className="animate-pulse bg-muted" />
                     )}
                     {!query.isLoading && query.data && (
                       <AvatarFallback className="bg-brand-green text-xs font-semibold text-white">
@@ -39,7 +39,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
                       </AvatarFallback>
                     )}
                     {!query.isLoading && !query.data && (
-                      <AvatarFallback className="bg-gray-300 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-muted-foreground text-xs font-semibold text-white">
                         ?
                       </AvatarFallback>
                     )}
@@ -61,13 +61,13 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
           <button
             type="button"
             onClick={() => setIsAddMemberOpen(true)}
-            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-50"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover"
           >
             + Add member
           </button>
           <Link
             to={`/lobbies/${lobby.id}/settings`}
-            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-50"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover"
           >
             ⚙ Settings
           </Link>

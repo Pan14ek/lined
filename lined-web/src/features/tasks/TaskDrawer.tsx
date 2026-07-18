@@ -316,7 +316,7 @@ export const TaskDrawer = ({
               <button
                 type="button"
                 onClick={onClose}
-                className={`h-10 rounded-lg border border-border bg-white px-4 text-sm text-text-secondary hover:bg-gray-50 ${
+                className={`h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover ${
                   isEditMode ? 'ml-auto' : 'flex-1'
                 }`}
               >

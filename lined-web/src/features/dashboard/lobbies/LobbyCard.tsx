@@ -13,7 +13,7 @@ export const LobbyCard = ({ lobby, eventCount, taskCount }: LobbyCardProps) => {
   return (
     <Link
       to={`/lobbies/${lobby.id}`}
-      className="flex w-56 flex-shrink-0 flex-col overflow-hidden rounded-xl bg-white shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
+      className="flex w-56 flex-shrink-0 flex-col overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
     >
       <div className={`h-1.5 w-full ${LOBBY_TYPE_COLORS[lobby.lobbyType]}`} />
       <div className="flex flex-col gap-2 p-4">

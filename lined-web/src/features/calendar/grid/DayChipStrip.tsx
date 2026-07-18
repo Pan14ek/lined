@@ -15,7 +15,7 @@ export const DayChipStrip = ({ selectedDay, onSelectDay }: DayChipStripProps) =>
     <div
       role="tablist"
       aria-label="Select day"
-      className="flex flex-shrink-0 gap-2 overflow-x-auto border-b border-border bg-white px-3 py-2"
+      className="flex flex-shrink-0 gap-2 overflow-x-auto border-b border-border bg-surface px-3 py-2"
     >
       {days.map((day) => {
         const selected = isSameDay(day, selectedDay);

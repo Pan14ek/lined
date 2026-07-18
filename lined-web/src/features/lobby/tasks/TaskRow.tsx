@@ -35,7 +35,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
             }
           : undefined
       }
-      className={`flex items-center gap-4 rounded-lg bg-white p-4 shadow-[var(--shadow-sm)] ${
+      className={`flex items-center gap-4 rounded-lg bg-surface p-4 shadow-[var(--shadow-sm)] ${
         isDone ? 'opacity-70' : ''
       } ${onOpen ? 'cursor-pointer hover:shadow-[var(--shadow-md)]' : ''}`}
     >
@@ -50,7 +50,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
           onToggle(task);
         }}
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 text-xs text-white disabled:opacity-50 ${
-          isDone ? 'border-task-done bg-task-done' : 'border-border bg-white'
+          isDone ? 'border-task-done bg-task-done' : 'border-border bg-surface'
         }`}
       >
         {isDone && '✓'}

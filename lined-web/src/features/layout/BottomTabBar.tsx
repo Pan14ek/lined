@@ -5,7 +5,7 @@ import { NAV_ITEMS } from './navItems';
 export const BottomTabBar = () => (
   <nav
     aria-label="Primary"
-    className="fixed inset-x-0 bottom-0 z-30 flex h-16 flex-shrink-0 items-stretch border-t border-border bg-white md:hidden"
+    className="fixed inset-x-0 bottom-0 z-30 flex h-16 flex-shrink-0 items-stretch border-t border-border bg-surface md:hidden"
   >
     {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
       <NavLink

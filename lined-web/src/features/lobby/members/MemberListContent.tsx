@@ -24,7 +24,7 @@ export const MemberListContent = ({
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-members-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-lg bg-white" />
+          <div key={i} className="h-20 animate-pulse rounded-lg bg-surface" />
         ))}
       </div>
     );

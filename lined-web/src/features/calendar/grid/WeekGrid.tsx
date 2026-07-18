@@ -303,9 +303,9 @@ export const WeekGrid = ({
   }, []);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-white">
+    <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       {/* Day header row */}
-      <div className="flex flex-shrink-0 border-b border-border bg-white" style={{ paddingLeft: 56 }}>
+      <div className="flex flex-shrink-0 border-b border-border bg-surface" style={{ paddingLeft: 56 }}>
         {weekDays.map((day) => {
           const today = isToday(day);
           const dayEvents = events.filter((e) => eventTouchesDay(e, day));
@@ -326,7 +326,7 @@ export const WeekGrid = ({
                 today
                   ? 'bg-brand-green-light font-semibold text-brand-green-dark'
                   : 'text-text-secondary'
-              } ${onDayClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+              } ${onDayClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
             >
               {formatDayLabel(day)}
               {today && (
@@ -338,7 +338,7 @@ export const WeekGrid = ({
       </div>
 
       {/* Scrollable time grid */}
-      <div ref={gridRef} className="flex flex-1 overflow-y-auto bg-white">
+      <div ref={gridRef} className="flex flex-1 overflow-y-auto bg-surface">
         {/* Hour labels. self-start: without it, the flex row's default
             align-items:stretch sizes this box to the scroll container's
             *viewport* height rather than its own (taller) content, which

@@ -21,7 +21,7 @@ export const LobbyTypePicker = ({ value, onChange }: LobbyTypePickerProps) => {
             className={`cursor-pointer rounded-lg border-2 px-3 py-3.5 text-center transition-colors ${
               selected
                 ? 'border-brand-green bg-brand-green-light'
-                : 'border-border bg-white hover:bg-gray-50'
+                : 'border-border bg-surface hover:bg-surface-hover'
             }`}
           >
             <div className="mb-1.5 text-xl leading-none">{LOBBY_TYPE_ICONS[type]}</div>

@@ -48,7 +48,7 @@ export const ReserveSlotModal = ({ lobbies, initial, onClose, onReserved }: Rese
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex h-full w-full flex-col overflow-y-auto bg-white md:h-auto md:max-h-[90vh] md:w-[520px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-surface md:h-auto md:max-h-[90vh] md:w-[520px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-5">
           <div>
@@ -248,7 +248,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           <div>
             <span className="mb-1.5 block text-xs font-medium text-text-secondary">Invite</span>
             {membersLoading ? (
-              <div className="h-12 w-full animate-pulse rounded-lg bg-gray-100" />
+              <div className="h-12 w-full animate-pulse rounded-lg bg-surface-hover" />
             ) : (
               <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-border bg-input-bg px-3 py-2.5">
                 {members.map((member) => (
@@ -283,7 +283,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
         <button
           type="button"
           onClick={onClose}
-          className="h-10 rounded-lg border border-border bg-white px-4 text-sm text-text-secondary hover:bg-gray-50"
+          className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
         >
           Cancel
         </button>
@@ -313,7 +313,7 @@ const CandidatePicker = ({ candidates, isLoading, onPick, onClose }: CandidatePi
     return (
       <div className="space-y-2" data-testid="candidate-picker-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100" />
+          <div key={i} className="h-14 animate-pulse rounded-lg bg-surface-hover" />
         ))}
       </div>
     );
@@ -328,7 +328,7 @@ const CandidatePicker = ({ candidates, isLoading, onPick, onClose }: CandidatePi
         <button
           type="button"
           onClick={onClose}
-          className="h-10 w-full rounded-lg border border-border bg-white text-sm text-text-secondary hover:bg-gray-50"
+          className="h-10 w-full rounded-lg border border-border bg-surface text-sm text-text-secondary hover:bg-surface-hover"
         >
           Close
         </button>

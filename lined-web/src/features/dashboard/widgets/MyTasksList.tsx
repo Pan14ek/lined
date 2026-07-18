@@ -33,7 +33,7 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
       {isLoading && (
         <div className="flex flex-col gap-2" data-testid="my-tasks-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded-lg bg-white" />
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-surface" />
           ))}
         </div>
       )}
@@ -59,7 +59,7 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
             return (
               <div
                 key={task.id}
-                className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)]"
+                className="flex items-center gap-3 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)]"
               >
                 <span
                   className={`h-2 w-2 flex-shrink-0 rounded-full ${TASK_STATUS_COLORS[task.status]}`}

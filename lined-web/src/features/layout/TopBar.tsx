@@ -18,7 +18,7 @@ export const TopBar = () => {
     (location.pathname.startsWith('/lobbies/') ? 'Lobby' : 'Lined');
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center gap-3 border-b border-border bg-white px-4 md:h-16 md:px-6">
+    <header className="flex h-14 flex-shrink-0 items-center gap-3 border-b border-border bg-surface px-4 md:h-16 md:px-6">
       <button
         type="button"
         onClick={openSidebarDrawer}

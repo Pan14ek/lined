@@ -36,7 +36,7 @@ const menuItemClass = (danger?: boolean): string => {
 /** Left-hand jump list for the settings page — most items scroll-anchor within the
  * single-scroll page; items with a `route` navigate to a separate page instead. */
 export const SettingsMenu = () => (
-  <nav className="w-full flex-shrink-0 border-b border-border bg-white py-5 md:w-[220px] md:border-b-0 md:border-r">
+  <nav className="w-full flex-shrink-0 border-b border-border bg-surface py-5 md:w-[220px] md:border-b-0 md:border-r">
     {SECTIONS.map((section) => (
       <div key={section.label}>
         <div className="px-5 py-1.5 text-[11px] font-semibold tracking-wider text-text-muted">

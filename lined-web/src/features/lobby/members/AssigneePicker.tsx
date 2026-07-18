@@ -25,7 +25,7 @@ const AssigneeOption = ({ label, initial, isSelected, onClick }: AssigneeOptionP
   >
     <div
       className={`flex h-12 w-12 items-center justify-center rounded-full border-[3px] text-lg font-bold text-white ${
-        isSelected ? 'border-brand-green bg-brand-green' : 'border-border bg-gray-300'
+        isSelected ? 'border-brand-green bg-brand-green' : 'border-border bg-muted-foreground'
       }`}
     >
       {initial}
@@ -50,7 +50,7 @@ export const AssigneePicker = ({
     return (
       <div className="flex gap-2.5" data-testid="assignee-picker-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-12 w-12 animate-pulse rounded-full bg-gray-200" />
+          <div key={i} className="h-12 w-12 animate-pulse rounded-full bg-muted" />
         ))}
       </div>
     );

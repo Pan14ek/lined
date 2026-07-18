@@ -24,9 +24,9 @@ const KanbanBoardSkeleton = () => (
   >
     {Array.from({ length: SKELETON_COLUMN_COUNT }, (_, columnIndex) => (
       <div key={columnIndex} className="flex min-w-full flex-col gap-2.5 snap-center md:min-w-0 md:flex-1 md:snap-align-none">
-        <div className="h-6 w-24 animate-pulse rounded bg-white" />
+        <div className="h-6 w-24 animate-pulse rounded bg-surface" />
         {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
-          <div key={cardIndex} className="h-20 animate-pulse rounded-lg bg-white" />
+          <div key={cardIndex} className="h-20 animate-pulse rounded-lg bg-surface" />
         ))}
       </div>
     ))}

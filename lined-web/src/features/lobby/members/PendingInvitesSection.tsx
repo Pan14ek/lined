@@ -41,7 +41,7 @@ export const PendingInvitesSection = ({
       <h3 className="mb-3 text-sm font-semibold text-text-primary">Pending Invites</h3>
 
       {isLoading && (
-        <div className="h-16 animate-pulse rounded-xl bg-white" data-testid="pending-invites-loading" />
+        <div className="h-16 animate-pulse rounded-xl bg-surface" data-testid="pending-invites-loading" />
       )}
 
       {!isLoading && isError && (

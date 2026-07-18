@@ -37,7 +37,7 @@ export const InviteCard = ({
   return (
     <div
       data-testid="invite-card"
-      className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border-[1.5px] border-brand-green bg-white p-3.5 shadow-[var(--shadow-sm)]"
+      className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border-[1.5px] border-brand-green bg-surface p-3.5 shadow-[var(--shadow-sm)]"
     >
       <div
         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"

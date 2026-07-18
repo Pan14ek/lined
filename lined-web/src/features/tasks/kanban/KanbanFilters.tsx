@@ -12,7 +12,7 @@ const DATE_FILTER_LABELS: Record<TaskDateFilter, string> = {
 const DATE_FILTER_OPTIONS = Object.keys(DATE_FILTER_LABELS) as TaskDateFilter[];
 
 const selectClassName =
-  'h-9 rounded-lg border border-border bg-white px-3 text-xs font-medium text-text-secondary focus:border-brand-green focus:outline-none';
+  'h-9 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-text-secondary focus:border-brand-green focus:outline-none';
 
 const renderMemberOptions = (members: UserDto[]) =>
   members.map((member) => (

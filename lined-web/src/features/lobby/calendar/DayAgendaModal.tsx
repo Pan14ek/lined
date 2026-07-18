@@ -35,7 +35,7 @@ export const DayAgendaModal = ({
       }}
     >
       {/* Dialog */}
-      <div className="flex max-h-[80vh] w-[420px] max-w-[90vw] flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-lg)]">
+      <div className="flex max-h-[80vh] w-[420px] max-w-[90vw] flex-col overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h2 className="text-base font-bold text-text-primary">{formatFullDate(day)}</h2>
@@ -58,7 +58,7 @@ export const DayAgendaModal = ({
                   <button
                     type="button"
                     onClick={() => onEventClick(event.id)}
-                    className={`w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors hover:bg-gray-50 ${
+                    className={`w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors hover:bg-surface-hover ${
                       event.id === selectedEventId ? 'border-brand-green' : 'border-border'
                     }`}
                   >

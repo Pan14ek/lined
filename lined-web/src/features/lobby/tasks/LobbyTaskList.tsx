@@ -48,7 +48,7 @@ const TaskListContent = ({
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-tasks-loading">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-white" />
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-surface" />
         ))}
       </div>
     );
@@ -143,7 +143,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               filter === f.id
                 ? 'bg-brand-green text-white'
-                : 'bg-white text-text-secondary hover:bg-gray-50'
+                : 'bg-surface text-text-secondary hover:bg-surface-hover'
             }`}
           >
             {f.label} ({counts[f.id]})

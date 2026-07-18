@@ -12,7 +12,7 @@ export const AuthCard = ({ heading, subheading, children }: AuthCardProps) => {
       <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-green-light opacity-50" />
       <div className="absolute -bottom-16 -right-10 h-60 w-60 rounded-full bg-brand-beige-dark opacity-60" />
 
-      <div className="relative z-10 w-[480px] max-w-[90vw] overflow-hidden rounded-2xl bg-white shadow-lg">
+      <div className="relative z-10 w-[480px] max-w-[90vw] overflow-hidden rounded-2xl bg-surface shadow-lg">
         <div className="h-1 bg-brand-green" />
         <div className="px-10 pb-10 pt-8">
           <div className="text-center text-3xl font-bold text-brand-green">Lined</div>

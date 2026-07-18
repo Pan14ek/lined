@@ -87,7 +87,7 @@ export const KanbanCard = ({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`flex cursor-grab gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
+      className={`flex cursor-grab gap-2.5 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
         isDone ? 'opacity-75' : ''
       } ${isDragging ? 'opacity-40' : ''}`}
     >
@@ -124,7 +124,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'prev');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 ←
               </button>
@@ -139,7 +139,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'next');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 →
               </button>

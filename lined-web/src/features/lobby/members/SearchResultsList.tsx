@@ -30,7 +30,7 @@ export const SearchResultsList = ({
     return (
       <div className="flex flex-col gap-2" data-testid="add-member-search-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />
+          <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-hover" />
         ))}
       </div>
     );
