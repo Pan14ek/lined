@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
   title: string;
@@ -70,9 +71,10 @@ export const ConfirmDialog = ({
             type="button"
             onClick={onConfirm}
             disabled={isConfirmDisabled}
-            className={`h-10 rounded-lg px-4 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${
-              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-green hover:bg-brand-green-dark'
-            }`}
+            className={cn(
+              'h-10 rounded-lg px-4 text-sm font-semibold text-white transition-colors disabled:opacity-60',
+              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-green hover:bg-brand-green-dark',
+            )}
           >
             {isPending ? 'Please wait…' : confirmLabel}
           </button>

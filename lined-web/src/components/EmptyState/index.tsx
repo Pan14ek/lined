@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateAction {
   label: string;
@@ -43,7 +44,7 @@ export const EmptyState = ({
 }: EmptyStateProps) => {
   if (variant === 'inline') {
     return (
-      <p className={`text-sm ${className}`} data-testid={testId}>
+      <p className={cn('text-sm', className)} data-testid={testId}>
         {message}
         {action && (
           <>
@@ -61,7 +62,7 @@ export const EmptyState = ({
       data-testid={testId}
     >
       {icon && <span className="text-2xl leading-none">{icon}</span>}
-      <p className={`text-sm ${className}`}>{message}</p>
+      <p className={cn('text-sm', className)}>{message}</p>
       {action && (
         <div className="mt-1 text-sm font-medium">
           <ActionControl action={action} />

@@ -1,5 +1,6 @@
 import type { UserDto } from '@/features/users/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 interface AssigneeAvatarProps {
   assignee: UserDto | undefined;
@@ -15,11 +16,11 @@ export const AssigneeAvatar = ({
 }: AssigneeAvatarProps) => (
   <Avatar size={size}>
     {assignee ? (
-      <AvatarFallback className={`bg-brand-green font-semibold text-white ${fallbackTextClassName}`}>
+      <AvatarFallback className={cn('bg-brand-green font-semibold text-white', fallbackTextClassName)}>
         {assignee.username.charAt(0).toUpperCase()}
       </AvatarFallback>
     ) : (
-      <AvatarFallback className={`bg-muted-foreground font-semibold text-white ${fallbackTextClassName}`}>
+      <AvatarFallback className={cn('bg-muted-foreground font-semibold text-white', fallbackTextClassName)}>
         ?
       </AvatarFallback>
     )}

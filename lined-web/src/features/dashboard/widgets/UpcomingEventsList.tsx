@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
-import { LOBBY_TYPE_BADGE_CLASSES, LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
+import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
+import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { formatRelativeEventTime } from '@/features/calendar/lib/calendarUtils';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -70,11 +71,9 @@ export const UpcomingEventsList = ({
                   </p>
                 </div>
                 {lobby && (
-                  <span
-                    className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${LOBBY_TYPE_BADGE_CLASSES[lobbyType]}`}
-                  >
+                  <LobbyTypeBadge type={lobbyType} size="compact" className="flex-shrink-0">
                     {lobby.name}
-                  </span>
+                  </LobbyTypeBadge>
                 )}
               </div>
             );

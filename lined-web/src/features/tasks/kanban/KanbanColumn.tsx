@@ -3,7 +3,8 @@ import type { DragEvent } from 'react';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
-import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
+import { TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
+import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
@@ -108,11 +109,7 @@ export const KanbanColumn = ({
       <div className="mb-3 flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${TASK_STATUS_COLORS[status]}`} />
         <span className="text-sm font-semibold text-text-primary">{TASK_STATUS_LABELS[status]}</span>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${TASK_STATUS_BADGE_CLASSES[status]}`}
-        >
-          {tasks.length}
-        </span>
+        <TaskStatusBadge status={status} size="count">{tasks.length}</TaskStatusBadge>
         <button
           type="button"
           aria-label={KANBAN_LABELS.addTaskToColumn(TASK_STATUS_LABELS[status])}

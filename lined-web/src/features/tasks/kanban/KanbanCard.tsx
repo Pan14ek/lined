@@ -5,7 +5,7 @@ import type { TaskDto } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { getAdjacentStatus, taskDetailsLabel } from '@/features/tasks/lib/taskUtils';
-import { LOBBY_TYPE_BADGE_CLASSES } from '@/features/lobby/lib/constants';
+import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { TASK_PRIORITY_COLORS } from '@/features/tasks/lib/constants';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 import { KANBAN_LABELS, KANBAN_TEST_IDS } from './kanbanConstants';
@@ -106,11 +106,9 @@ export const KanbanCard = ({
         </p>
 
         {lobby && (
-          <span
-            className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${LOBBY_TYPE_BADGE_CLASSES[lobby.lobbyType]}`}
-          >
+          <LobbyTypeBadge type={lobby.lobbyType} size="compact" className="mt-1.5 inline-block">
             {lobby.name}
-          </span>
+          </LobbyTypeBadge>
         )}
 
         <div className="mt-2.5 flex items-center justify-between">

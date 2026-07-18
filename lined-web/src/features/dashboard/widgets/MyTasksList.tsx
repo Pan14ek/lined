@@ -4,7 +4,7 @@ import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
 import { EmptyState } from '@/components/EmptyState';
-import { StatusBadge } from './StatusBadge';
+import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 
 const MAX_TASKS_SHOWN = 5;
 
@@ -72,7 +72,7 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
                   >
                     {task.title}
                   </p>
-                  <StatusBadge status={task.status} />
+                  <TaskStatusBadge status={task.status} />
                 </div>
                 <span
                   className={`flex-shrink-0 text-xs ${
