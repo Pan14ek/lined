@@ -51,7 +51,7 @@ describe('MonthGrid', () => {
 
     // Feb 23 2026 is the leading other-month cell for March's grid (first "23" in the grid).
     const otherMonthCell = screen.getAllByText('23')[0]!.closest('button');
-    expect(otherMonthCell?.className).toContain('bg-gray-50');
+    expect(otherMonthCell?.className).toContain('bg-surface-hover');
   });
 
   it('caps visible chips at 3 and shows a "+N more" label for the rest', () => {

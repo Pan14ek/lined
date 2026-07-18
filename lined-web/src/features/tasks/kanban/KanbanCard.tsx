@@ -43,7 +43,7 @@ const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneInd
   }
 
   return (
-    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500' : 'text-text-secondary'}`}>
+    <span className={`text-xs ${isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : 'text-text-secondary'}`}>
       Due: {dueLabel}
     </span>
   );
@@ -87,7 +87,7 @@ export const KanbanCard = ({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`flex cursor-grab gap-2.5 rounded-lg bg-white p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
+      className={`flex cursor-grab gap-2.5 rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
         isDone ? 'opacity-75' : ''
       } ${isDragging ? 'opacity-40' : ''}`}
     >
@@ -124,7 +124,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'prev');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 ←
               </button>
@@ -139,7 +139,7 @@ export const KanbanCard = ({
                   e.stopPropagation();
                   onMove(task, 'next');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-gray-100 disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50 md:min-h-0 md:min-w-0 md:px-1"
               >
                 →
               </button>
@@ -155,14 +155,14 @@ export const KanbanCard = ({
                 e.stopPropagation();
                 onDelete(task);
               }}
-              className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500"
+              className="rounded px-1 text-xs text-text-muted hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
             >
               ✕
             </button>
           </div>
         </div>
 
-        {moveError && <p className="mt-1.5 text-xs text-red-500">{moveError}</p>}
+        {moveError && <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{moveError}</p>}
       </div>
     </div>
   );

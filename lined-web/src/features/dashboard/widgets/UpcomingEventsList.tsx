@@ -32,7 +32,7 @@ export const UpcomingEventsList = ({
       {isLoading && (
         <div className="flex flex-col gap-2" data-testid="upcoming-events-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg bg-white" />
+            <div key={i} className="h-14 animate-pulse rounded-lg bg-surface" />
           ))}
         </div>
       )}
@@ -58,7 +58,7 @@ export const UpcomingEventsList = ({
             return (
               <div
                 key={event.id}
-                className="flex items-center gap-3 overflow-hidden rounded-lg bg-white p-3 shadow-[var(--shadow-sm)]"
+                className="flex items-center gap-3 overflow-hidden rounded-lg bg-surface p-3 shadow-[var(--shadow-sm)]"
               >
                 <span className={`h-8 w-1 flex-shrink-0 rounded-full ${LOBBY_TYPE_COLORS[lobbyType]}`} />
                 <div className="min-w-0 flex-1">

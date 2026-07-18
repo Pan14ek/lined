@@ -94,12 +94,12 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
       </form>
 
       {touched && validationError && (
-        <p role="alert" className="pb-4 text-xs text-red-600">
+        <p role="alert" className="pb-4 text-xs text-red-600 dark:text-red-400">
           {validationError}
         </p>
       )}
       {updateUser.isError && (
-        <p role="alert" className="pb-4 text-xs text-red-600">
+        <p role="alert" className="pb-4 text-xs text-red-600 dark:text-red-400">
           {getPasswordErrorMessage(updateUser.error)}
         </p>
       )}

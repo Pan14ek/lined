@@ -24,7 +24,7 @@ export const EventDetailPanel = ({
   const accentColor = lobbyAccentColor(lobby.lobbyType);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[70vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-[var(--shadow-md)] md:relative md:inset-auto md:z-auto md:m-4 md:ml-0 md:max-h-none md:w-72 md:flex-shrink-0 md:self-start md:overflow-hidden md:rounded-xl">
+    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[70vh] w-full overflow-y-auto rounded-t-2xl bg-surface shadow-[var(--shadow-md)] md:relative md:inset-auto md:z-auto md:m-4 md:ml-0 md:max-h-none md:w-72 md:flex-shrink-0 md:self-start md:overflow-hidden md:rounded-xl">
       {/* Coloured accent bar */}
       <div className="h-1" style={{ backgroundColor: accentColor }} />
 
@@ -81,7 +81,7 @@ export const EventDetailPanel = ({
         <div className="my-3 h-px bg-border" />
 
         {deleteError && (
-          <p className="mb-2 text-xs font-medium text-red-500">{deleteError}</p>
+          <p className="mb-2 text-xs font-medium text-red-500 dark:text-red-400">{deleteError}</p>
         )}
 
         {/* Actions */}
@@ -94,7 +94,7 @@ export const EventDetailPanel = ({
           </button>
           <button
             onClick={onDelete}
-            className="flex-1 h-9 rounded-lg border border-red-500 bg-white text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="flex-1 h-9 rounded-lg border border-red-500 bg-surface text-sm font-medium text-red-500 hover:bg-red-50 transition-colors dark:border-red-500/60 dark:text-red-400 dark:hover:bg-red-950/40"
           >
             Delete
           </button>

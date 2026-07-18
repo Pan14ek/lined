@@ -38,7 +38,7 @@ export const ConfirmDialog = ({
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="flex max-h-full w-[400px] max-w-[90vw] flex-col overflow-y-auto rounded-2xl bg-white p-6 shadow-[var(--shadow-lg)] max-md:h-full max-md:w-full max-md:max-w-none max-md:justify-center max-md:rounded-none">
+      <div className="flex max-h-full w-[400px] max-w-[90vw] flex-col overflow-y-auto rounded-2xl bg-surface p-6 shadow-[var(--shadow-lg)] max-md:h-full max-md:w-full max-md:max-w-none max-md:justify-center max-md:rounded-none">
         <h2 className="text-lg font-bold text-text-primary">{title}</h2>
         <p className="mt-2 text-sm text-text-secondary">{message}</p>
 
@@ -56,13 +56,13 @@ export const ConfirmDialog = ({
           </div>
         )}
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 rounded-lg border border-border bg-white px-4 text-sm text-text-secondary hover:bg-gray-50"
+            className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
           >
             Cancel
           </button>

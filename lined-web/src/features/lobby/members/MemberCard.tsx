@@ -21,7 +21,7 @@ export const MemberCard = ({
   onRemove,
 }: MemberCardProps) => {
   return (
-    <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-[var(--shadow-sm)]">
+    <div className="flex items-center gap-4 rounded-lg bg-surface p-4 shadow-[var(--shadow-sm)]">
       <Avatar size="lg">
         <AvatarFallback className="bg-brand-green text-sm font-semibold text-white">
           {member.username.charAt(0).toUpperCase()}
@@ -33,7 +33,7 @@ export const MemberCard = ({
           <p className="text-sm font-semibold text-text-primary">{member.username}</p>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              isOwner ? 'bg-brand-green/10 text-brand-green' : 'bg-gray-100 text-text-secondary'
+              isOwner ? 'bg-brand-green/10 text-brand-green' : 'bg-surface-hover text-text-secondary'
             }`}
           >
             {isOwner ? 'Owner' : 'Member'}
@@ -53,14 +53,14 @@ export const MemberCard = ({
             <button
               type="button"
               onClick={onMakeOwner}
-              className="h-8 rounded-lg border border-border px-3 text-xs font-medium text-text-primary hover:bg-gray-50"
+              className="h-8 rounded-lg border border-border px-3 text-xs font-medium text-text-primary hover:bg-surface-hover"
             >
               Make owner
             </button>
             <button
               type="button"
               onClick={onRemove}
-              className="h-8 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50"
+              className="h-8 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
             >
               Remove
             </button>

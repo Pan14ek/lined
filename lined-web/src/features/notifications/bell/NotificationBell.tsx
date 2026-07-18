@@ -78,7 +78,7 @@ export const NotificationBell = () => {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Notifications"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-gray-100"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-hover"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (

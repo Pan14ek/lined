@@ -51,9 +51,9 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
   return (
     <section
       id="danger-zone"
-      className="mb-5 scroll-mt-6 overflow-hidden rounded-xl border-[1.5px] border-red-200 bg-red-50"
+      className="mb-5 scroll-mt-6 overflow-hidden rounded-xl border-[1.5px] border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
     >
-      <div className="border-b border-red-200 px-6 py-3.5 text-sm font-bold text-red-600">
+      <div className="border-b border-red-200 px-6 py-3.5 text-sm font-bold text-red-600 dark:border-red-900/50 dark:text-red-400">
         ⚠ Danger Zone
       </div>
       <div className="flex items-center justify-between px-6 py-4">
@@ -66,13 +66,13 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
         <button
           type="button"
           onClick={() => setPendingAction('leave')}
-          className="h-9 flex-shrink-0 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+          className="h-9 flex-shrink-0 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
         >
           Leave
         </button>
       </div>
       {isOwner && (
-        <div className="flex items-center justify-between border-t border-red-200 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-red-200 px-6 py-4 dark:border-red-900/50">
           <div>
             <div className="text-sm font-semibold text-text-primary">Delete lobby</div>
             <div className="mt-0.5 text-xs text-text-secondary">

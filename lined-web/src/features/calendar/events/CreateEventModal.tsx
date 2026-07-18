@@ -149,7 +149,7 @@ export const CreateEventModal = ({
       }}
     >
       {/* Dialog — full-screen sheet under md, centered card at md and above */}
-      <div className="flex h-full w-full flex-col overflow-y-auto bg-white md:h-auto md:max-h-[90vh] md:w-[520px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-surface md:h-auto md:max-h-[90vh] md:w-[520px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="text-lg font-bold text-text-primary">
@@ -279,7 +279,7 @@ export const CreateEventModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="h-10 rounded-lg border border-border bg-white px-4 text-sm text-text-secondary hover:bg-gray-50"
+              className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
             >
               Cancel
             </button>

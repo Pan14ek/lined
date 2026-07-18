@@ -50,7 +50,7 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-h-[85vh] w-[460px] max-w-[90vw] overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-lg)]">
+      <div className="max-h-[85vh] w-[460px] max-w-[90vw] overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-lg)]">
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="text-lg font-bold text-text-primary">Add Member</h2>
           <button onClick={onClose} aria-label="Close" className="text-text-muted hover:text-text-secondary">
@@ -105,7 +105,7 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 rounded-lg border border-border bg-white px-4 text-sm text-text-secondary hover:bg-gray-50"
+            className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
           >
             Done
           </button>

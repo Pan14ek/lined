@@ -17,7 +17,7 @@ interface LobbyTabBarProps {
 
 export const LobbyTabBar = ({ lobbyType, activeTab, onTabChange }: LobbyTabBarProps) => {
   return (
-    <div role="tablist" className="flex gap-6 overflow-x-auto border-b border-border bg-white px-4 md:px-6">
+    <div role="tablist" className="flex gap-6 overflow-x-auto border-b border-border bg-surface px-4 md:px-6">
       {TABS.map((tab) => {
         const isActive = tab.id === activeTab;
         return (

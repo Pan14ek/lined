@@ -46,7 +46,7 @@ export const LobbyNotificationsCard = ({ lobbyId }: LobbyNotificationsCardProps)
         />
       ))}
       {updatePreferences.isError && (
-        <p role="alert" className="pb-4 pt-1 text-xs text-red-600">
+        <p role="alert" className="pb-4 pt-1 text-xs text-red-600 dark:text-red-400">
           Could not save that preference — please try again
         </p>
       )}

@@ -21,7 +21,7 @@ const getSubscribeErrorMessage = (error: unknown): string => {
 const PlanCardsSkeleton = () => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="plan-cards-loading">
     {Array.from({ length: 3 }, (_, i) => (
-      <div key={i} className="h-40 animate-pulse rounded-xl bg-white" />
+      <div key={i} className="h-40 animate-pulse rounded-xl bg-surface" />
     ))}
   </div>
 );
@@ -39,7 +39,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
           return (
             <div
               key={plan.id}
-              className={`relative rounded-xl border-[1.5px] bg-white p-5 ${
+              className={`relative rounded-xl border-[1.5px] bg-surface p-5 ${
                 isCurrent ? 'border-brand-green' : 'border-border'
               }`}
             >
@@ -61,7 +61,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
                 onClick={() => startSubscription.mutate(plan.id)}
                 className={`mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
                   isCurrent
-                    ? 'bg-brand-green-light text-brand-green-dark'
+                    ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
                     : 'bg-brand-green text-white hover:bg-brand-green-dark'
                 }`}
               >
@@ -72,7 +72,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
         })}
       </div>
       {startSubscription.isError && (
-        <p className="mt-3 text-sm text-red-600">
+        <p className="mt-3 text-sm text-red-600 dark:text-red-400">
           {getSubscribeErrorMessage(startSubscription.error)}
         </p>
       )}

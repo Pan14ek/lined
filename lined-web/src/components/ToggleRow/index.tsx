@@ -22,7 +22,7 @@ export const ToggleRow = ({ label, description, checked, onChange }: ToggleRowPr
         }`}
       >
         <span
-          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-[left] ${
+          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-surface shadow-sm transition-[left] ${
             checked ? 'left-[23px]' : 'left-[3px]'
           }`}
         />

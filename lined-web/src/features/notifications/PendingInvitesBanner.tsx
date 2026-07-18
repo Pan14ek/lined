@@ -50,8 +50,8 @@ export const PendingInvitesBanner = () => {
   if (isLoading) {
     return (
       <section data-testid="pending-invites-loading">
-        <div className="mb-3 h-4 w-40 animate-pulse rounded bg-white" />
-        <div className="h-16 animate-pulse rounded-xl bg-white" />
+        <div className="mb-3 h-4 w-40 animate-pulse rounded bg-surface" />
+        <div className="h-16 animate-pulse rounded-xl bg-surface" />
       </section>
     );
   }

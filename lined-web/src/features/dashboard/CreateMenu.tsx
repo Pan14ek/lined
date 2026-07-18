@@ -35,7 +35,7 @@ export const CreateMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => openReserveSlot()}
-          className="gap-2.5 bg-brand-green-light py-2 text-brand-green-dark focus:bg-brand-green-light/80 focus:text-brand-green-dark"
+          className="gap-2.5 bg-brand-green-light py-2 text-brand-green-dark focus:bg-brand-green-light/80 focus:text-brand-green-dark dark:text-brand-green dark:focus:text-brand-green"
         >
           <Sparkles className="h-4 w-4" />
           Reserve Free Slot

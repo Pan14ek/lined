@@ -35,7 +35,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
             }
           : undefined
       }
-      className={`flex items-center gap-4 rounded-lg bg-white p-4 shadow-[var(--shadow-sm)] ${
+      className={`flex items-center gap-4 rounded-lg bg-surface p-4 shadow-[var(--shadow-sm)] ${
         isDone ? 'opacity-70' : ''
       } ${onOpen ? 'cursor-pointer hover:shadow-[var(--shadow-md)]' : ''}`}
     >
@@ -50,7 +50,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
           onToggle(task);
         }}
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 text-xs text-white disabled:opacity-50 ${
-          isDone ? 'border-task-done bg-task-done' : 'border-border bg-white'
+          isDone ? 'border-task-done bg-task-done' : 'border-border bg-surface'
         }`}
       >
         {isDone && '✓'}
@@ -67,7 +67,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
         {task.description && (
           <p className="mt-0.5 truncate text-xs text-text-secondary">{task.description}</p>
         )}
-        {updateError && <p className="mt-0.5 text-xs text-red-500">{updateError}</p>}
+        {updateError && <p className="mt-0.5 text-xs text-red-500 dark:text-red-400">{updateError}</p>}
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-3">
@@ -75,7 +75,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
         <AssigneeAvatar assignee={assignee} size="sm" />
         <span
           className={`w-16 text-right text-xs ${
-            due.isUrgent ? 'font-semibold text-red-500' : isDone ? 'text-text-muted' : 'text-text-secondary'
+            due.isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : isDone ? 'text-text-muted' : 'text-text-secondary'
           }`}
         >
           {due.label}

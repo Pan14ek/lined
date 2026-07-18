@@ -27,8 +27,8 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
       type="button"
       onClick={() => onDayClick(day)}
       className={`flex min-h-0 flex-col items-start gap-1 overflow-hidden border-b border-l border-border p-1.5 text-left ${
-        inCurrentMonth ? 'bg-white' : 'bg-gray-50'
-      } hover:bg-gray-50`}
+        inCurrentMonth ? 'bg-surface' : 'bg-surface-hover'
+      } hover:bg-surface-hover`}
     >
       <div
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] ${
@@ -95,9 +95,9 @@ export const MonthGrid = ({ monthAnchor, events, lobbies, onDayClick }: MonthGri
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-white">
+    <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       {/* Day-of-week header row */}
-      <div className="grid flex-shrink-0 grid-cols-7 border-b border-border bg-white">
+      <div className="grid flex-shrink-0 grid-cols-7 border-b border-border bg-surface">
         {DOW_LABELS.map((label) => (
           <div
             key={label}

@@ -30,7 +30,7 @@ export const SearchResultRow = ({
           @{user.username}
           {isMember && ' · already in lobby'}
         </p>
-        {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </div>
       {isMember && <span className="text-lg text-task-done">✓</span>}
       {!isMember && (

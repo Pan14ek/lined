@@ -19,7 +19,7 @@ export const AssigneeAvatar = ({
         {assignee.username.charAt(0).toUpperCase()}
       </AvatarFallback>
     ) : (
-      <AvatarFallback className={`bg-gray-300 font-semibold text-white ${fallbackTextClassName}`}>
+      <AvatarFallback className={`bg-muted-foreground font-semibold text-white ${fallbackTextClassName}`}>
         ?
       </AvatarFallback>
     )}

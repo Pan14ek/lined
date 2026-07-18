@@ -120,7 +120,7 @@ export const CalendarPage = () => {
     // h-full fills the flex-1 main area; overflow-hidden so the grid controls its own scroll
     <div className="relative flex h-full flex-col overflow-hidden">
       {isPhone ? (
-        <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-white px-4">
+        <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-surface px-4">
           <button
             type="button"
             onClick={goToPrevDay}

@@ -31,7 +31,7 @@ export const DashboardPage = () => {
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Greeting top bar */}
-      <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-4 md:px-8">
+      <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-surface px-4 md:px-8">
         <div>
           <h1 className="text-base font-semibold text-text-primary md:text-lg">
             {getGreeting()}, {user?.username ?? 'there'} 👋

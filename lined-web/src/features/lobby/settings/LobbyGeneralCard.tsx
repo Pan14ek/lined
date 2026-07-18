@@ -88,7 +88,7 @@ export const LobbyGeneralCard = ({ lobby, isOwner }: LobbyGeneralCardProps) => {
       </form>
 
       {updateLobby.isError && (
-        <p role="alert" className="pb-4 text-xs text-red-600">
+        <p role="alert" className="pb-4 text-xs text-red-600 dark:text-red-400">
           {getLobbyUpdateErrorMessage(updateLobby.error)}
         </p>
       )}
