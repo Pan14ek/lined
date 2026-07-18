@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ListTodo, Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
@@ -8,14 +8,14 @@ import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { EmptyState } from '@/components/EmptyState';
+import { NAV_ITEMS } from './navItems';
 
-const NAV_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/calendar', icon: Calendar, label: 'Calendar' },
-  { to: '/tasks', icon: ListTodo, label: 'Tasks' },
-] as const;
+interface SidebarProps {
+  /** Called after any nav link is clicked — used by the mobile drawer to close itself. */
+  onNavigate?: () => void;
+}
 
-export const Sidebar = () => {
+export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
   const navigate = useNavigate();
   const { data: lobbies, isLoading: lobbiesLoading } = useMyLobbies();
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -41,6 +41,7 @@ export const Sidebar = () => {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onNavigate}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
@@ -99,6 +100,7 @@ export const Sidebar = () => {
             <NavLink
               key={lobby.id}
               to={`/lobbies/${lobby.id}`}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
@@ -122,6 +124,7 @@ export const Sidebar = () => {
       <div className="px-3 pb-2">
         <NavLink
           to="/settings"
+          onClick={onNavigate}
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               isActive

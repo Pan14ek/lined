@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
-import { renderWithProviders, screen } from '@/test/utils';
+import { within } from '@testing-library/react';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { MOCK_TASKS } from '@/features/tasks/api/mockData';
 import { AppShell } from '../AppShell';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { useUiStore } from '@/store/ui';
 import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 
 describe('AppShell', () => {
@@ -16,6 +18,7 @@ describe('AppShell', () => {
       editingTask: null,
       reserveSlotInitial: null,
     });
+    useUiStore.setState({ isSidebarDrawerOpen: false });
   });
 
   const renderShell = (initialEntries: string[] = ['/']) => {
@@ -105,5 +108,43 @@ describe('AppShell', () => {
     renderShell();
 
     expect(await screen.findByLabelText('What would you like to do?')).toBeInTheDocument();
+  });
+
+  it('does not render the sidebar drawer by default', () => {
+    expect.assertions(1);
+    renderShell();
+
+    expect(screen.queryByTestId('sidebar-drawer-backdrop')).not.toBeInTheDocument();
+  });
+
+  it('renders the sidebar drawer when the ui store flags it open', async () => {
+    expect.assertions(1);
+    useUiStore.setState({ isSidebarDrawerOpen: true });
+    renderShell();
+
+    expect(await screen.findByTestId('sidebar-drawer-backdrop')).toBeInTheDocument();
+  });
+
+  it('closes the sidebar drawer when the backdrop is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    useUiStore.setState({ isSidebarDrawerOpen: true });
+    renderShell();
+
+    await user.click(await screen.findByTestId('sidebar-drawer-backdrop'));
+
+    expect(useUiStore.getState().isSidebarDrawerOpen).toBe(false);
+  });
+
+  it('closes the sidebar drawer when a nav link inside it is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    useUiStore.setState({ isSidebarDrawerOpen: true });
+    renderShell();
+    const drawer = await screen.findByTestId('sidebar-drawer');
+
+    await user.click(within(drawer).getByRole('link', { name: /calendar/i }));
+
+    expect(useUiStore.getState().isSidebarDrawerOpen).toBe(false);
   });
 });
