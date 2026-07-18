@@ -9,15 +9,10 @@ interface OptimisticPatchContext<TData> {
   previous: TData | undefined;
 }
 
-/**
- * Mutation that optimistically merges `patch` into a single cached object at
- * `queryKey`, replaces it with the server response on success, and restores
- * the pre-mutation snapshot on failure.
- */
-export function useOptimisticPatchMutation<TData, TPatch extends object>({
+export const useOptimisticPatchMutation = <TData, TPatch extends object>({
   queryKey,
   mutationFn,
-}: OptimisticPatchOptions<TData, TPatch>) {
+}: OptimisticPatchOptions<TData, TPatch>) => {
   const queryClient = useQueryClient();
   return useMutation<TData, unknown, TPatch, OptimisticPatchContext<TData>>({
     mutationFn,

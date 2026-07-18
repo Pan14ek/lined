@@ -275,41 +275,57 @@ on this project.
 
 ### Project Structure
 
+The app is organized **feature-first**, not by technical layer: each
+business domain (`calendar`, `lobby`, `tasks`, `subscription`, `users`, ...)
+owns its own DTOs, API functions, hooks, utilities, and pages under
+`src/features/{feature}/`. Only truly domain-agnostic code lives at the top
+level (`src/components/`, `src/hooks/`, `src/lib/`, `src/store/`, `src/test/`).
+
+Full detail, the shared-vs-feature-owned rule, and the API mock-switch
+pattern: **[`lined-web/docs/ARCHITECTURE.md`](lined-web/docs/ARCHITECTURE.md)**
+and **[`lined-web/docs/PROJECT_STRUCTURE.md`](lined-web/docs/PROJECT_STRUCTURE.md)**.
+Read those before adding a file to this project — they supersede any older
+description of a flat `api/`/`hooks/`/`types/`/`components/` layout.
+
 ```
 lined-web/src/
-  api/           # ky HTTP client instance + API functions per domain
-  components/    # Shared UI components (shadcn/ui wrappers + custom)
-  hooks/         # TanStack Query hooks (useLobbies, useTasks, useEvents, …)
-  pages/         # Route-level components
-  store/         # Zustand stores for UI state
-  types/         # TypeScript types mirroring backend DTOs
-  lib/           # Utilities (date formatting, class name helpers, etc.)
-  test/          # Test utilities: MSW handlers, custom render, factories
+  features/{feature}/   # model/, api/ (prod.ts+dev.ts+index.ts), hooks/, lib/, pages/, UI
+  components/           # SHARED, domain-agnostic components only (+ shadcn's components/ui/)
+  hooks/                # SHARED, domain-agnostic hooks only
+  lib/                  # SHARED infra: ky client, error helpers, cn()
+  store/                # Zustand stores for UI state
+  test/                 # Test infrastructure: MSW server/browser, render helpers
 ```
 
 ### Routing
 
-React Router v7 with `createBrowserRouter`. All routes defined in
-`src/router.tsx`. Naming convention for route files: `{Domain}Page.tsx` (e.g.
-`CalendarPage.tsx`, `TasksPage.tsx`).
+React Router v7 with `createBrowserRouter`. All routes assembled in
+`src/router.tsx`. Route components live in `features/{feature}/pages/`, named
+`{Domain}Page.tsx` (e.g. `CalendarPage.tsx`, `TasksPage.tsx`).
 
 ### API Layer
 
-The `ky` HTTP client is configured in `src/api/client.ts` with:
+The shared `ky` HTTP client lives in `src/lib/apiClient.ts`, configured with:
 - `prefixUrl` set to `VITE_API_BASE_URL` environment variable
 - `beforeRequest` hook attaching `X-User-Id` header from the auth store
 
-Each domain gets its own file: `src/api/tasks.ts`, `src/api/lobbies.ts`, etc.
-Functions in these files call the backend and return typed responses.
+Each feature owns its own API surface under `features/{feature}/api/`:
+`prod.ts` (real requests via the shared client), `dev.ts` (in-memory mocks,
+same function signatures), and `index.ts` (picks one via `VITE_USE_MOCKS`).
+See `lined-web/docs/ARCHITECTURE.md` for the full pattern, including why it
+coexists with the separate MSW/`VITE_ENABLE_MSW` mocking layer used in tests.
 
-TanStack Query hooks in `src/hooks/` wrap these API functions. Hooks are the
-only place components fetch data — no direct `ky` calls in component files.
+TanStack Query hooks in each feature's `hooks/` (or shared `src/hooks/` for
+generic hooks like `useDebouncedValue`) wrap these API functions. Hooks are
+the only place components fetch data — no direct `ky` calls in component
+files.
 
 ### State Management
 
 - **Server state** (remote data): TanStack Query. Use `useQuery` for reads,
   `useMutation` for writes. Always invalidate related query keys after
-  mutations.
+  mutations. Cache keys live in each feature's `lib/constants.ts` as a
+  `QUERY_KEYS` object.
 - **UI state** (local only): Zustand. Use small, focused stores
   (e.g. `useCalendarStore` for view mode, selected date).
 - Never put server data in Zustand. Never put UI state in TanStack Query cache.
@@ -324,8 +340,10 @@ npx shadcn@latest add button
 ```
 
 Do not modify files in `src/components/ui/` directly — they are owned by
-shadcn. Create wrapper components in `src/components/` when you need
-customisation.
+shadcn. Create wrapper components in `src/components/` (if domain-agnostic)
+or the owning feature's folder (if not) when you need customisation. Shared
+components each live in their own `ComponentName/index.tsx` +
+`ComponentName/__tests__/` folder.
 
 All colours come from Tailwind CSS design tokens defined in `tailwind.config.ts`.
 Never hard-code hex values in component files.
@@ -577,7 +595,8 @@ files (gitignored).
 ### Web App
 
 11. **Calling `ky` directly in components.** All data fetching goes through
-    TanStack Query hooks in `src/hooks/`. Components only call hooks.
+    TanStack Query hooks in each feature's `hooks/` (or shared `src/hooks/`
+    for domain-agnostic hooks). Components only call hooks.
 
 12. **Putting server data in Zustand.** Zustand is for UI state only. Remote
     data lives in TanStack Query cache.

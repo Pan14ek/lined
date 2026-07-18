@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getWeekStart, getMonthStart, addDays } from '@/lib/calendarUtils';
+import { getWeekStart, getMonthStart, addDays } from '@/features/calendar/lib/calendarUtils';
 
 export type ViewMode = 'week' | 'month';
 

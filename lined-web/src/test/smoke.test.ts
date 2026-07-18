@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_USERS, MOCK_LOBBIES, MOCK_TASKS, MOCK_EVENTS } from './data';
+import { MOCK_USERS } from '@/features/users/api/mockData';
+import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
+import { MOCK_TASKS } from '@/features/tasks/api/mockData';
+import { MOCK_EVENTS } from '@/features/calendar/api/mockData';
 
 describe('Mock data', () => {
   it('has users matching mockup personas, including invitable non-members', () => {

@@ -1,13 +1,9 @@
-import { HTTPError } from 'ky';
+import { getErrorStatus } from '@/lib/apiClient';
 
-/** Maps an HTTP error's status code to a user-facing message, else `fallback`. */
-export function getApiErrorMessage(
-  error: unknown,
-  statusMessages: Partial<Record<number, string>>,
-  fallback: string,
-): string {
-  if (error instanceof HTTPError) {
-    const message = statusMessages[error.response.status];
+export const getApiErrorMessage = (error: unknown, statusMessages: Partial<Record<number, string>>, fallback: string): string => {
+  const status = getErrorStatus(error);
+  if (status !== undefined) {
+    const message = statusMessages[status];
     if (message) return message;
   }
   return fallback;
