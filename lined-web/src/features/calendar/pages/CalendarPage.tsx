@@ -235,7 +235,7 @@ export const CalendarPage = () => {
           type="button"
           onClick={openCreateModal}
           aria-label="New event"
-          className="fixed bottom-20 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-white shadow-[var(--shadow-lg)] hover:bg-brand-green-dark md:hidden"
+          className="fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-white shadow-[var(--shadow-lg)] hover:bg-brand-green-dark md:hidden"
         >
           <Plus className="h-6 w-6" />
         </button>

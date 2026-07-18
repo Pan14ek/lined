@@ -152,7 +152,7 @@ export const TaskDrawer = ({
     <>
       <Sheet open onOpenChange={(open) => !open && onClose()}>
         <SheetContent
-          className="w-full gap-0 p-0 sm:max-w-[420px] max-md:h-[85vh] max-md:rounded-t-2xl"
+          className="w-full gap-0 p-0 sm:max-w-[420px] data-[side=bottom]:h-[85vh] data-[side=bottom]:rounded-t-2xl"
           side={isPhone ? 'bottom' : 'right'}
         >
           <SheetHeader className="border-b border-border px-6 py-5">
