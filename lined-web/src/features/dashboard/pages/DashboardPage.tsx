@@ -31,9 +31,9 @@ export const DashboardPage = () => {
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Greeting top bar */}
-      <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-8">
+      <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-4 md:px-8">
         <div>
-          <h1 className="text-lg font-semibold text-text-primary">
+          <h1 className="text-base font-semibold text-text-primary md:text-lg">
             {getGreeting()}, {user?.username ?? 'there'} 👋
           </h1>
           <p className="text-xs text-text-secondary">{formatFullDate(new Date())}</p>
@@ -45,7 +45,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6 p-4 md:p-6">
         <PendingInvitesBanner />
 
         {showHero ? (
@@ -60,7 +60,7 @@ export const DashboardPage = () => {
           />
         )}
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <UpcomingEventsList
             events={events}
             lobbies={lobbies}

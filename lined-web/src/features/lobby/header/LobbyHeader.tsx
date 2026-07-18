@@ -19,7 +19,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
 
   return (
     <div className={`border-t-4 bg-white ${LOBBY_TYPE_BORDER_CLASSES[lobby.lobbyType]}`}>
-      <div className="flex items-center justify-between gap-4 p-6">
+      <div className="flex flex-col items-start gap-4 p-4 md:flex-row md:items-center md:justify-between md:p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl">
             {LOBBY_TYPE_ICONS[lobby.lobbyType]}
