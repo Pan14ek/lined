@@ -2,7 +2,7 @@ import type { TaskDto } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { taskDetailsLabel } from '@/features/tasks/lib/taskUtils';
-import { StatusBadge } from '@/features/dashboard/widgets/StatusBadge';
+import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 
 interface TaskRowProps {
@@ -71,7 +71,7 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-3">
-        <StatusBadge status={task.status} />
+        <TaskStatusBadge status={task.status} />
         <AssigneeAvatar assignee={assignee} size="sm" />
         <span
           className={`w-16 text-right text-xs ${

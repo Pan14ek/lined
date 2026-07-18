@@ -1,4 +1,5 @@
 import { CircleCheck, TriangleAlert } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AuthAlertProps {
   message: string;
@@ -15,7 +16,7 @@ export const AuthAlert = ({ message, variant = 'error' }: AuthAlertProps) => {
   return (
     <div
       role="alert"
-      className={`mt-4 flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${VARIANT_CLASSES[variant]}`}
+      className={cn('mt-4 flex items-start gap-2 rounded-lg border px-4 py-3 text-sm', VARIANT_CLASSES[variant])}
     >
       <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
       <span>{message}</span>

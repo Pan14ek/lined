@@ -14,7 +14,7 @@ dashboard/
   DashboardHero.tsx      first-run "create your first lobby" hero (zero-lobby state)
   CreateMenu.tsx          "+ Create" dropdown (event/task/lobby/reserve-slot)
   lobbies/                LobbyCard, LobbyCardGrid
-  widgets/                MyTasksList, UpcomingEventsList, FreeSlotBanner, StatusBadge
+  widgets/                MyTasksList, UpcomingEventsList, FreeSlotBanner
   hooks/useDashboard.ts    useFreeSlotBanner, useFreeSlotCandidates,
                           useNextFreeSlotHint, useLobbyFreeSlots
   pages/DashboardPage.tsx

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LobbyDto } from '@/features/lobby/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LOBBY_TYPE_BADGE_CLASSES, LOBBY_TYPE_BORDER_CLASSES, LOBBY_TYPE_ICONS, LOBBY_TYPE_LABELS } from '@/features/lobby/lib/constants';
+import { LOBBY_TYPE_BORDER_CLASSES, LOBBY_TYPE_ICONS } from '@/features/lobby/lib/constants';
+import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { AddMemberModal } from '../members/AddMemberModal';
 
@@ -49,11 +50,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
               <span className="text-xs text-text-secondary">
                 {lobby.memberIds.length} member{lobby.memberIds.length === 1 ? '' : 's'}
               </span>
-              <span
-                className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${LOBBY_TYPE_BADGE_CLASSES[lobby.lobbyType]}`}
-              >
-                {LOBBY_TYPE_LABELS[lobby.lobbyType]}
-              </span>
+              <LobbyTypeBadge type={lobby.lobbyType} />
             </div>
           </div>
         </div>

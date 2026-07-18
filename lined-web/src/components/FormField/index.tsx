@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FormFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'onChange' | 'className'> {
@@ -23,11 +24,12 @@ export const FormField = ({ id, label, value, onChange, error, ...rest }: FormFi
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`h-12 w-full rounded-lg border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:outline-none ${
+        className={cn(
+          'h-12 w-full rounded-lg border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:outline-none',
           error
             ? 'border-red-500 focus:border-red-500 dark:border-red-500/70 dark:focus:border-red-500/70'
-            : 'border-border focus:border-brand-green'
-        }`}
+            : 'border-border focus:border-brand-green',
+        )}
         {...rest}
       />
       {error && (

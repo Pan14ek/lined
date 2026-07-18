@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Users, Calendar, CheckSquare } from 'lucide-react';
 import type { LobbyDto } from '@/features/lobby/model';
-import { LOBBY_TYPE_BADGE_CLASSES, LOBBY_TYPE_COLORS, LOBBY_TYPE_LABELS } from '@/features/lobby/lib/constants';
+import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
+import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 
 interface LobbyCardProps {
   lobby: LobbyDto;
@@ -17,11 +18,7 @@ export const LobbyCard = ({ lobby, eventCount, taskCount }: LobbyCardProps) => {
     >
       <div className={`h-1.5 w-full ${LOBBY_TYPE_COLORS[lobby.lobbyType]}`} />
       <div className="flex flex-col gap-2 p-4">
-        <span
-          className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${LOBBY_TYPE_BADGE_CLASSES[lobby.lobbyType]}`}
-        >
-          {LOBBY_TYPE_LABELS[lobby.lobbyType]}
-        </span>
+        <LobbyTypeBadge type={lobby.lobbyType} />
         <p className="truncate text-sm font-semibold text-text-primary">{lobby.name}</p>
         <div className="flex items-center gap-3 text-xs text-text-secondary">
           <span className="flex items-center gap-1">

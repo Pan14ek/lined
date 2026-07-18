@@ -17,16 +17,19 @@ export const ToggleRow = ({ label, description, checked, onChange }: ToggleRowPr
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-brand-green' : 'bg-border'
-        }`}
+        className={cn(
+          'relative h-6 w-11 flex-shrink-0 rounded-full transition-colors',
+          checked ? 'bg-brand-green' : 'bg-border',
+        )}
       >
         <span
-          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-surface shadow-sm transition-[left] ${
-            checked ? 'left-[23px]' : 'left-[3px]'
-          }`}
+          className={cn(
+            'absolute top-[3px] h-[18px] w-[18px] rounded-full bg-surface shadow-sm transition-[left]',
+            checked ? 'left-[23px]' : 'left-[3px]',
+          )}
         />
       </button>
     </div>
   );
 }
+import { cn } from '@/lib/utils';
