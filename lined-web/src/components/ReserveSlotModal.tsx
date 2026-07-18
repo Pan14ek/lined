@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
 import type { EventDto, LobbyDto } from '@/types';
-import { useCreateEvent } from '@/hooks/useEvents';
+import { useCreateEvent, useConflictCheck } from '@/hooks/useEvents';
 import { useFreeSlotCandidates, type FreeSlotCandidate } from '@/hooks/useDashboard';
 import { useUsers } from '@/hooks/useUsers';
 import { useAuthStore } from '@/store/auth';
@@ -10,6 +10,7 @@ import { toDatetimeLocal, fromDatetimeLocal, formatFreeSlotRange } from '@/lib/c
 import { LOBBY_TYPE_ICONS } from '@/lib/constants';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/components/AuthAlert';
+import { ConflictBanner } from '@/components/ConflictBanner';
 import { FormField } from '@/components/FormField';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 import { ToggleRow } from '@/components/ToggleRow';
@@ -123,6 +124,12 @@ function ReserveSlotForm({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
   const [notifyMembers, setNotifyMembers] = useState(true);
 
   const lobby = lobbies.find((l) => l.id === selectedLobbyId) ?? null;
+  const { conflicts, suggestion } = useConflictCheck({
+    lobbyId: lobby?.id ?? null,
+    startAt,
+    endAt,
+    currentUserId,
+  });
   const memberQueries = useUsers(lobby?.memberIds ?? []);
   const members = memberQueries.map((q) => q.data).filter((u): u is NonNullable<typeof u> => !!u);
   const membersLoading = memberQueries.some((q) => q.isLoading);
@@ -217,6 +224,16 @@ function ReserveSlotForm({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
             />
           </div>
         </div>
+
+        <ConflictBanner
+          conflicts={conflicts}
+          currentUserId={currentUserId}
+          suggestion={suggestion}
+          onPickSuggestion={(start, end) => {
+            setStartAt(toDatetimeLocal(new Date(start)));
+            setEndAt(toDatetimeLocal(new Date(end)));
+          }}
+        />
 
         <FormField
           id="reserve-slot-location"

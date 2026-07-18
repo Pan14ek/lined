@@ -30,9 +30,10 @@ export function ConflictBanner({
   const busyEvents = conflicts.map((c) => otherEvent(c, currentUserId));
   const ownerIds = [...new Set(busyEvents.map((e) => e.ownerId))];
   const ownerQueries = useUsers(ownerIds);
-  const usernameByOwnerId = new Map(
-    ownerQueries.map((q, i) => [ownerIds[i]!, q.data?.username]).filter(([, name]) => name != null),
-  );
+  const usernameByOwnerId = new Map<number, string>();
+  ownerQueries.forEach((q, i) => {
+    if (q.data?.username) usernameByOwnerId.set(ownerIds[i]!, q.data.username);
+  });
 
   if (conflicts.length === 0) return null;
 
