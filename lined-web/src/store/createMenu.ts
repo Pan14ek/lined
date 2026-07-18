@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { LobbyType, TaskDto, TaskStatus } from '@/types';
+import type { LobbyType } from '@/features/lobby/model';
+import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 
 export type CreateOverlay = 'event' | 'task' | 'reserveSlot' | null;
 
