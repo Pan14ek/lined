@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { TaskStatus } from '@/types';
+import type { TaskDto, TaskStatus } from '@/types';
 
 export type CreateOverlay = 'event' | 'task' | 'reserveSlot' | null;
 
@@ -18,9 +18,12 @@ interface CreateMenuState {
   overlay: CreateOverlay;
   /** Preselected status for the 'task' overlay, e.g. when opened from a kanban column. */
   taskInitialStatus: TaskStatus | null;
+  /** When set, the 'task' overlay opens in edit mode, pre-filled from this task. */
+  editingTask: TaskDto | null;
   /** Preselected slot for the 'reserveSlot' overlay, e.g. from the dashboard banner or a free-band click. */
   reserveSlotInitial: ReserveSlotInitial | null;
   openOverlay: (overlay: Exclude<CreateOverlay, null>, taskInitialStatus?: TaskStatus) => void;
+  openTaskDetail: (task: TaskDto) => void;
   openReserveSlot: (initial?: ReserveSlotInitial) => void;
   closeOverlay: () => void;
 }
@@ -31,8 +34,12 @@ export const useCreateMenuStore = create<CreateMenuState>()((set) => ({
   closeCreateLobby: () => set({ isCreateLobbyOpen: false }),
   overlay: null,
   taskInitialStatus: null,
+  editingTask: null,
   reserveSlotInitial: null,
-  openOverlay: (overlay, taskInitialStatus) => set({ overlay, taskInitialStatus: taskInitialStatus ?? null }),
+  openOverlay: (overlay, taskInitialStatus) =>
+    set({ overlay, taskInitialStatus: taskInitialStatus ?? null, editingTask: null }),
+  openTaskDetail: (task) => set({ overlay: 'task', taskInitialStatus: null, editingTask: task }),
   openReserveSlot: (initial) => set({ overlay: 'reserveSlot', reserveSlotInitial: initial ?? null }),
-  closeOverlay: () => set({ overlay: null, taskInitialStatus: null, reserveSlotInitial: null }),
+  closeOverlay: () =>
+    set({ overlay: null, taskInitialStatus: null, editingTask: null, reserveSlotInitial: null }),
 }));
