@@ -1,5 +1,6 @@
 import type { TaskDto, UserDto } from '@/types';
 import { formatTaskDueDate } from '@/lib/calendarUtils';
+import { taskDetailsLabel } from '@/lib/taskUtils';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
 
@@ -9,17 +10,33 @@ interface TaskRowProps {
   onToggle: (task: TaskDto) => void;
   isUpdating: boolean;
   updateError?: string;
+  /** Opens the task-detail/edit drawer for this task. Omitted where no detail view exists yet. */
+  onOpen?: (task: TaskDto) => void;
 }
 
-export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: TaskRowProps) => {
+export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onOpen }: TaskRowProps) => {
   const isDone = task.status === 'DONE';
   const due = formatTaskDueDate(task.dueDate, task.status);
 
   return (
     <div
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? taskDetailsLabel(task.title) : undefined}
+      onClick={onOpen ? () => onOpen(task) : undefined}
+      onKeyDown={
+        onOpen
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpen(task);
+              }
+            }
+          : undefined
+      }
       className={`flex items-center gap-4 rounded-lg bg-white p-4 shadow-[var(--shadow-sm)] ${
         isDone ? 'opacity-70' : ''
-      }`}
+      } ${onOpen ? 'cursor-pointer hover:shadow-[var(--shadow-md)]' : ''}`}
     >
       <button
         type="button"
@@ -27,7 +44,10 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError }: T
         aria-checked={isDone}
         aria-label={isDone ? `Mark "${task.title}" as to do` : `Mark "${task.title}" as done`}
         disabled={isUpdating}
-        onClick={() => onToggle(task)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle(task);
+        }}
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 text-xs text-white disabled:opacity-50 ${
           isDone ? 'border-task-done bg-task-done' : 'border-border bg-white'
         }`}

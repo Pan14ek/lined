@@ -132,4 +132,53 @@ describe('TaskRow', () => {
 
     expect(screen.getByText("Couldn't update — try again")).toBeInTheDocument();
   });
+
+  it('is not clickable when onOpen is omitted', () => {
+    expect.assertions(1);
+    renderWithProviders(
+      <TaskRow task={baseTask} assignee={assignee} onToggle={vi.fn()} isUpdating={false} />,
+    );
+
+    expect(screen.queryByRole('button', { name: /view details/i })).not.toBeInTheDocument();
+  });
+
+  it('calls onOpen with the task when the row is clicked', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    renderWithProviders(
+      <TaskRow
+        task={baseTask}
+        assignee={assignee}
+        onToggle={vi.fn()}
+        isUpdating={false}
+        onOpen={onOpen}
+      />,
+    );
+
+    await user.click(screen.getByText(baseTask.title));
+
+    expect(onOpen).toHaveBeenCalledWith(baseTask);
+  });
+
+  it('does not call onOpen when the checkbox is clicked', async () => {
+    expect.assertions(2);
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const onToggle = vi.fn();
+    renderWithProviders(
+      <TaskRow
+        task={baseTask}
+        assignee={assignee}
+        onToggle={onToggle}
+        isUpdating={false}
+        onOpen={onOpen}
+      />,
+    );
+
+    await user.click(screen.getByRole('checkbox'));
+
+    expect(onToggle).toHaveBeenCalledWith(baseTask);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
 });

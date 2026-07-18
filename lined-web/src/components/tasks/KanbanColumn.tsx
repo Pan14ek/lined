@@ -13,6 +13,7 @@ export interface KanbanMoveState {
 export interface KanbanActions {
   onMove: (task: TaskDto, direction: 'prev' | 'next') => void;
   onDelete: (task: TaskDto) => void;
+  onOpen: (task: TaskDto) => void;
   onQuickAdd: (status: TaskStatus) => void;
   onDropTask: (taskId: number, status: TaskStatus) => void;
 }
@@ -32,7 +33,7 @@ interface KanbanCardListProps {
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
   moveState: KanbanMoveState;
-  actions: Pick<KanbanActions, 'onMove' | 'onDelete'>;
+  actions: Pick<KanbanActions, 'onMove' | 'onDelete' | 'onOpen'>;
 }
 
 /** The column's card stack, or an empty-state message when it has no tasks. */
@@ -60,6 +61,7 @@ const KanbanCardList = ({
           moveError={moveState.moveErrors[task.id]}
           onMove={actions.onMove}
           onDelete={actions.onDelete}
+          onOpen={actions.onOpen}
         />
       ))}
     </>

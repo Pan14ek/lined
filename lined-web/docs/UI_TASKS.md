@@ -85,6 +85,21 @@ screen.
   and cannot be verified against the real API until that gap ships.
   `SignInPage`'s "Forgot password?" text is now a real `<Link>`.
 
+- **Task Detail & Edit drawer** — `TaskDrawer` (renamed/refactored from
+  `AddTaskDrawer` into a mode-driven `create`/`edit` component, mirroring
+  `CreateEventModal`): clicking a `KanbanCard` or `TaskRow` (outside their
+  checkbox/move/delete hit-targets) opens the drawer pre-filled via a new
+  `useCreateMenuStore.openTaskDetail(task)` action; edit mode adds a
+  read-only "Created {date} by {creator} · {lobby}" meta line and a new
+  Priority select (High/Medium/Low, also added to create mode); Save
+  `PATCH /api/tasks/{id}` sends only changed fields; Delete opens the
+  shared `ConfirmDialog` (rendered via a `createPortal` so it isn't
+  clipped by the drawer's own `Sheet` portal) and calls `DELETE
+  /api/tasks/{id}`. `useUpdateTask` was generalized to a lobby-agnostic,
+  fully optimistic mutation (extracted cache helpers shared with
+  `useUpdateTaskStatus`) so both the drawer and the existing row-checkbox
+  toggle get rollback-on-error for free.
+
 All 18 tasks of the original plan are DONE. A gap analysis against the
 mockups and the live app (July 2026) found the remaining holes now tracked
 as tasks 19–23: the conflict-check endpoints are wired in `src/api/events.ts`
@@ -138,7 +153,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 17 | `feature/ui-17-lobby-invites-inbox` | Invitee-side invites: pending invites list, accept/decline flows | [tasks/UI-17-lobby-invites-inbox.md](tasks/UI-17-lobby-invites-inbox.md) | DONE |
 | 18 | `feature/ui-18-forgot-password` | Forgot password flow: request form, token redemption, new-password form | [tasks/UI-18-forgot-password.md](tasks/UI-18-forgot-password.md) | DONE |
 | 19 | `feature/ui-19-event-conflict-warnings` | Conflict warnings in event/reserve modals via the unused `GET /api/calendar/conflicts`, with next-free-slot suggestion | [tasks/UI-19-event-conflict-warnings.md](tasks/UI-19-event-conflict-warnings.md) | TODO |
-| 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | TODO |
+| 20 | `feature/ui-20-task-detail-edit` | Task detail/edit drawer (open from kanban card & task row, edit all fields incl. priority, delete) | [tasks/UI-20-task-detail-edit.md](tasks/UI-20-task-detail-edit.md) | DONE |
 | 21 | `feature/ui-21-onboarding-empty-states` | First-run dashboard hero ("create your first lobby") + designed empty states everywhere | [tasks/UI-21-onboarding-empty-states.md](tasks/UI-21-onboarding-empty-states.md) | TODO |
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | TODO |
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | TODO |

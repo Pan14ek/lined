@@ -3,6 +3,9 @@ import { addDays, getWeekStart, toLocalDateString } from './calendarUtils';
 
 export const STATUS_ORDER: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 
+/** Accessible name for the click-to-open-details affordance on a task row/card. */
+export const taskDetailsLabel = (title: string): string => `View details for "${title}"`;
+
 /** Adjacent status in `STATUS_ORDER`, or `undefined` at either end. */
 export const getAdjacentStatus = (
   status: TaskStatus,

@@ -5,7 +5,7 @@ interface ToggleRowProps {
   onChange: (checked: boolean) => void;
 }
 
-/** Labelled on/off switch row, shared by CreateEventModal, AddTaskDrawer, ReserveSlotModal. */
+/** Labelled on/off switch row, shared by CreateEventModal, TaskDrawer, ReserveSlotModal. */
 export function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
   return (
     <div className="flex items-center justify-between border-b border-border py-3.5">

@@ -26,6 +26,7 @@ interface TaskListContentProps {
   updatingTaskId: number | null;
   rowErrors: Record<number, string>;
   onToggle: (task: TaskDto) => void;
+  onOpen: (task: TaskDto) => void;
 }
 
 const TaskListContent = ({
@@ -37,6 +38,7 @@ const TaskListContent = ({
   updatingTaskId,
   rowErrors,
   onToggle,
+  onOpen,
 }: TaskListContentProps) => {
   if (isLoading) {
     return (
@@ -70,6 +72,7 @@ const TaskListContent = ({
           task={task}
           assignee={task.assigneeId != null ? assigneesById.get(task.assigneeId) : undefined}
           onToggle={onToggle}
+          onOpen={onOpen}
           isUpdating={updatingTaskId === task.id}
           updateError={rowErrors[task.id]}
         />
@@ -84,8 +87,9 @@ interface LobbyTaskListProps {
 
 export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   const { data: tasks, isLoading, isError } = useLobbyTasks(lobbyId);
-  const updateTask = useUpdateTask(lobbyId);
+  const updateTask = useUpdateTask();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
+  const openTaskDetail = useCreateMenuStore((s) => s.openTaskDetail);
   const [filter, setFilter] = useState<FilterId>('ALL');
   const { busyId: updatingTaskId, errors: rowErrors, start, finish, setError } = useRowMutationState();
 
@@ -147,6 +151,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
         updatingTaskId={updatingTaskId}
         rowErrors={rowErrors}
         onToggle={handleToggle}
+        onOpen={openTaskDetail}
       />
 
       <button

@@ -75,6 +75,7 @@ export const KanbanBoard = () => {
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { data: lobbies = [] } = useMyLobbies();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
+  const openTaskDetail = useCreateMenuStore((s) => s.openTaskDetail);
 
   const memberIds = Array.from(new Set(lobbies.flatMap((lobby) => lobby.memberIds)));
   const memberQueries = useUsers(memberIds);
@@ -177,6 +178,7 @@ export const KanbanBoard = () => {
         actions={{
           onMove: handleMove,
           onDelete: handleDelete,
+          onOpen: openTaskDetail,
           onQuickAdd: handleQuickAdd,
           onDropTask: handleDropTask,
         }}
