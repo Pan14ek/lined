@@ -1,5 +1,6 @@
 package io.backend.lined.plan.service;
 
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.plan.api.PlanCreateDto;
 import io.backend.lined.plan.api.PlanDto;
@@ -50,21 +51,40 @@ public class PlanServiceImpl implements PlanService {
 
   @Override
   @Transactional
-  public PlanDto update(Long id, PlanUpdateDto dto) {
+  public PlanDto update(Long id, PlanUpdateDto dto, long expectedVersion) {
     PlanEntity entity = repository.findById(id)
         .orElseThrow(() -> new NotFoundException("Plan with id " + id + " not found"));
+    verifyVersion(entity.getVersion(), expectedVersion);
 
     mapper.updateEntityFromDto(dto, entity);
-    PlanEntity saved = repository.save(entity);
-    return mapper.toDto(saved);
+    if (expectedVersion >= 0) {
+      repository.saveAndFlush(entity);
+    } else {
+      repository.save(entity);
+    }
+    return mapper.toDto(entity);
   }
 
   @Override
   @Transactional
-  public void delete(Long id) {
-    if (!repository.existsById(id)) {
-      throw new NotFoundException("Plan with id " + id + " not found");
+  public void delete(Long id, long expectedVersion) {
+    if (expectedVersion < 0) {
+      if (!repository.existsById(id)) {
+        throw new NotFoundException("Plan with id " + id + " not found");
+      }
+      repository.deleteById(id);
+      return;
     }
-    repository.deleteById(id);
+    PlanEntity entity = repository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Plan with id " + id + " not found"));
+    verifyVersion(entity.getVersion(), expectedVersion);
+    repository.delete(entity);
+    repository.flush();
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
+    }
   }
 }

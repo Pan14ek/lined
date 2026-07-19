@@ -96,6 +96,11 @@ Response: `200 OK` with `UserDto`.
 
 Partially update a user.
 
+All mutable Event, Task, Lobby, User, Plan, and notification-preference endpoints require
+`If-Match: "{version}"`, using the `version` in the last representation (or its `ETag`
+header). Missing preconditions return `428 Precondition Required`; malformed preconditions
+return `400 Bad Request`; stale writes return an RFC 7807 `409 Conflict`.
+
 ```json
 {
   "email": "new.mail@example.com",
@@ -189,6 +194,9 @@ Partially update lobby name, type, or owner. Owner-only.
 
 Response: `200 OK` with `LobbyDto`.
 
+The response includes the next `version` and ETag. The same `If-Match` requirement applies to
+member removal and lobby deletion.
+
 ### `DELETE /api/lobbies/{id}/members/{userId}`
 
 Remove a member from a lobby. Owner-only. The owner cannot remove themself
@@ -268,6 +276,9 @@ Response: `200 OK` with `TaskDto`.
 
 Partially update a task.
 
+Send the current task version as `If-Match: "{version}"`; the successful response contains the
+new version and ETag.
+
 ```json
 {
   "status": "IN_PROGRESS",
@@ -325,6 +336,8 @@ Response: `200 OK` with `EventDto`.
 ### `PATCH /api/calendar/events/{id}`
 
 Partially update an event. Blank `location` clears the stored location.
+
+Send the current event version as `If-Match: "{version}"`; deletion requires the same header.
 
 Response: `200 OK` with `EventDto`.
 
@@ -430,6 +443,8 @@ Response: `201 Created` with `PlanDto`.
 
 Update a plan.
 
+Send the current plan version as `If-Match: "{version}"`; plan deletion requires the same header.
+
 Response: `200 OK` with `PlanDto`.
 
 ### `DELETE /api/plans/{id}`
@@ -495,6 +510,10 @@ Subscription responses use this shape:
 ### `PATCH /api/notifications/preferences`
 
 Read or partially update global notification preferences.
+
+The first preferences GET creates the caller's default preference resource and returns its
+version/ETag. Subsequent PATCH requests require that ETag in `If-Match`; per-lobby preferences
+follow the same contract.
 
 ```json
 {

@@ -1,6 +1,7 @@
 package io.backend.lined.task.api;
 
 import io.backend.lined.task.service.TaskService;
+import io.backend.lined.common.VersionPrecondition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Tasks", description = "Shared tasks management")
 @RestController
@@ -31,7 +33,7 @@ public class TaskController {
 
   @Operation(summary = "Create task", description = "Creates a task in a lobby; creator is the requester.")
   @PostMapping
-  public TaskDto create(
+  public ResponseEntity<TaskDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -42,15 +44,17 @@ public class TaskController {
                     { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "notifyAssignee":true }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
-    return service.create(dto, currentUserId);
+    TaskDto created = service.create(dto, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
   @Operation(summary = "Update task", description = "Partial update (status, assignee, title, dueDate, description, priority).")
   @PatchMapping("/{id}")
-  public TaskDto update(
+  public ResponseEntity<TaskDto> update(
       @Parameter(description = "Task ID", example = "555") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           content = @Content(schema = @Schema(implementation = TaskUpdateDto.class),
@@ -58,6 +62,12 @@ public class TaskController {
                     { "status":"IN_PROGRESS", "assigneeId":77, "dueDate":"2025-11-25", "description":"Pick up milk and bread", "priority":"HIGH" }
                   """)))
       @Valid @RequestBody TaskUpdateDto dto) {
+    TaskDto updated = service.update(id, dto, currentUserId, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public TaskDto update(Long id, Long currentUserId, TaskUpdateDto dto) {
     return service.update(id, dto, currentUserId);
   }
 
@@ -83,7 +93,13 @@ public class TaskController {
   public void delete(
       @Parameter(description = "Task ID", example = "555") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
+      @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+    service.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
+  }
+
+  @Deprecated
+  public void delete(Long id, Long currentUserId) {
     service.delete(id, currentUserId);
   }
 

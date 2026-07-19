@@ -25,12 +25,14 @@ public interface UserMapper {
   UserDto toDto(UserEntity entity);
 
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "version", ignore = true)
   @Mapping(target = "createdAt", expression = "java(java.time.OffsetDateTime.now())")
   @Mapping(target = "roles", ignore = true)
   @Mapping(target = "subscriptions", ignore = true)
   UserEntity toEntity(UserCreateDto dto);
 
   @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "version", ignore = true)
   @Mapping(target = "username", expression = "java(dto.username() != null ? dto.username() : entity.getUsername())")
   @Mapping(target = "email", expression = "java(dto.email() != null ? dto.email() : entity.getEmail())")
   @Mapping(target = "password", expression = "java(dto.password() != null ? dto.password() : entity.getPassword())")

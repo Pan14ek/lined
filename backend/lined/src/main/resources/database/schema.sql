@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users
     username   VARCHAR(64)  NOT NULL,
     email      VARCHAR(255) NOT NULL,
     password   VARCHAR(255) NOT NULL,
+    version    BIGINT       NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS plans
     price_usd     NUMERIC(10, 2) NOT NULL DEFAULT 0,
     duration_days INT            NOT NULL DEFAULT 30,
     created_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    version       BIGINT         NOT NULL DEFAULT 0,
     CHECK (price_usd >= 0),
     CHECK (duration_days >= 0)                    -- 0 for FREE, otherwise 30
 );
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS lobbies
     name       VARCHAR(64) NOT NULL,
     lobby_type VARCHAR(16) NOT NULL CHECK (lobby_type IN ('COUPLE', 'FAMILY', 'FRIENDS', 'WORK')),
     owner_id   BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE
+    ,version   BIGINT      NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS lobby_members
@@ -124,6 +127,7 @@ CREATE TABLE IF NOT EXISTS tasks
     assignee_id BIGINT       REFERENCES users (id) ON DELETE SET NULL,
     due_date    DATE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    ,version    BIGINT       NOT NULL DEFAULT 0
 );
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
@@ -145,6 +149,7 @@ CREATE TABLE IF NOT EXISTS events
     lobby_id   BIGINT       NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
     owner_id   BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    ,version   BIGINT       NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
@@ -159,6 +164,7 @@ CREATE TABLE IF NOT EXISTS user_notification_preferences
     free_slots_enabled      BOOLEAN NOT NULL DEFAULT TRUE,
     event_reminders_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     email_digests_enabled   BOOLEAN NOT NULL DEFAULT TRUE
+    ,version                BIGINT  NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS lobby_notification_preferences
@@ -169,6 +175,7 @@ CREATE TABLE IF NOT EXISTS lobby_notification_preferences
     new_events_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
     task_updates_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     free_slots_enabled   BOOLEAN NOT NULL DEFAULT TRUE,
+    version              BIGINT  NOT NULL DEFAULT 0,
     UNIQUE (user_id, lobby_id)
 );
 
@@ -198,6 +205,14 @@ CREATE TABLE IF NOT EXISTS notification_deliveries
 
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
     ON notifications (recipient_id, created_at DESC);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE lobbies ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE user_notification_preferences ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE lobby_notification_preferences ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens
 (

@@ -8,6 +8,9 @@ public record PlanDto(
     @Schema(example = "1")
     long id,
 
+    @Schema(example = "0", description = "Optimistic-lock version")
+    long version,
+
     @Schema(example = "PRO_MONTHLY")
     String name,
 
@@ -20,4 +23,8 @@ public record PlanDto(
     @Schema(example = "2025-01-01T10:15:30Z")
     OffsetDateTime createdAt
 ) {
+  public PlanDto(long id, String name, BigDecimal priceUsd, int durationDays,
+                 OffsetDateTime createdAt) {
+    this(id, 0L, name, priceUsd, durationDays, createdAt);
+  }
 }

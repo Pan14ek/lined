@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventCreateDto;
@@ -104,7 +105,7 @@ class EventServiceImplTest {
         .build();
 
     eventDto = new EventDto(
-        9001L, "Dinner together", "Whole Foods Market", true,
+        9001L, 0L, "Dinner together", "Whole Foods Market", true,
         startAt, endAt, "Europe/Kyiv",
         101L, 1L, now
     );
@@ -326,6 +327,19 @@ class EventServiceImplTest {
     eventService.update(9001L, dto, 1L);
 
     assertThat(eventEntity.getLocation()).isNull();
+  }
+
+  @Test
+  void update_rejectsStaleVersion_withoutOverwritingEvent() {
+    EventUpdateDto dto = new EventUpdateDto("Stale title", null, null, null, null, null);
+    eventEntity.setVersion(3L);
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+
+    assertThatThrownBy(() -> eventService.update(9001L, dto, 1L, 2L))
+        .isInstanceOf(ConflictException.class);
+
+    assertThat(eventEntity.getTitle()).isEqualTo("Dinner together");
+    verify(repo, never()).saveAndFlush(any());
   }
 
   @Test

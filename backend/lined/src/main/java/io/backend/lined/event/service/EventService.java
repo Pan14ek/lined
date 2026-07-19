@@ -43,7 +43,12 @@ public interface EventService {
    * @throws ForbiddenException  if the user is not a lobby member
    * @throws NotFoundException   if the event is not found
    */
-  EventDto update(Long id, EventUpdateDto dto, Long currentUserId);
+  EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion);
+
+  @Deprecated
+  default EventDto update(Long id, EventUpdateDto dto, Long currentUserId) {
+    return update(id, dto, currentUserId, -1L);
+  }
 
   /**
    * Deletes an event by its unique identifier.
@@ -53,7 +58,12 @@ public interface EventService {
    * @throws ForbiddenException if the user is not a lobby member
    * @throws NotFoundException  if the event is not found
    */
-  void delete(Long id, Long currentUserId);
+  void delete(Long id, Long currentUserId, long expectedVersion);
+
+  @Deprecated
+  default void delete(Long id, Long currentUserId) {
+    delete(id, currentUserId, -1L);
+  }
 
   /**
    * Lists all events in a lobby within a given time window.

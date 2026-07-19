@@ -51,7 +51,7 @@ class UserControllerTest {
     var dto = new UserCreateDto("alice", "alice@example.com", "P@ss1!", null);
     when(accountService.registerUser(dto)).thenReturn(sampleUser);
 
-    UserDto result = controller.create(dto);
+    UserDto result = controller.create(dto).getBody();
 
     assertThat(result).isEqualTo(sampleUser);
     verify(accountService).registerUser(dto);
@@ -72,7 +72,7 @@ class UserControllerTest {
   void get_delegatesToUserService() {
     when(userService.getById(1L)).thenReturn(sampleUser);
 
-    UserDto result = controller.get(1L);
+    UserDto result = controller.get(1L).getBody();
 
     assertThat(result).isEqualTo(sampleUser);
     verify(userService).getById(1L);
@@ -97,10 +97,10 @@ class UserControllerTest {
 
   @Test
   void delete_acceptsCurrentUserHeader() throws Exception {
-    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "1"))
+    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "1").header("If-Match", "\"0\""))
         .andExpect(status().isNoContent());
 
-    verify(userService).delete(1L, 1L);
+    verify(userService).delete(1L, 1L, 0L);
   }
 
   @Test
@@ -114,9 +114,9 @@ class UserControllerTest {
   @Test
   void delete_mapsForbiddenServiceResult() throws Exception {
     org.mockito.Mockito.doThrow(new ForbiddenException("Users can only delete their own account"))
-        .when(userService).delete(1L, 2L);
+        .when(userService).delete(1L, 2L, 0L);
 
-    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "2"))
+    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "2").header("If-Match", "\"0\""))
         .andExpect(status().isForbidden());
   }
 

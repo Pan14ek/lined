@@ -13,11 +13,13 @@ public interface PlanMapper {
   PlanDto toDto(PlanEntity plan);
 
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "version", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "subscriptions", ignore = true)
   PlanEntity toEntity(PlanCreateDto dto);
 
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "version", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "subscriptions", ignore = true)
   void updateEntityFromDto(PlanUpdateDto dto, @MappingTarget PlanEntity entity);

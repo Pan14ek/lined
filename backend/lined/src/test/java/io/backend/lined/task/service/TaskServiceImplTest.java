@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
@@ -86,7 +87,7 @@ class TaskServiceImplTest {
         .creator(owner)
         .build();
 
-    taskDto = new TaskDto(555L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
+    taskDto = new TaskDto(555L, 0L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
         TaskStatus.TODO, 101L, 1L, null, null, null);
   }
 
@@ -256,6 +257,19 @@ class TaskServiceImplTest {
     taskService.update(555L, dto, 1L);
 
     assertThat(taskEntity.getDescription()).isNull();
+  }
+
+  @Test
+  void update_rejectsStaleVersion_withoutMutatingTask() {
+    TaskUpdateDto dto = new TaskUpdateDto(TaskStatus.DONE, null, null, null, null, null);
+    taskEntity.setVersion(2L);
+    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+
+    assertThatThrownBy(() -> taskService.update(555L, dto, 1L, 1L))
+        .isInstanceOf(ConflictException.class);
+
+    assertThat(taskEntity.getStatus()).isEqualTo(TaskStatus.TODO);
+    verify(repo, never()).saveAndFlush(any());
   }
 
   @Test

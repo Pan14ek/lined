@@ -1,6 +1,8 @@
 package io.backend.lined.notification.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.VersionPrecondition;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
@@ -47,37 +49,45 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public NotificationPreferencesDto getPreferences(Long currentUserId) {
     mustUser(currentUserId);
-    return mapper.toDto(globalPreferences(currentUserId));
+    return mapper.toDto(ensureGlobalPreferences(currentUserId));
   }
 
   @Override
   public NotificationPreferencesDto updatePreferences(
-      Long currentUserId, NotificationPreferencesUpdateDto dto) {
+      Long currentUserId, NotificationPreferencesUpdateDto dto, long expectedVersion) {
     var preferences = userPreferenceRepo.findByUserId(currentUserId)
-        .orElseGet(() -> UserNotificationPreferenceEntity.builder()
-            .user(mustUser(currentUserId))
-            .build());
+        .orElseThrow(() -> new ConflictException("Fetch notification preferences before updating"));
+    verifyVersion(preferences.getVersion(), expectedVersion);
     applyGlobalUpdates(preferences, dto);
-    return mapper.toDto(userPreferenceRepo.save(preferences));
+    if (expectedVersion >= 0) {
+      userPreferenceRepo.saveAndFlush(preferences);
+    } else {
+      userPreferenceRepo.save(preferences);
+    }
+    return mapper.toDto(preferences);
   }
 
   @Override
   public LobbyNotificationPreferencesDto getLobbyPreferences(Long lobbyId, Long currentUserId) {
     var lobby = accessibleLobby(lobbyId, currentUserId);
-    return mapper.toDto(lobbyPreferences(currentUserId, lobby));
+    return mapper.toDto(ensureLobbyPreferences(currentUserId, lobby));
   }
 
   @Override
   public LobbyNotificationPreferencesDto updateLobbyPreferences(
-      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto) {
+      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto,
+      long expectedVersion) {
     var lobby = accessibleLobby(lobbyId, currentUserId);
     var preferences = lobbyPreferenceRepo.findByUserIdAndLobbyId(currentUserId, lobbyId)
-        .orElseGet(() -> LobbyNotificationPreferenceEntity.builder()
-            .user(mustUser(currentUserId))
-            .lobby(lobby)
-            .build());
+        .orElseThrow(() -> new ConflictException("Fetch lobby notification preferences before updating"));
+    verifyVersion(preferences.getVersion(), expectedVersion);
     applyLobbyUpdates(preferences, dto);
-    return mapper.toDto(lobbyPreferenceRepo.save(preferences));
+    if (expectedVersion >= 0) {
+      lobbyPreferenceRepo.saveAndFlush(preferences);
+    } else {
+      lobbyPreferenceRepo.save(preferences);
+    }
+    return mapper.toDto(preferences);
   }
 
   @Override
@@ -174,9 +184,24 @@ public class NotificationServiceImpl implements NotificationService {
         .orElseGet(() -> UserNotificationPreferenceEntity.builder().build());
   }
 
+  private UserNotificationPreferenceEntity ensureGlobalPreferences(Long userId) {
+    return userPreferenceRepo.findByUserId(userId)
+        .orElseGet(() -> userPreferenceRepo.saveAndFlush(UserNotificationPreferenceEntity.builder()
+            .user(mustUser(userId))
+            .build()));
+  }
+
   private LobbyNotificationPreferenceEntity lobbyPreferences(Long userId, LobbyEntity lobby) {
     return lobbyPreferenceRepo.findByUserIdAndLobbyId(userId, lobby.getId())
         .orElseGet(() -> LobbyNotificationPreferenceEntity.builder().lobby(lobby).build());
+  }
+
+  private LobbyNotificationPreferenceEntity ensureLobbyPreferences(Long userId, LobbyEntity lobby) {
+    return lobbyPreferenceRepo.findByUserIdAndLobbyId(userId, lobby.getId())
+        .orElseGet(() -> lobbyPreferenceRepo.saveAndFlush(LobbyNotificationPreferenceEntity.builder()
+            .user(mustUser(userId))
+            .lobby(lobby)
+            .build()));
   }
 
   private LobbyEntity accessibleLobby(Long lobbyId, Long currentUserId) {
@@ -212,6 +237,12 @@ public class NotificationServiceImpl implements NotificationService {
     }
     if (dto.emailDigestsEnabled() != null) {
       entity.setEmailDigestsEnabled(dto.emailDigestsEnabled());
+    }
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
     }
   }
 

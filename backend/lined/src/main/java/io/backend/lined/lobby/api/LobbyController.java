@@ -1,6 +1,7 @@
 package io.backend.lined.lobby.api;
 
 import io.backend.lined.event.api.FreeSlotDto;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.service.LobbyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Lobbies", description = "Manage lobbies (groups)")
 @RestController
@@ -39,7 +41,7 @@ public class LobbyController {
       description = "Creates a lobby; the requester becomes the owner and is added as a member."
   )
   @PostMapping
-  public LobbyDto create(
+  public ResponseEntity<LobbyDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -50,7 +52,8 @@ public class LobbyController {
                       { "name": "Our Family", "lobbyType": "FAMILY" }
                   """)))
       @Valid @RequestBody LobbyCreateDto dto) {
-    return lobbyService.create(dto, currentUserId);
+    LobbyDto created = lobbyService.create(dto, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
   @Operation(summary = "My lobbies", description = "Returns lobbies where current user is a member.")
@@ -63,9 +66,10 @@ public class LobbyController {
 
   @Operation(summary = "Lobby details", description = "Get lobby by ID.")
   @GetMapping("/{id}")
-  public LobbyDto get(
+  public ResponseEntity<LobbyDto> get(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id) {
-    return lobbyService.getById(id);
+    LobbyDto lobby = lobbyService.getById(id);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(lobby.version())).body(lobby);
   }
 
   @Operation(
@@ -89,10 +93,11 @@ public class LobbyController {
       description = "Partially update lobby name, type, or owner (owner only)."
   )
   @PatchMapping("/{id}")
-  public LobbyDto update(
+  public ResponseEntity<LobbyDto> update(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           description = "Fields to update; ownership may transfer only to an existing member",
@@ -101,16 +106,35 @@ public class LobbyController {
                     { "name": "Weekend Crew", "lobbyType": "FRIENDS", "ownerId": 77 }
                   """)))
       @Valid @RequestBody LobbyUpdateDto dto) {
+    LobbyDto updated = lobbyService.update(id, dto, currentUserId, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public LobbyDto update(Long id, LobbyUpdateDto dto, Long currentUserId) {
+    return lobbyService.update(id, dto, currentUserId);
+  }
+
+  @Deprecated
+  public LobbyDto update(Long id, Long currentUserId, LobbyUpdateDto dto) {
     return lobbyService.update(id, dto, currentUserId);
   }
 
   @Operation(summary = "Remove member", description = "Remove user from lobby (owner only). Owner cannot be removed.")
   @DeleteMapping("/{id}/members/{userId}")
-  public LobbyDto removeMember(
+  public ResponseEntity<LobbyDto> removeMember(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "User ID to remove", example = "77") @PathVariable Long userId,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
+      @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+    LobbyDto updated = lobbyService.removeMember(
+        id, userId, currentUserId, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public LobbyDto removeMember(Long id, Long userId, Long currentUserId) {
     return lobbyService.removeMember(id, userId, currentUserId);
   }
 
@@ -119,7 +143,13 @@ public class LobbyController {
   public void delete(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
+      @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+    lobbyService.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
+  }
+
+  @Deprecated
+  public void delete(Long id, Long currentUserId) {
     lobbyService.delete(id, currentUserId);
   }
 

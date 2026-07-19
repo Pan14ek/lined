@@ -1,6 +1,7 @@
 package io.backend.lined.user.api;
 
 import io.backend.lined.app.AccountApplicationService;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +36,7 @@ public class UserController {
       description = "Creates a new user with unique username & email."
   )
   @PostMapping
-  public UserDto create(
+  public ResponseEntity<UserDto> create(
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           description = "User payload",
@@ -50,7 +51,8 @@ public class UserController {
           )
       )
       @Valid @RequestBody UserCreateDto dto) {
-    return accountApplicationService.registerUser(dto);
+    UserDto created = accountApplicationService.registerUser(dto);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
   @Operation(
@@ -58,9 +60,11 @@ public class UserController {
       description = "Partial update of an existing user by ID."
   )
   @PatchMapping("/{id}")
-  public UserDto update(
+  public ResponseEntity<UserDto> update(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id,
+      @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false)
+      String ifMatch,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           description = "Fields to update",
@@ -74,6 +78,12 @@ public class UserController {
           )
       )
       @Valid @RequestBody UserUpdateDto dto) {
+    UserDto updated = userService.update(id, dto, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public UserDto update(Long id, UserUpdateDto dto) {
     return userService.update(id, dto);
   }
 
@@ -82,10 +92,11 @@ public class UserController {
       description = "Returns a user by ID."
   )
   @GetMapping("/{id}")
-  public UserDto get(
+  public ResponseEntity<UserDto> get(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id) {
-    return userService.getById(id);
+    UserDto user = userService.getById(id);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
   }
 
   @Operation(
@@ -96,7 +107,15 @@ public class UserController {
   public ResponseEntity<Void> delete(
       @Parameter(description = "User ID", example = "1") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "1")
-      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId) {
+      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId,
+      @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false)
+      String ifMatch) {
+    userService.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.noContent().build();
+  }
+
+  @Deprecated
+  public ResponseEntity<Void> delete(Long id, Long currentUserId) {
     userService.delete(id, currentUserId);
     return ResponseEntity.noContent().build();
   }

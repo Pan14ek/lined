@@ -40,7 +40,12 @@ public interface UserService {
    * @throws NotFoundException if no user exists with the given ID
    * @throws ConflictException if the new username or email is already taken
    */
-  UserDto update(Long id, UserUpdateDto dto);
+  UserDto update(Long id, UserUpdateDto dto, long expectedVersion);
+
+  @Deprecated
+  default UserDto update(Long id, UserUpdateDto dto) {
+    return update(id, dto, -1L);
+  }
 
   /**
    * Deletes the requesting user's account when they do not own a lobby.
@@ -51,7 +56,12 @@ public interface UserService {
    * @throws ConflictException if the account owns one or more lobbies
    * @throws NotFoundException if no user exists with the given ID
    */
-  void delete(Long id, Long currentUserId);
+  void delete(Long id, Long currentUserId, long expectedVersion);
+
+  @Deprecated
+  default void delete(Long id, Long currentUserId) {
+    delete(id, currentUserId, -1L);
+  }
 
   /**
    * Changes the password for a user.

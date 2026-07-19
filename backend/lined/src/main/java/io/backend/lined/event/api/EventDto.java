@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 @Schema(name = "EventDto")
 public record EventDto(
     @Schema(example = "9001") Long id,
+    @Schema(example = "0", description = "Optimistic-lock version") long version,
     @Schema(example = "Dinner together") String title,
     @Schema(example = "Whole Foods Market") String location,
     @Schema(example = "true") boolean shared,

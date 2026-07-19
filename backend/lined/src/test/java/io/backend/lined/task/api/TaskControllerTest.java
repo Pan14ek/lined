@@ -32,7 +32,7 @@ class TaskControllerTest {
   @BeforeEach
   void setUp() {
     controller = new TaskController(taskService);
-    sampleTask = new TaskDto(555L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
+    sampleTask = new TaskDto(555L, 0L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
         TaskStatus.TODO, 101L, 42L, 77L, null, OffsetDateTime.now());
   }
 
@@ -42,7 +42,7 @@ class TaskControllerTest {
         "Pick up milk", TaskPriority.HIGH, TaskStatus.IN_PROGRESS);
     when(taskService.create(dto, 42L)).thenReturn(sampleTask);
 
-    TaskDto result = controller.create(42L, dto);
+    TaskDto result = controller.create(42L, dto).getBody();
 
     assertThat(result).isEqualTo(sampleTask);
     verify(taskService).create(dto, 42L);

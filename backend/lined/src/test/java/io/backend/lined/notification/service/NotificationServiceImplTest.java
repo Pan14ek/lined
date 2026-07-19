@@ -155,16 +155,18 @@ class NotificationServiceImplTest {
   }
 
   @Test
-  void getPreferences_returnsEnabledDefaults_withoutPersisting() {
+  void getPreferences_persistsDefaultsBeforeReturningVersion() {
     when(userRepo.findById(recipient.getId())).thenReturn(Optional.of(recipient));
     when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.empty());
+    when(userPreferenceRepo.saveAndFlush(any(UserNotificationPreferenceEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     var expected = new NotificationPreferencesDto(true, true, true, true, true);
     when(mapper.toDto(any(UserNotificationPreferenceEntity.class))).thenReturn(expected);
 
     NotificationPreferencesDto result = notificationService.getPreferences(recipient.getId());
 
     assertThat(result).isEqualTo(expected);
-    verify(userPreferenceRepo, never()).save(any());
+    verify(userPreferenceRepo).saveAndFlush(any(UserNotificationPreferenceEntity.class));
   }
 
   @Test
@@ -187,10 +189,13 @@ class NotificationServiceImplTest {
   }
 
   @Test
-  void getLobbyPreferences_returnsDefaultsForMember() {
+  void getLobbyPreferences_persistsDefaultsBeforeReturningVersion() {
     when(lobbyRepo.findById(lobby.getId())).thenReturn(Optional.of(lobby));
     when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
         .thenReturn(Optional.empty());
+    when(userRepo.findById(recipient.getId())).thenReturn(Optional.of(recipient));
+    when(lobbyPreferenceRepo.saveAndFlush(any(LobbyNotificationPreferenceEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     var expected = new LobbyNotificationPreferencesDto(101L, true, true, true);
     when(mapper.toDto(any(LobbyNotificationPreferenceEntity.class))).thenReturn(expected);
 
@@ -198,7 +203,7 @@ class NotificationServiceImplTest {
         lobby.getId(), recipient.getId());
 
     assertThat(result).isEqualTo(expected);
-    verify(lobbyPreferenceRepo, never()).save(any());
+    verify(lobbyPreferenceRepo).saveAndFlush(any(LobbyNotificationPreferenceEntity.class));
   }
 
   @Test

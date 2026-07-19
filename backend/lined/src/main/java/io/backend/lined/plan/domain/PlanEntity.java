@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -31,6 +32,10 @@ public class PlanEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @Column(length = 50, nullable = false, unique = true)
   private String name;

@@ -3,6 +3,7 @@ package io.backend.lined.user.service;
 import static java.lang.String.format;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -70,8 +71,9 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto update(Long id, UserUpdateDto dto) {
+  public UserDto update(Long id, UserUpdateDto dto, long expectedVersion) {
     UserEntity entity = mustUser(id);
+    verifyVersion(entity.getVersion(), expectedVersion);
 
     if (dto.username() != null && !dto.username().equalsIgnoreCase(entity.getUsername()) &&
         userRepository.existsByUsernameIgnoreCase(dto.username())) {
@@ -84,21 +86,25 @@ public class UserServiceImpl implements UserService {
     }
 
 
+    userMapper.updateEntity(entity, dto);
     if (dto.password() != null) {
       entity.setPassword(passwordEncoder.encode(dto.password()));
     }
 
-    userMapper.updateEntity(entity, dto);
-
     try {
-      return userMapper.toDto(userRepository.save(entity));
+      if (expectedVersion >= 0) {
+        userRepository.saveAndFlush(entity);
+      } else {
+        userRepository.save(entity);
+      }
+      return userMapper.toDto(entity);
     } catch (DataIntegrityViolationException ex) {
       throw new ConflictException("Username or email already taken");
     }
   }
 
   @Override
-  public void delete(Long id, Long currentUserId) {
+  public void delete(Long id, Long currentUserId, long expectedVersion) {
     var user = mustUser(id);
     if (!id.equals(currentUserId)) {
       throw new ForbiddenException("Users can only delete their own account");
@@ -106,7 +112,11 @@ public class UserServiceImpl implements UserService {
     if (!lobbyRepository.findAllByOwner_Id(id).isEmpty()) {
       throw new ConflictException(OWNED_LOBBY_DELETE_ERROR_MESSAGE);
     }
+    verifyVersion(user.getVersion(), expectedVersion);
     userRepository.delete(user);
+    if (expectedVersion >= 0) {
+      userRepository.flush();
+    }
   }
 
   @Override
@@ -171,6 +181,12 @@ public class UserServiceImpl implements UserService {
     return EntityFinder.findOrThrow(
         userRepository.findById(id),
         () -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, id)));
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
+    }
   }
 
 }

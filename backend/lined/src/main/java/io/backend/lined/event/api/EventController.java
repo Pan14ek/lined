@@ -1,6 +1,7 @@
 package io.backend.lined.event.api;
 
 import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +36,7 @@ public class EventController {
 
   @Operation(summary = "Create event", description = "Create personal/shared event in a lobby.")
   @PostMapping("/events")
-  public EventDto create(
+  public ResponseEntity<EventDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -54,17 +55,19 @@ public class EventController {
                     }
                   """)))
       @Valid @RequestBody EventCreateDto dto) {
-    return service.create(dto, currentUserId);
+    EventDto created = service.create(dto, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
   @Operation(summary = "Update event",
       description = "Partial update: title/location/shared/startAt/endAt/timezone. "
           + "Blank location clears it; omitted location is unchanged.")
   @PatchMapping("/events/{id}")
-  public EventDto update(
+  public ResponseEntity<EventDto> update(
       @Parameter(example = "9001") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           content = @Content(schema = @Schema(implementation = EventUpdateDto.class),
@@ -72,6 +75,12 @@ public class EventController {
                     { "location":"Central Park", "startAt":"2025-11-20T18:00:00Z" }
                   """)))
       @Valid @RequestBody EventUpdateDto dto) {
+    EventDto updated = service.update(id, dto, currentUserId, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public EventDto update(Long id, Long currentUserId, EventUpdateDto dto) {
     return service.update(id, dto, currentUserId);
   }
 
@@ -91,7 +100,13 @@ public class EventController {
   public void delete(
       @Parameter(example = "9001") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
+      @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+    service.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
+  }
+
+  @Deprecated
+  public void delete(Long id, Long currentUserId) {
     service.delete(id, currentUserId);
   }
 
