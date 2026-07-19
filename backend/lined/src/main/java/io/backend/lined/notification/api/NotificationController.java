@@ -1,5 +1,6 @@
 package io.backend.lined.notification.api;
 
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Notifications", description = "Notification preferences and inbox")
 @RestController
@@ -25,18 +27,28 @@ public class NotificationController {
 
   @Operation(summary = "Get notification preferences")
   @GetMapping("/preferences")
-  public NotificationPreferencesDto preferences(
+  public ResponseEntity<NotificationPreferencesDto> preferences(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId) {
-    return service.getPreferences(currentUserId);
+    NotificationPreferencesDto preferences = service.getPreferences(currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(preferences.version())).body(preferences);
   }
 
   @Operation(summary = "Update notification preferences")
   @PatchMapping("/preferences")
-  public NotificationPreferencesDto updatePreferences(
+  public ResponseEntity<NotificationPreferencesDto> updatePreferences(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @Valid @RequestBody NotificationPreferencesUpdateDto dto) {
+    NotificationPreferencesDto preferences = service.updatePreferences(
+        currentUserId, dto, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(preferences.version())).body(preferences);
+  }
+
+  @Deprecated
+  public NotificationPreferencesDto updatePreferences(
+      Long currentUserId, NotificationPreferencesUpdateDto dto) {
     return service.updatePreferences(currentUserId, dto);
   }
 

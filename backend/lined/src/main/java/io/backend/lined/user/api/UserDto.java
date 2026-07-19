@@ -9,6 +9,9 @@ public record UserDto(
     @Schema(description = "Unique user id", example = "42")
     long id,
 
+    @Schema(description = "Optimistic-lock version", example = "0")
+    long version,
+
     @Schema(description = "Login name", example = "pan14ek")
     String username,
 
@@ -27,4 +30,8 @@ public record UserDto(
     @Schema(description = "Plan expiration timestamp", type = "string", format = "date-time", example = "2024-01-01T12:00:00Z")
     OffsetDateTime activeUntil
 ) {
+  public UserDto(long id, String username, String email, OffsetDateTime createdAt, Set<String> roles,
+                 String activePlan, OffsetDateTime activeUntil) {
+    this(id, 0L, username, email, createdAt, roles, activePlan, activeUntil);
+  }
 }

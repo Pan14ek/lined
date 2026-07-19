@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 @Schema(name = "TaskDto")
 public record TaskDto(
     @Schema(example = "555") Long id,
+    @Schema(example = "0", description = "Optimistic-lock version") long version,
     @Schema(example = "Buy groceries") String title,
     @Schema(example = "Pick up milk and bread") String description,
     @Schema(example = "MEDIUM") TaskPriority priority,

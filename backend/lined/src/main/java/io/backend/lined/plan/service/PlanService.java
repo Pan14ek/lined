@@ -15,7 +15,17 @@ public interface PlanService {
 
   PlanDto create(PlanCreateDto dto);
 
-  PlanDto update(Long id, PlanUpdateDto dto);
+  PlanDto update(Long id, PlanUpdateDto dto, long expectedVersion);
 
-  void delete(Long id);
+  @Deprecated
+  default PlanDto update(Long id, PlanUpdateDto dto) {
+    return update(id, dto, -1L);
+  }
+
+  void delete(Long id, long expectedVersion);
+
+  @Deprecated
+  default void delete(Long id) {
+    delete(id, -1L);
+  }
 }

@@ -1,6 +1,7 @@
 package io.backend.lined.event.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
@@ -70,9 +71,10 @@ public class EventServiceImpl implements EventService {
   }
 
   @Override
-  public EventDto update(Long id, EventUpdateDto dto, Long currentUserId) {
+  public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
     var e = mustEvent(id);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    verifyVersion(e.getVersion(), expectedVersion);
     var window = eventWindow(
         dto.startAt() == null ? e.getStartAt() : dto.startAt(),
         dto.endAt() == null ? e.getEndAt() : dto.endAt());
@@ -92,14 +94,21 @@ public class EventServiceImpl implements EventService {
       e.setTimezone(dto.timezone());
     }
 
+    if (expectedVersion >= 0) {
+      repo.saveAndFlush(e);
+    }
     return mapper.toDto(e);
   }
 
   @Override
-  public void delete(Long id, Long currentUserId) {
+  public void delete(Long id, Long currentUserId, long expectedVersion) {
     var e = mustEvent(id);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    verifyVersion(e.getVersion(), expectedVersion);
     repo.delete(e);
+    if (expectedVersion >= 0) {
+      repo.flush();
+    }
   }
 
   @Override
@@ -160,6 +169,12 @@ public class EventServiceImpl implements EventService {
   private EventEntity mustEvent(Long id) {
     return EntityFinder.findOrThrow(repo.findById(id),
         () -> new NotFoundException("Event %d not found".formatted(id)));
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
+    }
   }
 
   private CalendarTimeWindow eventWindow(OffsetDateTime start, OffsetDateTime end) {

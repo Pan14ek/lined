@@ -29,7 +29,7 @@ class LobbyNotificationPreferenceControllerTest {
     var expected = new LobbyNotificationPreferencesDto(101L, true, true, true);
     when(service.getLobbyPreferences(101L, 42L)).thenReturn(expected);
 
-    assertThat(controller.preferences(101L, 42L)).isEqualTo(expected);
+    assertThat(controller.preferences(101L, 42L).getBody()).isEqualTo(expected);
 
     verify(service).getLobbyPreferences(101L, 42L);
   }

@@ -1,6 +1,7 @@
 package io.backend.lined.lobby.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -56,9 +57,10 @@ public class LobbyServiceImpl implements LobbyService {
   }
 
   @Override
-  public LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId) {
+  public LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId, long expectedVersion) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureOwner(lobby, requesterId);
+    verifyVersion(lobby.getVersion(), expectedVersion);
 
     if (dto.name() != null) {
       lobby.setName(dto.name());
@@ -69,34 +71,52 @@ public class LobbyServiceImpl implements LobbyService {
     if (dto.ownerId() != null) {
       transferOwnership(lobby, dto.ownerId());
     }
+    if (expectedVersion >= 0) {
+      lobbyRepo.saveAndFlush(lobby);
+    }
     return mapper.toDto(lobby);
   }
 
   @Override
-  public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId) {
+  public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId,
+                               long expectedVersion) {
     var lobby = mustLobby(lobbyId);
 
     accessPolicy.ensureOwner(lobby, requesterId);
+    verifyVersion(lobby.getVersion(), expectedVersion);
 
     if (lobby.getOwner().getId().equals(userIdToRemove)) {
       throw new BadRequestException("Owner cannot be removed from lobby");
     }
 
     lobby.getMembers().removeIf(u -> u.getId().equals(userIdToRemove));
+    if (expectedVersion >= 0) {
+      lobbyRepo.saveAndFlush(lobby);
+    }
     return mapper.toDto(lobby);
   }
 
   @Override
-  public void delete(Long lobbyId, Long requesterId) {
+  public void delete(Long lobbyId, Long requesterId, long expectedVersion) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureOwner(lobby, requesterId);
+    verifyVersion(lobby.getVersion(), expectedVersion);
     lobbyRepo.delete(lobby);
+    if (expectedVersion >= 0) {
+      lobbyRepo.flush();
+    }
   }
 
   private LobbyEntity mustLobby(Long id) {
     return EntityFinder.findOrThrow(
         lobbyRepo.findById(id),
         () -> new NotFoundException("Lobby %d not found".formatted(id)));
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
+    }
   }
 
   private void transferOwnership(LobbyEntity lobby, Long newOwnerId) {

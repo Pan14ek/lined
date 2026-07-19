@@ -15,12 +15,25 @@ public interface NotificationService {
   NotificationPreferencesDto getPreferences(Long currentUserId);
 
   NotificationPreferencesDto updatePreferences(
-      Long currentUserId, NotificationPreferencesUpdateDto dto);
+      Long currentUserId, NotificationPreferencesUpdateDto dto, long expectedVersion);
+
+  @Deprecated
+  default NotificationPreferencesDto updatePreferences(
+      Long currentUserId, NotificationPreferencesUpdateDto dto) {
+    return updatePreferences(currentUserId, dto, -1L);
+  }
 
   LobbyNotificationPreferencesDto getLobbyPreferences(Long lobbyId, Long currentUserId);
 
   LobbyNotificationPreferencesDto updateLobbyPreferences(
-      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto);
+      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto,
+      long expectedVersion);
+
+  @Deprecated
+  default LobbyNotificationPreferencesDto updateLobbyPreferences(
+      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto) {
+    return updateLobbyPreferences(lobbyId, currentUserId, dto, -1L);
+  }
 
   List<NotificationDto> listMine(Long currentUserId);
 

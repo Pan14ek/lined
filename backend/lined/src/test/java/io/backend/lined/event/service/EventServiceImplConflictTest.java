@@ -90,11 +90,11 @@ class EventServiceImplConflictTest {
   }
 
   private void setupDtos() {
-    dtoA = new EventDto(1L, "Event A", null, true,
+    dtoA = new EventDto(1L, 0L, "Event A", null, true,
         eventA.getStartAt(), eventA.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
-    dtoB = new EventDto(2L, "Event B", null, true,
+    dtoB = new EventDto(2L, 0L, "Event B", null, true,
         eventB.getStartAt(), eventB.getEndAt(), "Europe/Kyiv", 101L, 2L, now);
-    dtoC = new EventDto(3L, "Event C", null, true,
+    dtoC = new EventDto(3L, 0L, "Event C", null, true,
         eventC.getStartAt(), eventC.getEndAt(), "Europe/Kyiv", 101L, 1L, now);
   }
 

@@ -32,7 +32,7 @@ class NotificationControllerTest {
     var expected = new NotificationPreferencesDto(true, true, true, true, true);
     when(service.getPreferences(42L)).thenReturn(expected);
 
-    assertThat(controller.preferences(42L)).isEqualTo(expected);
+    assertThat(controller.preferences(42L).getBody()).isEqualTo(expected);
 
     verify(service).getPreferences(42L);
   }

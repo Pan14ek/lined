@@ -1,5 +1,6 @@
 package io.backend.lined.plan.api;
 
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.plan.service.PlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -136,6 +137,7 @@ public class PlanController {
     PlanDto created = planService.create(request);
     return ResponseEntity
         .created(URI.create("/api/plans/" + created.id()))
+        .eTag(VersionPrecondition.etag(created.version()))
         .body(created);
   }
 
@@ -155,9 +157,11 @@ public class PlanController {
           @ApiResponse(responseCode = "404", description = "Plan not found")
       }
   )
-  public PlanDto update(
+  public ResponseEntity<PlanDto> update(
       @Parameter(description = "Plan identifier", example = "1")
       @PathVariable Long id,
+      @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false)
+      String ifMatch,
 
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           description = "Updated plan data",
@@ -181,6 +185,12 @@ public class PlanController {
       )
       @RequestBody PlanUpdateDto request
   ) {
+    PlanDto updated = planService.update(id, request, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
+  }
+
+  @Deprecated
+  public PlanDto update(Long id, PlanUpdateDto request) {
     return planService.update(id, request);
   }
 
@@ -195,8 +205,16 @@ public class PlanController {
   )
   public ResponseEntity<Void> delete(
       @Parameter(description = "Plan identifier", example = "1")
-      @PathVariable Long id
+      @PathVariable Long id,
+      @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false)
+      String ifMatch
   ) {
+    planService.delete(id, VersionPrecondition.parse(ifMatch));
+    return ResponseEntity.noContent().build();
+  }
+
+  @Deprecated
+  public ResponseEntity<Void> delete(Long id) {
     planService.delete(id);
     return ResponseEntity.noContent().build();
   }

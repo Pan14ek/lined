@@ -53,7 +53,7 @@ class LobbyControllerTest {
     var dto = new LobbyCreateDto("Our Family", LobbyTypes.FAMILY);
     when(lobbyService.create(dto, 1L)).thenReturn(sampleLobby);
 
-    LobbyDto result = controller.create(1L, dto);
+    LobbyDto result = controller.create(1L, dto).getBody();
 
     assertThat(result).isEqualTo(sampleLobby);
     verify(lobbyService).create(dto, 1L);
@@ -92,7 +92,7 @@ class LobbyControllerTest {
   void get_delegatesToService() {
     when(lobbyService.getById(101L)).thenReturn(sampleLobby);
 
-    LobbyDto result = controller.get(101L);
+    LobbyDto result = controller.get(101L).getBody();
 
     assertThat(result).isEqualTo(sampleLobby);
     verify(lobbyService).getById(101L);

@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -72,6 +73,16 @@ public class GlobalExceptionHandler {
     ProblemDetail pd =
         ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Data integrity violation");
     pd.setTitle("Conflict");
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+  }
+
+  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<ProblemDetail> handleOptimisticLock(
+      ObjectOptimisticLockingFailureException ex) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+        HttpStatus.CONFLICT, "Resource has been modified; fetch the latest version and retry");
+    pd.setTitle("Conflict");
+    pd.setType(URI.create("https://errors.lined.app/common.conflict"));
     return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
   }
 

@@ -36,7 +36,12 @@ public interface TaskService {
    * @throws ForbiddenException if the user is not a lobby member
    * @throws NotFoundException  if the task is not found
    */
-  TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId);
+  TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId, long expectedVersion);
+
+  @Deprecated
+  default TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId) {
+    return update(id, dto, currentUserId, -1L);
+  }
 
   /**
    * Deletes a task by its unique identifier.
@@ -46,7 +51,12 @@ public interface TaskService {
    * @throws ForbiddenException if the user is not a lobby member
    * @throws NotFoundException  if the task is not found
    */
-  void delete(Long id, Long currentUserId);
+  void delete(Long id, Long currentUserId, long expectedVersion);
+
+  @Deprecated
+  default void delete(Long id, Long currentUserId) {
+    delete(id, currentUserId, -1L);
+  }
 
   /**
    * Lists tasks with optional filtering by lobby, assignee, and status.

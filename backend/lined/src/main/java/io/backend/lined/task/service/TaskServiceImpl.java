@@ -1,6 +1,7 @@
 package io.backend.lined.task.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
@@ -60,9 +61,10 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId) {
+  public TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId, long expectedVersion) {
     var task = mustTask(id);
     accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    verifyVersion(task.getVersion(), expectedVersion);
 
     if (dto.title() != null && !dto.title().isBlank()) {
       task.setTitle(dto.title());
@@ -83,14 +85,21 @@ public class TaskServiceImpl implements TaskService {
       task.setPriority(dto.priority());
     }
 
+    if (expectedVersion >= 0) {
+      repo.saveAndFlush(task);
+    }
     return mapper.toDto(task);
   }
 
   @Override
-  public void delete(Long id, Long currentUserId) {
+  public void delete(Long id, Long currentUserId, long expectedVersion) {
     var task = mustTask(id);
     accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    verifyVersion(task.getVersion(), expectedVersion);
     repo.delete(task);
+    if (expectedVersion >= 0) {
+      repo.flush();
+    }
   }
 
   @Override
@@ -135,6 +144,12 @@ public class TaskServiceImpl implements TaskService {
   private TaskEntity mustTask(Long id) {
     return EntityFinder.findOrThrow(repo.findById(id),
         () -> new NotFoundException("Task %d not found".formatted(id)));
+  }
+
+  private void verifyVersion(long actualVersion, long expectedVersion) {
+    if (expectedVersion >= 0) {
+      VersionPrecondition.verify(actualVersion, expectedVersion);
+    }
   }
 
   private String normalizeDescription(String description) {

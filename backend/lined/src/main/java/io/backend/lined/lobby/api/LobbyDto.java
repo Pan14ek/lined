@@ -7,9 +7,13 @@ import java.util.Set;
 @Schema(name = "LobbyDto", description = "Lobby representation")
 public record LobbyDto(
     @Schema(example = "101") Long id,
+    @Schema(example = "0", description = "Optimistic-lock version") long version,
     @Schema(example = "Our Family") String name,
     @Schema(example = "FAMILY") LobbyTypes lobbyType,
     @Schema(example = "42") Long ownerId,
     @Schema(example = "[1,42,77]") Set<Long> memberIds
 ) {
+  public LobbyDto(Long id, String name, LobbyTypes lobbyType, Long ownerId, Set<Long> memberIds) {
+    this(id, 0L, name, lobbyType, ownerId, memberIds);
+  }
 }

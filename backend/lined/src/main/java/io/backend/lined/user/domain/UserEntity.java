@@ -16,6 +16,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,10 @@ public class UserEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @EqualsAndHashCode.Include
   private Long id;
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @ToString.Include
   @Column(length = 64, nullable = false)

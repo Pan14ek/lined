@@ -38,7 +38,7 @@ class EventControllerTest {
     controller = new EventController(service);
     start = OffsetDateTime.parse("2026-01-01T10:00:00Z");
     end = start.plusHours(1);
-    sampleEvent = new EventDto(9001L, "Dinner together", "Whole Foods Market", true, start,
+    sampleEvent = new EventDto(9001L, 0L, "Dinner together", "Whole Foods Market", true, start,
         end,
         "Europe/Kyiv", 101L, 42L, OffsetDateTime.now());
     createDto = new EventCreateDto("Dinner together", "Whole Foods Market", true, start, end,
@@ -54,7 +54,7 @@ class EventControllerTest {
   void create_delegatesToService() {
     when(service.create(createDto, 42L)).thenReturn(sampleEvent);
 
-    EventDto result = controller.create(42L, createDto);
+    EventDto result = controller.create(42L, createDto).getBody();
 
     assertThat(result).isEqualTo(sampleEvent);
     verify(service).create(createDto, 42L);
