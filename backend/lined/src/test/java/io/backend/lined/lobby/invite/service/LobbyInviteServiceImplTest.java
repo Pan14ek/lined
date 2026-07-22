@@ -20,6 +20,7 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +46,8 @@ class LobbyInviteServiceImplTest {
   private LobbyInviteRepository inviteRepo;
   @Mock
   private LobbyInviteMapper mapper;
+  @Mock
+  private EntityManager entityManager;
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
@@ -202,12 +205,53 @@ class LobbyInviteServiceImplTest {
   @Test
   void accept_addsInviteeAndMarksInviteAccepted() {
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(inviteRepo.acceptPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(2L),
+        org.mockito.ArgumentMatchers.any(OffsetDateTime.class))).thenReturn(1);
     when(mapper.toDto(invite)).thenReturn(inviteDto);
 
     inviteService.accept(501L, 2L);
 
     assertThat(lobby.getMembers()).contains(owner, invitee);
     assertThat(invite.getStatus()).isEqualTo(LobbyInviteStatus.ACCEPTED);
+  }
+
+  @Test
+  void accept_returnsAcceptedInvite_whenConcurrentRequestAlreadyClaimedIt() {
+    var acceptedInvite = LobbyInviteEntity.builder()
+        .id(501L)
+        .lobby(lobby)
+        .inviter(owner)
+        .invitee(invitee)
+        .status(LobbyInviteStatus.ACCEPTED)
+        .sentAt(invite.getSentAt())
+        .createdAt(invite.getCreatedAt())
+        .updatedAt(invite.getUpdatedAt().plusMinutes(1))
+        .build();
+    var acceptedDto = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.ACCEPTED,
+        acceptedInvite.getSentAt(), acceptedInvite.getCreatedAt(), acceptedInvite.getUpdatedAt());
+    when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite), Optional.of(acceptedInvite));
+    when(inviteRepo.acceptPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(2L),
+        org.mockito.ArgumentMatchers.any(OffsetDateTime.class))).thenReturn(0);
+    when(mapper.toDto(acceptedInvite)).thenReturn(acceptedDto);
+
+    assertThat(inviteService.accept(501L, 2L)).isEqualTo(acceptedDto);
+    verify(entityManager).clear();
+  }
+
+  @Test
+  void accept_returnsAcceptedInvite_whenAlreadyAcceptedBySameInvitee() {
+    invite.setStatus(LobbyInviteStatus.ACCEPTED);
+    var acceptedDto = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.ACCEPTED,
+        invite.getSentAt(), invite.getCreatedAt(), invite.getUpdatedAt());
+    when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(mapper.toDto(invite)).thenReturn(acceptedDto);
+
+    assertThat(inviteService.accept(501L, 2L)).isEqualTo(acceptedDto);
+    verify(inviteRepo, never()).acceptPending(any(), any(), any());
   }
 
   @Test
