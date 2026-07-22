@@ -246,6 +246,9 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 32 | `feature/ui-32-style-foundations` | Styling foundations: semantic task/lobby badges and shared `cn()` cleanup | [tasks/UI-32-style-foundations.md](tasks/UI-32-style-foundations.md) | DONE |
 | 33 | `feature/ui-33-calendar-lobby-style-cleanup` | Calendar/lobby selection styling cleanup and shared agenda event row | [tasks/UI-33-calendar-lobby-style-cleanup.md](tasks/UI-33-calendar-lobby-style-cleanup.md) | DONE |
 | 34 | `feature/ui-34-feature-style-cleanup` | Feature-local conditional Tailwind cleanup across tasks, dashboard, subscription, notifications, and layout | [tasks/UI-34-feature-style-cleanup.md](tasks/UI-34-feature-style-cleanup.md) | DONE |
+| 35 | `feature/ui-35-feature-flags-foundation` | Typed public feature discovery, TanStack Query hooks, disabled-response synchronization, and reusable guards | [tasks/UI-35-feature-flags-foundation.md](tasks/UI-35-feature-flags-foundation.md) | TODO |
+| 36 | `feature/ui-36-feature-gated-capabilities` | Apply seven feature flags across routes, navigation, composite surfaces, overlays, and protected queries | [tasks/UI-36-feature-gated-capabilities.md](tasks/UI-36-feature-gated-capabilities.md) | TODO |
+| 37 | `feature/ui-37-feature-flags-admin` | Admin-only runtime flag table with ETag-safe toggles and failure/conflict handling | [tasks/UI-37-feature-flags-admin.md](tasks/UI-37-feature-flags-admin.md) | TODO |
 
 ## Suggested order
 
@@ -277,6 +280,14 @@ from *real*-API verification on its proposal branch
 `feature/user-locale-preference`, `feature/event-reminder-scheduler`,
 `feature/dashboard-summary-api` — see
 `backend/lined/docs/experiment-tasks.md`).
+
+**Batch 35–37 (runtime feature flags, July 2026):** implement 35 first after
+the backend public contract (`feature/feature-flags-core`) is stable. Task 36
+depends on 35 and backend enforcement; land it before 37 so the admin page can
+remain usable when all product capabilities are disabled. Task 37 depends on
+the backend admin API, with `feature/feature-flags-sync` required for complete
+multi-replica release behavior. Canonical semantics and capability boundaries
+live in `backend/lined/docs/feature-flags.md`.
 
 ## Conventions for every task
 
