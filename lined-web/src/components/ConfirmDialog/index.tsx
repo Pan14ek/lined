@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
@@ -27,9 +28,12 @@ export const ConfirmDialog = ({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) => {
+  const { t } = useTranslation('common');
   const [typedText, setTypedText] = useState('');
   const isConfirmDisabled =
     isPending || (confirmText != null && typedText !== confirmText);
+  const typeToConfirmLabel =
+    confirmTextLabel ?? (confirmText != null ? t('confirmDialog.typeToConfirm', { text: confirmText }) : undefined);
 
   return (
     <div
@@ -46,10 +50,10 @@ export const ConfirmDialog = ({
         {confirmText != null && (
           <div className="mt-4">
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-              {confirmTextLabel ?? `Type "${confirmText}" to confirm`}
+              {typeToConfirmLabel}
             </label>
             <input
-              aria-label={confirmTextLabel ?? `Type "${confirmText}" to confirm`}
+              aria-label={typeToConfirmLabel}
               className="h-10 w-full rounded-lg border border-border bg-input-bg px-3 text-sm text-text-primary focus:border-brand-green focus:outline-none"
               value={typedText}
               onChange={(e) => setTypedText(e.target.value)}
@@ -65,7 +69,7 @@ export const ConfirmDialog = ({
             onClick={onCancel}
             className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
           >
-            Cancel
+            {t('confirmDialog.cancel')}
           </button>
           <button
             type="button"
@@ -76,7 +80,7 @@ export const ConfirmDialog = ({
               danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-green hover:bg-brand-green-dark',
             )}
           >
-            {isPending ? 'Please wait…' : confirmLabel}
+            {isPending ? t('confirmDialog.pleaseWait') : confirmLabel}
           </button>
         </div>
       </div>

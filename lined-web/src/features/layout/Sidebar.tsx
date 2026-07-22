@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Settings, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
@@ -17,6 +18,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { data: lobbies, isLoading: lobbiesLoading } = useMyLobbies();
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -32,12 +34,12 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
     <aside className="flex h-full w-60 flex-shrink-0 flex-col bg-brand-sidebar text-white">
       {/* Logo */}
       <div className="flex h-16 items-center px-5">
-        <span className="text-xl font-bold tracking-tight">Lined</span>
+        <span className="text-xl font-bold tracking-tight">{t('nav.appName')}</span>
       </div>
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+        {NAV_ITEMS.map(({ to, icon: Icon, labelKey }) => (
           <NavLink
             key={to}
             to={to}
@@ -52,7 +54,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
             }
           >
             <Icon className="h-5 w-5" />
-            {label}
+            {t(labelKey)}
           </NavLink>
         ))}
       </nav>
@@ -63,14 +65,14 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
       <div className="flex flex-col gap-1 px-3">
         <div className="flex items-center justify-between px-3">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
-            My Lobbies
+            {t('sidebar.myLobbies')}
           </span>
           <button
             type="button"
             onClick={() => openCreateLobby()}
             className="text-xs font-medium text-brand-green hover:underline"
           >
-            + New
+            {t('sidebar.newLobby')}
           </button>
         </div>
 
@@ -89,8 +91,8 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
           <div className="px-3 py-2">
             <EmptyState
               variant="inline"
-              message="No lobbies yet"
-              action={{ label: '+ New', onClick: () => openCreateLobby() }}
+              message={t('sidebar.noLobbiesYet')}
+              action={{ label: t('sidebar.newLobby'), onClick: () => openCreateLobby() }}
               className="text-text-muted"
             />
           </div>
@@ -135,7 +137,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
           }
         >
           <Settings className="h-5 w-5" />
-          Settings
+          {t('nav.settings')}
         </NavLink>
       </div>
 
@@ -166,7 +168,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
           <button
             type="button"
             onClick={handleSignOut}
-            aria-label="Sign out"
+            aria-label={t('sidebar.signOut')}
             className="flex-shrink-0 text-text-muted hover:text-white"
           >
             <LogOut className="h-4 w-4" />

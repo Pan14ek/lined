@@ -1,0 +1,65 @@
+{
+  "nav": {
+    "dashboard": "Головна",
+    "calendar": "Календар",
+    "tasks": "Завдання",
+    "settings": "Налаштування",
+    "lobby": "Лобі",
+    "appName": "Lined",
+    "primary": "Основна навігація"
+  },
+  "topBar": {
+    "openMenu": "Відкрити меню"
+  },
+  "sidebar": {
+    "myLobbies": "Мої лобі",
+    "newLobby": "+ Нове",
+    "noLobbiesYet": "Поки немає лобі",
+    "signOut": "Вийти"
+  },
+  "createMenu": {
+    "trigger": "+ Створити",
+    "newEvent": "Нова подія",
+    "newTask": "Нове завдання",
+    "newLobby": "Нове лобі",
+    "reserveFreeSlot": "Зарезервувати вільний час"
+  },
+  "confirmDialog": {
+    "cancel": "Скасувати",
+    "pleaseWait": "Зачекайте…",
+    "typeToConfirm": "Введіть «{{text}}» для підтвердження"
+  },
+  "greeting": {
+    "morning": "Доброго ранку",
+    "afternoon": "Доброго дня",
+    "evening": "Доброго вечора"
+  },
+  "relativeTime": {
+    "justNow": "Щойно",
+    "yesterday": "Вчора",
+    "minutesAgo_one": "{{count}} хвилину тому",
+    "minutesAgo_few": "{{count}} хвилини тому",
+    "minutesAgo_many": "{{count}} хвилин тому",
+    "minutesAgo_other": "{{count}} хвилини тому",
+    "hoursAgo_one": "{{count}} годину тому",
+    "hoursAgo_few": "{{count}} години тому",
+    "hoursAgo_many": "{{count}} годин тому",
+    "hoursAgo_other": "{{count}} години тому",
+    "daysAgo_one": "{{count}} день тому",
+    "daysAgo_few": "{{count}} дні тому",
+    "daysAgo_many": "{{count}} днів тому",
+    "daysAgo_other": "{{count}} дня тому"
+  },
+  "actions": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "close": "Закрити",
+    "loading": "Завантаження…",
+    "retry": "Повторити"
+  },
+  "errors": {
+    "generic": "Щось пішло не так — спробуйте ще раз"
+  }
+}
