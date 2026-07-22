@@ -6,7 +6,7 @@ Use JUnit 5 with Testcontainers PostgreSQL, `ExecutorService` (two fixed workers
 | --- | --- | --- | --- | --- | --- | --- |
 | CONC-T01 | Event v1 exists | 2 / ready+release latches | PATCH title vs PATCH start/end with v1 | one 200, one 409; winner only; version v2 | required/required | lost event update |
 | CONC-T02 | Event v1 exists | 2 / latches | PATCH v1 vs DELETE v1 | one terminal success; other documented 404/409; no resurrected row | required/required | update/delete race |
-| CONC-T03 | Task v1 TODO exists | 2 / latches | PATCH status DONE v1 twice | one transition; second idempotent 200 or 409 by API decision; one final DONE | required/required | duplicate completion |
+| CONC-T03 | Task v1 TODO exists | 2 / latches | PATCH status DONE v1 twice | one `200`, one stale `409`; one final DONE | required/required | duplicate completion |
 | CONC-T04 | Task v1 TODO assigned A | 2 / latches | PATCH assignee B vs PATCH DONE | one applies; stale request 409; final row internally consistent | required/required | reassignment/completion loss |
 | CONC-T05 | PENDING invite; invitee absent | 2 / latches | accept same invite | one claim; membership count one; repeat result follows documented idempotency rule | required/required | double acceptance |
 | CONC-T06 | Lobby and user, no membership | 2 / latches | two membership inserts/accepts | one row in `lobby_members`; loser clean 409 or retry success | required/required | duplicate membership |
