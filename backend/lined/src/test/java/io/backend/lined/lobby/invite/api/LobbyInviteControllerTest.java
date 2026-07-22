@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.invite.service.LobbyInviteService;
 import java.time.OffsetDateTime;
@@ -15,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class LobbyInviteControllerTest {
@@ -23,11 +29,15 @@ class LobbyInviteControllerTest {
   private LobbyInviteService inviteService;
 
   private LobbyInviteController controller;
+  private MockMvc mockMvc;
   private LobbyInviteDto invite;
 
   @BeforeEach
   void setUp() {
     controller = new LobbyInviteController(inviteService);
+    mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
     var now = OffsetDateTime.parse("2026-07-16T10:00:00Z");
     invite = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.PENDING,
         now, now, now);
@@ -74,6 +84,18 @@ class LobbyInviteControllerTest {
     when(inviteService.accept(501L, 2L)).thenReturn(invite);
 
     assertThat(controller.accept(501L, 2L)).isEqualTo(invite);
+  }
+
+  @Test
+  void accept_returnsAcceptedInviteForSequentialRetryContract() throws Exception {
+    var accepted = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.ACCEPTED,
+        invite.sentAt(), invite.createdAt(), invite.updatedAt());
+    when(inviteService.accept(501L, 2L)).thenReturn(accepted);
+
+    mockMvc.perform(post("/api/lobby-invites/501/accept").header("X-User-Id", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(501))
+        .andExpect(jsonPath("$.status").value("ACCEPTED"));
   }
 
   @Test
