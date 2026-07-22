@@ -1,6 +1,8 @@
 import ky, { HTTPError } from 'ky';
 import {useAuthStore} from '@/store/auth';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+
 /** Whether feature api/index.ts modules should serve dev.ts (mock data) instead of prod.ts. */
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
 
@@ -26,7 +28,7 @@ export const mockDelay = (ms = 250): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const api = ky.create({
-    prefixUrl: import.meta.env.VITE_API_BASE_URL,
+    prefixUrl: API_BASE_URL,
     hooks: {
         beforeRequest: [
             (request) => {

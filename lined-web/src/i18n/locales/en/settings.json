@@ -60,7 +60,9 @@
     "description": "Choose the language Lined uses across the app",
     "english": "English",
     "ukrainian": "Українська",
+    "dateExample": "Default · dates like “{{date}}”",
     "previewLabel": "Preview",
+    "previewValue": "Good morning, Alex 👋 · My lobbies · Upcoming events · My tasks · ✨ Free slot: Sat 14:00 – 17:00",
     "appliesNote": "Applies immediately and is saved to your profile",
     "saveError": "Couldn't save your language choice — it's still applied here, but try again to sync it to your account"
   },

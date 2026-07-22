@@ -12,6 +12,19 @@ const LOCALE_OPTIONS = [
   { value: 'uk', flag: '🇺🇦', labelKey: 'language.ukrainian' },
 ] as const satisfies readonly { value: Locale; flag: string; labelKey: 'language.english' | 'language.ukrainian' }[];
 
+const DATE_EXAMPLE = new Date(Date.UTC(2026, 6, 18));
+
+const formatDateExample = (locale: Locale) => new Intl.DateTimeFormat(
+  locale === 'uk' ? 'uk-UA' : 'en-GB',
+  {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  },
+).format(DATE_EXAMPLE);
+
 export const LanguageCard = ({ userId }: LanguageCardProps) => {
   const { t } = useTranslation(['settings', 'common']);
   const locale = useSettingsStore((s) => s.locale);
@@ -47,7 +60,12 @@ export const LanguageCard = ({ userId }: LanguageCardProps) => {
                 className="h-4 w-4 accent-brand-green"
               />
               <span aria-hidden="true">{option.flag}</span>
-              <span className="text-text-primary">{t(option.labelKey)}</span>
+              <span className="flex flex-col gap-0.5">
+                <span className="text-text-primary">{t(option.labelKey)}</span>
+                <span className="text-xs text-text-secondary">
+                  {t('language.dateExample', { date: formatDateExample(option.value) })}
+                </span>
+              </span>
             </label>
           ))}
         </div>
@@ -59,7 +77,7 @@ export const LanguageCard = ({ userId }: LanguageCardProps) => {
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider opacity-80">
             {t('language.previewLabel')}
           </div>
-          <div>{t('greeting.morning', { ns: 'common' })} — {t('sidebar.myLobbies', { ns: 'common' })}</div>
+          <div>{t('language.previewValue')}</div>
         </div>
 
         {updateUser.isError && (

@@ -21,12 +21,13 @@ describe('LanguageCard', () => {
   });
 
   it('shows the persisted locale as the checked radio', () => {
-    expect.assertions(2);
+    expect.assertions(3);
     useSettingsStore.setState({ locale: 'uk' });
     renderWithProviders(<LanguageCard userId={testUser.id} />);
 
     expect(screen.getByRole('radio', { name: /Українська/i })).toBeChecked();
     expect(screen.getByRole('radio', { name: /English/i })).not.toBeChecked();
+    expect(screen.getByText(/субота, 18 липня 2026/i)).toBeInTheDocument();
   });
 
   it('switches the store locale and re-renders the preview strip in Ukrainian', async () => {
@@ -37,7 +38,7 @@ describe('LanguageCard', () => {
     await user.click(screen.getByRole('radio', { name: /Українська/i }));
 
     await waitFor(() => expect(useSettingsStore.getState().locale).toBe('uk'));
-    expect(await screen.findByText(/Мої лобі/)).toBeInTheDocument();
+    expect(await screen.findByText(/Мої лобі.*Майбутні події.*Мої завдання/)).toBeInTheDocument();
   });
 
   it('PATCHes the chosen locale to the user profile', async () => {
