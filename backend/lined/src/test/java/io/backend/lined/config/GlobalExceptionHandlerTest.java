@@ -21,6 +21,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -137,6 +138,18 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Conflict");
+  }
+
+  @Test
+  void handleOptimisticLock_returnsRfc7807Conflict() {
+    var ex = new ObjectOptimisticLockingFailureException("events", 101L);
+
+    ResponseEntity<ProblemDetail> response = handler.handleOptimisticLock(ex);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Conflict");
+    assertThat(response.getBody().getType().toString()).endsWith("common.conflict");
   }
 
   @Test

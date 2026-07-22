@@ -2,14 +2,22 @@ package io.backend.lined.event.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.event.service.EventService;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,6 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class EventControllerTest {
@@ -26,6 +38,7 @@ class EventControllerTest {
   private EventService service;
 
   private EventController controller;
+  private MockMvc mockMvc;
   private OffsetDateTime start;
   private OffsetDateTime end;
 
@@ -36,6 +49,9 @@ class EventControllerTest {
   @BeforeEach
   void setUp() {
     controller = new EventController(service);
+    mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
     start = OffsetDateTime.parse("2026-01-01T10:00:00Z");
     end = start.plusHours(1);
     sampleEvent = new EventDto(9001L, 0L, "Dinner together", "Whole Foods Market", true, start,
@@ -113,6 +129,36 @@ class EventControllerTest {
     assertThatThrownBy(() -> controller.update(9001L, 42L, badUpdate))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Start");
+  }
+
+  @Test
+  void update_returnsRfc7807ConflictForStaleIfMatch() throws Exception {
+    when(service.update(eq(9001L), any(EventUpdateDto.class), eq(42L), eq(0L)))
+        .thenThrow(new ObjectOptimisticLockingFailureException("events", 9001L));
+
+    mockMvc.perform(patch("/api/calendar/events/9001")
+            .header("X-User-Id", "42")
+            .header("If-Match", "\"0\"")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"title\":\"Late dinner\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Conflict"))
+        .andExpect(jsonPath("$.status").value(409));
+  }
+
+  @Test
+  void delete_returnsRfc7807ConflictForOptimisticLockFailure() throws Exception {
+    doThrow(new ObjectOptimisticLockingFailureException("events", 9001L))
+        .when(service).delete(9001L, 42L, 0L);
+
+    mockMvc.perform(delete("/api/calendar/events/9001")
+            .header("X-User-Id", "42")
+            .header("If-Match", "\"0\""))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Conflict"))
+        .andExpect(jsonPath("$.status").value(409));
   }
 
   /* =======================
