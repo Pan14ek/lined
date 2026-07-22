@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_PLANS } from '@/features/subscription/api/mockData';
 import { PlanCards } from '../PlanCards';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -46,7 +47,7 @@ describe('PlanCards', () => {
             active: true,
             createdAt: '2026-07-18T00:00:00Z',
           },
-          { status: 201 },
+          { status: HTTP_STATUS.CREATED },
         );
       }),
     );
@@ -64,7 +65,7 @@ describe('PlanCards', () => {
     expect.assertions(1);
     server.use(
       http.post(`${BASE}/subscriptions`, () =>
-        HttpResponse.json({ code: 'CONFLICT', message: 'An active subscription already exists' }, { status: 409 }),
+        HttpResponse.json({ code: 'CONFLICT', message: 'An active subscription already exists' }, { status: HTTP_STATUS.CONFLICT }),
       ),
     );
     const user = userEvent.setup();

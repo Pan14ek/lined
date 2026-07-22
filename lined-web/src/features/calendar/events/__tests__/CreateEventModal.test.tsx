@@ -7,6 +7,7 @@ import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import type { EventConflictDto } from '@/features/calendar/model';
 import { useAuthStore } from '@/store/auth';
 import { CreateEventModal } from '../CreateEventModal';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const LOBBY = MOCK_LOBBIES[0]!; // id 1, COUPLE, members [1, 2]
@@ -86,7 +87,7 @@ describe('CreateEventModal', () => {
       http.post(`${BASE}/calendar/events`, () =>
         HttpResponse.json(
           { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
-          { status: 400 },
+          { status: HTTP_STATUS.BAD_REQUEST },
         ),
       ),
     );
@@ -105,7 +106,7 @@ describe('CreateEventModal', () => {
 
   it('surfaces a generic error on a 500 response', async () => {
     expect.assertions(1);
-    server.use(http.post(`${BASE}/calendar/events`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.post(`${BASE}/calendar/events`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(
       <CreateEventModal lobbies={MOCK_LOBBIES} onClose={vi.fn()} onCreated={vi.fn()} />,
@@ -167,7 +168,7 @@ describe('CreateEventModal — edit mode', () => {
       http.patch(`${BASE}/calendar/events/:id`, () =>
         HttpResponse.json(
           { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
-          { status: 400 },
+          { status: HTTP_STATUS.BAD_REQUEST },
         ),
       ),
     );
@@ -186,7 +187,7 @@ describe('CreateEventModal — edit mode', () => {
   it('surfaces a generic error on a 500 response in edit mode', async () => {
     expect.assertions(1);
     server.use(
-      http.patch(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: 500 })),
+      http.patch(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     const user = userEvent.setup();
     renderWithProviders(
@@ -230,7 +231,7 @@ describe('CreateEventModal — conflict warnings', () => {
 
   it('does not block submission or show a banner when the conflicts check fails (fail open)', async () => {
     expect.assertions(2);
-    server.use(http.get(`${BASE}/calendar/conflicts`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/calendar/conflicts`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     const onCreated = vi.fn();
     renderWithProviders(

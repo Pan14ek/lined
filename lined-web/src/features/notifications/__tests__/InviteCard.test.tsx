@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { InviteCard } from '../InviteCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -108,7 +109,7 @@ describe('InviteCard', () => {
 
   it('falls back to generic lobby text when the lobby fetch fails', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: 404 })));
+    server.use(http.get(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })));
     renderWithProviders(
       <InviteCard
         invite={invite}

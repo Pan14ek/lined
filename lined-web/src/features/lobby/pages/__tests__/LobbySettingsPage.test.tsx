@@ -5,6 +5,7 @@ import { renderWithProviders, screen } from '@/test/utils';
 import { server } from '@/test/server';
 import { useAuthStore } from '@/store/auth';
 import { LobbySettingsPage } from '../LobbySettingsPage';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -31,7 +32,7 @@ describe('LobbySettingsPage', () => {
 
   it('shows a friendly message when the lobby cannot be found', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: 404 })));
+    server.use(http.get(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })));
     renderSettingsPage('/lobbies/999/settings');
 
     expect(

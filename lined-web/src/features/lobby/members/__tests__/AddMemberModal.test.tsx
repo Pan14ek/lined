@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { ROLES, ADD_MEMBER_MODAL_TEXT } from '@/test/lobbyMemberContent';
 import { AddMemberModal } from '../AddMemberModal';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobby = MOCK_LOBBIES[0]!; // id 1, memberIds [1, 2]
@@ -71,7 +72,7 @@ describe('AddMemberModal', () => {
 
   it('shows a search-failed message on a 500', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/users/search`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/users/search`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<AddMemberModal lobby={lobby} onClose={vi.fn()} />);
 
@@ -107,7 +108,7 @@ describe('AddMemberModal', () => {
         () =>
           HttpResponse.json(
             { code: 'CONFLICT', message: 'A pending invite already exists for this user' },
-            { status: 409 },
+            { status: HTTP_STATUS.CONFLICT },
           ),
       ),
     );
@@ -124,7 +125,7 @@ describe('AddMemberModal', () => {
   it('shows a generic error message when the invite request fails unexpectedly (500)', async () => {
     expect.assertions(1);
     server.use(
-      http.post(`${BASE}/lobbies/:lobbyId/invites`, () => new HttpResponse(null, { status: 500 })),
+      http.post(`${BASE}/lobbies/:lobbyId/invites`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     const user = userEvent.setup();
     renderWithProviders(<AddMemberModal lobby={lobby} onClose={vi.fn()} />);

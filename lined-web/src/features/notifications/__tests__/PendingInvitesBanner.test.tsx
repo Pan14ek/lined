@@ -5,6 +5,7 @@ import { within } from '@testing-library/react';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { PendingInvitesBanner } from '../PendingInvitesBanner';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -41,7 +42,7 @@ describe('PendingInvitesBanner', () => {
 
   it('shows an error message when the request fails', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/lobby-invites/mine`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/lobby-invites/mine`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderBanner();
 
     expect(await screen.findByText("Couldn't load your invites. Try again later.")).toBeInTheDocument();
@@ -87,7 +88,7 @@ describe('PendingInvitesBanner', () => {
     expect.assertions(1);
     server.use(
       http.post(`${BASE}/lobby-invites/:inviteId/accept`, () =>
-        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: 409 }),
+        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: HTTP_STATUS.CONFLICT }),
       ),
     );
     const user = userEvent.setup();

@@ -7,6 +7,7 @@ import { server } from '@/test/server';
 import { QUERY_KEYS } from '@/features/lobby/lib/constants';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from '../useInvites';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -59,7 +60,7 @@ describe('useMyInvites', () => {
   it('surfaces a failed request as an error state', async () => {
     expect.assertions(1);
     const queryClient = makeQueryClient();
-    server.use(http.get(`${BASE}/lobby-invites/mine`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/lobby-invites/mine`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
 
     const { result } = renderHook(() => useMyInvites(), { wrapper: makeWrapper(queryClient) });
     await waitUntilSettled(result);
@@ -88,7 +89,7 @@ describe('useAcceptInvite', () => {
     const queryClient = makeQueryClient();
     server.use(
       http.post(`${BASE}/lobby-invites/:inviteId/accept`, () =>
-        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: 409 }),
+        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: HTTP_STATUS.CONFLICT }),
       ),
     );
 
@@ -118,7 +119,7 @@ describe('useDeclineInvite', () => {
     const queryClient = makeQueryClient();
     server.use(
       http.post(`${BASE}/lobby-invites/:inviteId/decline`, () =>
-        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: 409 }),
+        HttpResponse.json({ code: 'CONFLICT', message: 'Invite is no longer pending' }, { status: HTTP_STATUS.CONFLICT }),
       ),
     );
 

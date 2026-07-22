@@ -6,6 +6,7 @@ import { server } from '@/test/server';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { useAuthStore } from '@/store/auth';
 import { DangerZoneCard } from '../DangerZoneCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobbyOwner = MOCK_USERS[0]!; // owns every mock lobby -> 409 on delete
@@ -60,7 +61,7 @@ describe('DangerZoneCard', () => {
 
   it('shows a generic error on an unexpected 500', async () => {
     expect.assertions(1);
-    server.use(http.delete(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.delete(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderCard(lobbyOwner.id);
 

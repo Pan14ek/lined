@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { ROLES, PENDING_INVITE_TEXT } from '@/test/lobbyMemberContent';
 import { PendingInviteRow } from '../PendingInviteRow';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -38,7 +39,7 @@ describe('PendingInviteRow', () => {
 
   it('falls back to a numeric label if the invitee profile fails to load', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 404 })));
+    server.use(http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })));
     renderWithProviders(
       <PendingInviteRow
         invite={invite}

@@ -7,6 +7,7 @@ import { MOCK_LOBBIES, MOCK_FREE_SLOT } from '@/features/lobby/api/mockData';
 import type { EventConflictDto } from '@/features/calendar/model';
 import { useAuthStore } from '@/store/auth';
 import { ReserveSlotModal } from '../ReserveSlotModal';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const LOBBY = MOCK_LOBBIES[0]!; // id 1, members [1, 2]
@@ -96,7 +97,7 @@ describe('ReserveSlotModal — mode A (full slot, lobby known)', () => {
     expect.assertions(1);
     server.use(
       http.post(`${BASE}/calendar/events`, () =>
-        HttpResponse.json({ code: 'VALIDATION_ERROR', message: 'title must not be blank' }, { status: 400 }),
+        HttpResponse.json({ code: 'VALIDATION_ERROR', message: 'title must not be blank' }, { status: HTTP_STATUS.BAD_REQUEST }),
       ),
     );
     const user = userEvent.setup();
@@ -229,7 +230,7 @@ describe('ReserveSlotModal — conflict warnings', () => {
 
   it('does not block submission or show a banner when the conflicts check fails (fail open)', async () => {
     expect.assertions(2);
-    server.use(http.get(`${BASE}/calendar/conflicts`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/calendar/conflicts`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     const onReserved = vi.fn();
     renderWithProviders(

@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settings';
 import i18n from '@/i18n';
 import { LanguageCard } from '../LanguageCard';
 import { api, locales, roles, testIds, texts } from './LanguageCard.test.helper';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const testUser = MOCK_USERS[0]!;
 
@@ -60,7 +61,7 @@ describe('LanguageCard', () => {
 
   it('keeps the switch applied locally even when the PATCH fails', async () => {
     expect.assertions(2);
-    server.use(http.patch(`${api.baseUrl}/users/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${api.baseUrl}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<LanguageCard userId={testUser.id} />);
 

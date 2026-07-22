@@ -4,6 +4,7 @@ import { http, HttpResponse, delay } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { ForgotPasswordPage } from '../ForgotPasswordPage';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -60,7 +61,7 @@ describe('ForgotPasswordPage', () => {
     server.use(
       http.post(`${BASE}/auth/password-reset-requests`, async () => {
         await delay(50);
-        return new HttpResponse(null, { status: 202 });
+        return new HttpResponse(null, { status: HTTP_STATUS.ACCEPTED });
       }),
     );
     const user = userEvent.setup();

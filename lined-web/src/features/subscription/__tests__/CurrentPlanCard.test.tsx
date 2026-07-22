@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_SUBSCRIPTIONS, MOCK_PLANS } from '@/features/subscription/api/mockData';
 import { CurrentPlanCard } from '../CurrentPlanCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const activeSubscription = MOCK_SUBSCRIPTIONS[0]!;
@@ -69,7 +70,7 @@ describe('CurrentPlanCard', () => {
   it('shows an inline error message when cancelling fails', async () => {
     expect.assertions(1);
     server.use(
-      http.post(`${BASE}/subscriptions/:userId/cancel-active`, () => new HttpResponse(null, { status: 404 })),
+      http.post(`${BASE}/subscriptions/:userId/cancel-active`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })),
     );
     const user = userEvent.setup();
     renderWithProviders(

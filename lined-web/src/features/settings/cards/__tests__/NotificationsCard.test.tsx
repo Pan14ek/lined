@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { useAuthStore } from '@/store/auth';
 import { NotificationsCard } from '../NotificationsCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -59,7 +60,7 @@ describe('NotificationsCard', () => {
   it('rolls back the toggle and shows an inline error on failure', async () => {
     expect.assertions(2);
     server.use(
-      http.patch(`${BASE}/notifications/preferences`, () => new HttpResponse(null, { status: 500 })),
+      http.patch(`${BASE}/notifications/preferences`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     const user = userEvent.setup();
     renderWithProviders(<NotificationsCard />);

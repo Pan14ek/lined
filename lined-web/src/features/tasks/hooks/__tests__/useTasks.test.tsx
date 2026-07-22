@@ -7,6 +7,7 @@ import { server } from '@/test/server';
 import { QUERY_KEYS } from '@/features/tasks/lib/constants';
 import type { TaskDto } from '@/features/tasks/model';
 import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '../useTasks';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -94,7 +95,7 @@ describe('useUpdateTask', () => {
     const task = makeTask({ id: 1, lobbyId: 1, title: 'Original title' });
     queryClient.setQueryData(QUERY_KEYS.myTasks, [task]);
     queryClient.setQueryData(QUERY_KEYS.lobbyTasks(1), [task]);
-    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
 
     const { result } = renderHook(() => useUpdateTask(), { wrapper: makeWrapper(queryClient) });
     result.current.mutate({ id: 1, data: { title: 'Updated title' } });
@@ -117,7 +118,7 @@ describe('useDeleteTask', () => {
     const task = makeTask({ id: 1, lobbyId: 1 });
     queryClient.setQueryData(QUERY_KEYS.myTasks, [task]);
     queryClient.setQueryData(QUERY_KEYS.lobbyTasks(1), [task]);
-    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 204 })));
+    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT })));
 
     const { result } = renderHook(() => useDeleteTask(), { wrapper: makeWrapper(queryClient) });
     result.current.mutate(1);

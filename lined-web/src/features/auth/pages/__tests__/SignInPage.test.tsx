@@ -5,6 +5,7 @@ import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { SignInPage } from '../SignInPage';
 import { useAuthStore } from '@/store/auth';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -56,7 +57,7 @@ describe('SignInPage', () => {
         await delay(50);
         return HttpResponse.json(
           { title: 'Unauthorized', detail: 'Invalid credentials' },
-          { status: 401 },
+          { status: HTTP_STATUS.UNAUTHORIZED },
         );
       }),
     );

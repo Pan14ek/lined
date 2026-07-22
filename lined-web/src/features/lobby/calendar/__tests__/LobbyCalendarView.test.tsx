@@ -6,6 +6,7 @@ import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import type { EventDto } from '@/features/calendar/model';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LobbyCalendarView } from '../LobbyCalendarView';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const LOBBY = MOCK_LOBBIES[0]!; // id 1, COUPLE
@@ -35,7 +36,7 @@ describe('LobbyCalendarView', () => {
 
   it('shows an error message when the events request fails', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/calendar/events`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/calendar/events`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);
 
     expect(
@@ -148,7 +149,7 @@ describe('LobbyCalendarView', () => {
       http.get(`${BASE}/calendar/events`, () =>
         HttpResponse.json([makeEvent(1, LOBBY.id, 9, 'Morning Coffee')]),
       ),
-      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: 500 })),
+      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     const user = userEvent.setup();
     renderWithProviders(<LobbyCalendarView lobby={LOBBY} />);

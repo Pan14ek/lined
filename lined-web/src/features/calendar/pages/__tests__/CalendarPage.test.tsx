@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth';
 import { useCalendarStore } from '@/store/calendar';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { MOCK_EVENTS } from '@/features/calendar/api/mockData';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -148,7 +149,7 @@ describe('CalendarPage', () => {
   it('shows an inline error and keeps the event when the delete request fails', async () => {
     expect.assertions(2);
     server.use(
-      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: 500 })),
+      http.delete(`${BASE}/calendar/events/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     const user = userEvent.setup();
     renderWithProviders(<CalendarPage />);

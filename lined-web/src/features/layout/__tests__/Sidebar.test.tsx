@@ -7,6 +7,7 @@ import { Sidebar } from '../Sidebar';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -74,7 +75,7 @@ describe('Sidebar', () => {
   it('does not crash and renders no user info when the user fetch fails', async () => {
     expect.assertions(2);
     server.use(
-      http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 404 })),
+      http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })),
     );
     renderSidebar();
 

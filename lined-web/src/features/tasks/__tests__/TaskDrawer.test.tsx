@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { MOCK_TASKS } from '@/features/tasks/api/mockData';
 import { TaskDrawer } from '../TaskDrawer';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const LOBBY = MOCK_LOBBIES[0]!; // id 1, memberIds [1, 2]
@@ -130,7 +131,7 @@ describe('TaskDrawer', () => {
       http.post(`${BASE}/tasks`, () =>
         HttpResponse.json(
           { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
-          { status: 400 },
+          { status: HTTP_STATUS.BAD_REQUEST },
         ),
       ),
     );
@@ -145,7 +146,7 @@ describe('TaskDrawer', () => {
 
   it('surfaces a generic error on a 500 response', async () => {
     expect.assertions(1);
-    server.use(http.post(`${BASE}/tasks`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.post(`${BASE}/tasks`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<TaskDrawer lobbies={[LOBBY]} lockedLobbyId={LOBBY.id} onClose={vi.fn()} />);
 
@@ -295,7 +296,7 @@ describe('TaskDrawer — edit mode', () => {
       http.patch(`${BASE}/tasks/:id`, () =>
         HttpResponse.json(
           { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
-          { status: 400 },
+          { status: HTTP_STATUS.BAD_REQUEST },
         ),
       ),
     );
@@ -314,7 +315,7 @@ describe('TaskDrawer — edit mode', () => {
 
   it('surfaces a generic error on a 500 save response', async () => {
     expect.assertions(1);
-    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<TaskDrawer lobbies={MOCK_LOBBIES} task={TASK} onClose={vi.fn()} />);
 
@@ -344,7 +345,7 @@ describe('TaskDrawer — edit mode', () => {
 
   it('shows an inline error and keeps the confirm dialog open when delete fails', async () => {
     expect.assertions(2);
-    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderWithProviders(<TaskDrawer lobbies={MOCK_LOBBIES} task={TASK} onClose={onClose} />);

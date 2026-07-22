@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { LobbyNotificationsCard } from '../LobbyNotificationsCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -53,7 +54,7 @@ describe('LobbyNotificationsCard', () => {
     server.use(
       http.patch(
         `${BASE}/lobbies/:lobbyId/notification-preferences`,
-        () => new HttpResponse(null, { status: 500 }),
+        () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }),
       ),
     );
     const user = userEvent.setup();
