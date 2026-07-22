@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { NotificationPreferencesDto } from '@/features/notifications/model';
 import {
   useNotificationPreferences,
@@ -6,48 +7,49 @@ import {
 import { ToggleRow } from '@/components/ToggleRow';
 import { SettingsCard } from '../SettingsCard';
 
-const TOGGLES: {
+const TOGGLE_KEYS: {
   key: keyof NotificationPreferencesDto;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 }[] = [
   {
     key: 'sharedEventsEnabled',
-    label: 'New shared events',
-    description: 'Notify when a lobby member adds a shared event',
+    labelKey: 'notifications.sharedEvents',
+    descriptionKey: 'notifications.sharedEventsDescription',
   },
   {
     key: 'taskAssignedEnabled',
-    label: 'Task assigned to me',
-    description: 'Alert when someone assigns a task to you',
+    labelKey: 'notifications.taskAssigned',
+    descriptionKey: 'notifications.taskAssignedDescription',
   },
   {
     key: 'freeSlotsEnabled',
-    label: 'Free slot detected',
-    description: 'Notify when a free time slot opens up for your lobbies',
+    labelKey: 'notifications.freeSlots',
+    descriptionKey: 'notifications.freeSlotsDescription',
   },
   {
     key: 'eventRemindersEnabled',
-    label: 'Event reminders',
-    description: 'Reminders 30 minutes before an event',
+    labelKey: 'notifications.eventReminders',
+    descriptionKey: 'notifications.eventRemindersDescription',
   },
   {
     key: 'emailDigestsEnabled',
-    label: 'Email digests',
-    description: 'Weekly summary of shared activity',
+    labelKey: 'notifications.emailDigests',
+    descriptionKey: 'notifications.emailDigestsDescription',
   },
 ];
 
 export const NotificationsCard = () => {
+  const { t } = useTranslation('settings');
   const { data: preferences, isLoading } = useNotificationPreferences();
   const updatePreferences = useUpdateNotificationPreferences();
 
   if (isLoading || !preferences) {
     return (
-      <SettingsCard id="notifications" title="Notifications">
+      <SettingsCard id="notifications" title={t('notifications.title')}>
         <div className="space-y-3 py-4" data-testid="notifications-card-loading">
-          {TOGGLES.map((t) => (
-            <div key={t.key} className="h-10 animate-pulse rounded-lg bg-bg" />
+          {TOGGLE_KEYS.map((toggle) => (
+            <div key={toggle.key} className="h-10 animate-pulse rounded-lg bg-bg" />
           ))}
         </div>
       </SettingsCard>
@@ -55,19 +57,19 @@ export const NotificationsCard = () => {
   }
 
   return (
-    <SettingsCard id="notifications" title="Notifications">
-      {TOGGLES.map((t) => (
+    <SettingsCard id="notifications" title={t('notifications.title')}>
+      {TOGGLE_KEYS.map((toggle) => (
         <ToggleRow
-          key={t.key}
-          label={t.label}
-          description={t.description}
-          checked={preferences[t.key]}
-          onChange={(checked) => updatePreferences.mutate({ [t.key]: checked })}
+          key={toggle.key}
+          label={t(toggle.labelKey)}
+          description={t(toggle.descriptionKey)}
+          checked={preferences[toggle.key]}
+          onChange={(checked) => updatePreferences.mutate({ [toggle.key]: checked })}
         />
       ))}
       {updatePreferences.isError && (
         <p role="alert" className="pb-4 pt-1 text-xs text-red-600 dark:text-red-400">
-          Could not save that preference — please try again
+          {t('notifications.saveError')}
         </p>
       )}
     </SettingsCard>

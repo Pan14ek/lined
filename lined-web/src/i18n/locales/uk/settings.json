@@ -1,1 +1,75 @@
-{}
+{
+  "menu": {
+    "sectionAccount": "ОБЛІКОВИЙ ЗАПИС",
+    "sectionPreferences": "НАЛАШТУВАННЯ",
+    "sectionDanger": "НЕБЕЗПЕЧНА ЗОНА",
+    "profile": "Профіль",
+    "password": "Пароль і безпека",
+    "notifications": "Сповіщення",
+    "appearance": "Вигляд",
+    "language": "Мова та регіон",
+    "subscription": "Підписка",
+    "deleteAccount": "Видалити акаунт"
+  },
+  "profile": {
+    "title": "Профіль",
+    "changePhoto": "Змінити фото",
+    "comingSoon": "Скоро",
+    "username": "Ім'я користувача",
+    "email": "Електронна пошта",
+    "saving": "Збереження…",
+    "saveChanges": "Зберегти зміни",
+    "errorTaken": "Це ім'я користувача або пошта вже зайняті",
+    "errorInvalid": "Введіть коректне ім'я користувача та пошту"
+  },
+  "password": {
+    "title": "Пароль і безпека",
+    "cannotVerifyNote": "Ми ще не можемо перевірити ваш поточний пароль — його буде оновлено напряму.",
+    "newPassword": "Новий пароль",
+    "confirmNewPassword": "Підтвердіть новий пароль",
+    "saving": "Збереження…",
+    "changePassword": "Змінити пароль",
+    "errorTooShort": "Пароль має містити щонайменше {{count}} символів",
+    "errorMismatch": "Паролі не збігаються",
+    "errorInvalid": "Введіть коректний пароль"
+  },
+  "notifications": {
+    "title": "Сповіщення",
+    "sharedEvents": "Нові спільні події",
+    "sharedEventsDescription": "Сповіщати, коли учасник лобі додає спільну подію",
+    "taskAssigned": "Завдання призначено мені",
+    "taskAssignedDescription": "Сповіщати, коли хтось призначає вам завдання",
+    "freeSlots": "Знайдено вільний час",
+    "freeSlotsDescription": "Сповіщати, коли для вашого лобі з'являється вільний час",
+    "eventReminders": "Нагадування про події",
+    "eventRemindersDescription": "Нагадування за 30 хвилин до події",
+    "emailDigests": "Дайджести на пошту",
+    "emailDigestsDescription": "Щотижневий підсумок спільної активності",
+    "saveError": "Не вдалося зберегти це налаштування — спробуйте ще раз"
+  },
+  "appearance": {
+    "title": "Вигляд",
+    "theme": "Тема",
+    "themeDescription": "Оберіть бажану колірну схему",
+    "light": "Світла",
+    "dark": "Темна",
+    "system": "Системна"
+  },
+  "language": {
+    "title": "Мова та регіон",
+    "description": "Оберіть мову інтерфейсу Lined",
+    "english": "English",
+    "ukrainian": "Українська",
+    "previewLabel": "Попередній перегляд",
+    "appliesNote": "Застосовується одразу та зберігається у вашому профілі",
+    "saveError": "Не вдалося зберегти вибір мови — тут вона вже застосована, спробуйте ще раз, щоб синхронізувати з акаунтом"
+  },
+  "dangerZone": {
+    "title": "Небезпечна зона",
+    "deleteAccount": "Видалити мій акаунт",
+    "deleteAccountDescription": "Остаточно видалити ваш акаунт і всі дані. Це неможливо скасувати.",
+    "deleteAccountButton": "Видалити акаунт",
+    "errorOwnsLobbies": "Ви досі є власником одного чи кількох лобі — передайте право власності або видаліть їх спочатку",
+    "errorGeneric": "Не вдалося видалити акаунт — спробуйте ще раз"
+  }
+}

@@ -1,1 +1,75 @@
-{}
+{
+  "menu": {
+    "sectionAccount": "ACCOUNT",
+    "sectionPreferences": "PREFERENCES",
+    "sectionDanger": "DANGER",
+    "profile": "Profile",
+    "password": "Password & Security",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "language": "Language & Region",
+    "subscription": "Subscription",
+    "deleteAccount": "Delete Account"
+  },
+  "profile": {
+    "title": "Profile",
+    "changePhoto": "Change photo",
+    "comingSoon": "Coming soon",
+    "username": "Username",
+    "email": "Email address",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "errorTaken": "That username or email is already taken",
+    "errorInvalid": "Enter a valid username and email"
+  },
+  "password": {
+    "title": "Password & Security",
+    "cannotVerifyNote": "We can't verify your current password yet — this will update it directly.",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "saving": "Saving…",
+    "changePassword": "Change password",
+    "errorTooShort": "Password must be at least {{count}} characters",
+    "errorMismatch": "Passwords do not match",
+    "errorInvalid": "Enter a valid password"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "sharedEvents": "New shared events",
+    "sharedEventsDescription": "Notify when a lobby member adds a shared event",
+    "taskAssigned": "Task assigned to me",
+    "taskAssignedDescription": "Alert when someone assigns a task to you",
+    "freeSlots": "Free slot detected",
+    "freeSlotsDescription": "Notify when a free time slot opens up for your lobbies",
+    "eventReminders": "Event reminders",
+    "eventRemindersDescription": "Reminders 30 minutes before an event",
+    "emailDigests": "Email digests",
+    "emailDigestsDescription": "Weekly summary of shared activity",
+    "saveError": "Could not save that preference — please try again"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "themeDescription": "Choose your preferred colour scheme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "title": "Language & Region",
+    "description": "Choose the language Lined uses across the app",
+    "english": "English",
+    "ukrainian": "Українська",
+    "previewLabel": "Preview",
+    "appliesNote": "Applies immediately and is saved to your profile",
+    "saveError": "Couldn't save your language choice — it's still applied here, but try again to sync it to your account"
+  },
+  "dangerZone": {
+    "title": "Danger Zone",
+    "deleteAccount": "Delete my account",
+    "deleteAccountDescription": "Permanently remove your account and all data. This cannot be undone.",
+    "deleteAccountButton": "Delete account",
+    "errorOwnsLobbies": "You still own one or more lobbies — transfer ownership or delete them first",
+    "errorGeneric": "Could not delete your account — please try again"
+  }
+}

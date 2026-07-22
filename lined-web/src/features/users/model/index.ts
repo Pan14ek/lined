@@ -6,6 +6,8 @@ export interface UserDto {
   roles: string[];
   activePlan: string | null;
   activeUntil: string | null;
+  /** Mock-only until `feature/user-locale-preference` ships on the backend. */
+  locale?: 'en' | 'uk';
 }
 
 export interface UserCreateDto {
@@ -20,6 +22,7 @@ export interface UserUpdateDto {
   email?: string;
   password?: string;
   roles?: string[];
+  locale?: 'en' | 'uk';
 }
 
 export interface UserSearchResultDto {
