@@ -31,6 +31,7 @@ changes.
 | LLM Trade-off Explanations | Reviewed explanation workflow for Pareto and decision-usefulness outputs. | `llm-tradeoff-explanations.md` | Use after generating `results-report.json` when you need article-facing explanation drafts with explicit caveats. | Candidate-level trade-off drafts, comparison-summary drafts, review status, article-readiness metadata. |
 | LLM Guardrail Evaluation | Repo-local guardrail enforcement over rule-promotion and article-claim artifact chains. | `llm-guardrail-evaluation.md` | Use after reviewed rule and explanation artifacts exist and before treating them as promotion-ready or article-claim-ready. | Advisory-only scope, cross-artifact promotion invariants, repo-local consumer scan, article-claim blocking rules. |
 | Agent Evaluation Harness | Fixture-based evaluation harness for research-agent outputs. | `agent-evaluation-harness.md` | Use before trusting agent-produced rule suggestions or research summaries in experiment work. | Versioned eval cases, local Notion snapshots, runtime-summary fixtures, rubric checks, pass/fail report. |
+| Feature Flags       | Runtime capability catalog, persistence/cache rules, public/admin API contracts, enforcement boundaries, and multi-instance synchronization. | `feature-flags.md` | Before implementing or changing feature availability in the backend or web app. | Flag semantics, capability ownership, environment defaults, disabled errors, cache propagation, admin security. |
 | Notion KB Workflow  | Rules for using Notion as the durable research knowledge base for backend experiment work.                     | `notion-knowledge-base-workflow.md` | Use when research or experiment analysis should be stored in Notion.                        | Notion write-back checklist, verification after write, fallback policy, entry template. |
 | Experiment Plan     | Detailed plan for adapting Lined to Kubernetes and runtime telemetry experiments for the article.               | `experiment-plan.md`           | Use before containerization, kind, Kubernetes, telemetry, load-test, or fitness-model work. | Research scope, experiment platform design, metrics, baselines, expected evidence.       |
 | Experiment Tasks    | One-PR task table for iterative experiment implementation.                                                      | `experiment-tasks.md`          | Use before starting an experiment branch or PR.                                             | Branch naming, PR scope, implementation order, final-work expectations.                  |
@@ -40,6 +41,8 @@ changes.
 
 - Keep backend documentation in this `docs/` directory.
 - Update this index when adding, moving, or renaming backend documentation.
+- Keep feature-flag implementation tasks linked from `feature-flags.md`,
+  `experiment-tasks.md`, and the corresponding web task files.
 - Keep experiment work linked to `experiment-tasks.md`.
 - Use `notion-knowledge-base-workflow.md` when backend experiment work changes
   durable research knowledge that should be stored in Notion.
