@@ -251,12 +251,9 @@ Only the invitee may accept or decline an invite.
 
 Response: `200 OK` with `LobbyInviteDto`.
 
-Acceptance retry contract:
-
-- First accept of a `PENDING` invite returns `200 OK` with `status = ACCEPTED`.
-- A concurrent or sequential retry by the same invitee after the invite is already accepted also
-  returns `200 OK` with the accepted `LobbyInviteDto`.
-- If the invite was already declined or cancelled, accept/decline returns `409 Conflict`.
+Accepting a `PENDING` invite adds the invitee to the lobby and returns an `ACCEPTED` invite.
+Concurrent or sequential retries by the same invitee return `200 OK` with the accepted invite.
+Accepting an invite that has been cancelled or declined returns `409 Conflict`.
 
 ## Tasks
 

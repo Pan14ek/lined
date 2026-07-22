@@ -205,7 +205,10 @@ class LobbyInviteServiceImplTest {
   @Test
   void accept_addsInviteeAndMarksInviteAccepted() {
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
-    when(inviteRepo.acceptPending(501L, 2L, any(OffsetDateTime.class))).thenReturn(1);
+    when(inviteRepo.acceptPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(2L),
+        any(OffsetDateTime.class))).thenReturn(1);
     when(mapper.toDto(invite)).thenReturn(inviteDto);
 
     inviteService.accept(501L, 2L);
@@ -229,7 +232,10 @@ class LobbyInviteServiceImplTest {
     var acceptedDto = new LobbyInviteDto(501L, 101L, 1L, 2L, LobbyInviteStatus.ACCEPTED,
         acceptedInvite.getSentAt(), acceptedInvite.getCreatedAt(), acceptedInvite.getUpdatedAt());
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite), Optional.of(acceptedInvite));
-    when(inviteRepo.acceptPending(501L, 2L, any(OffsetDateTime.class))).thenReturn(0);
+    when(inviteRepo.acceptPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(2L),
+        any(OffsetDateTime.class))).thenReturn(0);
     when(mapper.toDto(acceptedInvite)).thenReturn(acceptedDto);
 
     assertThat(inviteService.accept(501L, 2L)).isEqualTo(acceptedDto);
