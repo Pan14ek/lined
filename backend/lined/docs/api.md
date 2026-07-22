@@ -251,6 +251,10 @@ Only the invitee may accept or decline an invite.
 
 Response: `200 OK` with `LobbyInviteDto`.
 
+Accepting a `PENDING` invite adds the invitee to the lobby and returns an `ACCEPTED` invite.
+Concurrent or sequential retries by the same invitee return `200 OK` with the accepted invite.
+Accepting an invite that has been cancelled or declined returns `409 Conflict`.
+
 ## Tasks
 
 ### `POST /api/tasks`

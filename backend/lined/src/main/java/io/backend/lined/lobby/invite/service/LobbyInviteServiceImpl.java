@@ -15,6 +15,7 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -36,6 +37,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private final LobbyInviteRepository inviteRepo;
   private final LobbyInviteMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final EntityManager entityManager;
 
   @Override
   public LobbyInviteDto create(
@@ -89,10 +91,21 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   @Override
   public LobbyInviteDto accept(Long inviteId, Long requesterId) {
     var invite = inviteForInvitee(inviteId, requesterId);
+    if (invite.getStatus() == LobbyInviteStatus.ACCEPTED) {
+      return mapper.toDto(invite);
+    }
     requirePending(invite);
     ensureNotMember(invite.getLobby(), requesterId);
+
+    var now = OffsetDateTime.now();
+    int claimed = inviteRepo.acceptPending(inviteId, requesterId, now);
+    if (claimed == 0) {
+      return resolveConcurrentAcceptance(inviteId);
+    }
+
     invite.getLobby().getMembers().add(invite.getInvitee());
-    transition(invite, LobbyInviteStatus.ACCEPTED);
+    invite.setStatus(LobbyInviteStatus.ACCEPTED);
+    invite.setUpdatedAt(now);
     return mapper.toDto(invite);
   }
 
@@ -145,6 +158,15 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
     requirePending(invite);
     invite.setStatus(status);
     invite.setUpdatedAt(OffsetDateTime.now());
+  }
+
+  private LobbyInviteDto resolveConcurrentAcceptance(Long inviteId) {
+    entityManager.clear();
+    var latestInvite = mustInvite(inviteId);
+    if (latestInvite.getStatus() == LobbyInviteStatus.ACCEPTED) {
+      return mapper.toDto(latestInvite);
+    }
+    throw new ConflictException("Lobby invite is no longer pending");
   }
 
   private UserEntity resolveInvitee(Long inviteeId, String inviteeEmail) {
