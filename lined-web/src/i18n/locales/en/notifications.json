@@ -25,5 +25,15 @@
     "acceptFailed": "Could not accept — please try again",
     "declineFailed": "Could not decline — please try again",
     "staleInvite": "This invite is no longer valid"
+  },
+  "inbox": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "loadError": "Couldn't load notifications.",
+    "empty": "You're all caught up."
+  },
+  "notificationMessages": {
+    "taskAssigned": "You were assigned \"{{taskTitle}}\"",
+    "sharedEventCreated": "\"{{eventTitle}}\" was added to {{lobbyName}}"
   }
 }

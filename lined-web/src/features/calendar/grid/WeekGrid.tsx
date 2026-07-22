@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import {
@@ -127,6 +128,7 @@ interface FreeSlotBandProps {
 }
 
 const FreeSlotBand = ({ startHour, endHour, onClick }: FreeSlotBandProps) => {
+  const { t } = useTranslation('calendar');
   const top = (startHour - GRID_START_HOUR) * HOUR_HEIGHT;
   const height = (endHour - startHour) * HOUR_HEIGHT;
 
@@ -135,11 +137,11 @@ const FreeSlotBand = ({ startHour, endHour, onClick }: FreeSlotBandProps) => {
       <button
         type="button"
         onClick={onClick}
-        aria-label="Reserve this free slot"
+        aria-label={t('weekGrid.reserveFreeSlot')}
         className="absolute left-[2px] right-[2px] flex cursor-pointer items-center justify-center rounded-[6px] text-[10px] font-semibold text-brand-green-dark dark:text-brand-green hover:opacity-80"
         style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
       >
-        {height >= 40 && 'Free slot'}
+        {height >= 40 && t('weekGrid.freeSlot')}
       </button>
     );
   }
@@ -149,7 +151,7 @@ const FreeSlotBand = ({ startHour, endHour, onClick }: FreeSlotBandProps) => {
       className="pointer-events-none absolute left-[2px] right-[2px] rounded-[6px] flex items-center justify-center text-[10px] font-semibold text-brand-green-dark dark:text-brand-green"
       style={{ top, height, backgroundColor: 'var(--color-free-slot)', opacity: 0.6 }}
     >
-      {height >= 40 && 'Free slot'}
+      {height >= 40 && t('weekGrid.freeSlot')}
     </div>
   );
 }
@@ -185,6 +187,7 @@ const DayColumn = ({
   overflowCount = 0,
   actions,
 }: DayColumnProps) => {
+  const { t } = useTranslation('calendar');
   return (
     <div
       className={cn('relative flex-1 border-l border-border', today && 'bg-brand-green-light/25')}
@@ -236,7 +239,7 @@ const DayColumn = ({
           onClick={actions.onShowMore}
           className="absolute right-1 top-1 z-20 rounded-full bg-text-primary/80 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-text-primary"
         >
-          +{overflowCount} more
+          {t('weekGrid.showMore', { count: overflowCount })}
         </button>
       )}
 
@@ -290,6 +293,7 @@ export const WeekGrid = ({
   maxVisibleEvents = 4,
   onFreeSlotClick,
 }: WeekGridProps) => {
+  const { t } = useTranslation('calendar');
   const weekDays = days ?? Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
 
@@ -358,7 +362,7 @@ export const WeekGrid = ({
           ))}
           {/* Closing boundary label for the last row — absolutely positioned so
               it doesn't add flow height (would desync from the day columns). */}
-          <div className="absolute bottom-0 right-2 text-[11px] text-text-muted">12 AM</div>
+          <div className="absolute bottom-0 right-2 text-[11px] text-text-muted">{t('weekGrid.midnight')}</div>
         </div>
 
         {/* Day columns */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
 import { useMyNotifications, useMarkNotificationRead } from '@/features/notifications/hooks/useNotifications';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
@@ -17,6 +18,7 @@ const getInviteErrorMessage = (error: unknown, fallback: string): string => {
 }
 
 export const NotificationBell = () => {
+  const { t } = useTranslation('notifications');
   const navigate = useNavigate();
   const { data: notifications, isLoading, isError } = useMyNotifications();
   const { data: lobbies } = useMyLobbies();
@@ -54,7 +56,7 @@ export const NotificationBell = () => {
       onError: (error) => {
         setInviteErrors((prev) => ({
           ...prev,
-          [inviteId]: getInviteErrorMessage(error, 'Could not accept — please try again'),
+          [inviteId]: getInviteErrorMessage(error, t('errors.acceptFailed')),
         }));
         void refetchInvites();
       },
@@ -67,7 +69,7 @@ export const NotificationBell = () => {
       onError: (error) => {
         setInviteErrors((prev) => ({
           ...prev,
-          [inviteId]: getInviteErrorMessage(error, 'Could not decline — please try again'),
+          [inviteId]: getInviteErrorMessage(error, t('errors.declineFailed')),
         }));
         void refetchInvites();
       },
@@ -77,7 +79,7 @@ export const NotificationBell = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Notifications"
+        aria-label={t('inbox.title')}
         className="relative flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-hover"
       >
         <Bell className="h-4 w-4" />

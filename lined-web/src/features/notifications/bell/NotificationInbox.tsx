@@ -1,4 +1,5 @@
 import { CheckCircle2, CalendarPlus, Bell as BellIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto, LobbyInviteDto } from '@/features/lobby/model';
 import type { NotificationDto, NotificationType } from '@/features/notifications/model';
 import { formatRelativeTimeAgo } from '@/features/calendar/lib/calendarUtils';
@@ -39,20 +40,21 @@ export const NotificationInbox = ({
   decliningInviteId,
   inviteErrors,
 }: NotificationInboxProps) => {
+  const { t } = useTranslation('notifications');
   const lobbyMap = new Map((lobbies ?? []).map((l) => [l.id, l]));
   const hasUnread = notifications?.some((n) => n.readAt == null) ?? false;
 
   return (
     <div className="flex max-h-96 w-80 flex-col">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-sm font-semibold text-text-primary">Notifications</span>
+        <span className="text-sm font-semibold text-text-primary">{t('inbox.title')}</span>
         {hasUnread && (
           <button
             type="button"
             onClick={onMarkAllRead}
             className="text-xs font-medium text-brand-green hover:underline"
           >
-            Mark all read
+            {t('inbox.markAllRead')}
           </button>
         )}
       </div>
@@ -83,11 +85,11 @@ export const NotificationInbox = ({
         )}
 
         {!isLoading && isError && (
-          <p className="p-3 text-sm text-text-secondary">Couldn&apos;t load notifications.</p>
+          <p className="p-3 text-sm text-text-secondary">{t('inbox.loadError')}</p>
         )}
 
         {!isLoading && !isError && notifications?.length === 0 && (
-          <p className="p-3 text-sm text-text-secondary">You&apos;re all caught up.</p>
+          <p className="p-3 text-sm text-text-secondary">{t('inbox.empty')}</p>
         )}
 
         {!isLoading && !isError && notifications != null && notifications.length > 0 && (
@@ -112,7 +114,11 @@ export const NotificationInbox = ({
                   >
                     <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-text-secondary" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-text-primary">{notification.message}</p>
+                      <p className="text-sm text-text-primary">
+                        {notification.messageKey
+                          ? t(notification.messageKey, notification.messageParams)
+                          : notification.message}
+                      </p>
                       <p className="mt-0.5 text-xs text-text-secondary">
                         {formatRelativeTimeAgo(notification.createdAt)}
                         {lobbyName ? ` · ${lobbyName}` : ''}

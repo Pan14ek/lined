@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import type { LobbyDto } from '@/features/lobby/model';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';

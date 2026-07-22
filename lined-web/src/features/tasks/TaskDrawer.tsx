@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskPriority, TaskStatus, TaskUpdateDto } from '@/features/tasks/model';

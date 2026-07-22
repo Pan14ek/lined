@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { SettingsCard } from '../SettingsCard';

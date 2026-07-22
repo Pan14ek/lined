@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useDeleteAccount } from '@/features/users/hooks/useUserSettings';
 import { useAuthStore } from '@/store/auth';
 import { getApiErrorMessage } from '@/lib/apiErrors';

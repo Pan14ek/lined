@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { LobbyDto, LobbyType } from '@/features/lobby/model';
 import { useUpdateLobby } from '@/features/lobby/hooks/useLobbies';
 import { getApiErrorMessage } from '@/lib/apiErrors';

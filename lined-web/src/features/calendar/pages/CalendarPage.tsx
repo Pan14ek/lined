@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
@@ -25,14 +27,15 @@ import {
 import { WeekEmptyBanner } from '@/features/calendar/grid/WeekEmptyBanner';
 import type { EventDto } from '@/features/calendar/model';
 
-const getDeleteEventErrorMessage = (error: unknown): string => {
+const getDeleteEventErrorMessage = (error: unknown, t: TFunction<'calendar'>): string => {
   if (getErrorStatus(error) === 404) {
-    return 'This event was already deleted';
+    return t('page.deleteError.alreadyDeleted');
   }
-  return 'Could not delete this event — please try again';
+  return t('page.deleteError.generic');
 }
 
 export const CalendarPage = () => {
+  const { t } = useTranslation('calendar');
   const {
     weekStart,
     monthAnchor,
@@ -112,7 +115,7 @@ export const CalendarPage = () => {
         setDeleteError(null);
         deleteEvent.mutate(selectedEventId, {
           onSuccess: () => setSelectedEventId(null),
-          onError: (error) => setDeleteError(getDeleteEventErrorMessage(error)),
+          onError: (error) => setDeleteError(getDeleteEventErrorMessage(error, t)),
         });
       }
 
@@ -124,7 +127,7 @@ export const CalendarPage = () => {
           <button
             type="button"
             onClick={goToPrevDay}
-            aria-label="Previous day"
+            aria-label={t('page.previousDay')}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-bg"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -139,7 +142,7 @@ export const CalendarPage = () => {
           <button
             type="button"
             onClick={goToNextDay}
-            aria-label="Next day"
+            aria-label={t('page.nextDay')}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-bg"
           >
             <ChevronRight className="h-4 w-4" />
@@ -162,8 +165,8 @@ export const CalendarPage = () => {
 
       {!isPhone && viewMode === 'week' && weekEvents.length === 0 && (
         <WeekEmptyBanner
-          message="No events this week — create one."
-          action={{ label: 'Create event', onClick: openCreateModal }}
+          message={t('page.weekEmpty.message')}
+          action={{ label: t('page.weekEmpty.action'), onClick: openCreateModal }}
         />
       )}
 
@@ -234,7 +237,7 @@ export const CalendarPage = () => {
         <button
           type="button"
           onClick={openCreateModal}
-          aria-label="New event"
+          aria-label={t('page.newEvent')}
           className="fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-white shadow-[var(--shadow-lg)] hover:bg-brand-green-dark md:hidden"
         >
           <Plus className="h-6 w-6" />

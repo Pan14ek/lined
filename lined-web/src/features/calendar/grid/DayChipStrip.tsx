@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { addDays, getWeekStart, isSameDay, isToday } from '@/features/calendar/lib/calendarUtils';
 import { cn } from '@/lib/utils';
 
@@ -9,13 +10,14 @@ interface DayChipStripProps {
 /** Horizontal, scrollable week-of-`selectedDay` strip of day chips — the
  *  phone-only date picker above the single-day calendar column. */
 export const DayChipStrip = ({ selectedDay, onSelectDay }: DayChipStripProps) => {
+  const { t } = useTranslation('calendar');
   const weekStart = getWeekStart(selectedDay);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (
     <div
       role="tablist"
-      aria-label="Select day"
+      aria-label={t('dayChipStrip.selectDay')}
       className="flex flex-shrink-0 gap-2 overflow-x-auto border-b border-border bg-surface px-3 py-2"
     >
       {days.map((day) => {

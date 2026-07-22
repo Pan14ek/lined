@@ -1,1 +1,127 @@
-{}
+{
+  "page": {
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "newEvent": "New event",
+    "weekEmpty": {
+      "message": "No events this week — create one.",
+      "action": "Create event"
+    },
+    "deleteError": {
+      "alreadyDeleted": "This event was already deleted",
+      "generic": "Could not delete this event — please try again"
+    }
+  },
+  "topBar": {
+    "previousMonth": "Previous month",
+    "previousWeek": "Previous week",
+    "nextMonth": "Next month",
+    "nextWeek": "Next week",
+    "today": "Today",
+    "viewMode": {
+      "week": "Week",
+      "month": "Month"
+    },
+      "filters": "Filters",
+      "showLobbies": "Show lobbies",
+    "showLobbies": "Show lobbies",
+    "newEvent": "New event"
+  },
+  "dayChipStrip": {
+    "selectDay": "Select day"
+  },
+  "monthGrid": {
+    "overflowCompactCount": "+{{count}}",
+    "overflowMore_one": "+{{count}} more",
+    "overflowMore_other": "+{{count}} more"
+  },
+  "weekGrid": {
+    "midnight": "12 AM",
+    "freeSlot": "Free slot",
+    "reserveFreeSlot": "Reserve this free slot",
+    "showMore_one": "+{{count}} more",
+    "showMore_other": "+{{count}} more"
+  },
+  "eventDetail": {
+    "close": "Close",
+    "sharedEvent": "Shared event",
+    "editEvent": "Edit event",
+    "delete": "Delete"
+  },
+  "dayAgenda": {
+    "close": "Close",
+    "noEventsToday": "No events today."
+  },
+  "createEventModal": {
+    "editTitle": "Edit Event",
+    "newTitle": "New Event",
+    "close": "Close",
+    "eventTitleLabel": "Event title",
+    "eventTitlePlaceholder": "e.g. Movie night, Doctor appointment…",
+    "lobbyLabel": "Lobby",
+    "startLabel": "Start",
+    "endLabel": "End",
+    "locationLabel": "Location (optional)",
+    "locationPlaceholder": "e.g. Home, Central Park…",
+    "sharedToggle": {
+      "label": "Shared event",
+      "description": "Visible to all lobby members"
+    },
+    "cancel": "Cancel",
+    "submit": {
+      "saving": "Saving…",
+      "saveAnyway": "Save Anyway",
+      "saveChanges": "Save changes",
+      "creating": "Creating…",
+      "createAnyway": "Create Anyway",
+      "createEvent": "Create Event"
+    },
+    "errors": {
+      "invalidTitleTime": "Enter a valid title and time range",
+      "saveFailed": "Couldn't save changes — please try again",
+      "createFailed": "Couldn't create event — please try again"
+    }
+  },
+  "reserveSlotModal": {
+    "title": "Reserve Free Slot",
+    "bothFree": "{{range}} · Both free",
+    "close": "Close",
+    "lobbyLabel": "Lobby",
+    "lobbyBothFree": "{{lobbyName}} are both free",
+    "whatWouldYouLikeToDo": "What would you like to do?",
+    "titlePlaceholder": "e.g. Walk in the park, Cook together…",
+    "startTimeLabel": "Start time",
+    "endTimeLabel": "End time",
+    "locationLabel": "Location (optional)",
+    "locationPlaceholder": "Where will you meet?",
+    "inviteLabel": "Invite",
+    "you": "(you)",
+    "everyoneIncluded": "Everyone auto-included",
+    "notifyToggle": {
+      "label": "Notify lobby members",
+      "description": "They'll get a notification about this plan"
+    },
+    "cancel": "Cancel",
+    "submit": {
+      "reserving": "Reserving…",
+      "reserveSlot": "Reserve Slot ✨"
+    },
+    "candidatePicker": {
+      "noneFound": "No shared free time found in the next 7 days.",
+      "close": "Close",
+      "chooseTime": "Choose a time"
+    },
+    "errors": {
+      "invalidTitleTime": "Enter a valid title and time range",
+      "reserveFailed": "Couldn't reserve this slot — please try again"
+    }
+  },
+  "conflictBanner": {
+    "title_one": "Scheduling conflict for {{count}} member",
+    "title_other": "Scheduling conflict for {{count}} members",
+    "aLobbyMember": "A lobby member",
+    "alreadyHas": "already has",
+    "youAreFree": "You are free at this time.",
+    "nextSlotSuggestion": "Next slot when everyone is free: {{range}} →"
+  }
+}

@@ -3,11 +3,11 @@ import { useSettingsStore, type Theme } from '@/store/settings';
 import { SettingsCard } from '../SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '../SettingsRow';
 
-const THEME_OPTION_KEYS: { value: Theme; labelKey: string }[] = [
+const THEME_OPTION_KEYS = [
   { value: 'light', labelKey: 'appearance.light' },
   { value: 'dark', labelKey: 'appearance.dark' },
   { value: 'system', labelKey: 'appearance.system' },
-];
+] as const satisfies readonly { value: Theme; labelKey: 'appearance.light' | 'appearance.dark' | 'appearance.system' }[];
 
 export const AppearanceCard = () => {
   const { t } = useTranslation('settings');

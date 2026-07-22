@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation, type TFunction } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useRemoveMember, useDeleteLobby } from '@/features/lobby/hooks/useLobbies';
 import { getApiErrorMessage } from '@/lib/apiErrors';

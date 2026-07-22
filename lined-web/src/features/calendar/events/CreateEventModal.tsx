@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useUpdateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
@@ -40,6 +42,7 @@ export const CreateEventModal = ({
   event,
   onSaved,
 }: CreateEventModalProps) => {
+  const { t } = useTranslation('calendar');
   const isEditMode = event != null;
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
@@ -153,11 +156,11 @@ export const CreateEventModal = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="text-lg font-bold text-text-primary">
-            {isEditMode ? 'Edit Event' : 'New Event'}
+            {isEditMode ? t('createEventModal.editTitle') : t('createEventModal.newTitle')}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('createEventModal.close')}
             className="text-text-muted hover:text-text-secondary"
           >
             <X className="h-5 w-5" />
@@ -170,14 +173,14 @@ export const CreateEventModal = ({
             {/* Title */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Event title
+                {t('createEventModal.eventTitleLabel')}
               </label>
               <input
                 type="text"
                 required
                 value={form.title}
                 onChange={(e) => set('title', e.target.value)}
-                placeholder="e.g. Movie night, Doctor appointment…"
+                placeholder={t('createEventModal.eventTitlePlaceholder')}
                 className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
               />
             </div>
@@ -185,7 +188,7 @@ export const CreateEventModal = ({
             {/* Lobby */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Lobby
+                {t('createEventModal.lobbyLabel')}
               </label>
               {lockedLobby ? (
                 <div className="flex h-12 w-full items-center rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary">
@@ -211,7 +214,7 @@ export const CreateEventModal = ({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                  Start
+                  {t('createEventModal.startLabel')}
                 </label>
                 <input
                   type="datetime-local"
@@ -223,7 +226,7 @@ export const CreateEventModal = ({
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                  End
+                  {t('createEventModal.endLabel')}
                 </label>
                 <input
                   type="datetime-local"
@@ -248,28 +251,28 @@ export const CreateEventModal = ({
             {/* Location */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Location (optional)
+                {t('createEventModal.locationLabel')}
               </label>
               <input
                 type="text"
                 value={form.location}
                 onChange={(e) => set('location', e.target.value)}
-                placeholder="e.g. Home, Central Park…"
+                placeholder={t('createEventModal.locationPlaceholder')}
                 className="h-12 w-full rounded-lg border border-border bg-input-bg px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
               />
             </div>
 
             {/* Shared toggle */}
             <ToggleRow
-              label="Shared event"
-              description="Visible to all lobby members"
+              label={t('createEventModal.sharedToggle.label')}
+              description={t('createEventModal.sharedToggle.description')}
               checked={form.shared}
               onChange={(v) => set('shared', v)}
             />
 
             {mutation.isError && (
               <AuthAlert
-                message={getEventErrorMessage(mutation.error, isEditMode)}
+                message={getEventErrorMessage(mutation.error, isEditMode, t)}
               />
             )}
           </div>
@@ -281,7 +284,7 @@ export const CreateEventModal = ({
               onClick={onClose}
               className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
             >
-              Cancel
+              {t('createEventModal.cancel')}
             </button>
             <button
               type="submit"
@@ -290,15 +293,15 @@ export const CreateEventModal = ({
             >
               {isEditMode
                 ? mutation.isPending
-                  ? 'Saving…'
+                  ? t('createEventModal.submit.saving')
                   : hasConflicts
-                    ? 'Save Anyway'
-                    : 'Save changes'
+                    ? t('createEventModal.submit.saveAnyway')
+                    : t('createEventModal.submit.saveChanges')
                 : mutation.isPending
-                  ? 'Creating…'
+                  ? t('createEventModal.submit.creating')
                   : hasConflicts
-                    ? 'Create Anyway'
-                    : 'Create Event'}
+                    ? t('createEventModal.submit.createAnyway')
+                    : t('createEventModal.submit.createEvent')}
             </button>
           </div>
         </form>
@@ -307,10 +310,10 @@ export const CreateEventModal = ({
   );
 }
 
-const getEventErrorMessage = (error: unknown, isEditMode: boolean): string => {
+const getEventErrorMessage = (error: unknown, isEditMode: boolean, t: TFunction<'calendar'>): string => {
   return getApiErrorMessage(
     error,
-    { 400: 'Enter a valid title and time range' },
-    isEditMode ? "Couldn't save changes — please try again" : "Couldn't create event — please try again",
+    { 400: t('createEventModal.errors.invalidTitleTime') },
+    isEditMode ? t('createEventModal.errors.saveFailed') : t('createEventModal.errors.createFailed'),
   );
 }

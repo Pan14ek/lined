@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, ListFilter, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ViewMode } from '@/store/calendar';
 import type { LobbyDto } from '@/features/lobby/model';
 import { LOBBY_TYPE_LABELS, lobbyAccentColor } from '@/features/lobby/lib/constants';
@@ -39,6 +40,7 @@ export const CalendarTopBar = ({
   hiddenLobbyIds = [],
   onToggleLobby,
 }: CalendarTopBarProps) => {
+  const { t } = useTranslation('calendar');
   const showLobbyFilter = lobbies != null && onToggleLobby != null && lobbies.length > 1;
   return (
     <div className="flex h-16 flex-shrink-0 items-center gap-4 border-b border-border bg-surface px-8 shadow-[var(--shadow-sm)]">
@@ -46,7 +48,7 @@ export const CalendarTopBar = ({
       <div className="flex items-center gap-1">
         <button
           onClick={onPrev}
-          aria-label={viewMode === 'month' ? 'Previous month' : 'Previous week'}
+          aria-label={viewMode === 'month' ? t('topBar.previousMonth') : t('topBar.previousWeek')}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-hover"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -56,7 +58,7 @@ export const CalendarTopBar = ({
         </span>
         <button
           onClick={onNext}
-          aria-label={viewMode === 'month' ? 'Next month' : 'Next week'}
+          aria-label={viewMode === 'month' ? t('topBar.nextMonth') : t('topBar.nextWeek')}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-hover"
         >
           <ChevronRight className="h-4 w-4" />
@@ -68,7 +70,7 @@ export const CalendarTopBar = ({
         onClick={onToday}
         className="h-8 rounded-lg border border-border bg-surface px-3 text-sm text-text-secondary hover:bg-surface-hover"
       >
-        Today
+        {t('topBar.today')}
       </button>
 
       {/* Week / Month toggle */}
@@ -86,7 +88,7 @@ export const CalendarTopBar = ({
                   : 'bg-surface text-text-secondary hover:bg-surface-hover',
               )}
             >
-              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              {t(mode === 'month' ? 'topBar.viewMode.month' : 'topBar.viewMode.week')}
             </button>
           );
         })}
@@ -99,7 +101,7 @@ export const CalendarTopBar = ({
         <DropdownMenu>
           <DropdownMenuTrigger className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm text-text-secondary hover:bg-surface-hover">
             <ListFilter className="h-4 w-4" />
-            Filters
+            {t('topBar.filters')}
             {hiddenLobbyIds.length > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-semibold text-white">
                 {hiddenLobbyIds.length}
@@ -108,7 +110,7 @@ export const CalendarTopBar = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Show lobbies</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('topBar.showLobbies')}</DropdownMenuLabel>
               {lobbies!.map((lobby) => (
                 <DropdownMenuCheckboxItem
                   key={lobby.id}

@@ -27,5 +27,15 @@
     "acceptFailed": "Не вдалося прийняти — спробуйте ще раз",
     "declineFailed": "Не вдалося відхилити — спробуйте ще раз",
     "staleInvite": "Це запрошення більше недійсне"
+  },
+  "inbox": {
+    "title": "Сповіщення",
+    "markAllRead": "Позначити все як прочитане",
+    "loadError": "Не вдалося завантажити сповіщення.",
+    "empty": "У вас немає нових сповіщень."
+  },
+  "notificationMessages": {
+    "taskAssigned": "Вам призначено завдання «{{taskTitle}}»",
+    "sharedEventCreated": "«{{eventTitle}}» додано до {{lobbyName}}"
   }
 }

@@ -7,10 +7,10 @@ interface LanguageCardProps {
   userId: number | undefined;
 }
 
-const LOCALE_OPTIONS: { value: Locale; flag: string; labelKey: string }[] = [
+const LOCALE_OPTIONS = [
   { value: 'en', flag: '🇬🇧', labelKey: 'language.english' },
   { value: 'uk', flag: '🇺🇦', labelKey: 'language.ukrainian' },
-];
+] as const satisfies readonly { value: Locale; flag: string; labelKey: 'language.english' | 'language.ukrainian' }[];
 
 export const LanguageCard = ({ userId }: LanguageCardProps) => {
   const { t } = useTranslation(['settings', 'common']);

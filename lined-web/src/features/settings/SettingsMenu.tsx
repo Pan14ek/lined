@@ -1,12 +1,20 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-interface SettingsMenuSection {
-  sectionKey: string;
-  items: { id: string; labelKey: string; danger?: boolean; route?: string }[];
-}
+type SettingsSectionKey = 'menu.sectionAccount' | 'menu.sectionPreferences' | 'menu.sectionDanger';
+type SettingsItemKey =
+  | 'menu.profile'
+  | 'menu.password'
+  | 'menu.notifications'
+  | 'menu.appearance'
+  | 'menu.language'
+  | 'menu.subscription'
+  | 'menu.deleteAccount';
 
-const SECTIONS: SettingsMenuSection[] = [
+const SECTIONS: readonly {
+  sectionKey: SettingsSectionKey;
+  items: readonly { id: string; labelKey: SettingsItemKey; danger?: boolean; route?: string }[];
+}[] = [
   {
     sectionKey: 'menu.sectionAccount',
     items: [

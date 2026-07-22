@@ -9,8 +9,18 @@ import { SettingsCard } from '../SettingsCard';
 
 const TOGGLE_KEYS: {
   key: keyof NotificationPreferencesDto;
-  labelKey: string;
-  descriptionKey: string;
+  labelKey:
+    | 'notifications.sharedEvents'
+    | 'notifications.taskAssigned'
+    | 'notifications.freeSlots'
+    | 'notifications.eventReminders'
+    | 'notifications.emailDigests';
+  descriptionKey:
+    | 'notifications.sharedEventsDescription'
+    | 'notifications.taskAssignedDescription'
+    | 'notifications.freeSlotsDescription'
+    | 'notifications.eventRemindersDescription'
+    | 'notifications.emailDigestsDescription';
 }[] = [
   {
     key: 'sharedEventsEnabled',
