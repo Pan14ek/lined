@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation, type TFunction } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { UserDto } from '@/features/users/model';
 import { useUsers } from '@/features/users/hooks/useUsers';
@@ -12,7 +13,7 @@ import { PendingInvitesSection } from './PendingInvitesSection';
 type PendingActionKind = 'makeOwner' | 'remove';
 type PendingAction = { kind: PendingActionKind; member: UserDto } | null;
 
-const MEMBER_ACTION_CONFIG: Record<
+const getMemberActionConfig = (t: TFunction<'lobby'>): Record<
   PendingActionKind,
   {
     title: string;
@@ -20,28 +21,30 @@ const MEMBER_ACTION_CONFIG: Record<
     danger: boolean;
     getMessage: (member: UserDto, lobbyName: string) => string;
   }
-> = {
+> => ({
   makeOwner: {
-    title: 'Make owner',
-    confirmLabel: 'Make owner',
+    title: t('members.makeOwnerTitle'),
+    confirmLabel: t('members.makeOwnerConfirm'),
     danger: false,
     getMessage: (member, lobbyName) =>
-      `Make @${member.username} the owner of "${lobbyName}"? You will become a regular member.`,
+      t('members.makeOwnerMessage', { username: member.username, lobbyName }),
   },
   remove: {
-    title: 'Remove member',
-    confirmLabel: 'Remove',
+    title: t('members.removeTitle'),
+    confirmLabel: t('members.removeConfirm'),
     danger: true,
     getMessage: (member, lobbyName) =>
-      `Remove @${member.username} from "${lobbyName}"? They will lose access to shared events and tasks.`,
+      t('members.removeMessage', { username: member.username, lobbyName }),
   },
-};
+});
 
 interface LobbyMemberListProps {
   lobby: LobbyDto;
 }
 
 export const LobbyMemberList = ({ lobby }: LobbyMemberListProps) => {
+  const { t } = useTranslation('lobby');
+  const memberActionConfig = getMemberActionConfig(t);
   const { data: currentUser } = useCurrentUser();
   const memberQueries = useUsers(lobby.memberIds);
   const isOwnerViewer = currentUser != null && currentUser.id === lobby.ownerId;
@@ -64,12 +67,12 @@ export const LobbyMemberList = ({ lobby }: LobbyMemberListProps) => {
     if (pendingAction.kind === 'makeOwner') {
       updateOwner.mutate(pendingAction.member.id, {
         onSuccess: () => closeDialog(),
-        onError: () => setActionError('Could not transfer ownership — please try again'),
+        onError: () => setActionError(t('members.makeOwnerError')),
       });
     } else {
       removeMember.mutate(pendingAction.member.id, {
         onSuccess: () => closeDialog(),
-        onError: () => setActionError('Could not remove this member — please try again'),
+        onError: () => setActionError(t('members.removeError')),
       });
     }
   };
@@ -78,7 +81,7 @@ export const LobbyMemberList = ({ lobby }: LobbyMemberListProps) => {
     <div className="p-6">
       <div className="mb-5">
         <span className="text-sm font-semibold text-text-primary">
-          Members · {lobby.memberIds.length}
+          {t('members.heading', { count: lobby.memberIds.length })}
         </span>
       </div>
 
@@ -102,13 +105,13 @@ export const LobbyMemberList = ({ lobby }: LobbyMemberListProps) => {
 
       {pendingAction && (
         <ConfirmDialog
-          title={MEMBER_ACTION_CONFIG[pendingAction.kind].title}
-          message={MEMBER_ACTION_CONFIG[pendingAction.kind].getMessage(
+          title={memberActionConfig[pendingAction.kind].title}
+          message={memberActionConfig[pendingAction.kind].getMessage(
             pendingAction.member,
             lobby.name,
           )}
-          confirmLabel={MEMBER_ACTION_CONFIG[pendingAction.kind].confirmLabel}
-          danger={MEMBER_ACTION_CONFIG[pendingAction.kind].danger}
+          confirmLabel={memberActionConfig[pendingAction.kind].confirmLabel}
+          danger={memberActionConfig[pendingAction.kind].danger}
           isPending={updateOwner.isPending || removeMember.isPending}
           error={actionError}
           onConfirm={handleConfirm}

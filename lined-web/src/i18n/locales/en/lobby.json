@@ -1,1 +1,155 @@
-{}
+{
+  "type": {
+    "couple": "Couple",
+    "family": "Family",
+    "friends": "Friends",
+    "work": "Work"
+  },
+  "header": {
+    "addMember": "+ Add member",
+    "settings": "⚙ Settings",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members"
+  },
+  "loadStates": {
+    "notFound": "Lobby not found. It may have been deleted, or you may not have access to it."
+  },
+  "tabs": {
+    "calendar": "Calendar",
+    "tasks": "Tasks",
+    "members": "Members"
+  },
+  "settingsPage": {
+    "backToLobby": "← Back to lobby",
+    "title": "Lobby Settings"
+  },
+  "tasks": {
+    "filterAll": "All",
+    "loadError": "Couldn't load tasks. Try again later.",
+    "emptyTitle": "No tasks yet.",
+    "emptyFilterMessage": "No tasks match this filter.",
+    "inviteSomeone": "Invite someone",
+    "sortByDueDate": "Sort: Due date",
+    "addTask": "+ Add task",
+    "updateError": "Couldn't update — try again",
+    "markAsToDo": "Mark \"{{title}}\" as to do",
+    "markAsDone": "Mark \"{{title}}\" as done"
+  },
+  "members": {
+    "heading": "Members · {{count}}",
+    "makeOwnerTitle": "Make owner",
+    "makeOwnerConfirm": "Make owner",
+    "makeOwnerMessage": "Make @{{username}} the owner of \"{{lobbyName}}\"? You will become a regular member.",
+    "removeTitle": "Remove member",
+    "removeConfirm": "Remove",
+    "removeMessage": "Remove @{{username}} from \"{{lobbyName}}\"? They will lose access to shared events and tasks.",
+    "makeOwnerError": "Could not transfer ownership — please try again",
+    "removeError": "Could not remove this member — please try again",
+    "loadError": "Couldn't load members. Try again later.",
+    "ownerBadge": "Owner",
+    "memberBadge": "Member",
+    "thatsYou": "That's you",
+    "makeOwner": "Make owner",
+    "remove": "Remove",
+    "memberSince": "Member since {{date}}"
+  },
+  "pendingInvites": {
+    "heading": "Pending Invites",
+    "loadError": "Couldn't load pending invites.",
+    "empty": "No pending invites.",
+    "resendError": "Couldn't resend — try again",
+    "cancelError": "Couldn't cancel — try again",
+    "loading": "Loading…",
+    "userFallback": "User #{{id}}",
+    "sentAt": "Invite sent · {{date}}",
+    "resend": "Resend",
+    "resending": "Resending…",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling…"
+  },
+  "search": {
+    "alreadyInLobby": "already in lobby",
+    "inviting": "Inviting…",
+    "inviteSent": "Invite sent",
+    "invite": "Invite",
+    "searchFailed": "Search failed — try again.",
+    "noUsersFound": "No users found."
+  },
+  "addMember": {
+    "title": "Add Member",
+    "close": "Close",
+    "searchIntro": "Search by username or email to invite someone to {{lobbyName}}.",
+    "searchLabel": "Search user",
+    "searchPlaceholder": "Username or email",
+    "minChars": "Type at least 2 characters to search.",
+    "inviteLinkHint": "💡 You can also share an invite link:",
+    "done": "Done",
+    "conflictError": "Already a member or already invited",
+    "genericError": "Couldn't send invite — try again"
+  },
+  "assigneePicker": {
+    "ariaLabel": "Assign to",
+    "unassigned": "Unassigned"
+  },
+  "calendar": {
+    "legendSharedEvent": "Shared event",
+    "legendFreeSlot": "Free slot (both available)",
+    "loadError": "Couldn't load the calendar. Try again later.",
+    "emptyTitle": "No events yet.",
+    "inviteSomeone": "Invite someone",
+    "eventDeleted": "This event was already deleted",
+    "deleteError": "Could not delete this event — please try again"
+  },
+  "dayAgenda": {
+    "close": "Close",
+    "noEvents": "No events today.",
+    "bothFree": "Both free"
+  },
+  "createModal": {
+    "title": "New Lobby",
+    "close": "Close",
+    "nameLabel": "Lobby name",
+    "namePlaceholder": "e.g. Alex & Anastasiia, Johnson Family…",
+    "typeLabel": "Lobby type",
+    "ownerHint": "💡 You'll be the owner. Invite members right after creating the lobby.",
+    "cancel": "Cancel",
+    "submit": "Create Lobby",
+    "creating": "Creating…",
+    "invalidName": "Enter a valid lobby name",
+    "genericError": "Something went wrong — please try again"
+  },
+  "settings": {
+    "general": {
+      "title": "General",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "nameLabel": "Lobby name",
+      "typeLabel": "Lobby type",
+      "typeHint": "Determines how the lobby is labelled",
+      "forbiddenError": "Only the lobby owner can update lobby settings",
+      "invalidNameError": "Enter a valid lobby name",
+      "genericError": "Something went wrong — please try again"
+    },
+    "notifications": {
+      "title": "Lobby Notifications",
+      "newEvents": "New events in this lobby",
+      "taskUpdates": "Task updates",
+      "freeSlots": "Free slot notifications",
+      "saveError": "Could not save that preference — please try again"
+    },
+    "dangerZone": {
+      "heading": "⚠ Danger Zone",
+      "leaveTitle": "Leave lobby",
+      "leaveDescription": "You'll lose access to all shared events and tasks in this lobby.",
+      "leave": "Leave",
+      "deleteTitle": "Delete lobby",
+      "deleteDescription": "Permanently delete this lobby and all its content. Only the owner can do this.",
+      "delete": "Delete lobby",
+      "leaveConfirmMessage": "Leave \"{{lobbyName}}\"? You'll lose access to all shared events and tasks.",
+      "deleteConfirmMessage": "Permanently delete \"{{lobbyName}}\" and all its content. This cannot be undone.",
+      "leaveOwnerError": "You're the lobby owner — transfer ownership or delete the lobby instead of leaving",
+      "leaveGenericError": "Could not leave this lobby — please try again",
+      "deleteError": "Could not delete this lobby — please try again"
+    }
+  }
+}

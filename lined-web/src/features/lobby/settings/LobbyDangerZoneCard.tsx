@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation, type TFunction } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useRemoveMember, useDeleteLobby } from '@/features/lobby/hooks/useLobbies';
 import { getApiErrorMessage } from '@/lib/apiErrors';
@@ -12,12 +13,13 @@ interface LobbyDangerZoneCardProps {
 
 type PendingAction = 'leave' | 'delete' | null;
 
-const getLeaveErrorMessage = (error: unknown): string => {
-  const message = "You're the lobby owner — transfer ownership or delete the lobby instead of leaving";
-  return getApiErrorMessage(error, { 400: message, 409: message }, 'Could not leave this lobby — please try again');
+const getLeaveErrorMessage = (error: unknown, t: TFunction<'lobby'>): string => {
+  const message = t('settings.dangerZone.leaveOwnerError');
+  return getApiErrorMessage(error, { 400: message, 409: message }, t('settings.dangerZone.leaveGenericError'));
 }
 
 export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCardProps) => {
+  const { t } = useTranslation('lobby');
   const navigate = useNavigate();
   const removeMember = useRemoveMember(lobby.id);
   const deleteLobby = useDeleteLobby();
@@ -36,7 +38,7 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
     setActionError(null);
     removeMember.mutate(currentUserId, {
       onSuccess: () => navigate('/'),
-      onError: (error) => setActionError(getLeaveErrorMessage(error)),
+      onError: (error) => setActionError(getLeaveErrorMessage(error, t)),
     });
   };
 
@@ -44,7 +46,7 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
     setActionError(null);
     deleteLobby.mutate(lobby.id, {
       onSuccess: () => navigate('/'),
-      onError: () => setActionError('Could not delete this lobby — please try again'),
+      onError: () => setActionError(t('settings.dangerZone.deleteError')),
     });
   };
 
@@ -54,13 +56,13 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
       className="mb-5 scroll-mt-6 overflow-hidden rounded-xl border-[1.5px] border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
     >
       <div className="border-b border-red-200 px-6 py-3.5 text-sm font-bold text-red-600 dark:border-red-900/50 dark:text-red-400">
-        ⚠ Danger Zone
+        {t('settings.dangerZone.heading')}
       </div>
       <div className="flex items-center justify-between px-6 py-4">
         <div>
-          <div className="text-sm font-semibold text-text-primary">Leave lobby</div>
+          <div className="text-sm font-semibold text-text-primary">{t('settings.dangerZone.leaveTitle')}</div>
           <div className="mt-0.5 text-xs text-text-secondary">
-            You&apos;ll lose access to all shared events and tasks in this lobby.
+            {t('settings.dangerZone.leaveDescription')}
           </div>
         </div>
         <button
@@ -68,15 +70,15 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
           onClick={() => setPendingAction('leave')}
           className="h-9 flex-shrink-0 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
         >
-          Leave
+          {t('settings.dangerZone.leave')}
         </button>
       </div>
       {isOwner && (
         <div className="flex items-center justify-between border-t border-red-200 px-6 py-4 dark:border-red-900/50">
           <div>
-            <div className="text-sm font-semibold text-text-primary">Delete lobby</div>
+            <div className="text-sm font-semibold text-text-primary">{t('settings.dangerZone.deleteTitle')}</div>
             <div className="mt-0.5 text-xs text-text-secondary">
-              Permanently delete this lobby and all its content. Only the owner can do this.
+              {t('settings.dangerZone.deleteDescription')}
             </div>
           </div>
           <button
@@ -84,16 +86,16 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
             onClick={() => setPendingAction('delete')}
             className="h-9 flex-shrink-0 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-700"
           >
-            Delete lobby
+            {t('settings.dangerZone.delete')}
           </button>
         </div>
       )}
 
       {pendingAction === 'leave' && (
         <ConfirmDialog
-          title="Leave lobby"
-          message={`Leave "${lobby.name}"? You'll lose access to all shared events and tasks.`}
-          confirmLabel="Leave"
+          title={t('settings.dangerZone.leaveTitle')}
+          message={t('settings.dangerZone.leaveConfirmMessage', { lobbyName: lobby.name })}
+          confirmLabel={t('settings.dangerZone.leave')}
           danger
           isPending={removeMember.isPending}
           error={actionError}
@@ -104,9 +106,9 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
 
       {pendingAction === 'delete' && (
         <ConfirmDialog
-          title="Delete lobby"
-          message={`Permanently delete "${lobby.name}" and all its content. This cannot be undone.`}
-          confirmLabel="Delete lobby"
+          title={t('settings.dangerZone.deleteTitle')}
+          message={t('settings.dangerZone.deleteConfirmMessage', { lobbyName: lobby.name })}
+          confirmLabel={t('settings.dangerZone.delete')}
           danger
           confirmText={lobby.name}
           isPending={deleteLobby.isPending}

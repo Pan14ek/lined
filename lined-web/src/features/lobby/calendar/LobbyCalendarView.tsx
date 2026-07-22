@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation, type TFunction } from 'react-i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import type { LobbyDto } from '@/features/lobby/model';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
@@ -27,14 +28,15 @@ interface LobbyCalendarViewProps {
   lobby: LobbyDto;
 }
 
-const getDeleteEventErrorMessage = (error: unknown): string => {
+const getDeleteEventErrorMessage = (error: unknown, t: TFunction<'lobby'>): string => {
   if (getErrorStatus(error) === 404) {
-    return 'This event was already deleted';
+    return t('calendar.eventDeleted');
   }
-  return 'Could not delete this event — please try again';
+  return t('calendar.deleteError');
 }
 
 export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
+  const { t } = useTranslation('lobby');
   const [weekStart, setWeekStart] = useState(() => getWeekStart());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
@@ -57,8 +59,8 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
     selectedEventId != null ? (events?.find((e) => e.id === selectedEventId) ?? null) : null;
 
   const legendItems: LegendItem[] = [
-    { label: 'Shared event', color: lobbyAccentColor(lobby.lobbyType) },
-    { label: 'Free slot (both available)', color: 'var(--color-free-slot)' },
+    { label: t('calendar.legendSharedEvent'), color: lobbyAccentColor(lobby.lobbyType) },
+    { label: t('calendar.legendFreeSlot'), color: 'var(--color-free-slot)' },
   ];
 
   const handleDelete = () => {
@@ -66,7 +68,7 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
         setDeleteError(null);
         deleteEvent.mutate(selectedEventId, {
           onSuccess: () => setSelectedEventId(null),
-          onError: (error) => setDeleteError(getDeleteEventErrorMessage(error)),
+          onError: (error) => setDeleteError(getDeleteEventErrorMessage(error, t)),
         });
       }
 
@@ -88,14 +90,14 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
         </div>
       ) : isError ? (
         <p className="p-6 text-sm text-text-secondary">
-          Couldn&apos;t load the calendar. Try again later.
+          {t('calendar.loadError')}
         </p>
       ) : (
         <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
           {(events ?? []).length === 0 && (
             <WeekEmptyBanner
-              message="No events yet."
-              action={{ label: 'Invite someone', to: `/lobbies/${lobby.id}?tab=members` }}
+              message={t('calendar.emptyTitle')}
+              action={{ label: t('calendar.inviteSomeone'), to: `/lobbies/${lobby.id}?tab=members` }}
             />
           )}
 

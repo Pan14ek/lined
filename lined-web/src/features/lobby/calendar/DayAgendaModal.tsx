@@ -1,4 +1,5 @@
 import { X, MapPin, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { formatFullDate, formatHourRange, type FreeSlot } from '@/features/calendar/lib/calendarUtils';
@@ -24,6 +25,7 @@ export const DayAgendaModal = ({
   onEventClick,
   onClose,
 }: DayAgendaModalProps) => {
+  const { t } = useTranslation('lobby');
   const sorted = [...events].sort((a, b) => a.startAt.localeCompare(b.startAt));
   const accentColor = lobbyAccentColor(lobby.lobbyType);
 
@@ -42,7 +44,7 @@ export const DayAgendaModal = ({
           <h2 className="text-base font-bold text-text-primary">{formatFullDate(day)}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('dayAgenda.close')}
             className="text-text-muted hover:text-text-secondary"
           >
             <X className="h-5 w-5" />
@@ -51,7 +53,7 @@ export const DayAgendaModal = ({
 
         <div className="overflow-y-auto px-6 pb-6">
           {sorted.length === 0 ? (
-            <p className="py-2 text-sm text-text-secondary">No events today.</p>
+            <p className="py-2 text-sm text-text-secondary">{t('dayAgenda.noEvents')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {sorted.map((event) => (
@@ -76,7 +78,7 @@ export const DayAgendaModal = ({
           {freeSlots.length > 0 && (
             <div className="mt-4">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                Both free
+                {t('dayAgenda.bothFree')}
               </h3>
               <ul className="flex flex-col gap-1.5">
                 {freeSlots.map((slot, i) => (

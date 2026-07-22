@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { useTranslation, type TFunction } from 'react-i18next';
 import type { LobbyType } from '@/features/lobby/model';
 import { useCreateLobby } from '@/features/lobby/hooks/useLobbies';
 import { LobbyTypePicker } from '@/features/lobby/settings/LobbyTypePicker';
@@ -14,6 +15,7 @@ interface CreateLobbyModalProps {
 }
 
 export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
+  const { t } = useTranslation('lobby');
   const navigate = useNavigate();
   const createLobby = useCreateLobby();
   const lobbyTypeInitial = useCreateMenuStore((s) => s.lobbyTypeInitial);
@@ -48,10 +50,10 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
       <div className="flex h-full w-full flex-col overflow-y-auto bg-surface md:h-auto md:max-h-[90vh] md:w-[460px] md:max-w-[90vw] md:flex-none md:rounded-2xl md:shadow-[var(--shadow-lg)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="text-lg font-bold text-text-primary">New Lobby</h2>
+          <h2 className="text-lg font-bold text-text-primary">{t('createModal.title')}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('createModal.close')}
             className="text-text-muted hover:text-text-secondary"
           >
             <X className="h-5 w-5" />
@@ -64,29 +66,29 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
             {/* Name */}
             <FormField
               id="create-lobby-name"
-              label="Lobby name"
+              label={t('createModal.nameLabel')}
               type="text"
               required
               value={name}
               onChange={setName}
-              placeholder="e.g. Alex & Anastasiia, Johnson Family…"
+              placeholder={t('createModal.namePlaceholder')}
             />
 
             {/* Type */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Lobby type
+                {t('createModal.typeLabel')}
               </label>
               <LobbyTypePicker value={lobbyType} onChange={setLobbyType} />
             </div>
 
             {createLobby.isError && (
-              <AuthAlert message={getCreateLobbyErrorMessage(createLobby.error)} />
+              <AuthAlert message={getCreateLobbyErrorMessage(createLobby.error, t)} />
             )}
 
             {/* Hint */}
             <div className="rounded-lg bg-bg px-3.5 py-3 text-xs text-text-secondary">
-              💡 You&apos;ll be the owner. Invite members right after creating the lobby.
+              {t('createModal.ownerHint')}
             </div>
           </div>
 
@@ -97,14 +99,14 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
               onClick={onClose}
               className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
             >
-              Cancel
+              {t('createModal.cancel')}
             </button>
             <button
               type="submit"
               disabled={createLobby.isPending || !name.trim()}
               className="h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors"
             >
-              {createLobby.isPending ? 'Creating…' : 'Create Lobby'}
+              {createLobby.isPending ? t('createModal.creating') : t('createModal.submit')}
             </button>
           </div>
         </form>
@@ -113,10 +115,10 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
   );
 };
 
-const getCreateLobbyErrorMessage = (error: unknown): string => {
+const getCreateLobbyErrorMessage = (error: unknown, t: TFunction<'lobby'>): string => {
   return getApiErrorMessage(
     error,
-    { 400: 'Enter a valid lobby name' },
-    'Something went wrong — please try again',
+    { 400: t('createModal.invalidName') },
+    t('createModal.genericError'),
   );
 }

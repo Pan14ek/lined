@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLobby } from '@/features/lobby/hooks/useLobbies';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { LobbyHeader } from '@/features/lobby/header/LobbyHeader';
@@ -8,6 +9,7 @@ import { LobbyDangerZoneCard } from '@/features/lobby/settings/LobbyDangerZoneCa
 import { LobbyLoadingState, LobbyNotFoundState } from '@/features/lobby/header/LobbyLoadStates';
 
 export const LobbySettingsPage = () => {
+  const { t } = useTranslation('lobby');
   const { id } = useParams<{ id: string }>();
   const lobbyId = id ? Number(id) : undefined;
 
@@ -31,10 +33,10 @@ export const LobbySettingsPage = () => {
       <div className="p-4 md:p-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-text-secondary">
           <Link to={`/lobbies/${lobby.id}`} className="text-brand-green hover:underline">
-            ← Back to lobby
+            {t('settingsPage.backToLobby')}
           </Link>
           <span>·</span>
-          <span className="font-semibold text-text-primary">Lobby Settings</span>
+          <span className="font-semibold text-text-primary">{t('settingsPage.title')}</span>
         </div>
 
         <LobbyGeneralCard lobby={lobby} isOwner={isOwner} />

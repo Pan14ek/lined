@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@/features/users/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatMonthYear } from '@/features/calendar/lib/calendarUtils';
@@ -21,6 +22,7 @@ export const MemberCard = ({
   onMakeOwner,
   onRemove,
 }: MemberCardProps) => {
+  const { t } = useTranslation('lobby');
   return (
     <div className="flex items-center gap-4 rounded-lg bg-surface p-4 shadow-[var(--shadow-sm)]">
       <Avatar size="lg">
@@ -38,17 +40,19 @@ export const MemberCard = ({
               isOwner ? 'bg-brand-green/10 text-brand-green' : 'bg-surface-hover text-text-secondary',
             )}
           >
-            {isOwner ? 'Owner' : 'Member'}
+            {isOwner ? t('members.ownerBadge') : t('members.memberBadge')}
           </span>
         </div>
         <p className="text-xs text-text-secondary">@{member.username}</p>
         {/* No "joined lobby at" timestamp exists on the API — substitute the account creation date. */}
-        <p className="text-xs text-text-muted">Member since {formatMonthYear(new Date(member.createdAt))}</p>
+        <p className="text-xs text-text-muted">
+          {t('members.memberSince', { date: formatMonthYear(new Date(member.createdAt)) })}
+        </p>
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-2">
         {isCurrentUser && (
-          <span className="px-2 text-xs text-text-muted">That&apos;s you</span>
+          <span className="px-2 text-xs text-text-muted">{t('members.thatsYou')}</span>
         )}
         {!isCurrentUser && canManage && (
           <>
@@ -57,14 +61,14 @@ export const MemberCard = ({
               onClick={onMakeOwner}
               className="h-8 rounded-lg border border-border px-3 text-xs font-medium text-text-primary hover:bg-surface-hover"
             >
-              Make owner
+              {t('members.makeOwner')}
             </button>
             <button
               type="button"
               onClick={onRemove}
               className="h-8 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
             >
-              Remove
+              {t('members.remove')}
             </button>
           </>
         )}

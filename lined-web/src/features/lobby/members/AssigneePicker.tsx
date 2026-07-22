@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@/features/users/model';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +50,8 @@ export const AssigneePicker = ({
   onSelect,
   isLoading,
 }: AssigneePickerProps) => {
+  const { t } = useTranslation('lobby');
+
   if (isLoading) {
     return (
       <div className="flex gap-2.5" data-testid="assignee-picker-loading">
@@ -60,9 +63,9 @@ export const AssigneePicker = ({
   }
 
   return (
-    <div role="radiogroup" aria-label="Assign to" className="flex flex-wrap gap-2.5">
+    <div role="radiogroup" aria-label={t('assigneePicker.ariaLabel')} className="flex flex-wrap gap-2.5">
       <AssigneeOption
-        label="Unassigned"
+        label={t('assigneePicker.unassigned')}
         initial="—"
         isSelected={selectedId == null}
         onClick={() => onSelect(undefined)}

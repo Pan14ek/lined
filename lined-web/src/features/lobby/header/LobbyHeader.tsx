@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LOBBY_TYPE_BORDER_CLASSES, LOBBY_TYPE_ICONS } from '@/features/lobby/lib/constants';
@@ -15,6 +16,7 @@ interface LobbyHeaderProps {
 }
 
 export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
+  const { t } = useTranslation('lobby');
   const memberQueries = useUsers(lobby.memberIds);
   const shown = memberQueries.slice(0, MAX_AVATARS_SHOWN);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -49,7 +51,7 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
                 ))}
               </div>
               <span className="text-xs text-text-secondary">
-                {lobby.memberIds.length} member{lobby.memberIds.length === 1 ? '' : 's'}
+                {t('header.memberCount', { count: lobby.memberIds.length })}
               </span>
               <LobbyTypeBadge type={lobby.lobbyType} />
             </div>
@@ -61,13 +63,13 @@ export const LobbyHeader = ({ lobby }: LobbyHeaderProps) => {
             onClick={() => setIsAddMemberOpen(true)}
             className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover"
           >
-            + Add member
+            {t('header.addMember')}
           </button>
           <Link
             to={`/lobbies/${lobby.id}/settings`}
             className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover"
           >
-            ⚙ Settings
+            {t('header.settings')}
           </Link>
         </div>
       </div>
