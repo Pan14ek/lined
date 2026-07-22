@@ -1,4 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { FormField } from '@/components/FormField';
@@ -12,14 +14,17 @@ interface FormValues {
   password: string;
 }
 
-const validate = (values: FormValues): Partial<Record<keyof FormValues, string>> => {
-  const errors: Partial<Record<keyof FormValues, string>> = {};
-  if (!values.identifier.trim()) errors.identifier = 'Email or username is required';
-  if (!values.password) errors.password = 'Password is required';
-  return errors;
-}
+const validate =
+  (t: TFunction<'auth'>) =>
+  (values: FormValues): Partial<Record<keyof FormValues, string>> => {
+    const errors: Partial<Record<keyof FormValues, string>> = {};
+    if (!values.identifier.trim()) errors.identifier = t('signIn.errors.identifierRequired');
+    if (!values.password) errors.password = t('signIn.errors.passwordRequired');
+    return errors;
+  }
 
 export const SignInPage = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const signIn = useSignIn();
@@ -28,7 +33,7 @@ export const SignInPage = () => {
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { identifier: '', password: '' },
-    validate,
+    validate(t),
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,42 +49,42 @@ export const SignInPage = () => {
         });
       }
 
-  const serverError = getServerErrorMessage(signIn.error);
+  const serverError = getServerErrorMessage(t, signIn.error);
 
   return (
-    <AuthCard heading="Welcome back" subheading="Sign in to your Lined account">
+    <AuthCard heading={t('signIn.heading')} subheading={t('signIn.subheading')}>
       {resetSucceeded && (
-        <AuthAlert variant="success" message="Password reset — sign in with your new password." />
+        <AuthAlert variant="success" message={t('signIn.resetSuccess')} />
       )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
           <FormField
             id="signin-email"
-            label="Email address"
+            label={t('signIn.emailLabel')}
             type="email"
             autoComplete="username"
             value={values.identifier}
             onChange={(v) => set('identifier', v)}
             onBlur={() => markTouched('identifier')}
-            placeholder="alex@example.com"
+            placeholder={t('signIn.emailPlaceholder')}
             error={touched.identifier ? errors.identifier : null}
           />
         </div>
         <div className="mt-5">
           <FormField
             id="signin-password"
-            label="Password"
+            label={t('signIn.passwordLabel')}
             type="password"
             autoComplete="current-password"
             value={values.password}
             onChange={(v) => set('password', v)}
             onBlur={() => markTouched('password')}
-            placeholder="••••••••"
+            placeholder={t('signIn.passwordPlaceholder')}
             error={touched.password ? errors.password : null}
           />
           <div className="mt-1.5 text-xs">
             <Link to="/forgot-password" className="font-medium text-brand-green hover:underline">
-              Forgot password?
+              {t('signIn.forgotPassword')}
             </Link>
           </div>
         </div>
@@ -91,13 +96,13 @@ export const SignInPage = () => {
           disabled={signIn.isPending}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
-          {signIn.isPending ? 'Signing in…' : 'Sign in'}
+          {signIn.isPending ? t('signIn.submitting') : t('signIn.submit')}
         </button>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
-          New to Lined?{' '}
+          {t('signIn.newToLined')}{' '}
           <Link to="/sign-up" className="font-medium text-brand-green hover:underline">
-            Create an account →
+            {t('signIn.createAccount')}
           </Link>
         </p>
       </form>
@@ -105,10 +110,10 @@ export const SignInPage = () => {
   );
 }
 
-const getServerErrorMessage = (error: unknown): string | null => {
+const getServerErrorMessage = (t: TFunction<'auth'>, error: unknown): string | null => {
   if (!error) return null;
   if (getErrorStatus(error) === 401) {
-    return 'Invalid credentials';
+    return t('signIn.errors.invalidCredentials');
   }
-  return 'Something went wrong — please try again';
+  return t('errors.generic');
 }
