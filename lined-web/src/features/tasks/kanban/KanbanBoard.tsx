@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
@@ -11,7 +12,7 @@ import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } fr
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
-import { KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
+import { KANBAN_TEST_IDS } from './kanbanConstants';
 
 const SKELETON_COLUMN_COUNT = 3;
 const SKELETON_CARDS_PER_COLUMN = 2;
@@ -53,10 +54,12 @@ const KanbanBoardContent = ({
   moveState,
   actions,
 }: KanbanBoardContentProps) => {
+  const { t } = useTranslation('tasks');
+
   if (isLoading) return <KanbanBoardSkeleton />;
 
   if (isError) {
-    return <p className="text-sm text-text-secondary">{KANBAN_TEXT.loadError}</p>;
+    return <p className="text-sm text-text-secondary">{t('kanban.loadError')}</p>;
   }
 
   return (
@@ -77,6 +80,7 @@ const KanbanBoardContent = ({
 };
 
 export const KanbanBoard = () => {
+  const { t } = useTranslation('tasks');
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
   const { data: lobbies = [] } = useMyLobbies();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
@@ -111,7 +115,7 @@ export const KanbanBoard = () => {
       { id: task.id, status: nextStatus },
       {
         onSettled: finish,
-        onError: () => setError(task.id, KANBAN_TEXT.moveError),
+        onError: () => setError(task.id, t('kanban.moveError')),
       },
     );
   };
@@ -124,7 +128,7 @@ export const KanbanBoard = () => {
   };
 
   const handleDropTask = (taskId: number, status: TaskStatus) => {
-    const task = (tasks ?? []).find((t) => t.id === taskId);
+    const task = (tasks ?? []).find((candidate) => candidate.id === taskId);
     if (!task) return;
     moveTaskToStatus(task, status);
   };
@@ -141,7 +145,7 @@ export const KanbanBoard = () => {
     setDeleteError(null);
     deleteTask.mutate(pendingDelete.id, {
       onSuccess: () => setPendingDelete(null),
-      onError: () => setDeleteError(KANBAN_TEXT.deleteError),
+      onError: () => setDeleteError(t('kanban.deleteError')),
     });
   };
 
@@ -153,7 +157,7 @@ export const KanbanBoard = () => {
   return (
     <div className="flex h-full flex-col p-6">
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold text-text-primary">All Tasks</h1>
+        <h1 className="text-xl font-semibold text-text-primary">{t('page.title')}</h1>
         <KanbanFilters
           lobbies={lobbies}
           members={members}
@@ -169,7 +173,7 @@ export const KanbanBoard = () => {
           onClick={() => openOverlay('task')}
           className="ml-auto h-9 rounded-lg bg-brand-green px-4 text-sm font-semibold text-white hover:bg-brand-green-dark"
         >
-          {KANBAN_TEXT.newTask}
+          {t('kanban.newTask')}
         </button>
       </div>
 
@@ -191,9 +195,9 @@ export const KanbanBoard = () => {
 
       {pendingDelete && (
         <ConfirmDialog
-          title={KANBAN_TEXT.deleteDialogTitle}
-          message={`Delete "${pendingDelete.title}"? This can't be undone.`}
-          confirmLabel={KANBAN_TEXT.deleteConfirmLabel}
+          title={t('kanban.deleteDialogTitle')}
+          message={t('kanban.deleteConfirmMessage', { title: pendingDelete.title })}
+          confirmLabel={t('kanban.deleteConfirmLabel')}
           danger
           isPending={deleteTask.isPending}
           error={deleteError}

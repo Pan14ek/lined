@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { TASK_STATUS_BADGE_CLASSES, TASK_STATUS_LABELS } from './lib/constants';
+import { TASK_STATUS_BADGE_CLASSES } from './lib/constants';
 import type { TaskStatus } from './model';
 
 const taskStatusBadgeVariants = cva('', {
@@ -23,9 +24,11 @@ interface TaskStatusBadgeProps extends VariantProps<typeof taskStatusBadgeVarian
 
 export const TaskStatusBadge = ({
   status,
-  children = TASK_STATUS_LABELS[status],
+  children,
   size,
   className,
 }: TaskStatusBadgeProps) => {
-  return <span className={cn(taskStatusBadgeVariants({ status, size }), className)}>{children}</span>;
+  const { t } = useTranslation('tasks');
+  const label = children ?? t(`status.${status}`);
+  return <span className={cn(taskStatusBadgeVariants({ status, size }), className)}>{label}</span>;
 };

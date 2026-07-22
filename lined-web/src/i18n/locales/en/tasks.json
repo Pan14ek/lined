@@ -1,1 +1,72 @@
-{}
+{
+  "page": {
+    "title": "All Tasks"
+  },
+  "status": {
+    "TODO": "To Do",
+    "IN_PROGRESS": "In Progress",
+    "DONE": "Done"
+  },
+  "priority": {
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low"
+  },
+  "drawer": {
+    "titleEdit": "Task details",
+    "titleCreate": "Add Task",
+    "createdByOn": "Created {{date}} by {{creator}}",
+    "createdOn": "Created {{date}}",
+    "lobbyLabel": "Lobby",
+    "titleFieldLabel": "Task title",
+    "titlePlaceholder": "What needs to be done?",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Add more details…",
+    "assignToLabel": "Assign to",
+    "dueDateLabel": "Due date",
+    "pastDueWarning": "This date is in the past — the task will start off overdue.",
+    "priorityLabel": "Priority",
+    "statusLabel": "Status",
+    "notifyAssignee": "Notify assignee",
+    "notifyAssigneeDescription": "Send a notification when the task is assigned",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "add": "Add Task",
+    "adding": "Adding…",
+    "deleteDialogTitle": "Delete task",
+    "deleteConfirmLabel": "Delete",
+    "deleteConfirmMessage": "Delete \"{{title}}\"? This can't be undone.",
+    "titleRequiredError": "Enter a valid title",
+    "saveError": "Couldn't save changes — please try again",
+    "createError": "Couldn't create task — please try again",
+    "deleteError": "Couldn't delete this task — please try again"
+  },
+  "kanban": {
+    "loadError": "Couldn't load your tasks. Try again later.",
+    "moveError": "Couldn't move — try again",
+    "deleteError": "Couldn't delete this task — please try again",
+    "deleteDialogTitle": "Delete task",
+    "deleteConfirmLabel": "Delete",
+    "deleteConfirmMessage": "Delete \"{{title}}\"? This can't be undone.",
+    "newTask": "+ New task",
+    "addTask": "+ Add task",
+    "addTaskToColumn": "Add task to {{column}}",
+    "moveBack": "Move \"{{title}}\" back",
+    "moveForward": "Move \"{{title}}\" forward",
+    "deleteTask": "Delete \"{{title}}\"",
+    "viewDetails": "View details for \"{{title}}\"",
+    "doneBadge": "Done",
+    "due": "Due: {{date}}",
+    "emptyColumn": "No tasks in {{status}}.",
+    "filterByLobby": "Filter by lobby",
+    "filterByMember": "Filter by member",
+    "filterByDate": "Filter by date",
+    "allLobbies": "All Lobbies",
+    "allMembers": "All Members",
+    "allDates": "All Dates",
+    "overdue": "Overdue",
+    "thisWeek": "This Week"
+  }
+}

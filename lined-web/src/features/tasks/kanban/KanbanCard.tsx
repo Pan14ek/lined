@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import type { DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
-import { getAdjacentStatus, taskDetailsLabel } from '@/features/tasks/lib/taskUtils';
+import { getAdjacentStatus } from '@/features/tasks/lib/taskUtils';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { TASK_PRIORITY_COLORS } from '@/features/tasks/lib/constants';
 import { AssigneeAvatar } from '@/components/AssigneeAvatar';
-import { KANBAN_LABELS, KANBAN_TEST_IDS } from './kanbanConstants';
+import { KANBAN_TEST_IDS } from './kanbanConstants';
 import { cn } from '@/lib/utils';
 
 export const TASK_DRAG_DATA_FORMAT = 'application/x-lined-task-id';
@@ -32,10 +33,12 @@ interface DueDateOrDoneIndicatorProps {
 
 /** Shows a due-date label, or a green checkmark badge once the task is done. */
 const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneIndicatorProps) => {
+  const { t } = useTranslation('tasks');
+
   if (isDone) {
     return (
       <span
-        aria-label={KANBAN_LABELS.doneBadge}
+        aria-label={t('kanban.doneBadge')}
         className="flex h-4 w-4 items-center justify-center rounded-full bg-task-done text-[10px] text-white"
       >
         ✓
@@ -45,7 +48,7 @@ const DueDateOrDoneIndicator = ({ isDone, dueLabel, isUrgent }: DueDateOrDoneInd
 
   return (
     <span className={cn('text-xs', isUrgent ? 'font-semibold text-red-500 dark:text-red-400' : 'text-text-secondary')}>
-      Due: {dueLabel}
+      {t('kanban.due', { date: dueLabel })}
     </span>
   );
 };
@@ -60,6 +63,7 @@ export const KanbanCard = ({
   onDelete,
   onOpen,
 }: KanbanCardProps) => {
+  const { t } = useTranslation('tasks');
   const isDone = task.status === 'DONE';
   const due = formatTaskDueDate(task.dueDate, task.status);
   const prevStatus = getAdjacentStatus(task.status, 'prev');
@@ -77,7 +81,7 @@ export const KanbanCard = ({
       data-testid={KANBAN_TEST_IDS.card(task.id)}
       role="button"
       tabIndex={0}
-      aria-label={taskDetailsLabel(task.title)}
+      aria-label={t('kanban.viewDetails', { title: task.title })}
       onClick={() => onOpen(task)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -117,7 +121,7 @@ export const KanbanCard = ({
             {prevStatus && (
               <button
                 type="button"
-                aria-label={KANBAN_LABELS.moveBack(task.title)}
+                aria-label={t('kanban.moveBack', { title: task.title })}
                 disabled={isMoving}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -132,7 +136,7 @@ export const KanbanCard = ({
             {nextStatus && (
               <button
                 type="button"
-                aria-label={KANBAN_LABELS.moveForward(task.title)}
+                aria-label={t('kanban.moveForward', { title: task.title })}
                 disabled={isMoving}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -149,7 +153,7 @@ export const KanbanCard = ({
             <AssigneeAvatar assignee={assignee} size="sm" fallbackTextClassName="text-[10px]" />
             <button
               type="button"
-              aria-label={KANBAN_LABELS.deleteTask(task.title)}
+              aria-label={t('kanban.deleteTask', { title: task.title })}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(task);

@@ -1,15 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { UserDto } from '@/features/users/model';
 import type { TaskDateFilter } from '@/features/tasks/lib/taskUtils';
-import { KANBAN_LABELS } from './kanbanConstants';
-
-const DATE_FILTER_LABELS: Record<TaskDateFilter, string> = {
-  ALL: 'All Dates',
-  OVERDUE: 'Overdue',
-  THIS_WEEK: 'This Week',
-};
-
-const DATE_FILTER_OPTIONS = Object.keys(DATE_FILTER_LABELS) as TaskDateFilter[];
 
 const selectClassName =
   'h-9 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-text-secondary focus:border-brand-green focus:outline-none';
@@ -18,13 +10,6 @@ const renderMemberOptions = (members: UserDto[]) =>
   members.map((member) => (
     <option key={member.id} value={member.id}>
       {member.username}
-    </option>
-  ));
-
-const renderDateFilterOptions = () =>
-  DATE_FILTER_OPTIONS.map((dateFilterKey) => (
-    <option key={dateFilterKey} value={dateFilterKey}>
-      {DATE_FILTER_LABELS[dateFilterKey]}
     </option>
   ));
 
@@ -49,6 +34,15 @@ export const KanbanFilters = ({
   onMemberChange,
   onDateFilterChange,
 }: KanbanFiltersProps) => {
+  const { t } = useTranslation('tasks');
+
+  const dateFilterLabels: Record<TaskDateFilter, string> = {
+    ALL: t('kanban.allDates'),
+    OVERDUE: t('kanban.overdue'),
+    THIS_WEEK: t('kanban.thisWeek'),
+  };
+  const dateFilterOptions = Object.keys(dateFilterLabels) as TaskDateFilter[];
+
   const lobbyOptions = lobbies.map((lobby) => (
     <option key={lobby.id} value={lobby.id}>
       {lobby.name}
@@ -58,32 +52,36 @@ export const KanbanFilters = ({
   return (
     <div className="flex items-center gap-2">
       <select
-        aria-label={KANBAN_LABELS.filterByLobby}
+        aria-label={t('kanban.filterByLobby')}
         value={lobbyId ?? ''}
         onChange={(e) => onLobbyChange(e.target.value === '' ? undefined : Number(e.target.value))}
         className={selectClassName}
       >
-        <option value="">All Lobbies</option>
+        <option value="">{t('kanban.allLobbies')}</option>
         {lobbyOptions}
       </select>
 
       <select
-        aria-label={KANBAN_LABELS.filterByMember}
+        aria-label={t('kanban.filterByMember')}
         value={memberId ?? ''}
         onChange={(e) => onMemberChange(e.target.value === '' ? undefined : Number(e.target.value))}
         className={selectClassName}
       >
-        <option value="">All Members</option>
+        <option value="">{t('kanban.allMembers')}</option>
         {renderMemberOptions(members)}
       </select>
 
       <select
-        aria-label={KANBAN_LABELS.filterByDate}
+        aria-label={t('kanban.filterByDate')}
         value={dateFilter}
         onChange={(e) => onDateFilterChange(e.target.value as TaskDateFilter)}
         className={selectClassName}
       >
-        {renderDateFilterOptions()}
+        {dateFilterOptions.map((dateFilterKey) => (
+          <option key={dateFilterKey} value={dateFilterKey}>
+            {dateFilterLabels[dateFilterKey]}
+          </option>
+        ))}
       </select>
     </div>
   );
