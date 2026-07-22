@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from '@/features/lobby/hooks/useInvites';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { InviteCard } from './InviteCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
-const STALE_INVITE_MESSAGE = 'This invite is no longer valid';
-
-const getInviteErrorMessage = (error: unknown, fallback: string): string => {
-  return getApiErrorMessage(error, { 409: STALE_INVITE_MESSAGE }, fallback);
+const getInviteErrorMessage = (
+  error: unknown,
+  fallback: string,
+  staleInviteMessage: string,
+): string => {
+  return getApiErrorMessage(error, { 409: staleInviteMessage }, fallback);
 }
 
 export const PendingInvitesBanner = () => {
+  const { t } = useTranslation('notifications');
   const { data: invites, isLoading, isError, refetch } = useMyInvites();
   const acceptInvite = useAcceptInvite();
   const declineInvite = useDeclineInvite();
@@ -27,7 +31,10 @@ export const PendingInvitesBanner = () => {
     acceptInvite.mutate(inviteId, {
       onSuccess: () => navigate(`/lobbies/${lobbyId}`),
       onError: (error) => {
-        setCardError(inviteId, getInviteErrorMessage(error, 'Could not accept — please try again'));
+        setCardError(
+          inviteId,
+          getInviteErrorMessage(error, t('errors.acceptFailed'), t('errors.staleInvite')),
+        );
         void refetch();
       },
     });
@@ -40,7 +47,10 @@ export const PendingInvitesBanner = () => {
     declineInvite.mutate(inviteId, {
       onSuccess: () => setDecliningInviteId(null),
       onError: (error) => {
-        setCardError(inviteId, getInviteErrorMessage(error, 'Could not decline — please try again'));
+        setCardError(
+          inviteId,
+          getInviteErrorMessage(error, t('errors.declineFailed'), t('errors.staleInvite')),
+        );
         setDecliningInviteId(null);
         void refetch();
       },
@@ -57,11 +67,7 @@ export const PendingInvitesBanner = () => {
   }
 
   if (isError) {
-    return (
-      <p className="text-sm text-text-secondary">
-        Couldn&apos;t load your invites. Try again later.
-      </p>
-    );
+    return <p className="text-sm text-text-secondary">{t('pendingInvites.loadError')}</p>;
   }
 
   if (!invites || invites.length === 0) return null;
@@ -72,7 +78,7 @@ export const PendingInvitesBanner = () => {
     <section>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">
-          Pending Invites · {invites.length}
+          {t('pendingInvites.title', { count: invites.length })}
         </h2>
       </div>
       {invites.map((invite) => (
@@ -89,9 +95,9 @@ export const PendingInvitesBanner = () => {
 
       {decliningInvite && (
         <ConfirmDialog
-          title="Decline invite"
-          message="Decline this lobby invite? You can be invited again later."
-          confirmLabel="Decline"
+          title={t('declineDialog.title')}
+          message={t('declineDialog.message')}
+          confirmLabel={t('declineDialog.confirmLabel')}
           danger
           isPending={declineInvite.isPending}
           onConfirm={handleDeclineConfirm}

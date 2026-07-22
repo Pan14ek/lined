@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
@@ -20,14 +21,15 @@ export const UpcomingEventsList = ({
   isLoading,
   isError,
 }: UpcomingEventsListProps) => {
+  const { t } = useTranslation('dashboard');
   const lobbyMap = new Map((lobbies ?? []).map((l) => [l.id, l]));
 
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-primary">Upcoming Events</h2>
+        <h2 className="text-sm font-semibold text-text-primary">{t('events.title')}</h2>
         <Link to="/calendar" className="text-xs font-medium text-brand-green">
-          View calendar →
+          {t('events.viewCalendar')}
         </Link>
       </div>
 
@@ -40,16 +42,11 @@ export const UpcomingEventsList = ({
       )}
 
       {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">
-          Couldn&apos;t load upcoming events. Try again later.
-        </p>
+        <p className="text-sm text-text-secondary">{t('events.loadError')}</p>
       )}
 
       {!isLoading && !isError && events?.length === 0 && (
-        <EmptyState
-          icon="📅"
-          message="No events yet — once you have a lobby, your shared calendar shows up here."
-        />
+        <EmptyState icon="📅" message={t('events.empty')} />
       )}
 
       {!isLoading && !isError && events != null && events.length > 0 && (

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useMyInvites } from '@/features/lobby/hooks/useInvites';
@@ -16,6 +17,7 @@ import { PendingInvitesBanner } from '@/features/notifications/PendingInvitesBan
 import { useCreateMenuStore } from '@/store/createMenu';
 
 export const DashboardPage = () => {
+  const { t } = useTranslation('dashboard');
   const { data: user } = useCurrentUser();
   const { data: lobbies, isLoading: lobbiesLoading, isError: lobbiesError } = useMyLobbies();
   const { data: invites, isLoading: invitesLoading, isError: invitesError } = useMyInvites();
@@ -34,7 +36,7 @@ export const DashboardPage = () => {
       <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-surface px-4 md:px-8">
         <div>
           <h1 className="text-base font-semibold text-text-primary md:text-lg">
-            {getGreeting()}, {user?.username ?? 'there'} 👋
+            {getGreeting()}, {user?.username ?? t('fallbackUsername')} 👋
           </h1>
           <p className="text-xs text-text-secondary">{formatFullDate(new Date())}</p>
         </div>
@@ -49,7 +51,7 @@ export const DashboardPage = () => {
         <PendingInvitesBanner />
 
         {showHero ? (
-          <DashboardHero username={user?.username ?? 'there'} />
+          <DashboardHero username={user?.username ?? t('fallbackUsername')} />
         ) : (
           <LobbyCardGrid
             lobbies={lobbies}

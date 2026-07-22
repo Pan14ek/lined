@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { useUser } from '@/features/users/hooks/useUsers';
 import { useLobby } from '@/features/lobby/hooks/useLobbies';
@@ -21,18 +22,24 @@ export const InviteCard = ({
   isDeclining,
   error,
 }: InviteCardProps) => {
+  const { t } = useTranslation('notifications');
   const { data: inviter } = useUser(invite.inviterId);
   const { data: lobby, isError: lobbyError } = useLobby(invite.lobbyId);
   const isPending = isAccepting || isDeclining;
 
-  const inviterName = inviter?.username ?? `User #${invite.inviterId}`;
-  const lobbyName = lobby?.name ?? 'a lobby';
+  const inviterName = inviter?.username ?? t('inviteCard.fallbackInviter', { id: invite.inviterId });
+  const lobbyName = lobby?.name ?? t('inviteCard.fallbackLobbyName');
   const avatarColor = lobby ? lobbyAccentColor(lobby.lobbyType) : undefined;
   const subLine = lobby
-    ? `${LOBBY_TYPE_ICONS[lobby.lobbyType]} ${LOBBY_TYPE_LABELS[lobby.lobbyType]} lobby · ${lobby.memberIds.length} members · invited ${formatRelativeTimeAgo(invite.sentAt)}`
+    ? t('inviteCard.subLine', {
+        icon: LOBBY_TYPE_ICONS[lobby.lobbyType],
+        label: LOBBY_TYPE_LABELS[lobby.lobbyType],
+        count: lobby.memberIds.length,
+        time: formatRelativeTimeAgo(invite.sentAt),
+      })
     : lobbyError
-      ? `invited ${formatRelativeTimeAgo(invite.sentAt)}`
-      : 'Loading lobby details…';
+      ? t('inviteCard.subLineNoLobby', { time: formatRelativeTimeAgo(invite.sentAt) })
+      : t('inviteCard.loadingLobbyDetails');
 
   return (
     <div
@@ -47,7 +54,7 @@ export const InviteCard = ({
       </div>
       <div className="min-w-[170px] flex-1">
         <p className="text-sm font-semibold text-text-primary">
-          {inviterName} invited you to <strong>{lobbyName}</strong>
+          {t('inviteCard.invitedYouTo', { inviter: inviterName })} <strong>{lobbyName}</strong>
         </p>
         <p className="mt-0.5 text-xs text-text-secondary">{subLine}</p>
         {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
@@ -59,7 +66,7 @@ export const InviteCard = ({
           disabled={isPending}
           className="h-8 rounded-lg bg-brand-green px-3.5 text-xs font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60"
         >
-          {isAccepting ? 'Accepting…' : 'Accept'}
+          {isAccepting ? t('inviteCard.accepting') : t('inviteCard.accept')}
         </button>
         <button
           type="button"
@@ -67,7 +74,7 @@ export const InviteCard = ({
           disabled={isPending}
           className="h-8 rounded-lg border border-red-300 px-3.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
         >
-          {isDeclining ? 'Declining…' : 'Decline'}
+          {isDeclining ? t('inviteCard.declining') : t('inviteCard.decline')}
         </button>
       </div>
     </div>

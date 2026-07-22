@@ -1,1 +1,32 @@
-{}
+{
+  "fallbackUsername": "there",
+  "hero": {
+    "welcome": "Welcome to Lined, {{username}}!",
+    "description": "A lobby is a shared space for the people you plan life with. Create your first one to start syncing schedules, tasks and free time.",
+    "createFirstLobby": "+ Create your first lobby"
+  },
+  "lobbies": {
+    "title": "My Lobbies",
+    "seeAll": "See all →",
+    "loadError": "Couldn't load your lobbies. Try again later.",
+    "empty": "No lobbies yet",
+    "createLobby": "+ Create lobby"
+  },
+  "freeSlot": {
+    "title": "Free time found!",
+    "bothFree": "You & {{name}} are both free {{range}}",
+    "planSomething": "Plan something →"
+  },
+  "tasks": {
+    "title": "My Tasks",
+    "allTasks": "All tasks →",
+    "loadError": "Couldn't load your tasks. Try again later.",
+    "empty": "No tasks yet — tasks you create or get assigned will appear here."
+  },
+  "events": {
+    "title": "Upcoming Events",
+    "viewCalendar": "View calendar →",
+    "loadError": "Couldn't load upcoming events. Try again later.",
+    "empty": "No events yet — once you have a lobby, your shared calendar shows up here."
+  }
+}

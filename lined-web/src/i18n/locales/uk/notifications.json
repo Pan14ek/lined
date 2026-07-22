@@ -1,1 +1,31 @@
-{}
+{
+  "pendingInvites": {
+    "title": "Запрошення · {{count}}",
+    "loadError": "Не вдалося завантажити ваші запрошення. Спробуйте пізніше."
+  },
+  "inviteCard": {
+    "invitedYouTo": "{{inviter}} запросив(ла) вас до",
+    "fallbackInviter": "Користувач #{{id}}",
+    "fallbackLobbyName": "лобі",
+    "loadingLobbyDetails": "Завантаження даних лобі…",
+    "subLine_one": "{{icon}} {{label}} лобі · {{count}} учасник · запрошено {{time}}",
+    "subLine_few": "{{icon}} {{label}} лобі · {{count}} учасники · запрошено {{time}}",
+    "subLine_many": "{{icon}} {{label}} лобі · {{count}} учасників · запрошено {{time}}",
+    "subLine_other": "{{icon}} {{label}} лобі · {{count}} учасників · запрошено {{time}}",
+    "subLineNoLobby": "запрошено {{time}}",
+    "accept": "Прийняти",
+    "accepting": "Приймається…",
+    "decline": "Відхилити",
+    "declining": "Відхиляється…"
+  },
+  "declineDialog": {
+    "title": "Відхилити запрошення",
+    "message": "Відхилити це запрошення до лобі? Вас можуть запросити знову пізніше.",
+    "confirmLabel": "Відхилити"
+  },
+  "errors": {
+    "acceptFailed": "Не вдалося прийняти — спробуйте ще раз",
+    "declineFailed": "Не вдалося відхилити — спробуйте ще раз",
+    "staleInvite": "Це запрошення більше недійсне"
+  }
+}
