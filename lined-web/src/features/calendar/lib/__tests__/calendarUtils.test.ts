@@ -18,10 +18,11 @@ import {
   clipEventToDay,
   computeFreeSlots,
 } from '../calendarUtils';
+import { locales, texts } from './calendarUtils.test.helper';
 
 afterEach(() => {
   vi.useRealTimers();
-  void i18next.changeLanguage('en');
+  void i18next.changeLanguage(locales.english);
 });
 
 describe('getGreeting', () => {
@@ -518,70 +519,70 @@ describe('getMonthGridDays', () => {
 describe('locale-aware formatting (uk)', () => {
   it('formatMonthYear renders the Ukrainian month name', () => {
     expect.assertions(1);
-    expect(formatMonthYear(new Date('2026-07-18T10:00:00'), 'uk')).toBe('липень 2026 р.');
+    expect(formatMonthYear(new Date('2026-07-18T10:00:00'), locales.ukrainian)).toBe(texts.ukrainianMonthYear);
   });
 
   it('formatFullDate renders the Ukrainian weekday and month', () => {
     expect.assertions(1);
-    expect(formatFullDate(new Date('2026-07-18T10:00:00'), 'uk')).toBe('субота, 18 липня 2026 р.');
+    expect(formatFullDate(new Date('2026-07-18T10:00:00'), locales.ukrainian)).toBe(texts.ukrainianFullDate);
   });
 
   it('getGreeting picks up the current i18next language', async () => {
     expect.assertions(1);
-    await i18next.changeLanguage('uk');
-    expect(getGreeting(new Date('2026-07-18T09:00:00'))).toBe('Доброго ранку');
+    await i18next.changeLanguage(locales.ukrainian);
+    expect(getGreeting(new Date('2026-07-18T09:00:00'))).toBe(texts.ukrainianMorningGreeting);
   });
 
   it('formatRelativeTimeAgo pluralises correctly for 1/2/5 minutes in Ukrainian', async () => {
     expect.assertions(3);
-    await i18next.changeLanguage('uk');
+    await i18next.changeLanguage(locales.ukrainian);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:10:00'));
-    expect(formatRelativeTimeAgo('2026-03-28T08:09:00')).toBe('1 хвилину тому');
-    expect(formatRelativeTimeAgo('2026-03-28T08:08:00')).toBe('2 хвилини тому');
-    expect(formatRelativeTimeAgo('2026-03-28T08:05:00')).toBe('5 хвилин тому');
+    expect(formatRelativeTimeAgo('2026-03-28T08:09:00')).toBe(texts.ukrainianOneMinuteAgo);
+    expect(formatRelativeTimeAgo('2026-03-28T08:08:00')).toBe(texts.ukrainianTwoMinutesAgo);
+    expect(formatRelativeTimeAgo('2026-03-28T08:05:00')).toBe(texts.ukrainianFiveMinutesAgo);
   });
 
   it('formatRelativeTimeAgo renders "Just now"/"Yesterday" in Ukrainian', async () => {
     expect.assertions(2);
-    await i18next.changeLanguage('uk');
+    await i18next.changeLanguage(locales.ukrainian);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:00:30'));
-    expect(formatRelativeTimeAgo('2026-03-28T08:00:00')).toBe('Щойно');
+    expect(formatRelativeTimeAgo('2026-03-28T08:00:00')).toBe(texts.ukrainianJustNow);
     vi.setSystemTime(new Date('2026-03-28T08:00:00'));
-    expect(formatRelativeTimeAgo('2026-03-27T07:00:00')).toBe('Вчора');
+    expect(formatRelativeTimeAgo('2026-03-27T07:00:00')).toBe(texts.ukrainianYesterday);
   });
 
   it('formatTaskDueDate renders Ukrainian "Done"/"No due date"/"Today"', async () => {
     expect.assertions(3);
-    await i18next.changeLanguage('uk');
+    await i18next.changeLanguage(locales.ukrainian);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:00:00Z'));
-    expect(formatTaskDueDate('2020-01-01', 'DONE').label).toBe('Готово');
-    expect(formatTaskDueDate(null, 'TODO').label).toBe('Без терміну');
-    expect(formatTaskDueDate('2026-03-28', 'TODO').label).toBe('Сьогодні');
+    expect(formatTaskDueDate('2020-01-01', 'DONE').label).toBe(texts.ukrainianDone);
+    expect(formatTaskDueDate(null, 'TODO').label).toBe(texts.ukrainianNoDueDate);
+    expect(formatTaskDueDate('2026-03-28', 'TODO').label).toBe(texts.ukrainianToday);
   });
 
   it('formatFreeSlotRange renders "Сьогодні"/"Завтра" in Ukrainian', async () => {
     expect.assertions(2);
-    await i18next.changeLanguage('uk');
+    await i18next.changeLanguage(locales.ukrainian);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:00:00'));
-    expect(formatFreeSlotRange('2026-03-28T14:00:00', '2026-03-28T17:00:00')).toBe('Сьогодні 2–5 PM');
-    expect(formatFreeSlotRange('2026-03-29T14:00:00', '2026-03-29T17:00:00')).toBe('Завтра 2–5 PM');
+    expect(formatFreeSlotRange('2026-03-28T14:00:00', '2026-03-28T17:00:00')).toBe(texts.ukrainianTodayFreeSlot);
+    expect(formatFreeSlotRange('2026-03-29T14:00:00', '2026-03-29T17:00:00')).toBe(texts.ukrainianTomorrowFreeSlot);
   });
 
   it('formatRelativeEventTime renders "Сьогодні"/"Завтра" in Ukrainian', async () => {
     expect.assertions(2);
-    await i18next.changeLanguage('uk');
+    await i18next.changeLanguage(locales.ukrainian);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-28T08:00:00'));
-    expect(formatRelativeEventTime('2026-03-28T17:00:00')).toBe('Сьогодні · 5 PM');
-    expect(formatRelativeEventTime('2026-03-29T19:00:00')).toBe('Завтра · 7 PM');
+    expect(formatRelativeEventTime('2026-03-28T17:00:00')).toBe(texts.ukrainianTodayRelativeEvent);
+    expect(formatRelativeEventTime('2026-03-29T19:00:00')).toBe(texts.ukrainianTomorrowRelativeEvent);
   });
 
   it('an explicit locale argument overrides the current i18next language', () => {
     expect.assertions(1);
-    expect(formatMonthYear(new Date('2026-07-18T10:00:00'), 'en')).toBe('July 2026');
+    expect(formatMonthYear(new Date('2026-07-18T10:00:00'), locales.english)).toBe(texts.englishMonthYear);
   });
 });
