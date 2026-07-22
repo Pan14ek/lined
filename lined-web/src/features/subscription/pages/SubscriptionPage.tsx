@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { usePlans, useActivePlan, useSubscriptionHistory } from '@/features/subscription/hooks/useSubscriptions';
 import { CurrentPlanCard } from '@/features/subscription/CurrentPlanCard';
@@ -6,6 +7,7 @@ import { PlanCards } from '@/features/subscription/PlanCards';
 import { SubscriptionHistoryCard } from '@/features/subscription/SubscriptionHistoryCard';
 
 export const SubscriptionPage = () => {
+  const { t } = useTranslation('subscription');
   const { data: user } = useCurrentUser();
   const userId = user?.id;
 
@@ -21,7 +23,7 @@ export const SubscriptionPage = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-bg p-8">
-      <h1 className="mb-5 text-xl font-bold text-text-primary">Subscription</h1>
+      <h1 className="mb-5 text-xl font-bold text-text-primary">{t('page.title')}</h1>
 
       <CurrentPlanCard
         userId={userId ?? 0}
@@ -30,7 +32,7 @@ export const SubscriptionPage = () => {
         isLoading={isActiveLoading}
       />
 
-      <div className="mb-2 mt-2 text-sm font-bold text-text-primary">Available Plans</div>
+      <div className="mb-2 mt-2 text-sm font-bold text-text-primary">{t('page.availablePlans')}</div>
       <div className="mb-5">
         <PlanCards
           userId={userId ?? 0}

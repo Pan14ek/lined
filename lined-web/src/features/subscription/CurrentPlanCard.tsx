@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { PlanDto, SubscriptionDto } from '@/features/subscription/model';
 import { useCancelSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
@@ -13,11 +15,11 @@ interface CurrentPlanCardProps {
   isLoading: boolean;
 }
 
-const getCancelErrorMessage = (error: unknown): string => {
+const getCancelErrorMessage = (error: unknown, t: TFunction<'subscription'>): string => {
   return getApiErrorMessage(
     error,
-    { 404: 'You have no active subscription to cancel' },
-    'Could not cancel your subscription — please try again',
+    { 404: t('currentPlan.errors.notFound') },
+    t('currentPlan.errors.generic'),
   );
 }
 
@@ -27,28 +29,31 @@ export const CurrentPlanCard = ({
   activePlanDetails,
   isLoading,
 }: CurrentPlanCardProps) => {
+  const { t } = useTranslation('subscription');
   const cancelSubscription = useCancelSubscription(userId);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   if (isLoading) {
     return (
-      <SettingsCard id="current-plan" title="Current Plan">
+      <SettingsCard id="current-plan" title={t('currentPlan.title')}>
         <div className="h-16 animate-pulse rounded-lg bg-input-bg" data-testid="current-plan-loading" />
       </SettingsCard>
     );
   }
 
   return (
-    <SettingsCard id="current-plan" title="Current Plan">
+    <SettingsCard id="current-plan" title={t('currentPlan.title')}>
       {activeSubscription ? (
         <div className="flex items-center justify-between py-3.5">
           <div>
             <div className="text-base font-bold text-text-primary">
               {activeSubscription.planName}
-              {activePlanDetails ? ` · ${formatPlanPrice(activePlanDetails.priceUsd)}/month` : ''}
+              {activePlanDetails
+                ? ` · ${t('currentPlan.priceMonthly', { price: formatPlanPrice(activePlanDetails.priceUsd) })}`
+                : ''}
             </div>
             <div className="mt-0.5 text-xs text-text-secondary">
-              Renews {formatShortDate(activeSubscription.endDate)}
+              {t('currentPlan.renews', { date: formatShortDate(activeSubscription.endDate) })}
             </div>
           </div>
           <button
@@ -56,21 +61,21 @@ export const CurrentPlanCard = ({
             onClick={() => setIsConfirmOpen(true)}
             className="h-9 flex-shrink-0 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-700"
           >
-            Cancel subscription
+            {t('currentPlan.cancelButton')}
           </button>
         </div>
       ) : (
-        <p className="py-3.5 text-sm text-text-secondary">You are on the free plan.</p>
+        <p className="py-3.5 text-sm text-text-secondary">{t('currentPlan.freePlan')}</p>
       )}
 
       {isConfirmOpen && (
         <ConfirmDialog
-          title="Cancel subscription"
-          message="Your plan will be cancelled immediately. You'll keep access to the free plan's features."
-          confirmLabel="Cancel subscription"
+          title={t('currentPlan.cancelDialog.title')}
+          message={t('currentPlan.cancelDialog.message')}
+          confirmLabel={t('currentPlan.cancelDialog.confirmLabel')}
           danger
           isPending={cancelSubscription.isPending}
-          error={cancelSubscription.isError ? getCancelErrorMessage(cancelSubscription.error) : null}
+          error={cancelSubscription.isError ? getCancelErrorMessage(cancelSubscription.error, t) : null}
           onConfirm={() =>
             cancelSubscription.mutate(undefined, {
               onSuccess: () => setIsConfirmOpen(false),
