@@ -39,9 +39,24 @@ class AggregateOptimisticLockingConcurrencyTest {
 
   private static final long OWNER_ID = 1L;
   private static final long ASSIGNEE_ID = 2L;
+  private static final long LOBBY_ID = 11L;
   private static final long EVENT_ID = 101L;
   private static final long TASK_ID = 201L;
-  private static final long VERSION_ONE = 0L;
+  private static final long INITIAL_VERSION = 0L;
+  private static final long UPDATED_VERSION = 1L;
+  private static final String ORIGINAL_EVENT_TITLE = "Original event";
+  private static final String WINNING_EVENT_TITLE = "Winner title";
+  private static final String UPDATED_EVENT_TITLE = "Updated before delete";
+  private static final String ORIGINAL_TASK_TITLE = "Original task";
+  private static final String TIME_ZONE = "UTC";
+  private static final OffsetDateTime ORIGINAL_EVENT_START =
+      OffsetDateTime.parse("2026-08-01T10:00:00Z");
+  private static final OffsetDateTime ORIGINAL_EVENT_END =
+      OffsetDateTime.parse("2026-08-01T11:00:00Z");
+  private static final OffsetDateTime UPDATED_EVENT_START =
+      OffsetDateTime.parse("2026-08-01T13:00:00Z");
+  private static final OffsetDateTime UPDATED_EVENT_END =
+      OffsetDateTime.parse("2026-08-01T15:00:00Z");
 
   @Container
   private static final PostgreSQLContainer<?> POSTGRES =
@@ -87,13 +102,14 @@ class AggregateOptimisticLockingConcurrencyTest {
   void eventUpdates_allowOneWinner_andRejectTheStaleWriter() throws Exception {
     RaceResults results = race(
         () -> eventRepository.findById(EVENT_ID).orElseThrow(),
-        () -> eventService.update(EVENT_ID, titleUpdate("Winner title"), OWNER_ID, VERSION_ONE),
-        () -> eventService.update(EVENT_ID, timeUpdate(), OWNER_ID, VERSION_ONE));
+        () -> eventService.update(EVENT_ID, titleUpdate(WINNING_EVENT_TITLE), OWNER_ID,
+            INITIAL_VERSION),
+        () -> eventService.update(EVENT_ID, timeUpdate(), OWNER_ID, INITIAL_VERSION));
 
     assertOneSuccessAndOneConflict(results);
     Map<String, Object> event = eventRow();
-    assertThat(event.get("version")).isEqualTo(1L);
-    assertThat(event.get("title")).isIn("Winner title", "Original event");
+    assertThat(event.get("version")).isEqualTo(UPDATED_VERSION);
+    assertThat(event.get("title")).isIn(WINNING_EVENT_TITLE, ORIGINAL_EVENT_TITLE);
     assertWinnerFieldsPersisted(event.get("title"), eventStart());
   }
 
@@ -101,15 +117,16 @@ class AggregateOptimisticLockingConcurrencyTest {
   void eventUpdateAndDelete_allowOneTerminalOperation_withoutResurrection() throws Exception {
     RaceResults results = race(
         () -> eventRepository.findById(EVENT_ID).orElseThrow(),
-        () -> eventService.update(EVENT_ID, titleUpdate("Updated before delete"), OWNER_ID, VERSION_ONE),
-        () -> eventService.delete(EVENT_ID, OWNER_ID, VERSION_ONE));
+        () -> eventService.update(EVENT_ID, titleUpdate(UPDATED_EVENT_TITLE), OWNER_ID,
+            INITIAL_VERSION),
+        () -> eventService.delete(EVENT_ID, OWNER_ID, INITIAL_VERSION));
 
     assertOneSuccessAndOneConflictOrNotFound(results);
     Integer count = jdbcTemplate.queryForObject(
         "select count(*) from events where id = ?", Integer.class, EVENT_ID);
     assertThat(count).isIn(0, 1);
     if (count != null && count == 1) {
-      assertThat(eventRow()).containsEntry("title", "Updated before delete");
+      assertThat(eventRow()).containsEntry("title", UPDATED_EVENT_TITLE);
     }
   }
 
@@ -117,12 +134,15 @@ class AggregateOptimisticLockingConcurrencyTest {
   void duplicateTaskCompletion_returnsOneSuccessAndOneConflict() throws Exception {
     RaceResults results = race(
         () -> taskRepository.findById(TASK_ID).orElseThrow(),
-        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID, VERSION_ONE),
-        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID, VERSION_ONE));
+        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID,
+            INITIAL_VERSION),
+        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID,
+            INITIAL_VERSION));
 
     assertOneSuccessAndOneConflict(results);
     Map<String, Object> task = taskRow();
-    assertThat(task).containsEntry("status", "DONE").containsEntry("version", 1L);
+    assertThat(task).containsEntry("status", TaskStatus.DONE.name())
+        .containsEntry("version", UPDATED_VERSION);
   }
 
   @Test
@@ -130,14 +150,16 @@ class AggregateOptimisticLockingConcurrencyTest {
       throws Exception {
     RaceResults results = race(
         () -> taskRepository.findById(TASK_ID).orElseThrow(),
-        () -> taskService.update(TASK_ID, assigneeUpdate(), OWNER_ID, VERSION_ONE),
-        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID, VERSION_ONE));
+        () -> taskService.update(TASK_ID, assigneeUpdate(), OWNER_ID, INITIAL_VERSION),
+        () -> taskService.update(TASK_ID, statusUpdate(TaskStatus.DONE), OWNER_ID,
+            INITIAL_VERSION));
 
     assertOneSuccessAndOneConflict(results);
     Map<String, Object> task = taskRow();
     assertThat(task).isIn(
-        Map.of("assignee_id", OWNER_ID, "status", "DONE", "version", 1L),
-        Map.of("assignee_id", ASSIGNEE_ID, "status", "TODO", "version", 1L));
+        Map.of("assignee_id", OWNER_ID, "status", TaskStatus.DONE.name(), "version", UPDATED_VERSION),
+        Map.of("assignee_id", ASSIGNEE_ID, "status", TaskStatus.TODO.name(), "version",
+            UPDATED_VERSION));
   }
 
   private RaceResults race(Runnable preload, Runnable firstOperation, Runnable secondOperation)
@@ -207,8 +229,7 @@ class AggregateOptimisticLockingConcurrencyTest {
   }
 
   private EventUpdateDto timeUpdate() {
-    OffsetDateTime start = OffsetDateTime.parse("2026-08-01T13:00:00Z");
-    return new EventUpdateDto(null, null, null, start, start.plusHours(2), null);
+    return new EventUpdateDto(null, null, null, UPDATED_EVENT_START, UPDATED_EVENT_END, null);
   }
 
   private TaskUpdateDto statusUpdate(TaskStatus status) {
@@ -235,33 +256,35 @@ class AggregateOptimisticLockingConcurrencyTest {
   }
 
   private void assertWinnerFieldsPersisted(Object title, OffsetDateTime start) {
-    if ("Winner title".equals(title)) {
-      assertThat(start).isEqualTo(OffsetDateTime.parse("2026-08-01T10:00:00Z"));
+    if (WINNING_EVENT_TITLE.equals(title)) {
+      assertThat(start).isEqualTo(ORIGINAL_EVENT_START);
     } else {
-      assertThat(start).isEqualTo(OffsetDateTime.parse("2026-08-01T13:00:00Z"));
+      assertThat(start).isEqualTo(UPDATED_EVENT_START);
     }
   }
 
   private void insertFixtures() {
     jdbcTemplate.update("""
         insert into users (id, username, email, password, version, created_at)
-        values (1, 'owner', 'owner@example.com', 'pw', 0, now()),
-               (2, 'assignee', 'assignee@example.com', 'pw', 0, now())
-        """);
+        values (?, 'owner', 'owner@example.com', 'pw', ?, now()),
+               (?, 'assignee', 'assignee@example.com', 'pw', ?, now())
+        """, OWNER_ID, INITIAL_VERSION, ASSIGNEE_ID, INITIAL_VERSION);
     jdbcTemplate.update("""
         insert into lobbies (id, name, lobby_type, owner_id, version)
-        values (11, 'Home', 'COUPLE', 1, 0)
-        """);
-    jdbcTemplate.update("insert into lobby_members (lobby_id, user_id) values (11, 1), (11, 2)");
+        values (%d, 'Home', 'COUPLE', %d, %d)
+        """.formatted(LOBBY_ID, OWNER_ID, INITIAL_VERSION));
+    jdbcTemplate.update("insert into lobby_members (lobby_id, user_id) values (?, ?), (?, ?)",
+        LOBBY_ID, OWNER_ID, LOBBY_ID, ASSIGNEE_ID);
     jdbcTemplate.update("""
         insert into events (id, title, shared, start_at, end_at, timezone, lobby_id, owner_id, version)
-        values (101, 'Original event', true, '2026-08-01T10:00:00Z', '2026-08-01T11:00:00Z',
-                'UTC', 11, 1, 0)
-        """);
+        values (?, ?, true, ?, ?, ?, ?, ?, ?)
+        """, EVENT_ID, ORIGINAL_EVENT_TITLE, ORIGINAL_EVENT_START, ORIGINAL_EVENT_END,
+        TIME_ZONE, LOBBY_ID, OWNER_ID, INITIAL_VERSION);
     jdbcTemplate.update("""
         insert into tasks (id, title, priority, status, lobby_id, creator_id, assignee_id, version)
-        values (201, 'Original task', 'MEDIUM', 'TODO', 11, 1, 1, 0)
-        """);
+        values (?, ?, 'MEDIUM', ?, ?, ?, ?, ?)
+        """, TASK_ID, ORIGINAL_TASK_TITLE, TaskStatus.TODO.name(), LOBBY_ID, OWNER_ID, OWNER_ID,
+        INITIAL_VERSION);
   }
 
   private void truncateTables() {
