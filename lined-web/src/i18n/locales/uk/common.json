@@ -34,6 +34,12 @@
     "afternoon": "Доброго дня",
     "evening": "Доброго вечора"
   },
+  "dates": {
+    "today": "Сьогодні",
+    "tomorrow": "Завтра",
+    "done": "Готово",
+    "noDueDate": "Без терміну"
+  },
   "relativeTime": {
     "justNow": "Щойно",
     "yesterday": "Вчора",

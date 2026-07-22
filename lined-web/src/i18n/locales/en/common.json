@@ -34,6 +34,12 @@
     "afternoon": "Good afternoon",
     "evening": "Good evening"
   },
+  "dates": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "done": "Done",
+    "noDueDate": "No due date"
+  },
   "relativeTime": {
     "justNow": "Just now",
     "yesterday": "Yesterday",
