@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { UserDto } from '@/features/users/model';
 import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
@@ -10,18 +12,19 @@ interface ProfileCardProps {
   isLoading: boolean;
 }
 
-const getProfileErrorMessage = (error: unknown): string => {
+const getProfileErrorMessage = (error: unknown, t: TFunction<['settings', 'common']>): string => {
   return getApiErrorMessage(
     error,
     {
-      409: 'That username or email is already taken',
-      400: 'Enter a valid username and email',
+      409: t('profile.errorTaken', { ns: 'settings' }),
+      400: t('profile.errorInvalid', { ns: 'settings' }),
     },
-    'Something went wrong — please try again',
+    t('errors.generic', { ns: 'common' }),
   );
 }
 
 export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
+  const { t } = useTranslation(['settings', 'common']);
   const updateUser = useUpdateUser(user?.id ?? 0);
   const [loadedUserId, setLoadedUserId] = useState<number | undefined>(undefined);
   const [username, setUsername] = useState('');
@@ -37,7 +40,7 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
 
   if (isLoading || !user) {
     return (
-      <SettingsCard id="profile" title="Profile">
+      <SettingsCard id="profile" title={t('profile.title')}>
         <div className="space-y-3 py-4" data-testid="profile-card-loading">
           <div className="h-16 w-16 animate-pulse rounded-full bg-bg" />
           <div className="h-10 animate-pulse rounded-lg bg-bg" />
@@ -61,7 +64,7 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
   return (
     <SettingsCard
       id="profile"
-      title="Profile"
+      title={t('profile.title')}
       footer={
         <button
           type="submit"
@@ -69,7 +72,7 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
           disabled={!isDirty || updateUser.isPending}
           className="h-[38px] rounded-lg bg-brand-green px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
-          {updateUser.isPending ? 'Saving…' : 'Save changes'}
+          {updateUser.isPending ? t('profile.saving') : t('profile.saveChanges')}
         </button>
       }
     >
@@ -83,26 +86,26 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
           <button
             type="button"
             disabled
-            title="Coming soon"
+            title={t('profile.comingSoon')}
             className="mt-2.5 h-8 rounded-lg border border-border px-3 text-xs text-text-secondary opacity-60"
           >
-            Change photo
+            {t('profile.changePhoto')}
           </button>
         </div>
       </div>
 
       <form id="profile-form" onSubmit={handleSubmit}>
-        <SettingsRow label="Username">
+        <SettingsRow label={t('profile.username')}>
           <input
-            aria-label="Username"
+            aria-label={t('profile.username')}
             className={SETTINGS_INPUT_CLASS}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
         </SettingsRow>
-        <SettingsRow label="Email address">
+        <SettingsRow label={t('profile.email')}>
           <input
-            aria-label="Email address"
+            aria-label={t('profile.email')}
             type="email"
             className={SETTINGS_INPUT_CLASS}
             value={email}
@@ -113,7 +116,7 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
 
       {updateUser.isError && (
         <p role="alert" className="pb-4 text-xs text-red-600 dark:text-red-400">
-          {getProfileErrorMessage(updateUser.error)}
+          {getProfileErrorMessage(updateUser.error, t)}
         </p>
       )}
     </SettingsCard>

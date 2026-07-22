@@ -13,6 +13,7 @@ import {
   LOBBY_MEMBER_LIST_TEXT,
 } from '@/test/lobbyMemberContent';
 import { LobbyMemberList } from '../LobbyMemberList';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobby = MOCK_LOBBIES[0]!; // id 1, ownerId 1, memberIds [1, 2] (Alex owner, nastia_k member)
@@ -43,7 +44,7 @@ describe('LobbyMemberList', () => {
 
   it('shows an error message when a member profile fails to load', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
     expect(await screen.findByText(LOBBY_MEMBER_LIST_TEXT.loadMembersError)).toBeInTheDocument();
@@ -98,7 +99,7 @@ describe('LobbyMemberList', () => {
   it('shows an error message when pending invites fail to load', async () => {
     expect.assertions(1);
     server.use(
-      http.get(`${BASE}/lobbies/:lobbyId/invites`, () => new HttpResponse(null, { status: 500 })),
+      http.get(`${BASE}/lobbies/:lobbyId/invites`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
 
@@ -125,7 +126,7 @@ describe('LobbyMemberList', () => {
     server.use(
       http.post(
         `${BASE}/lobbies/:lobbyId/invites/:inviteId/resend`,
-        () => new HttpResponse(null, { status: 500 }),
+        () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }),
       ),
     );
     const user = userEvent.setup();
@@ -179,7 +180,7 @@ describe('LobbyMemberList', () => {
 
   it('shows an inline error and keeps the dialog open when the make-owner PATCH fails', async () => {
     expect.assertions(1);
-    server.use(http.patch(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<LobbyMemberList lobby={lobby} />);
     await screen.findByText('nastia_k');
@@ -215,7 +216,7 @@ describe('LobbyMemberList', () => {
     server.use(
       http.delete(
         `${BASE}/lobbies/:lobbyId/members/:userId`,
-        () => new HttpResponse(null, { status: 500 }),
+        () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }),
       ),
     );
     const user = userEvent.setup();

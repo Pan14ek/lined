@@ -6,6 +6,7 @@ import { server } from '@/test/server';
 import { useAuthStore } from '@/store/auth';
 import { useCalendarStore } from '@/store/calendar';
 import { NotificationBell } from '../NotificationBell';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -113,7 +114,7 @@ describe('NotificationBell', () => {
     server.use(
       http.patch(`${BASE}/notifications/:id/read`, () => {
         readCalled = true;
-        return new HttpResponse(null, { status: 500 });
+        return new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
       }),
     );
     renderBell();
@@ -152,7 +153,7 @@ describe('NotificationBell', () => {
   it('shows an inline error state when the inbox fails to load', async () => {
     expect.assertions(1);
     server.use(
-      http.get(`${BASE}/notifications/mine`, () => new HttpResponse(null, { status: 500 })),
+      http.get(`${BASE}/notifications/mine`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
     renderBell();
     const user = userEvent.setup();

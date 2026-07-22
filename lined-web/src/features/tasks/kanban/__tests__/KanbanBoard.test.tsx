@@ -7,6 +7,7 @@ import { useCreateMenuStore } from '@/store/createMenu';
 import { KanbanBoard } from '../KanbanBoard';
 import { TASK_DRAG_DATA_FORMAT } from '../KanbanCard';
 import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from '../kanbanConstants';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -47,7 +48,7 @@ describe('KanbanBoard', () => {
 
   it('shows an error message when the tasks request fails', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/tasks/mine`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/tasks/mine`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderWithProviders(<KanbanBoard />);
 
     expect(await screen.findByText(KANBAN_TEXT.loadError)).toBeInTheDocument();
@@ -85,7 +86,7 @@ describe('KanbanBoard', () => {
 
   it('shows an inline error and keeps the card in place when the move PATCH fails', async () => {
     expect.assertions(2);
-    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');
@@ -120,7 +121,7 @@ describe('KanbanBoard', () => {
 
   it('shows an inline error and keeps the task when the delete request fails', async () => {
     expect.assertions(2);
-    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.delete(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<KanbanBoard />);
     await screen.findByText('Plan dinner for Saturday');

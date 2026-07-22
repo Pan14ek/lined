@@ -1,0 +1,65 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "tasks": "Tasks",
+    "settings": "Settings",
+    "lobby": "Lobby",
+    "appName": "Lined",
+    "primary": "Primary"
+  },
+  "topBar": {
+    "openMenu": "Open menu"
+  },
+  "sidebar": {
+    "myLobbies": "My Lobbies",
+    "newLobby": "+ New",
+    "noLobbiesYet": "No lobbies yet",
+    "signOut": "Sign out"
+  },
+  "createMenu": {
+    "trigger": "+ Create",
+    "newEvent": "New Event",
+    "newTask": "New Task",
+    "newLobby": "New Lobby",
+    "reserveFreeSlot": "Reserve Free Slot"
+  },
+  "confirmDialog": {
+    "cancel": "Cancel",
+    "pleaseWait": "Please wait…",
+    "typeToConfirm": "Type \"{{text}}\" to confirm"
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "dates": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "done": "Done",
+    "noDueDate": "No due date"
+  },
+  "relativeTime": {
+    "justNow": "Just now",
+    "yesterday": "Yesterday",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading…",
+    "retry": "Retry"
+  },
+  "errors": {
+    "generic": "Something went wrong — please try again"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { useResendInvite, useCancelInvite } from '@/features/lobby/hooks/useInvites';
 import { useRowMutationState } from '@/hooks/useRowMutationState';
@@ -16,6 +17,7 @@ export const PendingInvitesSection = ({
   isLoading,
   isError,
 }: PendingInvitesSectionProps) => {
+  const { t } = useTranslation('lobby');
   const resendInvite = useResendInvite(lobbyId);
   const cancelInvite = useCancelInvite(lobbyId);
   const { busyId, errors: rowErrors, start, finish, setError } = useRowMutationState();
@@ -24,7 +26,7 @@ export const PendingInvitesSection = ({
     start(inviteId);
     resendInvite.mutate(inviteId, {
       onSettled: finish,
-      onError: () => setError(inviteId, "Couldn't resend — try again"),
+      onError: () => setError(inviteId, t('pendingInvites.resendError')),
     });
   };
 
@@ -32,24 +34,24 @@ export const PendingInvitesSection = ({
     start(inviteId);
     cancelInvite.mutate(inviteId, {
       onSettled: finish,
-      onError: () => setError(inviteId, "Couldn't cancel — try again"),
+      onError: () => setError(inviteId, t('pendingInvites.cancelError')),
     });
   };
 
   return (
     <div className="mt-6">
-      <h3 className="mb-3 text-sm font-semibold text-text-primary">Pending Invites</h3>
+      <h3 className="mb-3 text-sm font-semibold text-text-primary">{t('pendingInvites.heading')}</h3>
 
       {isLoading && (
         <div className="h-16 animate-pulse rounded-xl bg-surface" data-testid="pending-invites-loading" />
       )}
 
       {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">Couldn&apos;t load pending invites.</p>
+        <p className="text-sm text-text-secondary">{t('pendingInvites.loadError')}</p>
       )}
 
       {!isLoading && !isError && (invites == null || invites.length === 0) && (
-        <p className="text-sm text-text-secondary">No pending invites.</p>
+        <p className="text-sm text-text-secondary">{t('pendingInvites.empty')}</p>
       )}
 
       {!isLoading && !isError && invites && invites.length > 0 && (

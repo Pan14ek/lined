@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useUserSearch } from '@/features/users/hooks/useUsers';
@@ -14,6 +15,7 @@ interface AddMemberModalProps {
 }
 
 export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
+  const { t } = useTranslation('lobby');
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), 300);
   const { data: results, isLoading, isError } = useUserSearch(debouncedQuery);
@@ -34,8 +36,8 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
         onError: (error) => {
           const message =
             getErrorStatus(error) === 409
-              ? 'Already a member or already invited'
-              : "Couldn't send invite — try again";
+              ? t('addMember.conflictError')
+              : t('addMember.genericError');
           setError(userId, message);
         },
         onSettled: finish,
@@ -52,19 +54,19 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
     >
       <div className="max-h-[85vh] w-[460px] max-w-[90vw] overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-lg)]">
         <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="text-lg font-bold text-text-primary">Add Member</h2>
-          <button onClick={onClose} aria-label="Close" className="text-text-muted hover:text-text-secondary">
+          <h2 className="text-lg font-bold text-text-primary">{t('addMember.title')}</h2>
+          <button onClick={onClose} aria-label={t('addMember.close')} className="text-text-muted hover:text-text-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="px-6 py-5">
           <p className="mb-4 text-xs text-text-secondary">
-            Search by username or email to invite someone to <strong>{lobby.name}</strong>.
+            {t('addMember.searchIntro', { lobbyName: lobby.name })}
           </p>
 
           <label htmlFor="add-member-search" className="mb-1.5 block text-xs font-medium text-text-secondary">
-            Search user
+            {t('addMember.searchLabel')}
           </label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
@@ -73,14 +75,14 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Username or email"
+              placeholder={t('addMember.searchPlaceholder')}
               className="h-12 w-full rounded-lg border border-border bg-input-bg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
             />
           </div>
 
           <div className="mt-4 max-h-64 space-y-1 overflow-y-auto">
             {query.trim().length > 0 && query.trim().length < 2 && (
-              <p className="text-xs text-text-muted">Type at least 2 characters to search.</p>
+              <p className="text-xs text-text-muted">{t('addMember.minChars')}</p>
             )}
 
             <SearchResultsList
@@ -97,7 +99,7 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
           </div>
 
           <div className="mt-4 rounded-lg bg-bg px-3.5 py-3 text-xs text-text-secondary">
-            💡 You can also share an invite link: <span className="font-semibold text-brand-green">lined.app/invite/abc123</span>
+            {t('addMember.inviteLinkHint')} <span className="font-semibold text-brand-green">lined.app/invite/abc123</span>
           </div>
         </div>
 
@@ -107,7 +109,7 @@ export const AddMemberModal = ({ lobby, onClose }: AddMemberModalProps) => {
             onClick={onClose}
             className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
           >
-            Done
+            {t('addMember.done')}
           </button>
         </div>
       </div>

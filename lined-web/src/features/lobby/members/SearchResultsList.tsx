@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { UserPageDto } from '@/features/users/model';
 import { SearchResultRow } from './SearchResultRow';
 
@@ -24,6 +25,7 @@ export const SearchResultsList = ({
   rowErrors,
   onInvite,
 }: SearchResultsListProps) => {
+  const { t } = useTranslation('lobby');
   const hasQuery = debouncedQuery.length >= 2;
 
   if (isLoading && hasQuery) {
@@ -37,11 +39,11 @@ export const SearchResultsList = ({
   }
 
   if (isError) {
-    return <p className="text-sm text-text-secondary">Search failed — try again.</p>;
+    return <p className="text-sm text-text-secondary">{t('search.searchFailed')}</p>;
   }
 
   if (hasQuery && results?.content.length === 0) {
-    return <p className="text-sm text-text-secondary">No users found.</p>;
+    return <p className="text-sm text-text-secondary">{t('search.noUsersFound')}</p>;
   }
 
   return (

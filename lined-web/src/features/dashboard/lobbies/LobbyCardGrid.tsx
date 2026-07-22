@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto } from '@/features/tasks/model';
@@ -20,13 +21,14 @@ export const LobbyCardGrid = ({
   isLoading,
   isError,
 }: LobbyCardGridProps) => {
+  const { t } = useTranslation('dashboard');
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
 
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-primary">My Lobbies</h2>
-        <span className="text-xs font-medium text-brand-green">See all →</span>
+        <h2 className="text-sm font-semibold text-text-primary">{t('lobbies.title')}</h2>
+        <span className="text-xs font-medium text-brand-green">{t('lobbies.seeAll')}</span>
       </div>
 
       {isLoading && (
@@ -38,16 +40,14 @@ export const LobbyCardGrid = ({
       )}
 
       {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">
-          Couldn&apos;t load your lobbies. Try again later.
-        </p>
+        <p className="text-sm text-text-secondary">{t('lobbies.loadError')}</p>
       )}
 
       {!isLoading && !isError && lobbies?.length === 0 && (
         <EmptyState
           variant="inline"
-          message="No lobbies yet"
-          action={{ label: '+ Create lobby', onClick: () => openCreateLobby() }}
+          message={t('lobbies.empty')}
+          action={{ label: t('lobbies.createLobby'), onClick: () => openCreateLobby() }}
         />
       )}
 

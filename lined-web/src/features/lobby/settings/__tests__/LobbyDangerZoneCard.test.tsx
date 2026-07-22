@@ -5,6 +5,7 @@ import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { LobbyDangerZoneCard } from '../LobbyDangerZoneCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobby = MOCK_LOBBIES[0]!; // id 1, name "Alex & Anastasiia", ownerId 1, memberIds [1, 2]
@@ -66,7 +67,7 @@ describe('LobbyDangerZoneCard', () => {
     server.use(
       http.delete(
         `${BASE}/lobbies/:lobbyId/members/:userId`,
-        () => new HttpResponse(null, { status: 500 }),
+        () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }),
       ),
     );
     const user = userEvent.setup();
@@ -108,7 +109,7 @@ describe('LobbyDangerZoneCard', () => {
 
   it('shows a generic error when deleting fails unexpectedly', async () => {
     expect.assertions(1);
-    server.use(http.delete(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.delete(`${BASE}/lobbies/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderCard(1);
 

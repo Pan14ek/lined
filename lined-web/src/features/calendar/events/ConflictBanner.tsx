@@ -1,4 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { EventConflictDto } from '@/features/calendar/model';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { formatEventTime, formatFreeSlotRange } from '@/features/calendar/lib/calendarUtils';
@@ -26,6 +27,7 @@ export const ConflictBanner = ({
   suggestion,
   onPickSuggestion,
 }: ConflictBannerProps) => {
+  const { t } = useTranslation('calendar');
   const busyEvents = conflicts.map((c) => otherEvent(c, currentUserId));
   const ownerIds = [...new Set(busyEvents.map((e) => e.ownerId))];
   const ownerQueries = useUsers(ownerIds);
@@ -44,14 +46,14 @@ export const ConflictBanner = ({
       <TriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700 dark:text-amber-400" />
       <div className="text-xs text-amber-700 dark:text-amber-400">
         <div className="text-[13px] font-bold">
-          Scheduling conflict for {ownerIds.length} member{ownerIds.length === 1 ? '' : 's'}
+          {t('conflictBanner.title', { count: ownerIds.length })}
         </div>
         <div className="mt-0.5 space-y-0.5 leading-relaxed opacity-90">
           {busyEvents.map((event) => (
             <div key={event.id}>
-              <strong>{usernameByOwnerId.get(event.ownerId) ?? 'A lobby member'}</strong> already
-              has <strong>&ldquo;{event.title}&rdquo;</strong> {formatEventTime(event.startAt, event.endAt)}.
-              You are free at this time.
+              <strong>{usernameByOwnerId.get(event.ownerId) ?? t('conflictBanner.aLobbyMember')}</strong>{' '}
+              {t('conflictBanner.alreadyHas')} <strong>&ldquo;{event.title}&rdquo;</strong>{' '}
+              {formatEventTime(event.startAt, event.endAt)}. {t('conflictBanner.youAreFree')}
             </div>
           ))}
         </div>
@@ -61,7 +63,7 @@ export const ConflictBanner = ({
             onClick={() => onPickSuggestion(suggestion.start, suggestion.end)}
             className="mt-1.5 block font-semibold underline-offset-2 hover:underline"
           >
-            Next slot when everyone is free: {formatFreeSlotRange(suggestion.start, suggestion.end)} →
+            {t('conflictBanner.nextSlotSuggestion', { range: formatFreeSlotRange(suggestion.start, suggestion.end) })}
           </button>
         )}
       </div>

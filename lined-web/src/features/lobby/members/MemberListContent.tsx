@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { UserDto } from '@/features/users/model';
 import type { useUsers } from '@/features/users/hooks/useUsers';
@@ -20,6 +21,8 @@ export const MemberListContent = ({
   onMakeOwner,
   onRemove,
 }: MemberListContentProps) => {
+  const { t } = useTranslation('lobby');
+
   if (memberQueries.some((q) => q.isLoading)) {
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-members-loading">
@@ -31,7 +34,7 @@ export const MemberListContent = ({
   }
 
   if (memberQueries.some((q) => q.isError)) {
-    return <p className="text-sm text-text-secondary">Couldn&apos;t load members. Try again later.</p>;
+    return <p className="text-sm text-text-secondary">{t('members.loadError')}</p>;
   }
 
   return (

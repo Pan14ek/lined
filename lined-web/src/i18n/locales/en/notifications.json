@@ -1,0 +1,39 @@
+{
+  "pendingInvites": {
+    "title": "Pending Invites · {{count}}",
+    "loadError": "Couldn't load your invites. Try again later."
+  },
+  "inviteCard": {
+    "invitedYouTo": "{{inviter}} invited you to",
+    "fallbackInviter": "User #{{id}}",
+    "fallbackLobbyName": "a lobby",
+    "loadingLobbyDetails": "Loading lobby details…",
+    "subLine_one": "{{icon}} {{label}} lobby · {{count}} member · invited {{time}}",
+    "subLine_other": "{{icon}} {{label}} lobby · {{count}} members · invited {{time}}",
+    "subLineNoLobby": "invited {{time}}",
+    "accept": "Accept",
+    "accepting": "Accepting…",
+    "decline": "Decline",
+    "declining": "Declining…"
+  },
+  "declineDialog": {
+    "title": "Decline invite",
+    "message": "Decline this lobby invite? You can be invited again later.",
+    "confirmLabel": "Decline"
+  },
+  "errors": {
+    "acceptFailed": "Could not accept — please try again",
+    "declineFailed": "Could not decline — please try again",
+    "staleInvite": "This invite is no longer valid"
+  },
+  "inbox": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "loadError": "Couldn't load notifications.",
+    "empty": "You're all caught up."
+  },
+  "notificationMessages": {
+    "taskAssigned": "You were assigned \"{{taskTitle}}\"",
+    "sharedEventCreated": "\"{{eventTitle}}\" was added to {{lobbyName}}"
+  }
+}

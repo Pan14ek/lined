@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import { DashboardPage } from '../DashboardPage';
 import { useAuthStore } from '@/store/auth';
 import { useCreateMenuStore } from '@/store/createMenu';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -54,7 +55,7 @@ describe('DashboardPage', () => {
 
   it('keeps the rest of the page working when the tasks request fails', async () => {
     expect.assertions(2);
-    server.use(http.get(`${BASE}/tasks/mine`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/tasks/mine`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderWithProviders(<DashboardPage />);
 
     expect(await screen.findByText(/couldn't load your tasks/i)).toBeInTheDocument();

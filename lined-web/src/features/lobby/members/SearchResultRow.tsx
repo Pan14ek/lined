@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { UserSearchResultDto } from '@/features/users/model';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +19,7 @@ export const SearchResultRow = ({
   error,
   onInvite,
 }: SearchResultRowProps) => {
+  const { t } = useTranslation('lobby');
   return (
     <div
       className={cn('flex items-center gap-3 rounded-lg p-2.5', isMember && 'bg-brand-green-light')}
@@ -29,7 +31,7 @@ export const SearchResultRow = ({
         <p className="text-sm font-semibold text-text-primary">{user.username}</p>
         <p className="text-xs text-text-secondary">
           @{user.username}
-          {isMember && ' · already in lobby'}
+          {isMember && ` · ${t('search.alreadyInLobby')}`}
         </p>
         {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </div>
@@ -41,7 +43,7 @@ export const SearchResultRow = ({
           disabled={isInvited || isSending}
           className="h-8 flex-shrink-0 rounded-lg bg-brand-green px-3.5 text-xs font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60"
         >
-          {isSending ? 'Inviting…' : isInvited ? 'Invite sent' : 'Invite'}
+          {isSending ? t('search.inviting') : isInvited ? t('search.inviteSent') : t('search.invite')}
         </button>
       )}
     </div>

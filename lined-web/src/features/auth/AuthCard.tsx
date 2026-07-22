@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface AuthCardProps {
   heading: string;
@@ -7,6 +8,7 @@ interface AuthCardProps {
 }
 
 export const AuthCard = ({ heading, subheading, children }: AuthCardProps) => {
+  const { t } = useTranslation('auth');
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-brand-beige">
       <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-green-light opacity-50" />
@@ -15,9 +17,9 @@ export const AuthCard = ({ heading, subheading, children }: AuthCardProps) => {
       <div className="relative z-10 w-[480px] max-w-[90vw] overflow-hidden rounded-2xl bg-surface shadow-lg">
         <div className="h-1 bg-brand-green" />
         <div className="px-10 pb-10 pt-8">
-          <div className="text-center text-3xl font-bold text-brand-green">Lined</div>
+          <div className="text-center text-3xl font-bold text-brand-green">{t('brand.name')}</div>
           <p className="mt-1.5 text-center text-[13px] text-text-muted">
-            Where life and quality time meet
+            {t('brand.tagline')}
           </p>
           <div className="my-6 h-px bg-border" />
           <h1 className="text-[22px] font-bold text-text-primary">{heading}</h1>

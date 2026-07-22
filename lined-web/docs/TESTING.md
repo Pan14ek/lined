@@ -80,13 +80,16 @@ directly**:
 
 ```ts
 import { http, HttpResponse } from 'msw';
+import { HTTP_STATUS } from '@/test/httpStatus';
 import { server } from '@/test/server';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 it('shows an error when the request fails', async () => {
   server.use(
-    http.get(`${BASE}/tasks`, () => HttpResponse.json(null, { status: 500 })),
+    http.get(`${BASE}/tasks`, () => HttpResponse.json(null, {
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    })),
   );
 
   renderWithProviders(<KanbanBoard />);
@@ -146,9 +149,37 @@ produce distinct keys for distinct ids, and any real function (e.g.
 - When a feature has many tests sharing the same accessible names/copy
   (roles, button labels, error strings), factor them into a shared content
   file like `src/test/lobbyMemberContent.ts` or `src/test/createMenuContent.ts`
-  instead of repeating string literals across files — but don't create one
-  for a single test file; inline literals are fine until a second file needs
-  the same strings.
+  instead of repeating string literals across files.
+
+## Test data constants
+
+Do not duplicate magic values that describe a test contract. Put repeated or
+meaningful test data in a helper and import it into the test:
+
+- Use `{Subject}.test.helper.ts` beside a test file for data local to that
+  subject. It may export `texts`, `testIds`, `roles`, `dates`, `statuses`,
+  `locales`, URLs, or fixtures as appropriate.
+- Use `src/test/` for values shared by several features. For example, use
+  `HTTP_STATUS` from `@/test/httpStatus` for every HTTP response and status
+  assertion; do not write numeric HTTP status values in a test. If that
+  shared constant does not exist yet, add it as part of the same change.
+- Name values by intent, not by their literal representation: prefer
+  `dates.tomorrowEvent`, `statuses.todo`, `roles.alert`, and
+  `testIds.preview` over `date1`, `500`, or copied strings.
+- Keep one-off values inline when extracting them would make the test harder
+  to read. The rule applies to repeated data and data that forms a UI, API,
+  or business-domain contract.
+
+```ts
+// LanguageCard.test.helper.ts
+export const roles = { radio: 'radio' } as const;
+export const testIds = { preview: 'language-preview' } as const;
+export const locales = { ukrainian: 'uk' } as const;
+
+// LanguageCard.test.tsx
+expect(screen.getByRole(roles.radio, { name: texts.ukrainian })).toBeChecked();
+expect(screen.getByTestId(testIds.preview)).toHaveTextContent(texts.preview);
+```
 
 ## Definition of done
 

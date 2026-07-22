@@ -6,6 +6,7 @@ import { server } from '@/test/server';
 import { ROLES, CREATE_LOBBY_MODAL_TEXT, LOBBY_TYPE_OPTION_NAME } from '@/test/createMenuContent';
 import { CreateLobbyModal } from '../CreateLobbyModal';
 import { useAuthStore } from '@/store/auth';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -87,7 +88,7 @@ describe('CreateLobbyModal', () => {
       http.post(`${BASE}/lobbies`, () =>
         HttpResponse.json(
           { code: 'VALIDATION_ERROR', message: 'name must not be blank' },
-          { status: 400 },
+          { status: HTTP_STATUS.BAD_REQUEST },
         ),
       ),
     );
@@ -105,7 +106,7 @@ describe('CreateLobbyModal', () => {
 
   it('shows a generic error when the server fails unexpectedly (500)', async () => {
     expect.assertions(1);
-    server.use(http.post(`${BASE}/lobbies`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.post(`${BASE}/lobbies`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderModal();
 

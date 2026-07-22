@@ -1,0 +1,133 @@
+{
+  "page": {
+    "previousDay": "Попередній день",
+    "nextDay": "Наступний день",
+    "newEvent": "Нова подія",
+    "weekEmpty": {
+      "message": "Цього тижня подій немає — створіть одну.",
+      "action": "Створити подію"
+    },
+    "deleteError": {
+      "alreadyDeleted": "Цю подію вже видалено",
+      "generic": "Не вдалося видалити подію — спробуйте ще раз"
+    }
+  },
+  "topBar": {
+    "previousMonth": "Попередній місяць",
+    "previousWeek": "Попередній тиждень",
+    "nextMonth": "Наступний місяць",
+    "nextWeek": "Наступний тиждень",
+    "today": "Сьогодні",
+    "viewMode": {
+      "week": "Тиждень",
+      "month": "Місяць"
+    },
+      "filters": "Фільтри",
+      "showLobbies": "Показати лобі",
+    "showLobbies": "Показати лобі",
+    "newEvent": "Нова подія"
+  },
+  "dayChipStrip": {
+    "selectDay": "Вибрати день"
+  },
+  "monthGrid": {
+    "overflowCompactCount": "+{{count}}",
+    "overflowMore_one": "+{{count}} ще",
+    "overflowMore_few": "+{{count}} ще",
+    "overflowMore_many": "+{{count}} ще",
+    "overflowMore_other": "+{{count}} ще"
+  },
+  "weekGrid": {
+    "midnight": "00:00",
+    "freeSlot": "Вільний час",
+    "reserveFreeSlot": "Зарезервувати цей вільний час",
+    "showMore_one": "+{{count}} ще",
+    "showMore_few": "+{{count}} ще",
+    "showMore_many": "+{{count}} ще",
+    "showMore_other": "+{{count}} ще"
+  },
+  "eventDetail": {
+    "close": "Закрити",
+    "sharedEvent": "Спільна подія",
+    "editEvent": "Редагувати подію",
+    "delete": "Видалити"
+  },
+  "dayAgenda": {
+    "close": "Закрити",
+    "noEventsToday": "Сьогодні подій немає."
+  },
+  "createEventModal": {
+    "editTitle": "Редагування події",
+    "newTitle": "Нова подія",
+    "close": "Закрити",
+    "eventTitleLabel": "Назва події",
+    "eventTitlePlaceholder": "напр. Кіновечір, Прийом у лікаря…",
+    "lobbyLabel": "Лобі",
+    "startLabel": "Початок",
+    "endLabel": "Кінець",
+    "locationLabel": "Місце (необов'язково)",
+    "locationPlaceholder": "напр. Вдома, Центральний парк…",
+    "sharedToggle": {
+      "label": "Спільна подія",
+      "description": "Видима всім учасникам лобі"
+    },
+    "cancel": "Скасувати",
+    "submit": {
+      "saving": "Збереження…",
+      "saveAnyway": "Все одно зберегти",
+      "saveChanges": "Зберегти зміни",
+      "creating": "Створення…",
+      "createAnyway": "Все одно створити",
+      "createEvent": "Створити подію"
+    },
+    "errors": {
+      "invalidTitleTime": "Введіть коректну назву та часовий проміжок",
+      "saveFailed": "Не вдалося зберегти зміни — спробуйте ще раз",
+      "createFailed": "Не вдалося створити подію — спробуйте ще раз"
+    }
+  },
+  "reserveSlotModal": {
+    "title": "Зарезервувати вільний час",
+    "bothFree": "{{range}} · Обоє вільні",
+    "close": "Закрити",
+    "lobbyLabel": "Лобі",
+    "lobbyBothFree": "{{lobbyName}} обоє вільні",
+    "whatWouldYouLikeToDo": "Що б ви хотіли зробити?",
+    "titlePlaceholder": "напр. Прогулянка в парку, Готуємо разом…",
+    "startTimeLabel": "Час початку",
+    "endTimeLabel": "Час завершення",
+    "locationLabel": "Місце (необов'язково)",
+    "locationPlaceholder": "Де ви зустрінетесь?",
+    "inviteLabel": "Запросити",
+    "you": "(ви)",
+    "everyoneIncluded": "Всі додаються автоматично",
+    "notifyToggle": {
+      "label": "Сповістити учасників лобі",
+      "description": "Вони отримають сповіщення про цей план"
+    },
+    "cancel": "Скасувати",
+    "submit": {
+      "reserving": "Резервування…",
+      "reserveSlot": "Зарезервувати час ✨"
+    },
+    "candidatePicker": {
+      "noneFound": "Спільного вільного часу за наступні 7 днів не знайдено.",
+      "close": "Закрити",
+      "chooseTime": "Виберіть час"
+    },
+    "errors": {
+      "invalidTitleTime": "Введіть коректну назву та часовий проміжок",
+      "reserveFailed": "Не вдалося зарезервувати час — спробуйте ще раз"
+    }
+  },
+  "conflictBanner": {
+    "title_one": "Конфлікт розкладу для {{count}} учасника",
+    "title_few": "Конфлікт розкладу для {{count}} учасників",
+    "title_many": "Конфлікт розкладу для {{count}} учасників",
+    "title_other": "Конфлікт розкладу для {{count}} учасника",
+    "aLobbyMember": "Учасник лобі",
+    "alreadyHas": "вже має",
+    "youAreFree": "Ви вільні в цей час.",
+    "nextSlotSuggestion": "Наступний час, коли всі вільні: {{range}} →"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { LOBBY_TYPE_ICONS, LOBBY_TYPE_LABELS, LOBBY_TYPE_TAGLINES, LOBBY_TYPES } from '@/features/lobby/lib/constants';
 import { useCreateMenuStore } from '@/store/createMenu';
 
@@ -6,17 +7,17 @@ interface DashboardHeroProps {
 }
 
 export const DashboardHero = ({ username }: DashboardHeroProps) => {
+  const { t } = useTranslation('dashboard');
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
 
   return (
     <section className="flex flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border bg-surface px-8 py-10 text-center">
       <span className="text-4xl leading-none">🌱</span>
       <div>
-        <h2 className="text-xl font-bold text-text-primary">Welcome to Lined, {username}!</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-          A lobby is a shared space for the people you plan life with. Create your first one to
-          start syncing schedules, tasks and free time.
-        </p>
+        <h2 className="text-xl font-bold text-text-primary">
+          {t('hero.welcome', { username })}
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">{t('hero.description')}</p>
       </div>
 
       <div className="grid w-full max-w-md grid-cols-2 gap-3">
@@ -41,7 +42,7 @@ export const DashboardHero = ({ username }: DashboardHeroProps) => {
         onClick={() => openCreateLobby()}
         className="h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark"
       >
-        + Create your first lobby
+        {t('hero.createFirstLobby')}
       </button>
     </section>
   );

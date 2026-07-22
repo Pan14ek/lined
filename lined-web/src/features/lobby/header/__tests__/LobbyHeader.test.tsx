@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { ADD_MEMBER_MODAL_TEXT } from '@/test/lobbyMemberContent';
 import { LobbyHeader } from '../LobbyHeader';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobby = MOCK_LOBBIES[0]!; // COUPLE, memberIds [1, 2]
@@ -36,7 +37,7 @@ describe('LobbyHeader', () => {
     expect.assertions(1);
     server.use(
       http.get(`${BASE}/users/:id`, ({ params }) => {
-        if (params['id'] === '2') return new HttpResponse(null, { status: 500 });
+        if (params['id'] === '2') return new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
         const user = { id: 1, username: 'alex_johnson', email: 'alex@lined.app' };
         return HttpResponse.json(user);
       }),

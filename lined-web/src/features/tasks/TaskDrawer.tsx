@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskPriority, TaskStatus, TaskUpdateDto } from '@/features/tasks/model';
 import { useCreateTask, useUpdateTask, useDeleteTask } from '@/features/tasks/hooks/useTasks';
 import { useUser, useUsers } from '@/features/users/hooks/useUsers';
-import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_PRIORITY_OPTIONS } from '@/features/tasks/lib/constants';
+import { TASK_PRIORITY_OPTIONS } from '@/features/tasks/lib/constants';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/features/calendar/lib/calendarUtils';
@@ -50,16 +52,16 @@ const todayStr = (): string => {
   return new Date().toISOString().slice(0, 10);
 }
 
-const getTaskErrorMessage = (error: unknown, isEditMode: boolean): string => {
+const getTaskErrorMessage = (t: TFunction<'tasks'>, error: unknown, isEditMode: boolean): string => {
   return getApiErrorMessage(
     error,
-    { 400: 'Enter a valid title' },
-    isEditMode ? "Couldn't save changes — please try again" : "Couldn't create task — please try again",
+    { 400: t('drawer.titleRequiredError') },
+    isEditMode ? t('drawer.saveError') : t('drawer.createError'),
   );
 }
 
-const getDeleteTaskErrorMessage = (error: unknown): string => {
-  return getApiErrorMessage(error, {}, "Couldn't delete this task — please try again");
+const getDeleteTaskErrorMessage = (t: TFunction<'tasks'>, error: unknown): string => {
+  return getApiErrorMessage(error, {}, t('drawer.deleteError'));
 }
 
 const buildTaskPatch = (task: TaskDto, form: TaskFormValues): TaskUpdateDto => {
@@ -81,6 +83,7 @@ export const TaskDrawer = ({
   initialStatus,
   task,
 }: TaskDrawerProps) => {
+  const { t } = useTranslation('tasks');
   const isEditMode = task != null;
   // Right-side sheet on tablet/desktop, bottom sheet on phones.
   const isPhone = useMediaQuery('(max-width: 767px)');
@@ -157,11 +160,15 @@ export const TaskDrawer = ({
           side={isPhone ? 'bottom' : 'right'}
         >
           <SheetHeader className="border-b border-border px-6 py-5">
-            <SheetTitle>{isEditMode ? 'Task details' : 'Add Task'}</SheetTitle>
+            <SheetTitle>{isEditMode ? t('drawer.titleEdit') : t('drawer.titleCreate')}</SheetTitle>
             {isEditMode && (
               <SheetDescription>
-                Created {formatShortDate(new Date(task.createdAt))}
-                {creator ? ` by ${creator.username}` : ''}
+                {creator
+                  ? t('drawer.createdByOn', {
+                      date: formatShortDate(new Date(task.createdAt)),
+                      creator: creator.username,
+                    })
+                  : t('drawer.createdOn', { date: formatShortDate(new Date(task.createdAt)) })}
                 {selectedLobby ? ` · ${selectedLobby.name}` : ''}
               </SheetDescription>
             )}
@@ -175,7 +182,7 @@ export const TaskDrawer = ({
                     htmlFor="add-task-lobby"
                     className="mb-1.5 block text-xs font-medium text-text-secondary"
                   >
-                    Lobby
+                    {t('drawer.lobbyLabel')}
                   </label>
                   <select
                     id="add-task-lobby"
@@ -195,10 +202,10 @@ export const TaskDrawer = ({
 
               <FormField
                 id="add-task-title"
-                label="Task title"
+                label={t('drawer.titleFieldLabel')}
                 value={title}
                 onChange={setTitle}
-                placeholder="What needs to be done?"
+                placeholder={t('drawer.titlePlaceholder')}
                 required
               />
 
@@ -207,21 +214,21 @@ export const TaskDrawer = ({
                   htmlFor="add-task-description"
                   className="mb-1.5 block text-xs font-medium text-text-secondary"
                 >
-                  Description (optional)
+                  {t('drawer.descriptionLabel')}
                 </label>
                 <textarea
                   id="add-task-description"
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add more details…"
+                  placeholder={t('drawer.descriptionPlaceholder')}
                   className="w-full resize-none rounded-lg border border-border bg-input-bg px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
                 />
               </div>
 
               <div>
                 <span className="mb-1.5 block text-xs font-medium text-text-secondary">
-                  Assign to
+                  {t('drawer.assignToLabel')}
                 </span>
                 <AssigneePicker
                   members={members}
@@ -235,14 +242,14 @@ export const TaskDrawer = ({
                 <div>
                   <FormField
                     id="add-task-due-date"
-                    label="Due date"
+                    label={t('drawer.dueDateLabel')}
                     type="date"
                     value={dueDate}
                     onChange={setDueDate}
                   />
                   {isPastDue && (
                     <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      This date is in the past — the task will start off overdue.
+                      {t('drawer.pastDueWarning')}
                     </p>
                   )}
                 </div>
@@ -252,7 +259,7 @@ export const TaskDrawer = ({
                     htmlFor="add-task-priority"
                     className="mb-1.5 block text-xs font-medium text-text-secondary"
                   >
-                    Priority
+                    {t('drawer.priorityLabel')}
                   </label>
                   <select
                     id="add-task-priority"
@@ -262,7 +269,7 @@ export const TaskDrawer = ({
                   >
                     {TASK_PRIORITY_OPTIONS.map((p) => (
                       <option key={p} value={p}>
-                        {TASK_PRIORITY_LABELS[p]}
+                        {t(`priority.${p}`)}
                       </option>
                     ))}
                   </select>
@@ -274,7 +281,7 @@ export const TaskDrawer = ({
                   htmlFor="add-task-status"
                   className="mb-1.5 block text-xs font-medium text-text-secondary"
                 >
-                  Status
+                  {t('drawer.statusLabel')}
                 </label>
                 <select
                   id="add-task-status"
@@ -284,7 +291,7 @@ export const TaskDrawer = ({
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
-                      {TASK_STATUS_LABELS[s]}
+                      {t(`status.${s}`)}
                     </option>
                   ))}
                 </select>
@@ -292,15 +299,15 @@ export const TaskDrawer = ({
 
               {!isEditMode && (
                 <ToggleRow
-                  label="Notify assignee"
-                  description="Send a notification when the task is assigned"
+                  label={t('drawer.notifyAssignee')}
+                  description={t('drawer.notifyAssigneeDescription')}
                   checked={notifyAssignee}
                   onChange={setNotifyAssignee}
                 />
               )}
 
               {mutation.isError && (
-                <AuthAlert message={getTaskErrorMessage(mutation.error, isEditMode)} />
+                <AuthAlert message={getTaskErrorMessage(t, mutation.error, isEditMode)} />
               )}
             </div>
 
@@ -311,7 +318,7 @@ export const TaskDrawer = ({
                   onClick={() => setIsConfirmingDelete(true)}
                   className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
                 >
-                  Delete
+                  {t('drawer.delete')}
                 </button>
               )}
               <button
@@ -322,7 +329,7 @@ export const TaskDrawer = ({
                   isEditMode ? 'ml-auto' : 'flex-1',
                 )}
               >
-                Cancel
+                {t('drawer.cancel')}
               </button>
               <button
                 type="submit"
@@ -334,11 +341,11 @@ export const TaskDrawer = ({
               >
                 {isEditMode
                   ? mutation.isPending
-                    ? 'Saving…'
-                    : 'Save changes'
+                    ? t('drawer.saving')
+                    : t('drawer.save')
                   : mutation.isPending
-                    ? 'Adding…'
-                    : 'Add Task'}
+                    ? t('drawer.adding')
+                    : t('drawer.add')}
               </button>
             </SheetFooter>
           </form>
@@ -349,12 +356,12 @@ export const TaskDrawer = ({
         task &&
         createPortal(
           <ConfirmDialog
-            title="Delete task"
-            message={`Delete "${task.title}"? This can't be undone.`}
-            confirmLabel="Delete"
+            title={t('drawer.deleteDialogTitle')}
+            message={t('drawer.deleteConfirmMessage', { title: task.title })}
+            confirmLabel={t('drawer.deleteConfirmLabel')}
             danger
             isPending={deleteTask.isPending}
-            error={deleteTask.isError ? getDeleteTaskErrorMessage(deleteTask.error) : null}
+            error={deleteTask.isError ? getDeleteTaskErrorMessage(t, deleteTask.error) : null}
             onConfirm={handleDeleteConfirm}
             onCancel={() => setIsConfirmingDelete(false)}
           />,

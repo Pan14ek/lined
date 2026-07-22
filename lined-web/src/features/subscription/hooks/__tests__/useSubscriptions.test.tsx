@@ -11,6 +11,7 @@ import {
   useStartSubscription,
   useCancelSubscription,
 } from '../useSubscriptions';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -49,7 +50,7 @@ describe('usePlans', () => {
   it('surfaces a failed request as an error state', async () => {
     expect.assertions(1);
     const queryClient = makeQueryClient();
-    server.use(http.get(`${BASE}/plans`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/plans`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
 
     const { result } = renderHook(() => usePlans(), { wrapper: makeWrapper(queryClient) });
     await waitUntilSettled(result);
@@ -74,7 +75,7 @@ describe('useActivePlan', () => {
     expect.assertions(2);
     const queryClient = makeQueryClient();
     server.use(
-      http.get(`${BASE}/subscriptions/:userId/active`, () => new HttpResponse(null, { status: 404 })),
+      http.get(`${BASE}/subscriptions/:userId/active`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })),
     );
 
     const { result } = renderHook(() => useActivePlan(99), { wrapper: makeWrapper(queryClient) });
@@ -88,7 +89,7 @@ describe('useActivePlan', () => {
     expect.assertions(1);
     const queryClient = makeQueryClient();
     server.use(
-      http.get(`${BASE}/subscriptions/:userId/active`, () => new HttpResponse(null, { status: 500 })),
+      http.get(`${BASE}/subscriptions/:userId/active`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })),
     );
 
     const { result } = renderHook(() => useActivePlan(1), { wrapper: makeWrapper(queryClient) });
@@ -132,7 +133,7 @@ describe('useStartSubscription', () => {
             active: true,
             createdAt: '2026-07-18T00:00:00Z',
           },
-          { status: 201 },
+          { status: HTTP_STATUS.CREATED },
         );
       }),
     );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { useLobbyTasks, useUpdateTask } from '@/features/tasks/hooks/useTasks';
@@ -13,12 +14,7 @@ import { TaskRow } from './TaskRow';
 
 type FilterId = 'ALL' | TaskStatus;
 
-const FILTERS: { id: FilterId; label: string }[] = [
-  { id: 'ALL', label: 'All' },
-  { id: 'TODO', label: TASK_STATUS_LABELS.TODO },
-  { id: 'IN_PROGRESS', label: TASK_STATUS_LABELS.IN_PROGRESS },
-  { id: 'DONE', label: TASK_STATUS_LABELS.DONE },
-];
+const FILTER_IDS: FilterId[] = ['ALL', 'TODO', 'IN_PROGRESS', 'DONE'];
 
 interface TaskListContentProps {
   lobbyId: number;
@@ -45,6 +41,8 @@ const TaskListContent = ({
   onToggle,
   onOpen,
 }: TaskListContentProps) => {
+  const { t } = useTranslation('lobby');
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-tasks-loading">
@@ -57,7 +55,7 @@ const TaskListContent = ({
 
   if (isError) {
     return (
-      <p className="text-sm text-text-secondary">Couldn&apos;t load tasks. Try again later.</p>
+      <p className="text-sm text-text-secondary">{t('tasks.loadError')}</p>
     );
   }
 
@@ -65,14 +63,14 @@ const TaskListContent = ({
     return (
       <EmptyState
         icon="✅"
-        message="No tasks yet."
-        action={{ label: 'Invite someone', to: `/lobbies/${lobbyId}?tab=members` }}
+        message={t('tasks.emptyTitle')}
+        action={{ label: t('tasks.inviteSomeone'), to: `/lobbies/${lobbyId}?tab=members` }}
       />
     );
   }
 
   if (sorted.length === 0) {
-    return <EmptyState message="No tasks match this filter." />;
+    return <EmptyState message={t('tasks.emptyFilterMessage')} />;
   }
 
   return (
@@ -97,12 +95,16 @@ interface LobbyTaskListProps {
 }
 
 export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
+  const { t } = useTranslation('lobby');
   const { data: tasks, isLoading, isError } = useLobbyTasks(lobbyId);
   const updateTask = useUpdateTask();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
   const openTaskDetail = useCreateMenuStore((s) => s.openTaskDetail);
   const [filter, setFilter] = useState<FilterId>('ALL');
   const { busyId: updatingTaskId, errors: rowErrors, start, finish, setError } = useRowMutationState();
+
+  const filterLabel = (id: FilterId): string =>
+    id === 'ALL' ? t('tasks.filterAll') : TASK_STATUS_LABELS[id];
 
   const assigneeIds = Array.from(
     new Set((tasks ?? []).map((t) => t.assigneeId).filter((id): id is number => id != null)),
@@ -127,7 +129,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
       { id: task.id, data: { status: nextStatus } },
       {
         onSettled: finish,
-        onError: () => setError(task.id, "Couldn't update — try again"),
+        onError: () => setError(task.id, t('tasks.updateError')),
       },
     );
   };
@@ -135,13 +137,13 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   return (
     <div className="p-6">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {FILTERS.map((filterOption) => {
-          const isSelected = filter === filterOption.id;
+        {FILTER_IDS.map((filterId) => {
+          const isSelected = filter === filterId;
           return (
             <button
-              key={filterOption.id}
+              key={filterId}
               type="button"
-              onClick={() => setFilter(filterOption.id)}
+              onClick={() => setFilter(filterId)}
               aria-pressed={isSelected}
               className={cn(
                 'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
@@ -150,11 +152,11 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
                   : 'bg-surface text-text-secondary hover:bg-surface-hover',
               )}
             >
-              {filterOption.label} ({counts[filterOption.id]})
+              {filterLabel(filterId)} ({counts[filterId]})
             </button>
           );
         })}
-        <span className="ml-auto text-xs text-text-secondary">Sort: Due date</span>
+        <span className="ml-auto text-xs text-text-secondary">{t('tasks.sortByDueDate')}</span>
       </div>
 
       <TaskListContent
@@ -175,7 +177,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
         onClick={() => openOverlay('task')}
         className="mt-4 w-full rounded-lg border-2 border-dashed border-border py-2.5 text-sm font-medium text-text-secondary hover:border-brand-green hover:text-brand-green"
       >
-        + Add task
+        {t('tasks.addTask')}
       </button>
     </div>
   );

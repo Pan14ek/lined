@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import i18next from 'i18next';
 import type { EventDto } from '@/features/calendar/model';
 import {
   getGreeting,
   formatFullDate,
+  formatMonthYear,
   formatRelativeEventTime,
   formatRelativeTimeAgo,
   formatFreeSlotRange,
@@ -16,9 +18,11 @@ import {
   clipEventToDay,
   computeFreeSlots,
 } from '../calendarUtils';
+import { dates, locales, statuses, texts } from './calendarUtils.test.helper';
 
 afterEach(() => {
   vi.useRealTimers();
+  void i18next.changeLanguage(locales.english);
 });
 
 describe('getGreeting', () => {
@@ -509,5 +513,76 @@ describe('getMonthGridDays', () => {
     for (let i = 0; i < 31; i++) {
       expect(monthDays[i]!.getDate()).toBe(i + 1);
     }
+  });
+});
+
+describe('locale-aware formatting (uk)', () => {
+  it('formatMonthYear renders the Ukrainian month name', () => {
+    expect.assertions(1);
+    expect(formatMonthYear(new Date(dates.julySample), locales.ukrainian)).toBe(texts.ukrainianMonthYear);
+  });
+
+  it('formatFullDate renders the Ukrainian weekday and month', () => {
+    expect.assertions(1);
+    expect(formatFullDate(new Date(dates.julySample), locales.ukrainian)).toBe(texts.ukrainianFullDate);
+  });
+
+  it('getGreeting picks up the current i18next language', async () => {
+    expect.assertions(1);
+    await i18next.changeLanguage(locales.ukrainian);
+    expect(getGreeting(new Date(dates.julyMorning))).toBe(texts.ukrainianMorningGreeting);
+  });
+
+  it('formatRelativeTimeAgo pluralises correctly for 1/2/5 minutes in Ukrainian', async () => {
+    expect.assertions(3);
+    await i18next.changeLanguage(locales.ukrainian);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(dates.marchNow));
+    expect(formatRelativeTimeAgo(dates.marchOneMinuteAgo)).toBe(texts.ukrainianOneMinuteAgo);
+    expect(formatRelativeTimeAgo(dates.marchTwoMinutesAgo)).toBe(texts.ukrainianTwoMinutesAgo);
+    expect(formatRelativeTimeAgo(dates.marchFiveMinutesAgo)).toBe(texts.ukrainianFiveMinutesAgo);
+  });
+
+  it('formatRelativeTimeAgo renders "Just now"/"Yesterday" in Ukrainian', async () => {
+    expect.assertions(2);
+    await i18next.changeLanguage(locales.ukrainian);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(dates.marchJustNow));
+    expect(formatRelativeTimeAgo(dates.marchMorning)).toBe(texts.ukrainianJustNow);
+    vi.setSystemTime(new Date(dates.marchMorning));
+    expect(formatRelativeTimeAgo(dates.marchYesterday)).toBe(texts.ukrainianYesterday);
+  });
+
+  it('formatTaskDueDate renders Ukrainian "Done"/"No due date"/"Today"', async () => {
+    expect.assertions(3);
+    await i18next.changeLanguage(locales.ukrainian);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(dates.marchMorningUtc));
+    expect(formatTaskDueDate(dates.completedTask, statuses.done).label).toBe(texts.ukrainianDone);
+    expect(formatTaskDueDate(null, statuses.todo).label).toBe(texts.ukrainianNoDueDate);
+    expect(formatTaskDueDate(dates.todayTaskDueDate, statuses.todo).label).toBe(texts.ukrainianToday);
+  });
+
+  it('formatFreeSlotRange renders "Сьогодні"/"Завтра" in Ukrainian', async () => {
+    expect.assertions(2);
+    await i18next.changeLanguage(locales.ukrainian);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(dates.marchMorning));
+    expect(formatFreeSlotRange(dates.freeSlotStart, dates.freeSlotEnd)).toBe(texts.ukrainianTodayFreeSlot);
+    expect(formatFreeSlotRange(dates.tomorrowFreeSlotStart, dates.tomorrowFreeSlotEnd)).toBe(texts.ukrainianTomorrowFreeSlot);
+  });
+
+  it('formatRelativeEventTime renders "Сьогодні"/"Завтра" in Ukrainian', async () => {
+    expect.assertions(2);
+    await i18next.changeLanguage(locales.ukrainian);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(dates.marchMorning));
+    expect(formatRelativeEventTime(dates.todayEvent)).toBe(texts.ukrainianTodayRelativeEvent);
+    expect(formatRelativeEventTime(dates.tomorrowEvent)).toBe(texts.ukrainianTomorrowRelativeEvent);
+  });
+
+  it('an explicit locale argument overrides the current i18next language', () => {
+    expect.assertions(1);
+    expect(formatMonthYear(new Date(dates.julySample), locales.english)).toBe(texts.englishMonthYear);
   });
 });

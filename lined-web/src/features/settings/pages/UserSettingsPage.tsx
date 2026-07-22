@@ -4,6 +4,7 @@ import { ProfileCard } from '@/features/settings/cards/ProfileCard';
 import { PasswordCard } from '@/features/settings/cards/PasswordCard';
 import { NotificationsCard } from '@/features/settings/cards/NotificationsCard';
 import { AppearanceCard } from '@/features/settings/cards/AppearanceCard';
+import { LanguageCard } from '@/features/settings/cards/LanguageCard';
 import { DangerZoneCard } from '@/features/settings/cards/DangerZoneCard';
 
 export const UserSettingsPage = () => {
@@ -17,6 +18,7 @@ export const UserSettingsPage = () => {
         <PasswordCard userId={user?.id} />
         <NotificationsCard />
         <AppearanceCard />
+        <LanguageCard userId={user?.id} />
         <DangerZoneCard userId={user?.id} />
       </div>
     </div>

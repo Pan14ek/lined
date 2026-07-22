@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { TaskDto } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
@@ -17,6 +18,7 @@ interface TaskRowProps {
 }
 
 export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onOpen }: TaskRowProps) => {
+  const { t } = useTranslation('lobby');
   const isDone = task.status === 'DONE';
   const due = formatTaskDueDate(task.dueDate, task.status);
 
@@ -46,7 +48,11 @@ export const TaskRow = ({ task, assignee, onToggle, isUpdating, updateError, onO
         type="button"
         role="checkbox"
         aria-checked={isDone}
-        aria-label={isDone ? `Mark "${task.title}" as to do` : `Mark "${task.title}" as done`}
+        aria-label={
+          isDone
+            ? t('tasks.markAsToDo', { title: task.title })
+            : t('tasks.markAsDone', { title: task.title })
+        }
         disabled={isUpdating}
         onClick={(e) => {
           e.stopPropagation();

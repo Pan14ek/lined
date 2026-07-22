@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { TaskDto } from '@/features/tasks/model';
 import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
@@ -20,14 +21,15 @@ interface MyTasksListProps {
 }
 
 export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => {
+  const { t } = useTranslation('dashboard');
   const sorted = tasks ? sortTasks(tasks) : [];
 
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-primary">My Tasks</h2>
+        <h2 className="text-sm font-semibold text-text-primary">{t('tasks.title')}</h2>
         <Link to="/tasks" className="text-xs font-medium text-brand-green">
-          All tasks →
+          {t('tasks.allTasks')}
         </Link>
       </div>
 
@@ -40,16 +42,11 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
       )}
 
       {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">
-          Couldn&apos;t load your tasks. Try again later.
-        </p>
+        <p className="text-sm text-text-secondary">{t('tasks.loadError')}</p>
       )}
 
       {!isLoading && !isError && tasks?.length === 0 && (
-        <EmptyState
-          icon="✅"
-          message="No tasks yet — tasks you create or get assigned will appear here."
-        />
+        <EmptyState icon="✅" message={t('tasks.empty')} />
       )}
 
       {!isLoading && !isError && tasks != null && tasks.length > 0 && (

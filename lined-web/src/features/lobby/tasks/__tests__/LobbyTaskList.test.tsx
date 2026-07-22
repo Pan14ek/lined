@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LobbyTaskList } from '../LobbyTaskList';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -41,7 +42,7 @@ describe('LobbyTaskList', () => {
 
   it('shows an error message when the task list fails to load', async () => {
     expect.assertions(1);
-    server.use(http.get(`${BASE}/tasks`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${BASE}/tasks`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     renderWithProviders(<LobbyTaskList lobbyId={1} />);
 
     expect(await screen.findByText("Couldn't load tasks. Try again later.")).toBeInTheDocument();
@@ -79,7 +80,7 @@ describe('LobbyTaskList', () => {
 
   it('shows an inline error and keeps the row unchanged when the PATCH fails', async () => {
     expect.assertions(2);
-    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
     renderWithProviders(<LobbyTaskList lobbyId={1} />);
     await screen.findByText('Plan dinner for Saturday');

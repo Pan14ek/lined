@@ -1,4 +1,5 @@
 import { Clock, Link, MapPin, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { formatEventTime } from '@/features/calendar/lib/calendarUtils';
@@ -21,6 +22,7 @@ export const EventDetailPanel = ({
   onDelete,
   deleteError,
 }: EventDetailPanelProps) => {
+  const { t } = useTranslation('calendar');
   const accentColor = lobbyAccentColor(lobby.lobbyType);
 
   return (
@@ -37,7 +39,7 @@ export const EventDetailPanel = ({
           </h3>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('eventDetail.close')}
             className="mt-0.5 flex-shrink-0 text-text-muted hover:text-text-secondary"
           >
             <X className="h-4 w-4" />
@@ -73,7 +75,7 @@ export const EventDetailPanel = ({
         {event.shared && (
           <div className="mb-2 flex items-center gap-2 text-sm text-text-primary">
             <Link className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
-            <span>Shared event</span>
+            <span>{t('eventDetail.sharedEvent')}</span>
           </div>
         )}
 
@@ -90,13 +92,13 @@ export const EventDetailPanel = ({
             onClick={onEdit}
             className="flex-1 h-9 rounded-lg bg-brand-green text-sm font-semibold text-white hover:bg-brand-green-dark transition-colors"
           >
-            Edit event
+            {t('eventDetail.editEvent')}
           </button>
           <button
             onClick={onDelete}
             className="flex-1 h-9 rounded-lg border border-red-500 bg-surface text-sm font-medium text-red-500 hover:bg-red-50 transition-colors dark:border-red-500/60 dark:text-red-400 dark:hover:bg-red-950/40"
           >
-            Delete
+            {t('eventDetail.delete')}
           </button>
         </div>
       </div>

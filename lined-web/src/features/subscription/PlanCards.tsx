@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
@@ -11,11 +13,11 @@ interface PlanCardsProps {
   currentPlanId: number | undefined;
 }
 
-const getSubscribeErrorMessage = (error: unknown): string => {
+const getSubscribeErrorMessage = (error: unknown, t: TFunction<'subscription'>): string => {
   return getApiErrorMessage(
     error,
-    { 409: 'You already have an active plan — cancel it first to switch' },
-    'Could not start your subscription — please try again',
+    { 409: t('planCards.errors.conflict') },
+    t('planCards.errors.generic'),
   );
 }
 
@@ -28,6 +30,7 @@ const PlanCardsSkeleton = () => (
 );
 
 export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCardsProps) => {
+  const { t } = useTranslation('subscription');
   const startSubscription = useStartSubscription(userId);
 
   if (isLoading) return <PlanCardsSkeleton />;
@@ -47,14 +50,14 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
             >
               {isCurrent && (
                 <span className="absolute right-4 top-4 rounded-full bg-brand-green px-2 py-0.5 text-[10px] font-bold text-white">
-                  CURRENT
+                  {t('planCards.current')}
                 </span>
               )}
               <div className="text-sm font-semibold text-text-primary">{plan.name}</div>
               <div className="mt-1 text-xl font-bold text-text-primary">
                 {formatPlanPrice(plan.priceUsd)}
                 {plan.priceUsd > 0 && (
-                  <span className="text-xs font-normal text-text-secondary"> / month</span>
+                  <span className="text-xs font-normal text-text-secondary">{t('planCards.perMonth')}</span>
                 )}
               </div>
               <button
@@ -68,7 +71,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
                     : 'bg-brand-green text-white hover:bg-brand-green-dark',
                 )}
               >
-                {isCurrent ? 'Your plan' : 'Subscribe'}
+                {isCurrent ? t('planCards.yourPlan') : t('planCards.subscribe')}
               </button>
             </div>
           );
@@ -76,7 +79,7 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
       </div>
       {startSubscription.isError && (
         <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-          {getSubscribeErrorMessage(startSubscription.error)}
+          {getSubscribeErrorMessage(startSubscription.error, t)}
         </p>
       )}
     </div>

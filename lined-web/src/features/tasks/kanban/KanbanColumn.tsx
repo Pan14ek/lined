@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import type { DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
-import { TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
+import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
-import { KANBAN_LABELS, KANBAN_TEST_IDS, KANBAN_TEXT } from './kanbanConstants';
+import { KANBAN_TEST_IDS } from './kanbanConstants';
 import { cn } from '@/lib/utils';
 
 export interface KanbanMoveState {
@@ -50,8 +51,15 @@ const KanbanCardList = ({
   moveState,
   actions,
 }: KanbanCardListProps) => {
+  const { t } = useTranslation('tasks');
+
   if (tasks.length === 0) {
-    return <EmptyState variant="inline" message={`No tasks in ${TASK_STATUS_LABELS[status]}.`} />;
+    return (
+      <EmptyState
+        variant="inline"
+        message={t('kanban.emptyColumn', { status: t(`status.${status}`) })}
+      />
+    );
   }
 
   return (
@@ -81,6 +89,7 @@ export const KanbanColumn = ({
   moveState,
   actions,
 }: KanbanColumnProps) => {
+  const { t } = useTranslation('tasks');
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -110,11 +119,11 @@ export const KanbanColumn = ({
     >
       <div className="mb-3 flex items-center gap-2">
         <span className={cn('h-2.5 w-2.5 rounded-full', TASK_STATUS_COLORS[status])} />
-        <span className="text-sm font-semibold text-text-primary">{TASK_STATUS_LABELS[status]}</span>
+        <span className="text-sm font-semibold text-text-primary">{t(`status.${status}`)}</span>
         <TaskStatusBadge status={status} size="count">{tasks.length}</TaskStatusBadge>
         <button
           type="button"
-          aria-label={KANBAN_LABELS.addTaskToColumn(TASK_STATUS_LABELS[status])}
+          aria-label={t('kanban.addTaskToColumn', { column: t(`status.${status}`) })}
           onClick={() => actions.onQuickAdd(status)}
           className="ml-auto text-lg leading-none text-text-secondary hover:text-brand-green"
         >
@@ -138,7 +147,7 @@ export const KanbanColumn = ({
         onClick={() => actions.onQuickAdd(status)}
         className="mt-2.5 w-full rounded-lg border-2 border-dashed border-border py-2 text-xs font-medium text-text-secondary hover:border-brand-green hover:text-brand-green"
       >
-        {KANBAN_TEXT.addTask}
+        {t('kanban.addTask')}
       </button>
     </div>
   );

@@ -1,0 +1,40 @@
+{
+  "page": {
+    "title": "Subscription",
+    "availablePlans": "Available Plans"
+  },
+  "currentPlan": {
+    "title": "Current Plan",
+    "priceMonthly": "{{price}}/month",
+    "renews": "Renews {{date}}",
+    "freePlan": "You are on the free plan.",
+    "cancelButton": "Cancel subscription",
+    "cancelDialog": {
+      "title": "Cancel subscription",
+      "message": "Your plan will be cancelled immediately. You'll keep access to the free plan's features.",
+      "confirmLabel": "Cancel subscription"
+    },
+    "errors": {
+      "notFound": "You have no active subscription to cancel",
+      "generic": "Could not cancel your subscription — please try again"
+    }
+  },
+  "planCards": {
+    "current": "CURRENT",
+    "perMonth": " / month",
+    "yourPlan": "Your plan",
+    "subscribe": "Subscribe",
+    "errors": {
+      "conflict": "You already have an active plan — cancel it first to switch",
+      "generic": "Could not start your subscription — please try again"
+    }
+  },
+  "history": {
+    "title": "Subscription History",
+    "priceMonthly": "{{price}}/month",
+    "present": "present",
+    "statusActive": "ACTIVE",
+    "statusEnded": "ENDED",
+    "empty": "No subscription history yet."
+  }
+}

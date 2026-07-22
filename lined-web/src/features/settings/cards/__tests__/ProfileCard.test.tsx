@@ -5,6 +5,7 @@ import { server } from '@/test/server';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { useAuthStore } from '@/store/auth';
 import { ProfileCard } from '../ProfileCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const user = MOCK_USERS[0]!;
@@ -64,7 +65,7 @@ describe('ProfileCard', () => {
     expect.assertions(1);
     server.use(
       http.patch(`${BASE}/users/:id`, () =>
-        HttpResponse.json({ code: 'CONFLICT', message: 'taken' }, { status: 409 }),
+        HttpResponse.json({ code: 'CONFLICT', message: 'taken' }, { status: HTTP_STATUS.CONFLICT }),
       ),
     );
     const userEventInstance = userEvent.setup();
@@ -80,7 +81,7 @@ describe('ProfileCard', () => {
 
   it('shows a generic error on 500', async () => {
     expect.assertions(1);
-    server.use(http.patch(`${BASE}/users/:id`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.patch(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const userEventInstance = userEvent.setup();
     renderWithProviders(<ProfileCard user={user} isLoading={false} />);
 

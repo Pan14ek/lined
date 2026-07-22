@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface LobbyLoadStatesProps {
   loadingTestId: string;
 }
@@ -12,10 +14,11 @@ export const LobbyLoadingState = ({ loadingTestId }: LobbyLoadStatesProps) => {
 }
 
 export const LobbyNotFoundState = () => {
+  const { t } = useTranslation('lobby');
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <p className="text-sm text-text-secondary">
-        Lobby not found. It may have been deleted, or you may not have access to it.
+        {t('loadStates.notFound')}
       </p>
     </div>
   );

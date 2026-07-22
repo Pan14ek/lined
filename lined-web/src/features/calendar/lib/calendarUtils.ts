@@ -1,5 +1,15 @@
+import i18next from 'i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { TaskStatus } from '@/features/tasks/model';
+
+export type CalendarLocale = 'en' | 'uk';
+
+/** Resolves the app's current i18n language, re-read on every call so a
+ * locale switch is picked up without callers needing to pass it explicitly. */
+const currentLocale = (): CalendarLocale => (i18next.language === 'uk' ? 'uk' : 'en');
+
+const localeTag = (locale: CalendarLocale, enBase: 'en-US' | 'en-GB'): string =>
+  locale === 'uk' ? 'uk-UA' : enBase;
 
 export const GRID_START_HOUR = 1; // 1 AM
 export const GRID_END_HOUR = 24; // 12 AM (midnight)
@@ -69,12 +79,12 @@ export const getMonthGridDays = (monthAnchor: Date): Date[] => {
   return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 }
 
-export const formatMonthYear = (date: Date): string => {
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+export const formatMonthYear = (date: Date, locale: CalendarLocale = currentLocale()): string => {
+  return date.toLocaleDateString(localeTag(locale, 'en-US'), { month: 'long', year: 'numeric' });
 }
 
-export const formatDayLabel = (date: Date): string => {
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+export const formatDayLabel = (date: Date, locale: CalendarLocale = currentLocale()): string => {
+  const weekday = date.toLocaleDateString(localeTag(locale, 'en-US'), { weekday: 'short' });
   return `${weekday} ${date.getDate()}`;
 }
 
@@ -97,11 +107,11 @@ export const formatClockTime = (d: Date): string => {
   return `${value} ${ampm}`;
 }
 
-export const formatEventTime = (startAt: string, endAt: string): string => {
+export const formatEventTime = (startAt: string, endAt: string, locale: CalendarLocale = currentLocale()): string => {
   const start = new Date(startAt);
   const end = new Date(endAt);
 
-  const dateStr = start.toLocaleDateString('en-US', {
+  const dateStr = start.toLocaleDateString(localeTag(locale, 'en-US'), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -112,13 +122,12 @@ export const formatEventTime = (startAt: string, endAt: string): string => {
 
 export const getGreeting = (date: Date = new Date()): string => {
   const hour = date.getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  const key = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  return i18next.t(`common:greeting.${key}`);
 }
 
-export const formatFullDate = (date: Date): string => {
-  return date.toLocaleDateString('en-GB', {
+export const formatFullDate = (date: Date, locale: CalendarLocale = currentLocale()): string => {
+  return date.toLocaleDateString(localeTag(locale, 'en-GB'), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -126,24 +135,24 @@ export const formatFullDate = (date: Date): string => {
   });
 }
 
-export const formatRelativeEventTime = (startAt: string): string => {
+export const formatRelativeEventTime = (startAt: string, locale: CalendarLocale = currentLocale()): string => {
   const start = new Date(startAt);
   const now = new Date();
   const timeStr = formatClockTime(start);
 
-  if (isSameDay(start, now)) return `Today · ${timeStr}`;
-  if (isSameDay(start, addDays(now, 1))) return `Tomorrow · ${timeStr}`;
+  if (isSameDay(start, now)) return `${i18next.t('common:dates.today')} · ${timeStr}`;
+  if (isSameDay(start, addDays(now, 1))) return `${i18next.t('common:dates.tomorrow')} · ${timeStr}`;
 
-  const weekday = start.toLocaleDateString('en-US', { weekday: 'short' });
-  const dayMonth = start.toLocaleDateString('en-GB', {
+  const weekday = start.toLocaleDateString(localeTag(locale, 'en-US'), { weekday: 'short' });
+  const dayMonth = start.toLocaleDateString(localeTag(locale, 'en-GB'), {
     day: 'numeric',
     month: 'short',
   });
   return `${weekday}, ${dayMonth} · ${timeStr}`;
 }
 
-export const formatShortDate = (date: Date): string => {
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+export const formatShortDate = (date: Date, locale: CalendarLocale = currentLocale()): string => {
+  return date.toLocaleDateString(localeTag(locale, 'en-GB'), { day: 'numeric', month: 'short' });
 }
 
 export const formatRelativeTimeAgo = (iso: string): string => {
@@ -151,32 +160,32 @@ export const formatRelativeTimeAgo = (iso: string): string => {
   const now = new Date();
   const seconds = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
 
-  if (seconds < 60) return 'Just now';
+  if (seconds < 60) return i18next.t('common:relativeTime.justNow');
 
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  if (minutes < 60) return i18next.t('common:relativeTime.minutesAgo', { count: minutes });
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  if (hours < 24) return i18next.t('common:relativeTime.hoursAgo', { count: hours });
 
-  if (isSameDay(then, addDays(now, -1))) return 'Yesterday';
+  if (isSameDay(then, addDays(now, -1))) return i18next.t('common:relativeTime.yesterday');
 
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+  if (days < 7) return i18next.t('common:relativeTime.daysAgo', { count: days });
 
   return formatShortDate(then);
 }
 
-export const formatFreeSlotRange = (start: string, end: string): string => {
+export const formatFreeSlotRange = (start: string, end: string, locale: CalendarLocale = currentLocale()): string => {
   const startDate = new Date(start);
   const endDate = new Date(end);
   const now = new Date();
 
   const dayLabel = isSameDay(startDate, now)
-    ? 'Today'
+    ? i18next.t('common:dates.today')
     : isSameDay(startDate, addDays(now, 1))
-      ? 'Tomorrow'
-      : startDate.toLocaleDateString('en-US', { weekday: 'long' });
+      ? i18next.t('common:dates.tomorrow')
+      : startDate.toLocaleDateString(localeTag(locale, 'en-US'), { weekday: 'long' });
 
   const startClock = toHourClock(startDate.getHours() + startDate.getMinutes() / 60);
   const endClock = toHourClock(endDate.getHours() + endDate.getMinutes() / 60);
@@ -189,20 +198,24 @@ export const formatFreeSlotRange = (start: string, end: string): string => {
   return `${dayLabel} ${range}`;
 }
 
-export const formatTaskDueDate = (dueDate: string | null, status: TaskStatus): { label: string; isUrgent: boolean } => {
-  if (status === 'DONE') return { label: 'Done', isUrgent: false };
-  if (!dueDate) return { label: 'No due date', isUrgent: false };
+export const formatTaskDueDate = (
+  dueDate: string | null,
+  status: TaskStatus,
+  locale: CalendarLocale = currentLocale(),
+): { label: string; isUrgent: boolean } => {
+  if (status === 'DONE') return { label: i18next.t('common:dates.done'), isUrgent: false };
+  if (!dueDate) return { label: i18next.t('common:dates.noDueDate'), isUrgent: false };
 
   const dueStr = dueDate.slice(0, 10);
   const todayStr = toLocalDateString(new Date());
 
-  if (dueStr === todayStr) return { label: 'Today', isUrgent: true };
+  if (dueStr === todayStr) return { label: i18next.t('common:dates.today'), isUrgent: true };
 
   const due = new Date(`${dueStr}T00:00:00`);
   const today = new Date(`${todayStr}T00:00:00`);
   const isOverdue = due.getTime() < today.getTime();
 
-  const label = due.toLocaleDateString('en-US', {
+  const label = due.toLocaleDateString(localeTag(locale, 'en-US'), {
     month: 'short',
     day: 'numeric',
   });

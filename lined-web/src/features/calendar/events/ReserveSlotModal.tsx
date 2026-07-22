@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
@@ -32,6 +34,7 @@ interface ResolvedSlot {
 }
 
 export const ReserveSlotModal = ({ lobbies, initial, onClose, onReserved }: ReserveSlotModalProps) => {
+  const { t } = useTranslation('calendar');
   const { candidates, isLoading: candidatesLoading } = useFreeSlotCandidates(lobbies);
   const [pickedCandidate, setPickedCandidate] = useState<FreeSlotCandidate | null>(null);
 
@@ -52,17 +55,17 @@ export const ReserveSlotModal = ({ lobbies, initial, onClose, onReserved }: Rese
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-5">
           <div>
-            <h2 className="text-lg font-bold text-text-primary">Reserve Free Slot</h2>
+            <h2 className="text-lg font-bold text-text-primary">{t('reserveSlotModal.title')}</h2>
             {resolved && (
               <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-1 text-xs font-semibold text-brand-green-dark dark:text-brand-green">
                 <Sparkles className="h-3 w-3" />
-                {formatFreeSlotRange(resolved.start, resolved.end)} · Both free
+                {t('reserveSlotModal.bothFree', { range: formatFreeSlotRange(resolved.start, resolved.end) })}
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('reserveSlotModal.close')}
             className="text-text-muted hover:text-text-secondary"
           >
             <X className="h-5 w-5" />
@@ -101,15 +104,16 @@ interface ReserveSlotFormProps {
   onReserved?: (event: EventDto) => void;
 }
 
-const getReserveErrorMessage = (error: unknown): string => {
+const getReserveErrorMessage = (error: unknown, t: TFunction<'calendar'>): string => {
   return getApiErrorMessage(
     error,
-    { 400: 'Enter a valid title and time range' },
-    "Couldn't reserve this slot — please try again",
+    { 400: t('reserveSlotModal.errors.invalidTitleTime') },
+    t('reserveSlotModal.errors.reserveFailed'),
   );
 }
 
 const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotFormProps) => {
+  const { t } = useTranslation('calendar');
   const createEvent = useCreateEvent();
   const currentUserId = useAuthStore((s) => s.userId);
   const sharableLobbies = lobbies.filter((l) => l.memberIds.length > 1);
@@ -164,7 +168,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
               htmlFor="reserve-slot-lobby"
               className="mb-1.5 block text-xs font-medium text-text-secondary"
             >
-              Lobby
+              {t('reserveSlotModal.lobbyLabel')}
             </label>
             <select
               id="reserve-slot-lobby"
@@ -185,7 +189,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
             <span className="text-xl">{LOBBY_TYPE_ICONS[lobby.lobbyType]}</span>
             <div>
               <div className="text-sm font-semibold text-brand-green-dark dark:text-brand-green">
-                {lobby.name} are both free
+                {t('reserveSlotModal.lobbyBothFree', { lobbyName: lobby.name })}
               </div>
               <div className="mt-0.5 text-xs text-brand-green-dark dark:text-brand-green">
                 {formatFreeSlotRange(slot.start, slot.end)}
@@ -196,16 +200,16 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
 
         <FormField
           id="reserve-slot-title"
-          label="What would you like to do?"
+          label={t('reserveSlotModal.whatWouldYouLikeToDo')}
           value={title}
           onChange={setTitle}
-          placeholder="e.g. Walk in the park, Cook together…"
+          placeholder={t('reserveSlotModal.titlePlaceholder')}
           required
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Start time</label>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('reserveSlotModal.startTimeLabel')}</label>
             <input
               type="datetime-local"
               required
@@ -215,7 +219,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">End time</label>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('reserveSlotModal.endTimeLabel')}</label>
             <input
               type="datetime-local"
               required
@@ -238,15 +242,15 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
 
         <FormField
           id="reserve-slot-location"
-          label="Location (optional)"
+          label={t('reserveSlotModal.locationLabel')}
           value={location}
           onChange={setLocation}
-          placeholder="Where will you meet?"
+          placeholder={t('reserveSlotModal.locationPlaceholder')}
         />
 
         {lobby && (
           <div>
-            <span className="mb-1.5 block text-xs font-medium text-text-secondary">Invite</span>
+            <span className="mb-1.5 block text-xs font-medium text-text-secondary">{t('reserveSlotModal.inviteLabel')}</span>
             {membersLoading ? (
               <div className="h-12 w-full animate-pulse rounded-lg bg-surface-hover" />
             ) : (
@@ -256,13 +260,13 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
                     <AssigneeAvatar assignee={member} size="sm" />
                     <span className="text-sm text-text-primary">{member.username}</span>
                     {member.id === currentUserId && (
-                      <span className="text-xs text-text-secondary">(you)</span>
+                      <span className="text-xs text-text-secondary">{t('reserveSlotModal.you')}</span>
                     )}
                   </div>
                 ))}
                 <Check
                   className="ml-auto h-4 w-4 flex-shrink-0 text-brand-green"
-                  aria-label="Everyone auto-included"
+                  aria-label={t('reserveSlotModal.everyoneIncluded')}
                 />
               </div>
             )}
@@ -270,13 +274,13 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
         )}
 
         <ToggleRow
-          label="Notify lobby members"
-          description="They'll get a notification about this plan"
+          label={t('reserveSlotModal.notifyToggle.label')}
+          description={t('reserveSlotModal.notifyToggle.description')}
           checked={notifyMembers}
           onChange={setNotifyMembers}
         />
 
-        {createEvent.isError && <AuthAlert message={getReserveErrorMessage(createEvent.error)} />}
+        {createEvent.isError && <AuthAlert message={getReserveErrorMessage(createEvent.error, t)} />}
       </div>
 
       <div className="mt-5 flex items-center justify-end gap-2.5">
@@ -285,14 +289,14 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           onClick={onClose}
           className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
         >
-          Cancel
+          {t('reserveSlotModal.cancel')}
         </button>
         <button
           type="submit"
           disabled={createEvent.isPending || !lobby}
           className="h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors"
         >
-          {createEvent.isPending ? 'Reserving…' : 'Reserve Slot ✨'}
+          {createEvent.isPending ? t('reserveSlotModal.submit.reserving') : t('reserveSlotModal.submit.reserveSlot')}
         </button>
       </div>
     </form>
@@ -309,6 +313,7 @@ interface CandidatePickerProps {
 }
 
 const CandidatePicker = ({ candidates, isLoading, onPick, onClose }: CandidatePickerProps) => {
+  const { t } = useTranslation('calendar');
   if (isLoading) {
     return (
       <div className="space-y-2" data-testid="candidate-picker-loading">
@@ -323,14 +328,14 @@ const CandidatePicker = ({ candidates, isLoading, onPick, onClose }: CandidatePi
     return (
       <div className="text-center">
         <p className="py-4 text-sm text-text-secondary">
-          No shared free time found in the next 7 days.
+          {t('reserveSlotModal.candidatePicker.noneFound')}
         </p>
         <button
           type="button"
           onClick={onClose}
           className="h-10 w-full rounded-lg border border-border bg-surface text-sm text-text-secondary hover:bg-surface-hover"
         >
-          Close
+          {t('reserveSlotModal.candidatePicker.close')}
         </button>
       </div>
     );
@@ -338,7 +343,7 @@ const CandidatePicker = ({ candidates, isLoading, onPick, onClose }: CandidatePi
 
   return (
     <div>
-      <p className="mb-3 text-xs font-medium text-text-secondary">Choose a time</p>
+      <p className="mb-3 text-xs font-medium text-text-secondary">{t('reserveSlotModal.candidatePicker.chooseTime')}</p>
       <ul className="flex flex-col gap-2">
         {candidates.map((candidate) => (
           <li key={candidate.lobby.id}>

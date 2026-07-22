@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { CalendarLegend } from './CalendarLegend';
@@ -17,6 +18,7 @@ interface MonthDayCellProps {
 }
 
 const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthDayCellProps) => {
+  const { t } = useTranslation('calendar');
   const inCurrentMonth = isSameMonth(day, monthAnchor);
   const today = isToday(day);
   const sorted = [...events].sort((a, b) => a.startAt.localeCompare(b.startAt));
@@ -59,7 +61,11 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
             />
           );
         })}
-        {overflowCount > 0 && <span className="text-[9px] font-medium text-text-muted">+{overflowCount}</span>}
+        {overflowCount > 0 && (
+          <span className="text-[9px] font-medium text-text-muted">
+            {t('monthGrid.overflowCompactCount', { count: overflowCount })}
+          </span>
+        )}
       </div>
 
       <div className="hidden w-full flex-col gap-0.5 lg:flex">
@@ -78,7 +84,7 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
         })}
         {overflowCount > 0 && (
           <span className="px-1.5 text-[10px] font-medium text-text-muted">
-            +{overflowCount} more
+            {t('monthGrid.overflowMore', { count: overflowCount })}
           </span>
         )}
       </div>

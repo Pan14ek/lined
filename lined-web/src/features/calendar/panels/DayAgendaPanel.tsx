@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { formatFullDate } from '@/features/calendar/lib/calendarUtils';
@@ -22,6 +23,7 @@ export const DayAgendaPanel = ({
   onEventClick,
   onClose,
 }: DayAgendaPanelProps) => {
+  const { t } = useTranslation('calendar');
   const lobbyMap = new Map(lobbies.map((l) => [l.id, l]));
   const sorted = [...events].sort((a, b) => a.startAt.localeCompare(b.startAt));
 
@@ -31,7 +33,7 @@ export const DayAgendaPanel = ({
         <h3 className="text-sm font-bold text-text-primary">{formatFullDate(day)}</h3>
         <button
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t('dayAgenda.close')}
           className="flex-shrink-0 text-text-muted hover:text-text-secondary"
         >
           <X className="h-4 w-4" />
@@ -40,7 +42,7 @@ export const DayAgendaPanel = ({
 
       <div className="max-h-[calc(100vh-220px)] overflow-y-auto px-5 pb-4">
         {sorted.length === 0 ? (
-          <p className="py-2 text-sm text-text-secondary">No events today.</p>
+          <p className="py-2 text-sm text-text-secondary">{t('dayAgenda.noEventsToday')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {sorted.map((event) => {

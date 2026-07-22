@@ -4,6 +4,7 @@ import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { LobbyGeneralCard } from '../LobbyGeneralCard';
+import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobby = MOCK_LOBBIES[0]!; // id 1, name "Alex & Anastasiia", type COUPLE
@@ -51,7 +52,7 @@ describe('LobbyGeneralCard', () => {
     expect.assertions(1);
     server.use(
       http.patch(`${BASE}/lobbies/:id`, () =>
-        HttpResponse.json({ code: 'FORBIDDEN', message: 'nope' }, { status: 403 }),
+        HttpResponse.json({ code: 'FORBIDDEN', message: 'nope' }, { status: HTTP_STATUS.FORBIDDEN }),
       ),
     );
     const user = userEvent.setup();
@@ -69,7 +70,7 @@ describe('LobbyGeneralCard', () => {
     expect.assertions(1);
     server.use(
       http.patch(`${BASE}/lobbies/:id`, () =>
-        HttpResponse.json({ code: 'VALIDATION_ERROR', message: 'blank' }, { status: 400 }),
+        HttpResponse.json({ code: 'VALIDATION_ERROR', message: 'blank' }, { status: HTTP_STATUS.BAD_REQUEST }),
       ),
     );
     const user = userEvent.setup();

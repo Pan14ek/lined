@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { SettingsCard } from '../SettingsCard';
@@ -10,15 +12,16 @@ interface PasswordCardProps {
   userId: number | undefined;
 }
 
-const getPasswordErrorMessage = (error: unknown): string => {
+const getPasswordErrorMessage = (error: unknown, t: TFunction<['settings', 'common']>): string => {
   return getApiErrorMessage(
     error,
-    { 400: 'Enter a valid password' },
-    'Something went wrong — please try again',
+    { 400: t('password.errorInvalid', { ns: 'settings' }) },
+    t('errors.generic', { ns: 'common' }),
   );
 }
 
 export const PasswordCard = ({ userId }: PasswordCardProps) => {
+  const { t } = useTranslation(['settings', 'common']);
   const updateUser = useUpdateUser(userId ?? 0);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,9 +29,9 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
 
   const validationError =
     password.length > 0 && password.length < MIN_PASSWORD_LENGTH
-      ? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
+      ? t('password.errorTooShort', { count: MIN_PASSWORD_LENGTH })
       : confirmPassword.length > 0 && confirmPassword !== password
-        ? 'Passwords do not match'
+        ? t('password.errorMismatch')
         : null;
 
   const canSubmit =
@@ -55,7 +58,7 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
   return (
     <SettingsCard
       id="password"
-      title="Password & Security"
+      title={t('password.title')}
       footer={
         <button
           type="submit"
@@ -63,17 +66,15 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
           disabled={!password || !confirmPassword || updateUser.isPending}
           className="h-[38px] rounded-lg bg-brand-green px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
-          {updateUser.isPending ? 'Saving…' : 'Change password'}
+          {updateUser.isPending ? t('password.saving') : t('password.changePassword')}
         </button>
       }
     >
-      <p className="pt-3 text-xs text-text-secondary">
-        We can&apos;t verify your current password yet — this will update it directly.
-      </p>
+      <p className="pt-3 text-xs text-text-secondary">{t('password.cannotVerifyNote')}</p>
       <form id="password-form" onSubmit={handleSubmit}>
-        <SettingsRow label="New password">
+        <SettingsRow label={t('password.newPassword')}>
           <input
-            aria-label="New password"
+            aria-label={t('password.newPassword')}
             type="password"
             autoComplete="new-password"
             className={SETTINGS_INPUT_CLASS}
@@ -81,9 +82,9 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </SettingsRow>
-        <SettingsRow label="Confirm new password">
+        <SettingsRow label={t('password.confirmNewPassword')}>
           <input
-            aria-label="Confirm new password"
+            aria-label={t('password.confirmNewPassword')}
             type="password"
             autoComplete="new-password"
             className={SETTINGS_INPUT_CLASS}
@@ -100,7 +101,7 @@ export const PasswordCard = ({ userId }: PasswordCardProps) => {
       )}
       {updateUser.isError && (
         <p role="alert" className="pb-4 text-xs text-red-600 dark:text-red-400">
-          {getPasswordErrorMessage(updateUser.error)}
+          {getPasswordErrorMessage(updateUser.error, t)}
         </p>
       )}
     </SettingsCard>

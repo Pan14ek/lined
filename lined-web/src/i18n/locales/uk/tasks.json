@@ -1,0 +1,72 @@
+{
+  "page": {
+    "title": "Усі завдання"
+  },
+  "status": {
+    "TODO": "До виконання",
+    "IN_PROGRESS": "В процесі",
+    "DONE": "Виконано"
+  },
+  "priority": {
+    "HIGH": "Високий",
+    "MEDIUM": "Середній",
+    "LOW": "Низький"
+  },
+  "drawer": {
+    "titleEdit": "Деталі завдання",
+    "titleCreate": "Додати завдання",
+    "createdByOn": "Створено {{date}} — {{creator}}",
+    "createdOn": "Створено {{date}}",
+    "lobbyLabel": "Лобі",
+    "titleFieldLabel": "Назва завдання",
+    "titlePlaceholder": "Що потрібно зробити?",
+    "descriptionLabel": "Опис (необов'язково)",
+    "descriptionPlaceholder": "Додайте більше деталей…",
+    "assignToLabel": "Призначити",
+    "dueDateLabel": "Термін виконання",
+    "pastDueWarning": "Ця дата вже минула — завдання одразу стане простроченим.",
+    "priorityLabel": "Пріоритет",
+    "statusLabel": "Статус",
+    "notifyAssignee": "Сповістити виконавця",
+    "notifyAssigneeDescription": "Надіслати сповіщення, коли завдання призначено",
+    "delete": "Видалити",
+    "cancel": "Скасувати",
+    "save": "Зберегти зміни",
+    "saving": "Збереження…",
+    "add": "Додати завдання",
+    "adding": "Додавання…",
+    "deleteDialogTitle": "Видалити завдання",
+    "deleteConfirmLabel": "Видалити",
+    "deleteConfirmMessage": "Видалити «{{title}}»? Цю дію не можна скасувати.",
+    "titleRequiredError": "Введіть коректну назву",
+    "saveError": "Не вдалося зберегти зміни — спробуйте ще раз",
+    "createError": "Не вдалося створити завдання — спробуйте ще раз",
+    "deleteError": "Не вдалося видалити це завдання — спробуйте ще раз"
+  },
+  "kanban": {
+    "loadError": "Не вдалося завантажити ваші завдання. Спробуйте пізніше.",
+    "moveError": "Не вдалося перемістити — спробуйте ще раз",
+    "deleteError": "Не вдалося видалити це завдання — спробуйте ще раз",
+    "deleteDialogTitle": "Видалити завдання",
+    "deleteConfirmLabel": "Видалити",
+    "deleteConfirmMessage": "Видалити «{{title}}»? Цю дію не можна скасувати.",
+    "newTask": "+ Нове завдання",
+    "addTask": "+ Додати завдання",
+    "addTaskToColumn": "Додати завдання до {{column}}",
+    "moveBack": "Перемістити «{{title}}» назад",
+    "moveForward": "Перемістити «{{title}}» вперед",
+    "deleteTask": "Видалити «{{title}}»",
+    "viewDetails": "Переглянути деталі «{{title}}»",
+    "doneBadge": "Виконано",
+    "due": "Термін: {{date}}",
+    "emptyColumn": "Немає завдань у статусі «{{status}}».",
+    "filterByLobby": "Фільтр за лобі",
+    "filterByMember": "Фільтр за учасником",
+    "filterByDate": "Фільтр за датою",
+    "allLobbies": "Усі лобі",
+    "allMembers": "Усі учасники",
+    "allDates": "Усі дати",
+    "overdue": "Прострочені",
+    "thisWeek": "Цей тиждень"
+  }
+}
