@@ -15,6 +15,7 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.task.api.TaskCreateDto;
 import io.backend.lined.task.api.TaskDto;
@@ -52,6 +53,8 @@ class TaskServiceImplTest {
   private TaskMapper mapper;
   @Spy
   private LobbyAccessPolicy accessPolicy;
+  @Mock
+  private LobbyWritePolicy writePolicy;
   @Mock
   private NotificationService notificationService;
 

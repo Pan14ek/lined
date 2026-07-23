@@ -12,6 +12,9 @@ import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.entitlement.application.LimitEvaluator;
+import io.backend.lined.entitlement.application.EntitlementService;
+import io.backend.lined.billing.application.BillingAccountService;
+import io.backend.lined.billing.domain.account.BillingAccountEntity;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -19,6 +22,9 @@ import io.backend.lined.lobby.api.LobbyUpdateDto;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
+import io.backend.lined.lobby.domain.LobbyAccessMode;
+import io.backend.lined.lobby.domain.LobbyLifecycleStatus;
+import io.backend.lined.lobby.domain.LobbyRestrictionReason;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.util.HashSet;
@@ -44,6 +50,12 @@ class LobbyServiceImplTest {
   private LobbyMapper mapper;
   @Mock
   private LimitEvaluator limitEvaluator;
+  @Mock
+  private BillingAccountService billingAccountService;
+  @Mock
+  private EntitlementService entitlementService;
+  @Mock
+  private LobbyWritePolicy writePolicy;
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
@@ -185,6 +197,77 @@ class LobbyServiceImplTest {
     List<LobbyDto> result = lobbyService.myLobbies(99L);
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void selectAsFree_clearsPreviousSelection_andMakesTargetWritable() {
+    LobbyEntity previous = LobbyEntity.builder().owner(owner).build();
+    previous.setSelectedAsFreeAt(java.time.OffsetDateTime.now());
+    BillingAccountEntity account = BillingAccountEntity.builder().id(10L).build();
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(billingAccountService.getByOwnerUserId(1L)).thenReturn(account);
+    when(entitlementService.getEntitlements(10L)).thenReturn(EntitlementService.FREE);
+    when(lobbyRepo.findAllByOwner_IdAndSelectedAsFreeAtIsNotNull(1L)).thenReturn(List.of(previous));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    LobbyDto result = lobbyService.selectAsFree(101L, 1L);
+
+    assertThat(result).isEqualTo(lobbyDto);
+    assertThat(previous.getSelectedAsFreeAt()).isNull();
+    assertThat(lobbyEntity.getAccessMode()).isEqualTo(LobbyAccessMode.READ_WRITE);
+    assertThat(lobbyEntity.getRestrictionReason()).isEqualTo(LobbyRestrictionReason.NONE);
+    assertThat(lobbyEntity.getSelectedAsFreeAt()).isNotNull();
+    assertThat(lobbyEntity.getArchiveAt()).isNull();
+  }
+
+  @Test
+  void selectAsFree_throwsConflict_whenOwnerHasProEntitlements() {
+    BillingAccountEntity account = BillingAccountEntity.builder().id(10L).build();
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(billingAccountService.getByOwnerUserId(1L)).thenReturn(account);
+    when(entitlementService.getEntitlements(10L)).thenReturn(EntitlementService.PRO);
+
+    assertThatThrownBy(() -> lobbyService.selectAsFree(101L, 1L))
+        .isInstanceOf(ConflictException.class)
+        .extracting("code")
+        .isEqualTo("LOBBY_LIMIT_EXCEEDED");
+  }
+
+  @Test
+  void selectAsFree_throwsConflict_whenLobbyHasMoreThanFourMembers() {
+    for (long userId = 2; userId <= 5; userId++) {
+      UserEntity extra = new UserEntity();
+      extra.setId(userId);
+      lobbyEntity.getMembers().add(extra);
+    }
+    BillingAccountEntity account = BillingAccountEntity.builder().id(10L).build();
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(billingAccountService.getByOwnerUserId(1L)).thenReturn(account);
+    when(entitlementService.getEntitlements(10L)).thenReturn(EntitlementService.FREE);
+
+    assertThatThrownBy(() -> lobbyService.selectAsFree(101L, 1L))
+        .isInstanceOf(ConflictException.class)
+        .extracting("code")
+        .isEqualTo("LOBBY_MEMBER_LIMIT_EXCEEDED");
+  }
+
+  @Test
+  void restore_activatesArchivedLobby_afterCapacityCheck() {
+    lobbyEntity.setLifecycleStatus(LobbyLifecycleStatus.ARCHIVED);
+    lobbyEntity.setAccessMode(LobbyAccessMode.READ_ONLY);
+    lobbyEntity.setRestrictionReason(LobbyRestrictionReason.BILLING_GRACE_EXPIRED);
+    lobbyEntity.setArchiveAt(java.time.OffsetDateTime.now());
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    LobbyDto result = lobbyService.restore(101L, 1L);
+
+    assertThat(result).isEqualTo(lobbyDto);
+    assertThat(lobbyEntity.getLifecycleStatus()).isEqualTo(LobbyLifecycleStatus.ACTIVE);
+    assertThat(lobbyEntity.getAccessMode()).isEqualTo(LobbyAccessMode.READ_WRITE);
+    assertThat(lobbyEntity.getRestrictionReason()).isEqualTo(LobbyRestrictionReason.NONE);
+    assertThat(lobbyEntity.getArchiveAt()).isNull();
+    verify(limitEvaluator).assertCanRestoreLobby(1L);
   }
 
   /* =======================

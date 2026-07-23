@@ -10,6 +10,7 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesDto;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesUpdateDto;
 import io.backend.lined.notification.api.NotificationDto;
@@ -55,6 +56,8 @@ class NotificationServiceImplTest {
   private LobbyRepository lobbyRepo;
   @Spy
   private LobbyAccessPolicy accessPolicy;
+  @Mock
+  private LobbyWritePolicy writePolicy;
   @Mock
   private NotificationMapper mapper;
 

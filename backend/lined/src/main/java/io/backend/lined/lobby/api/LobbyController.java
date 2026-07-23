@@ -4,6 +4,7 @@ import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.service.LobbyService;
+import io.backend.lined.lobby.domain.LobbyLifecycleStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -64,12 +65,66 @@ public class LobbyController {
     return lobbyService.myLobbies(currentUserId);
   }
 
+  /**
+   * Lists archived lobbies that the authenticated caller owns or belongs to.
+   *
+   * <p>For example, {@code GET /api/lobbies?lifecycleStatus=ARCHIVED} lets a former member view
+   * their archived lobby history without exposing unrelated owners' lobbies.</p>
+   *
+   * @param lifecycleStatus required lifecycle filter; this endpoint currently supports ARCHIVED
+   * @param currentUserId authenticated caller identifier
+   * @return archived lobbies available to the caller
+   */
+  @Operation(summary = "List archived lobbies", description = "Lists archived lobbies accessible to the caller.")
+  @GetMapping(params = "lifecycleStatus=ARCHIVED")
+  public List<LobbyDto> archived(
+      @RequestParam LobbyLifecycleStatus lifecycleStatus,
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    return lobbyService.archivedLobbies(currentUserId);
+  }
+
   @Operation(summary = "Lobby details", description = "Get lobby by ID.")
   @GetMapping("/{id}")
   public ResponseEntity<LobbyDto> get(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id) {
     LobbyDto lobby = lobbyService.getById(id);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(lobby.version())).body(lobby);
+  }
+
+  /**
+   * Selects the owner's single writable lobby when the effective plan is Free.
+   *
+   * <p>For example, an owner calls {@code POST /api/lobbies/101/select-as-free} after reducing
+   * membership; the response makes lobby {@code 101} read-write and clears any old selection.</p>
+   *
+   * @param id selected lobby identifier
+   * @param currentUserId authenticated owner identifier
+   * @return selected lobby and its current optimistic-lock ETag
+   */
+  @Operation(summary = "Select Free lobby", description = "Selects the owner's writable Free-plan lobby.")
+  @PostMapping("/{id}/select-as-free")
+  public ResponseEntity<LobbyDto> selectAsFree(
+      @PathVariable Long id, @RequestHeader("X-User-Id") Long currentUserId) {
+    LobbyDto selected = lobbyService.selectAsFree(id, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(selected.version())).body(selected);
+  }
+
+  /**
+   * Restores an archived lobby when the owner's effective plan has capacity.
+   *
+   * <p>For example, an owner with no active Free lobby can restore an archived one; capacity
+   * failures use the stable {@code LOBBY_LIMIT_EXCEEDED} conflict code.</p>
+   *
+   * @param id archived lobby identifier
+   * @param currentUserId authenticated owner identifier
+   * @return restored lobby and its current optimistic-lock ETag
+   */
+  @Operation(summary = "Restore archived lobby", description = "Restores an archived lobby when capacity permits.")
+  @PostMapping("/{id}/restore")
+  public ResponseEntity<LobbyDto> restore(
+      @PathVariable Long id, @RequestHeader("X-User-Id") Long currentUserId) {
+    LobbyDto restored = lobbyService.restore(id, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(restored.version())).body(restored);
   }
 
   @Operation(

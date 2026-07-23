@@ -13,6 +13,41 @@ public interface LobbyService {
 
   List<LobbyDto> myLobbies(Long userId);
 
+  /**
+   * Lists lobbies in one lifecycle state that the caller owns or belongs to.
+   *
+   * <p>For example, {@code archivedLobbies(42L)} returns only archived lobbies accessible to
+   * user {@code 42}, never another owner's private archived resources.</p>
+   *
+   * @param userId authenticated caller identifier
+   * @return archived lobbies accessible to the caller
+   */
+  List<LobbyDto> archivedLobbies(Long userId);
+
+  /**
+   * Selects the owner's active lobby that remains writable under the Free entitlement.
+   *
+   * <p>For example, selecting lobby {@code 101} clears a prior selection of lobby {@code 99}
+   * for the same owner and makes {@code 101} read-write.</p>
+   *
+   * @param lobbyId lobby selected by its owner
+   * @param requesterId authenticated owner identifier
+   * @return the newly selected lobby
+   */
+  LobbyDto selectAsFree(Long lobbyId, Long requesterId);
+
+  /**
+   * Restores an archived lobby when the owner has effective-plan capacity.
+   *
+   * <p>For example, a Free owner with no active lobby can restore one archived lobby; a Free
+   * owner already at capacity receives {@code LOBBY_LIMIT_EXCEEDED}.</p>
+   *
+   * @param lobbyId archived lobby to restore
+   * @param requesterId authenticated owner identifier
+   * @return restored active lobby
+   */
+  LobbyDto restore(Long lobbyId, Long requesterId);
+
   LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId, long expectedVersion);
 
   @Deprecated

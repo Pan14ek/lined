@@ -7,6 +7,7 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.entitlement.domain.PlanEntitlements;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
+import io.backend.lined.lobby.domain.LobbyLifecycleStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -64,6 +65,25 @@ public class LimitEvaluator {
     if (lobbyRepository.countMembersByLobbyId(lobbyId) >= entitlements.lobbyMembersMax()) {
       throw new ConflictException(
           LOBBY_MEMBER_LIMIT_EXCEEDED, "Lobby member limit exceeded for current plan");
+    }
+  }
+
+  /**
+   * Ensures an archived lobby may return to the owner's active lobby set.
+   *
+   * <p>For example, a Free owner with no active lobbies can restore one archived lobby. If the
+   * owner already has one active lobby, restoration fails with {@code LOBBY_LIMIT_EXCEEDED};
+   * archived lobbies do not themselves consume active capacity.</p>
+   *
+   * @param ownerUserId identifier of the archived lobby's owner
+   * @throws ConflictException when active lobby capacity is exhausted
+   */
+  public void assertCanRestoreLobby(Long ownerUserId) {
+    var entitlements = entitlementsForOwner(ownerUserId);
+    long activeLobbies = lobbyRepository.countByOwner_IdAndLifecycleStatus(
+        ownerUserId, LobbyLifecycleStatus.ACTIVE);
+    if (activeLobbies >= entitlements.lobbiesMax()) {
+      throw new ConflictException(LOBBY_LIMIT_EXCEEDED, "Lobby limit exceeded for current plan");
     }
   }
 

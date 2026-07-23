@@ -13,6 +13,8 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteEntity;
 import io.backend.lined.lobby.invite.domain.LobbyInviteRepository;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWriteAction;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
@@ -39,6 +41,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private final LobbyInviteRepository inviteRepo;
   private final LobbyInviteMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final LobbyWritePolicy writePolicy;
   private final EntityManager entityManager;
   private final LimitEvaluator limitEvaluator;
 
@@ -47,6 +50,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
       Long lobbyId, Long inviteeId, String inviteeEmail, Long requesterId) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureOwner(lobby, requesterId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.INVITE_MUTATION);
     var invitee = resolveInvitee(inviteeId, inviteeEmail);
     ensureNotMember(lobby, invitee.getId());
     ensureNoPendingInvite(lobbyId, invitee.getId());
@@ -109,6 +113,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
       return mapper.toDto(invite);
     }
     requirePending(invite);
+    writePolicy.assertWritable(invite.getLobby(), LobbyWriteAction.INVITE_MUTATION);
     ensureNotMember(invite.getLobby(), requesterId);
     limitEvaluator.assertCanAcceptInvite(invite.getLobby().getId());
 
@@ -134,6 +139,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private LobbyInviteEntity ownerInvite(Long lobbyId, Long inviteId, Long requesterId) {
     var lobby = mustLobby(lobbyId);
     accessPolicy.ensureOwner(lobby, requesterId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.INVITE_MUTATION);
     var invite = mustInvite(inviteId);
     if (!invite.getLobby().getId().equals(lobbyId)) {
       throw new NotFoundException("Lobby invite %d not found".formatted(inviteId));
