@@ -29,6 +29,17 @@ import lombok.Setter;
 @Entity
 @Table(name = "billing_accounts", uniqueConstraints = @UniqueConstraint(
     name = "uq_billing_accounts_owner_type", columnNames = {"owner_user_id", "type"}))
+/**
+ * Persistent aggregate that owns a user's billing state.
+ *
+ * <p>The unique {@code (owner_user_id, type)} invariant permits exactly one personal account per
+ * user. For example, a new row for user {@code 42} is stored as
+ * {@code {owner_user_id=42, type=PERSONAL, status=ACTIVE}} and later subscriptions attach to its
+ * generated ID.</p>
+ *
+ * <p>The version column supports optimistic locking, while lifecycle callbacks assign UTC
+ * creation and update timestamps when callers do not provide them.</p>
+ */
 public class BillingAccountEntity {
 
   @Id
@@ -57,6 +68,12 @@ public class BillingAccountEntity {
   @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 
+  /**
+   * Initializes creation and update timestamps immediately before the first insert.
+   *
+   * <p>Example: a builder-created account with no timestamps receives the same current UTC value
+   * for both fields; explicitly supplied timestamps are retained.</p>
+   */
   @PrePersist
   void prePersist() {
     OffsetDateTime now = OffsetDateTime.now();
@@ -68,6 +85,12 @@ public class BillingAccountEntity {
     }
   }
 
+  /**
+   * Refreshes the mutable update timestamp before an existing account is written.
+   *
+   * <p>Example: changing an account's status updates {@code updatedAt} while retaining its
+   * original {@code createdAt} value.</p>
+   */
   @PreUpdate
   void preUpdate() {
     updatedAt = OffsetDateTime.now();
