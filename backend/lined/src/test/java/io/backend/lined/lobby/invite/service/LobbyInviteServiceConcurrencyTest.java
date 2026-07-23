@@ -2,8 +2,10 @@ package io.backend.lined.lobby.invite.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.lobby.invite.api.LobbyInviteDto;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -93,10 +95,51 @@ class LobbyInviteServiceConcurrencyTest {
     }
   }
 
+  @Test
+  void accept_andDecline_leaveOneTerminalState_withMembershipMatchingAcceptance() throws Exception {
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      CountDownLatch ready = new CountDownLatch(2);
+      CountDownLatch release = new CountDownLatch(1);
+
+      Future<TransitionResult> acceptance = executor.submit(
+          () -> runTransition(ready, release, () -> inviteService.accept(501L, 2L)));
+      Future<TransitionResult> decline = executor.submit(
+          () -> runTransition(ready, release, () -> inviteService.decline(501L, 2L)));
+
+      assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+      release.countDown();
+
+      assertThat(List.of(acceptance.get(10, TimeUnit.SECONDS), decline.get(10, TimeUnit.SECONDS)))
+          .filteredOn(TransitionResult::succeeded)
+          .hasSize(1);
+      assertThat(inviteStatus()).isIn("ACCEPTED", "DECLINED");
+      assertThat(memberCount()).isEqualTo(inviteStatus().equals("ACCEPTED") ? 2 : 1);
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  private TransitionResult runTransition(
+      CountDownLatch ready, CountDownLatch release, Callable<LobbyInviteDto> callback) {
+    try {
+      return inTransaction(() -> {
+        ready.countDown();
+        await(ready);
+        await(release);
+        return new TransitionResult(callback.call(), false);
+      });
+    } catch (ConflictException ex) {
+      return new TransitionResult(null, true);
+    }
+  }
+
   private <T> T inTransaction(Callable<T> callback) {
     return new TransactionTemplate(transactionManager).execute(status -> {
       try {
         return callback.call();
+      } catch (RuntimeException ex) {
+        throw ex;
       } catch (Exception ex) {
         throw new IllegalStateException(ex);
       }
@@ -153,5 +196,12 @@ class LobbyInviteServiceConcurrencyTest {
   private String inviteStatus() {
     return jdbcTemplate.queryForObject(
         "select status from lobby_invites where id = 501", String.class);
+  }
+
+  private record TransitionResult(LobbyInviteDto invite, boolean conflicted) {
+
+    private boolean succeeded() {
+      return !conflicted;
+    }
   }
 }
