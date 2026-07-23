@@ -2,10 +2,16 @@ package io.backend.lined.lobby.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.common.exception.BadRequestException;
@@ -24,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -196,6 +204,20 @@ class LobbyControllerTest {
   }
 
   @Test
+  void update_returnsRfc7807ConflictForOptimisticLockFailure() throws Exception {
+    when(lobbyService.update(eq(101L), any(LobbyUpdateDto.class), eq(1L), eq(0L)))
+        .thenThrow(new ObjectOptimisticLockingFailureException("lobbies", 101L));
+
+    mockMvc.perform(patch("/api/lobbies/101")
+            .header("X-User-Id", "1")
+            .header("If-Match", "\"0\"")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"ownerId\":2}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.status").value(409));
+  }
+
+  @Test
   void removeMember_delegatesToService() {
     when(lobbyService.removeMember(101L, 2L, 1L)).thenReturn(sampleLobby);
 
@@ -223,6 +245,18 @@ class LobbyControllerTest {
     assertThatThrownBy(() -> controller.removeMember(101L, 1L, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Owner cannot be removed");
+  }
+
+  @Test
+  void removeMember_returnsRfc7807ConflictForOptimisticLockFailure() throws Exception {
+    doThrow(new ObjectOptimisticLockingFailureException("lobbies", 101L))
+        .when(lobbyService).removeMember(101L, 2L, 1L, 0L);
+
+    mockMvc.perform(delete("/api/lobbies/101/members/2")
+            .header("X-User-Id", "1")
+            .header("If-Match", "\"0\""))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.status").value(409));
   }
 
   @Test

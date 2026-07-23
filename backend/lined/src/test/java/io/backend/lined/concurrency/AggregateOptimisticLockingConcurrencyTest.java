@@ -6,6 +6,9 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventUpdateDto;
 import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.event.service.EventService;
+import io.backend.lined.lobby.api.LobbyUpdateDto;
+import io.backend.lined.lobby.domain.LobbyRepository;
+import io.backend.lined.lobby.service.LobbyService;
 import io.backend.lined.task.api.TaskUpdateDto;
 import io.backend.lined.task.domain.TaskRepository;
 import io.backend.lined.task.domain.TaskStatus;
@@ -70,6 +73,12 @@ class AggregateOptimisticLockingConcurrencyTest {
 
   @Autowired
   private JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  private LobbyRepository lobbyRepository;
+
+  @Autowired
+  private LobbyService lobbyService;
 
   @Autowired
   private TaskRepository taskRepository;
@@ -162,6 +171,18 @@ class AggregateOptimisticLockingConcurrencyTest {
             UPDATED_VERSION));
   }
 
+  @Test
+  void ownershipTransferAndMemberRemoval_allowOneWinner_andKeepOwnerAsMember() throws Exception {
+    RaceResults results = race(
+        () -> lobbyRepository.findById(LOBBY_ID).orElseThrow(),
+        () -> lobbyService.update(LOBBY_ID, new LobbyUpdateDto(null, null, ASSIGNEE_ID),
+            OWNER_ID, INITIAL_VERSION),
+        () -> lobbyService.removeMember(LOBBY_ID, ASSIGNEE_ID, OWNER_ID, INITIAL_VERSION));
+
+    assertOneSuccessAndOneConflict(results);
+    assertThat(lobbyOwnerIsMember()).isTrue();
+  }
+
   private RaceResults race(Runnable preload, Runnable firstOperation, Runnable secondOperation)
       throws Exception {
     ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -248,6 +269,17 @@ class AggregateOptimisticLockingConcurrencyTest {
   private Map<String, Object> taskRow() {
     return jdbcTemplate.queryForMap("select assignee_id, status, version from tasks where id = ?",
         TASK_ID);
+  }
+
+  private Boolean lobbyOwnerIsMember() {
+    return jdbcTemplate.queryForObject("""
+        select exists (
+          select 1
+          from lobbies l
+          join lobby_members lm on lm.lobby_id = l.id and lm.user_id = l.owner_id
+          where l.id = ?
+        )
+        """, Boolean.class, LOBBY_ID);
   }
 
   private OffsetDateTime eventStart() {
