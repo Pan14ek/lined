@@ -2,12 +2,14 @@ package io.backend.lined.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.backend.lined.billing.application.BillingAccountService;
 import io.backend.lined.plan.api.PlanDto;
 import io.backend.lined.plan.domain.BuiltInPlan;
 import io.backend.lined.plan.service.PlanService;
@@ -61,6 +63,8 @@ class AccountApplicationServiceImplTest {
   private SubscriptionService subscriptionService;
   @Mock
   private AccountProvisioningPolicy provisioningPolicy;
+  @Mock
+  private BillingAccountService billingAccountService;
 
   @InjectMocks
   private AccountApplicationServiceImpl accountService;
@@ -97,32 +101,27 @@ class AccountApplicationServiceImplTest {
     when(userService.getById(USER_ID)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
         .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
-    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(userDto);
     verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
-    verify(subscriptionService).start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(true));
+    verify(billingAccountService).ensurePersonalAccount(USER_ID);
+    verify(subscriptionService, never()).start(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test
   void registerUser_usesPolicyPlanNameForDefaultSubscription() {
-    PlanDto starterPlan =
-        new PlanDto(STARTER_PLAN_ID, STARTER_PLAN_NAME, BigDecimal.ZERO, PLAN_DURATION_DAYS, now);
-
     when(userService.create(createDto)).thenReturn(userDto);
     when(userService.getById(USER_ID)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
         .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), STARTER_PLAN_NAME, true));
-    when(planService.getByName(STARTER_PLAN_NAME)).thenReturn(starterPlan);
 
     accountService.registerUser(createDto);
 
     verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
-    verify(planService).getByName(STARTER_PLAN_NAME);
-    verify(subscriptionService)
-        .start(eq(USER_ID), eq(STARTER_PLAN_ID), isNull(), isNull(), eq(true));
+    verify(billingAccountService).ensurePersonalAccount(USER_ID);
+    verify(subscriptionService, never()).start(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -131,12 +130,12 @@ class AccountApplicationServiceImplTest {
     when(userService.getById(USER_ID)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
         .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, false));
-    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     accountService.registerUser(createDto);
 
     verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
-    verify(subscriptionService).start(eq(USER_ID), eq(FREE_PLAN_ID), isNull(), isNull(), eq(false));
+    verify(billingAccountService).ensurePersonalAccount(USER_ID);
+    verify(subscriptionService, never()).start(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -151,12 +150,12 @@ class AccountApplicationServiceImplTest {
     when(userService.getById(ADMIN_USER_ID)).thenReturn(adminUserDto);
     when(provisioningPolicy.defaultRegistration())
         .thenReturn(new AccountProvisioningSpec(policyRoles, FREE_PLAN_NAME, true));
-    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
 
     accountService.registerUser(adminDto);
 
     verify(roleService).setUserRoles(ADMIN_USER_ID, policyRoles);
     verify(roleService, never()).addUserRoles(any(), any());
+    verify(billingAccountService).ensurePersonalAccount(ADMIN_USER_ID);
   }
 
   @Test
@@ -169,12 +168,12 @@ class AccountApplicationServiceImplTest {
     when(userService.create(createDto)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
         .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
-    when(planService.getByName(FREE_PLAN_NAME)).thenReturn(freePlan);
     when(userService.getById(USER_ID)).thenReturn(refreshedUser);
 
     UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(refreshedUser);
+    verify(billingAccountService).ensurePersonalAccount(USER_ID);
   }
 
   /* =======================

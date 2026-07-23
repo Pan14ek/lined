@@ -102,7 +102,7 @@ io.backend.lined
 
 | # | Branch name | Task description | Reference | Status |
 |---|---|---|---|---|
-| BE-01 | `feature/be-01-billing-account-effective-plan` | Introduce `BillingAccount` (Personal), backfill for existing users, `EffectivePlanResolver` returning implicit FREE | [tasks/BE-01-billing-account-effective-plan.md](tasks/BE-01-billing-account-effective-plan.md) | TODO |
+| BE-01 | `feature/be-01-billing-account-effective-plan` | Introduce `BillingAccount` (Personal), backfill for existing users, `EffectivePlanResolver` returning implicit FREE | [tasks/BE-01-billing-account-effective-plan.md](tasks/BE-01-billing-account-effective-plan.md) | DONE |
 | BE-02 | `feature/be-02-entitlement-module-free-limits` | `entitlement` module: `PlanEntitlements` (Free 1×4, Pro 10×20), capability checks, enforce Free limits in lobby create + invite accept | [tasks/BE-02-entitlement-module-free-limits.md](tasks/BE-02-entitlement-module-free-limits.md) | TODO |
 | BE-03 | `feature/be-03-lobby-lifecycle-access-mode` | Lobby lifecycle status + access mode + restriction reason + `archiveAt`; select-as-free / restore / archived-list endpoints | [tasks/BE-03-lobby-lifecycle-access-mode.md](tasks/BE-03-lobby-lifecycle-access-mode.md) | TODO |
 | BE-04 | `feature/be-04-remove-legacy-billing-endpoints` | Remove unsafe prototype endpoints; add secured `GET /api/billing/me` derived from the authenticated principal | [tasks/BE-04-remove-legacy-billing-endpoints.md](tasks/BE-04-remove-legacy-billing-endpoints.md) | TODO |

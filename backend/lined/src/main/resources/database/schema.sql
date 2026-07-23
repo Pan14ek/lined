@@ -226,3 +226,25 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_password_reset_tokens_hash ON password_reset_tokens (token_hash);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens (user_id);
+
+CREATE TABLE IF NOT EXISTS billing_accounts
+(
+    id            BIGSERIAL PRIMARY KEY,
+    owner_user_id BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    type          VARCHAR(16) NOT NULL,
+    status        VARCHAR(16) NOT NULL,
+    version       BIGINT      NOT NULL DEFAULT 0,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_billing_accounts_owner_type UNIQUE (owner_user_id, type)
+);
+
+INSERT INTO billing_accounts (owner_user_id, type, status, created_at, updated_at)
+SELECT users.id, 'PERSONAL', 'ACTIVE', NOW(), NOW()
+FROM users
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM billing_accounts accounts
+    WHERE accounts.owner_user_id = users.id
+      AND accounts.type = 'PERSONAL'
+);
