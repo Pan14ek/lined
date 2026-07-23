@@ -13,6 +13,7 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteEntity;
 import io.backend.lined.lobby.invite.domain.LobbyInviteRepository;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -39,6 +40,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private final LobbyInviteMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
   private final EntityManager entityManager;
+  private final LimitEvaluator limitEvaluator;
 
   @Override
   public LobbyInviteDto create(
@@ -90,6 +92,17 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   }
 
   @Override
+  /**
+   * Accepts a pending invitation only when the lobby remains within its owner's member limit.
+   *
+   * <p>For example, accepting the fourth member of a Free-owned lobby succeeds, while a fifth
+   * acceptance raises {@code LOBBY_MEMBER_LIMIT_EXCEEDED} before the invitation can be claimed
+   * or the invitee is added. Already accepted invitations remain idempotent and return unchanged.</p>
+   *
+   * @param inviteId identifier of the invitation being accepted
+   * @param requesterId authenticated identifier of the invited user
+   * @return the accepted invitation, or an existing accepted invitation for an idempotent retry
+   */
   public LobbyInviteDto accept(Long inviteId, Long requesterId) {
     var invite = inviteForInvitee(inviteId, requesterId);
     if (invite.getStatus() == LobbyInviteStatus.ACCEPTED) {
@@ -97,6 +110,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
     }
     requirePending(invite);
     ensureNotMember(invite.getLobby(), requesterId);
+    limitEvaluator.assertCanAcceptInvite(invite.getLobby().getId());
 
     var now = OffsetDateTime.now();
     int claimed = inviteRepo.acceptPending(inviteId, requesterId, now);

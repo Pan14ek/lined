@@ -29,6 +29,7 @@ public class GlobalExceptionHandler {
       default -> ex.getStatus().getReasonPhrase();
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));
+    pd.setProperty("code", ex.getCode());
     return ResponseEntity.status(ex.getStatus()).body(pd);
   }
 

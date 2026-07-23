@@ -18,6 +18,7 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteEntity;
 import io.backend.lined.lobby.invite.domain.LobbyInviteRepository;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -48,6 +49,8 @@ class LobbyInviteServiceImplTest {
   private LobbyInviteMapper mapper;
   @Mock
   private EntityManager entityManager;
+  @Mock
+  private LimitEvaluator limitEvaluator;
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
@@ -233,6 +236,25 @@ class LobbyInviteServiceImplTest {
 
     assertThat(lobby.getMembers()).contains(owner, invitee);
     assertThat(invite.getStatus()).isEqualTo(LobbyInviteStatus.ACCEPTED);
+    verify(limitEvaluator).assertCanAcceptInvite(101L);
+  }
+
+  @Test
+  void accept_doesNotClaimInvite_whenLobbyMemberLimitIsExceeded() {
+    when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    org.mockito.Mockito.doThrow(new ConflictException(
+        "LOBBY_MEMBER_LIMIT_EXCEEDED", "Lobby member limit exceeded for current plan"))
+        .when(limitEvaluator).assertCanAcceptInvite(101L);
+
+    assertThatThrownBy(() -> inviteService.accept(501L, 2L))
+        .isInstanceOf(ConflictException.class)
+        .extracting("code")
+        .isEqualTo("LOBBY_MEMBER_LIMIT_EXCEEDED");
+
+    verify(inviteRepo, never()).acceptPending(
+        org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(), any());
+    assertThat(lobby.getMembers()).containsExactly(owner);
+    assertThat(invite.getStatus()).isEqualTo(LobbyInviteStatus.PENDING);
   }
 
   @Test
