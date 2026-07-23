@@ -34,4 +34,17 @@ public interface LobbyInviteRepository extends JpaRepository<LobbyInviteEntity, 
       @Param("inviteId") Long inviteId,
       @Param("inviteeId") Long inviteeId,
       @Param("updatedAt") OffsetDateTime updatedAt);
+
+  @Modifying(flushAutomatically = true)
+  @Query("""
+      update LobbyInviteEntity invite
+         set invite.status = :status,
+             invite.updatedAt = :updatedAt
+       where invite.id = :inviteId
+         and invite.status = io.backend.lined.lobby.invite.domain.LobbyInviteStatus.PENDING
+      """)
+  int transitionPending(
+      @Param("inviteId") Long inviteId,
+      @Param("status") LobbyInviteStatus status,
+      @Param("updatedAt") OffsetDateTime updatedAt);
 }

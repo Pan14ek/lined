@@ -194,12 +194,30 @@ class LobbyInviteServiceImplTest {
   void cancel_marksPendingInviteCancelled() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(inviteRepo.transitionPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(LobbyInviteStatus.CANCELLED),
+        any(OffsetDateTime.class))).thenReturn(1);
     when(mapper.toDto(invite)).thenReturn(inviteDto);
 
     inviteService.cancel(101L, 501L, 1L);
 
     assertThat(invite.getStatus()).isEqualTo(LobbyInviteStatus.CANCELLED);
     assertThat(invite.getUpdatedAt()).isAfter(OffsetDateTime.parse("2026-07-16T10:00:00Z"));
+  }
+
+  @Test
+  void cancel_throwsConflict_whenConcurrentAcceptanceAlreadyClaimedInvite() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(inviteRepo.transitionPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(LobbyInviteStatus.CANCELLED),
+        any(OffsetDateTime.class))).thenReturn(0);
+
+    assertThatThrownBy(() -> inviteService.cancel(101L, 501L, 1L))
+        .isInstanceOf(ConflictException.class)
+        .hasMessageContaining("no longer pending");
   }
 
   @Test
@@ -266,12 +284,29 @@ class LobbyInviteServiceImplTest {
   @Test
   void decline_marksPendingInviteDeclined() {
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(inviteRepo.transitionPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(LobbyInviteStatus.DECLINED),
+        any(OffsetDateTime.class))).thenReturn(1);
     when(mapper.toDto(invite)).thenReturn(inviteDto);
 
     inviteService.decline(501L, 2L);
 
     assertThat(invite.getStatus()).isEqualTo(LobbyInviteStatus.DECLINED);
     assertThat(lobby.getMembers()).containsExactly(owner);
+  }
+
+  @Test
+  void decline_throwsConflict_whenConcurrentAcceptanceAlreadyClaimedInvite() {
+    when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
+    when(inviteRepo.transitionPending(
+        org.mockito.ArgumentMatchers.eq(501L),
+        org.mockito.ArgumentMatchers.eq(LobbyInviteStatus.DECLINED),
+        any(OffsetDateTime.class))).thenReturn(0);
+
+    assertThatThrownBy(() -> inviteService.decline(501L, 2L))
+        .isInstanceOf(ConflictException.class)
+        .hasMessageContaining("no longer pending");
   }
 
   @Test

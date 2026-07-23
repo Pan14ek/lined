@@ -18,6 +18,7 @@ import io.backend.lined.user.domain.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -156,8 +157,12 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
 
   private void transition(LobbyInviteEntity invite, LobbyInviteStatus status) {
     requirePending(invite);
+    var now = OffsetDateTime.now(ZoneOffset.UTC);
+    if (inviteRepo.transitionPending(invite.getId(), status, now) == 0) {
+      throw new ConflictException("Lobby invite is no longer pending");
+    }
     invite.setStatus(status);
-    invite.setUpdatedAt(OffsetDateTime.now());
+    invite.setUpdatedAt(now);
   }
 
   private LobbyInviteDto resolveConcurrentAcceptance(Long inviteId) {
