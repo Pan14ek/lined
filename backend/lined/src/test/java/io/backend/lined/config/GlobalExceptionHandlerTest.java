@@ -60,6 +60,18 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  void handleBase_conflict_includesStableCodeExtension() {
+    var ex = new ConflictException("LOBBY_LIMIT_EXCEEDED", "Lobby limit exceeded");
+
+    ResponseEntity<ProblemDetail> response = handler.handleBase(ex);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getProperties())
+        .containsEntry("code", "LOBBY_LIMIT_EXCEEDED");
+  }
+
+  @Test
   void handleBase_badRequest_returns400WithCorrectTitle() {
     var ex = new BadRequestException("Start must be before end");
 

@@ -167,6 +167,10 @@ class LobbyInviteServiceConcurrencyTest {
         insert into lobbies (id, name, lobby_type, owner_id, version)
         values (101, 'Home', 'COUPLE', 1, 0)
         """);
+    jdbcTemplate.update("""
+        insert into billing_accounts (owner_user_id, type, status)
+        values (1, 'PERSONAL', 'ACTIVE')
+        """);
     jdbcTemplate.update("insert into lobby_members (lobby_id, user_id) values (101, 1)");
     jdbcTemplate.update("""
         insert into lobby_invites
@@ -182,6 +186,7 @@ class LobbyInviteServiceConcurrencyTest {
           lobby_invites,
           lobby_members,
           lobbies,
+          billing_accounts,
           users
         restart identity cascade
         """);

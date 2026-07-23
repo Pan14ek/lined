@@ -11,6 +11,7 @@ import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -41,6 +42,8 @@ class LobbyServiceImplTest {
   private UserRepository userRepo;
   @Mock
   private LobbyMapper mapper;
+  @Mock
+  private LimitEvaluator limitEvaluator;
   @Spy
   private LobbyAccessPolicy accessPolicy;
 
@@ -88,7 +91,24 @@ class LobbyServiceImplTest {
     LobbyDto result = lobbyService.create(dto, 1L);
 
     assertThat(result).isEqualTo(lobbyDto);
+    verify(limitEvaluator).assertCanCreateLobby(1L);
     verify(lobbyRepo).save(any(LobbyEntity.class));
+  }
+
+  @Test
+  void create_doesNotPersist_whenLobbyLimitIsExceeded() {
+    LobbyCreateDto dto = new LobbyCreateDto("Our Family", LobbyTypes.FAMILY);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    org.mockito.Mockito.doThrow(new ConflictException(
+        "LOBBY_LIMIT_EXCEEDED", "Lobby limit exceeded for current plan"))
+        .when(limitEvaluator).assertCanCreateLobby(1L);
+
+    assertThatThrownBy(() -> lobbyService.create(dto, 1L))
+        .isInstanceOf(ConflictException.class)
+        .extracting("code")
+        .isEqualTo("LOBBY_LIMIT_EXCEEDED");
+
+    verify(lobbyRepo, never()).save(any());
   }
 
   @Test

@@ -5,6 +5,7 @@ import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.lobby.api.LobbyCreateDto;
 import io.backend.lined.lobby.api.LobbyDto;
 import io.backend.lined.lobby.api.LobbyMapper;
@@ -26,11 +27,24 @@ public class LobbyServiceImpl implements LobbyService {
   private final UserRepository userRepo;
   private final LobbyMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final LimitEvaluator limitEvaluator;
 
   @Override
+  /**
+   * Creates a lobby after enforcing the authenticated owner's plan limit.
+   *
+   * <p>For example, a Free user who owns no lobbies can create {@code "Our Family"}; a Free
+   * user who already owns one receives {@code LOBBY_LIMIT_EXCEEDED} before any new lobby is
+   * persisted. Owner lookup remains first so an unknown user still receives the existing 404.</p>
+   *
+   * @param dto requested lobby name and type
+   * @param ownerId authenticated identifier of the prospective owner
+   * @return the persisted lobby with the owner added as its first member
+   */
   public LobbyDto create(LobbyCreateDto dto, Long ownerId) {
     var owner = EntityFinder.findOrThrow(userRepo.findById(ownerId),
         () -> new NotFoundException("Owner %d not found".formatted(ownerId)));
+    limitEvaluator.assertCanCreateLobby(ownerId);
 
     var entity = LobbyEntity.builder()
         .name(dto.name())
