@@ -1,5 +1,6 @@
 package io.backend.lined.app;
 
+import io.backend.lined.billing.application.BillingAccountService;
 import io.backend.lined.plan.api.PlanDto;
 import io.backend.lined.plan.service.PlanService;
 import io.backend.lined.role.service.RoleService;
@@ -22,6 +23,7 @@ public class AccountApplicationServiceImpl implements AccountApplicationService 
   private final PlanService planService;
   private final SubscriptionService subscriptionService;
   private final AccountProvisioningPolicy provisioningPolicy;
+  private final BillingAccountService billingAccountService;
 
   @Override
   @Transactional
@@ -29,10 +31,7 @@ public class AccountApplicationServiceImpl implements AccountApplicationService 
     AccountProvisioningSpec provisioning = provisioningPolicy.defaultRegistration();
     UserDto user = userService.create(createDto);
     roleService.setUserRoles(user.id(), provisioning.roleNames());
-
-    PlanDto defaultPlan = planService.getByName(provisioning.planName());
-    subscriptionService.start(
-        user.id(), defaultPlan.id(), null, null, provisioning.activeSubscription());
+    billingAccountService.ensurePersonalAccount(user.id());
 
     return userService.getById(user.id());
   }
