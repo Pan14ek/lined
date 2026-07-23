@@ -237,7 +237,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | DONE |
 | 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | DONE |
 | 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
-| 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | TODO |
+| 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | SUPERSEDED — see UI-38..UI-50 |
 | 27 | `feature/ui-27-dashboard-summary` | Adopt `GET /api/dashboard/summary`: one request, accurate lobby-card counts, 404 fallback | [tasks/UI-27-dashboard-summary.md](tasks/UI-27-dashboard-summary.md) | TODO |
 | 28 | `feature/ui-28-lobby-chat` | Lobby Chat tab: polling message list, optimistic send, edit/delete, chat notifications | [tasks/UI-28-lobby-chat.md](tasks/UI-28-lobby-chat.md) | TODO |
 | 29 | `feature/ui-29-lobby-stats` | Lobby Stats tab: time-together tiles, month picker, per-member split bars | [tasks/UI-29-lobby-stats.md](tasks/UI-29-lobby-stats.md) | TODO |
@@ -249,6 +249,19 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 35 | `feature/ui-35-feature-flags-foundation` | Typed public feature discovery, TanStack Query hooks, disabled-response synchronization, and reusable guards | [tasks/UI-35-feature-flags-foundation.md](tasks/UI-35-feature-flags-foundation.md) | TODO |
 | 36 | `feature/ui-36-feature-gated-capabilities` | Apply seven feature flags across routes, navigation, composite surfaces, overlays, and protected queries | [tasks/UI-36-feature-gated-capabilities.md](tasks/UI-36-feature-gated-capabilities.md) | TODO |
 | 37 | `feature/ui-37-feature-flags-admin` | Admin-only runtime flag table with ETag-safe toggles and failure/conflict handling | [tasks/UI-37-feature-flags-admin.md](tasks/UI-37-feature-flags-admin.md) | TODO |
+| 38 | `feature/ui-38-billing-me-page-scaffold` | Billing feature scaffold + `GET /api/billing/me` page + shared toast primitive (supersedes UI-14 + first half of UI-26) | [tasks/UI-38-billing-me-page-scaffold.md](tasks/UI-38-billing-me-page-scaffold.md) | TODO |
+| 39 | `feature/ui-39-pricing-preview-monthly-yearly` | Localized pricing card with monthly/yearly toggle from `GET /api/billing/prices` | [tasks/UI-39-pricing-preview-monthly-yearly.md](tasks/UI-39-pricing-preview-monthly-yearly.md) | TODO |
+| 40 | `feature/ui-40-checkout-overlay-activation-pending` | Provider overlay checkout + PAYMENT_CONFIRMATION_PENDING polling (never activate from client callback) | [tasks/UI-40-checkout-overlay-activation-pending.md](tasks/UI-40-checkout-overlay-activation-pending.md) | TODO |
+| 41 | `feature/ui-41-cancel-resume-flows` | Schedule cancellation at period end + resume before period end | [tasks/UI-41-cancel-resume-flows.md](tasks/UI-41-cancel-resume-flows.md) | TODO |
+| 42 | `feature/ui-42-change-interval-flow` | Change monthly ↔ yearly at `currentPeriodEnd` + scheduled-change chip | [tasks/UI-42-change-interval-flow.md](tasks/UI-42-change-interval-flow.md) | TODO |
+| 43 | `feature/ui-43-past-due-grace-warnings` | PAST_DUE banner + persistent chip + lobby callout + "Update payment method" | [tasks/UI-43-past-due-grace-warnings.md](tasks/UI-43-past-due-grace-warnings.md) | TODO |
+| 44 | `feature/ui-44-select-free-lobby-flow` | Post-downgrade "choose your Free lobby" modal + deadline banner | [tasks/UI-44-select-free-lobby-flow.md](tasks/UI-44-select-free-lobby-flow.md) | TODO |
+| 45 | `feature/ui-45-read-only-lobby-ux` | READ_ONLY lobby ribbon + disabled write controls + centralized `LOBBY_READ_ONLY_DUE_TO_PLAN` handler | [tasks/UI-45-read-only-lobby-ux.md](tasks/UI-45-read-only-lobby-ux.md) | TODO |
+| 46 | `feature/ui-46-archived-lobbies-section` | Archived lobbies sidebar section + `/lobbies/archived` route + restore | [tasks/UI-46-archived-lobbies-section.md](tasks/UI-46-archived-lobbies-section.md) | TODO |
+| 47 | `feature/ui-47-billing-history-transactions-refunds` | Payment History card (Transactions + Refunds tabs) paginated | [tasks/UI-47-billing-history-transactions-refunds.md](tasks/UI-47-billing-history-transactions-refunds.md) | TODO |
+| 48 | `feature/ui-48-customer-portal-button` | "Manage billing" button opens provider portal in a new tab | [tasks/UI-48-customer-portal-button.md](tasks/UI-48-customer-portal-button.md) | TODO |
+| 49 | `feature/ui-49-admin-billing-view` | Admin `/admin/billing`: search, account detail, resync, retry event, audit log (permission-gated) | [tasks/UI-49-admin-billing-view.md](tasks/UI-49-admin-billing-view.md) | TODO |
+| 50 | `feature/ui-50-admin-refund-flow` | Admin refund preview + issue flow with `BILLING_REFUND` permission gate and `withinDefaultWindow` flag | [tasks/UI-50-admin-refund-flow.md](tasks/UI-50-admin-refund-flow.md) | TODO |
 
 ## Suggested order
 
@@ -288,6 +301,31 @@ remain usable when all product capabilities are disabled. Task 37 depends on
 the backend admin API, with `feature/feature-flags-sync` required for complete
 multi-replica release behavior. Canonical semantics and capability boundaries
 live in `backend/lined/docs/feature-flags.md`.
+
+**Batch 38–50 (billing subsystem, 2026-07):** these tasks implement the
+target subscription/billing architecture defined in
+`Downloads/subscription-billing-system-design.md` (backend companion:
+`backend/lined/docs/billing/BILLING_TASKS.md`). They **supersede UI-14 and
+UI-26** entirely — the old subscription prototype and the placeholder
+payment-checkout task are replaced by this batch. Provider is deliberately
+TBD; the backend ships a sandbox stub adapter, so every UI task in this
+batch is MSW-first and fully verifiable in dev without provider credentials.
+
+Order: **38** first (scaffold + toast primitive; unblocks all others).
+Then **39 → 40** (pricing preview → checkout overlay) as one paired
+slice. **41, 42, 48** are small, independent, and can land any time
+after 38 in parallel PRs. **43** depends on 48 (shares the "Update
+payment method" CTA). The downgrade thread is **44 → 45 → 46**: land in
+order to keep the read-only visual language consistent. **47** is
+independent after 38. **49 → 50** (admin surfaces) come last; they depend
+on the backend permission model (BE-14) which is late in the backend
+sequence.
+
+Backend dependency map (blocking pairs):
+UI-38 ← BE-04; UI-39 ← BE-10; UI-40 ← BE-10 + BE-11; UI-41/42 ← BE-11;
+UI-43 ← BE-11 (+BE-15 for lobby DTO hint); UI-44/45/46 ← BE-03 + BE-12;
+UI-47 ← BE-13; UI-48 ← BE-11/BE-15 portal endpoint;
+UI-49 ← BE-14; UI-50 ← BE-13 + BE-14.
 
 ## Conventions for every task
 
