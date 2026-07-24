@@ -244,3 +244,55 @@ INSERT INTO billing_prices (
 VALUES ('PRO_MONTHLY', 'PRO', 'MONTH', 'sandbox', 'sandbox-pro-monthly', TRUE, NOW(), NOW()),
        ('PRO_YEARLY', 'PRO', 'YEAR', 'sandbox', 'sandbox-pro-yearly', TRUE, NOW(), NOW())
 ON CONFLICT (code) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS billing_provider_customers
+(
+    id                   BIGSERIAL PRIMARY KEY,
+    billing_account_id   BIGINT       NOT NULL REFERENCES billing_accounts (id) ON DELETE CASCADE,
+    provider             VARCHAR(32)  NOT NULL,
+    provider_customer_id VARCHAR(128) NOT NULL,
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_billing_provider_customers_account_provider
+        UNIQUE (billing_account_id, provider),
+    CONSTRAINT uq_billing_provider_customers_provider_customer
+        UNIQUE (provider_customer_id)
+);
+
+CREATE TABLE IF NOT EXISTS billing_subscriptions
+(
+    id                       BIGSERIAL PRIMARY KEY,
+    billing_account_id       BIGINT       NOT NULL REFERENCES billing_accounts (id) ON DELETE CASCADE,
+    provider                 VARCHAR(32)  NOT NULL,
+    provider_subscription_id VARCHAR(128) NOT NULL,
+    plan_code                VARCHAR(16)  NOT NULL REFERENCES billing_plans (code),
+    current_price_code       VARCHAR(32)  NOT NULL REFERENCES billing_prices (code),
+    status                   VARCHAR(16)  NOT NULL,
+    current_period_start     TIMESTAMPTZ  NOT NULL,
+    current_period_end       TIMESTAMPTZ  NOT NULL,
+    cancel_at_period_end     BOOLEAN      NOT NULL DEFAULT FALSE,
+    scheduled_price_code     VARCHAR(32)  REFERENCES billing_prices (code),
+    scheduled_change_at      TIMESTAMPTZ,
+    past_due_since           TIMESTAMPTZ,
+    grace_ends_at            TIMESTAMPTZ,
+    provider_updated_at      TIMESTAMPTZ  NOT NULL,
+    last_synced_at           TIMESTAMPTZ,
+    version                  BIGINT       NOT NULL DEFAULT 0,
+    created_at               TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_billing_subscriptions_provider_subscription
+        UNIQUE (provider_subscription_id),
+    CONSTRAINT chk_billing_subscriptions_status
+        CHECK (status IN ('PENDING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'EXPIRED')),
+    CONSTRAINT chk_billing_subscriptions_period
+        CHECK (current_period_end >= current_period_start),
+    CONSTRAINT chk_billing_subscriptions_scheduled_change
+        CHECK ((scheduled_price_code IS NULL AND scheduled_change_at IS NULL)
+            OR (scheduled_price_code IS NOT NULL AND scheduled_change_at IS NOT NULL)),
+    CONSTRAINT chk_billing_subscriptions_past_due_grace
+        CHECK (status = 'PAST_DUE' OR (past_due_since IS NULL AND grace_ends_at IS NULL))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscriptions_active
+    ON billing_subscriptions (billing_account_id)
+    WHERE status IN ('PENDING', 'ACTIVE', 'PAST_DUE');

@@ -1,6 +1,7 @@
 package io.backend.lined.billing.application;
 
 import io.backend.lined.billing.domain.plan.PlanCode;
+import io.backend.lined.billing.domain.subscription.SubscriptionStatus;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,29 @@ public class EffectivePlanResolver {
   public PlanCode resolve(Long billingAccountId, Instant now) {
     return paidSubscriptionLookup.findCurrentByBillingAccountId(billingAccountId)
         .filter(subscription -> subscription.planCode() == PlanCode.PRO)
-        .filter(subscription -> subscription.currentPeriodEnd().isAfter(now))
+        .filter(subscription -> grantsPaidAccess(subscription, now))
         .map(PaidSubscription::planCode)
         .orElse(PlanCode.FREE);
+  }
+
+  /**
+   * Applies the request-time paid-access policy to one current subscription projection.
+   *
+   * <p>For example, an {@code ACTIVE} subscription ending one second after {@code now} grants
+   * paid access even when cancellation is scheduled. A {@code PAST_DUE} subscription grants paid
+   * access only when it has a grace end strictly after {@code now}; missing or boundary grace
+   * timestamps resolve to Free.</p>
+   *
+   * @param subscription non-terminal paid-subscription view returned by the lookup port
+   * @param now precise instant at which product access is evaluated
+   * @return {@code true} when the subscription presently grants its paid plan
+   */
+  public boolean grantsPaidAccess(PaidSubscription subscription, Instant now) {
+    if (subscription.status() == SubscriptionStatus.ACTIVE) {
+      return subscription.currentPeriodEnd().isAfter(now);
+    }
+    return subscription.status() == SubscriptionStatus.PAST_DUE
+        && subscription.graceEndsAt() != null
+        && subscription.graceEndsAt().isAfter(now);
   }
 }
