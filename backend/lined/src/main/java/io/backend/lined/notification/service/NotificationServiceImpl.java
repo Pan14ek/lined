@@ -4,6 +4,7 @@ import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -137,6 +138,26 @@ public class NotificationServiceImpl implements NotificationService {
         null, eventId);
   }
 
+  @Override
+  public void notifyEventReminder(UserEntity recipient, EventEntity event) {
+    if (!isLobbyMember(event.getLobby(), recipient.getId())
+        || !allowsEventReminder(recipient, event.getLobby())) {
+      return;
+    }
+    saveNotification(recipient, event.getLobby(), NotificationType.EVENT_REMINDER,
+        "Event reminder", "%s starts soon".formatted(event.getTitle()), null, event.getId());
+  }
+
+  @Override
+  public void notifyTaskDue(UserEntity recipient, TaskEntity task) {
+    if (!isLobbyMember(task.getLobby(), recipient.getId())
+        || !allowsTaskDue(recipient, task.getLobby())) {
+      return;
+    }
+    saveNotification(recipient, task.getLobby(), NotificationType.TASK_DUE,
+        "Task due today", "%s is due today".formatted(task.getTitle()), task.getId(), null);
+  }
+
   private void saveNotification(UserEntity recipient, LobbyEntity lobby, NotificationType type,
                                 String title, String message, Long taskId, Long eventId) {
     var notification = NotificationEntity.builder()
@@ -180,6 +201,18 @@ public class NotificationServiceImpl implements NotificationService {
     var global = globalPreferences(user.getId());
     var local = lobbyPreferences(user.getId(), lobby);
     return global.isSharedEventsEnabled() && local.isNewEventsEnabled();
+  }
+
+  private boolean allowsEventReminder(UserEntity user, LobbyEntity lobby) {
+    var global = globalPreferences(user.getId());
+    var local = lobbyPreferences(user.getId(), lobby);
+    return global.isEventRemindersEnabled() && local.isNewEventsEnabled();
+  }
+
+  private boolean allowsTaskDue(UserEntity user, LobbyEntity lobby) {
+    var global = globalPreferences(user.getId());
+    var local = lobbyPreferences(user.getId(), lobby);
+    return global.isEventRemindersEnabled() && local.isTaskUpdatesEnabled();
   }
 
   private UserNotificationPreferenceEntity globalPreferences(Long userId) {

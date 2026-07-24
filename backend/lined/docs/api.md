@@ -377,6 +377,7 @@ Create an event.
   "startAt": "2025-11-20T17:00:00Z",
   "endAt": "2025-11-20T19:00:00Z",
   "timezone": "Europe/Kyiv",
+  "reminderMinutesBefore": 30,
   "lobbyId": 101,
   "notifyMembers": true
 }
@@ -387,6 +388,13 @@ Response: `200 OK` with `EventDto`.
 ### `PATCH /api/calendar/events/{id}`
 
 Partially update an event. Blank `location` clears the stored location.
+
+`reminderMinutesBefore` is optional on create: `null` or omission uses the
+30-minute default, `0` disables that event's reminder, and values through
+10,080 (seven days) are accepted. On PATCH, omission or `null` leaves the
+stored setting unchanged. Moving an already-reminded event or changing its
+non-null reminder lead time makes its new occurrence eligible for one new
+reminder.
 
 Send the current event version as `If-Match: "{version}"`; deletion requires the same header.
 
@@ -575,6 +583,20 @@ Inbox entries use this shape:
   "deliveries": []
 }
 ```
+
+### Scheduled reminders
+
+The server runs a reminder job every minute. A shared event emits an
+`EVENT_REMINDER` to the current lobby owner and members; a private event emits
+one only to its owner. Event reminders require both global
+`eventRemindersEnabled` and per-lobby `newEventsEnabled`.
+
+At or after `08:00 UTC`, every unfinished task due on the current UTC date is
+considered for one `TASK_DUE` notification. The assignee receives it when
+present; otherwise the creator does. Task due reminders require both global
+`eventRemindersEnabled` and per-lobby `taskUpdatesEnabled`. Event and task
+markers are claimed atomically, so repeated ticks and concurrent replicas do
+not duplicate an occurrence.
 
 ## Planned / Proposal-Only Endpoints
 

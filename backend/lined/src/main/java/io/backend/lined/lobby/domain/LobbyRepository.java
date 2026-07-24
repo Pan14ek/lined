@@ -1,6 +1,8 @@
 package io.backend.lined.lobby.domain;
 
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +10,18 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LobbyRepository extends JpaRepository<LobbyEntity, Long> {
+
+  /**
+   * Reloads a lobby with the membership snapshot used by a notification recipient decision.
+   *
+   * <p>For example, a reminder worker calls this after claiming an event so a member removed
+   * between candidate selection and notification fan-out is not included in that fan-out.</p>
+   *
+   * @param lobbyId lobby identifier
+   * @return the current lobby and its owner/member relationships when it still exists
+   */
+  @EntityGraph(attributePaths = {"owner", "members"})
+  Optional<LobbyEntity> findWithMembersById(Long lobbyId);
 
   List<LobbyEntity> findAllByOwner_Id(Long ownerId);
 

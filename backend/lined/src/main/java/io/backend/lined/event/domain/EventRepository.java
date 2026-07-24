@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -96,5 +98,50 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
    */
   Optional<EventEntity> findByOwner_IdAndLobby_IdAndIcsUid(Long ownerId, Long lobbyId,
                                                             String icsUid);
+
+  /**
+   * Finds unsent events in the bounded horizon used by the minute scheduler.
+   *
+   * <p>For example, a dinner in three days with a four-day override is returned, while an event
+   * with {@code reminderMinutesBefore = 0} is filtered by the service without creating an inbox
+   * entry.</p>
+   *
+   * @param now current UTC time
+   * @param horizon latest candidate start time, at most seven days away
+   * @return candidates with recipient associations initialized
+   */
+  @EntityGraph(attributePaths = {"lobby", "lobby.owner", "lobby.members", "owner"})
+  @Query("""
+      SELECT e FROM EventEntity e
+      WHERE e.reminderSentAt IS NULL
+        AND e.startAt >= :now
+        AND e.startAt <= :horizon
+      ORDER BY e.startAt ASC
+      """)
+  List<EventEntity> findReminderCandidates(@Param("now") OffsetDateTime now,
+                                            @Param("horizon") OffsetDateTime horizon);
+
+  /**
+   * Atomically claims a reminder occurrence for a single scheduler replica.
+   *
+   * <p>For example, two pods may read the same event, but only the row matching its original
+   * version and an empty marker receives a {@code reminderSentAt}; the loser returns zero and
+   * emits nothing.</p>
+   *
+   * @param eventId event identifier
+   * @param expectedVersion version observed while selecting the candidate
+   * @param sentAt marker timestamp
+   * @return {@code 1} for the winning replica, otherwise {@code 0}
+   */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("""
+      UPDATE EventEntity e
+      SET e.reminderSentAt = :sentAt, e.version = e.version + 1
+      WHERE e.id = :eventId
+        AND e.version = :expectedVersion
+        AND e.reminderSentAt IS NULL
+      """)
+  int claimReminder(@Param("eventId") Long eventId, @Param("expectedVersion") long expectedVersion,
+                    @Param("sentAt") OffsetDateTime sentAt);
 
 }

@@ -50,6 +50,7 @@ public class EventController {
                       "startAt":"2025-11-20T17:00:00Z",
                       "endAt":"2025-11-20T19:00:00Z",
                       "timezone":"Europe/Kyiv",
+                      "reminderMinutesBefore":30,
                       "lobbyId":101,
                       "notifyMembers":true
                     }
@@ -61,7 +62,8 @@ public class EventController {
 
   @Operation(summary = "Update event",
       description = "Partial update: title/location/shared/startAt/endAt/timezone. "
-          + "Blank location clears it; omitted location is unchanged.")
+          + "Blank location clears it; omitted location is unchanged. "
+          + "reminderMinutesBefore accepts 0 through 10080; 0 disables reminders.")
   @PatchMapping("/events/{id}")
   public ResponseEntity<EventDto> update(
       @Parameter(example = "9001") @PathVariable Long id,

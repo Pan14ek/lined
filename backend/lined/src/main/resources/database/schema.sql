@@ -111,6 +111,10 @@ CREATE TABLE IF NOT EXISTS events
 );
 
 ALTER TABLE events ADD COLUMN IF NOT EXISTS ics_uid VARCHAR(255);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS reminder_minutes_before INTEGER;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
+
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_reminder_sent_for_date DATE;
 
 CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events (lobby_id, start_at, end_at);

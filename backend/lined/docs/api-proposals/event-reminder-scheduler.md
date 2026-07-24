@@ -1,7 +1,7 @@
 # API Proposal — Event Reminder Scheduler
 
 **Branch:** `feature/event-reminder-scheduler`
-**Status:** Proposed
+**Status:** Implemented
 **Motivation:** README MVP list includes "Notifications (basic) — reminders
 for events and tasks", and the notification preferences already expose an
 `eventRemindersEnabled` toggle ("Reminders 30 minutes before an event") —
@@ -24,11 +24,11 @@ client-facing surface:
      `reminder_emission` row) so restarts/multiple instances never
      double-send.
 2. **Task due reminders (same mechanism):** tasks with a `dueDate` arriving
-   today and status ≠ DONE get a `TASK_DUE` notification at a fixed morning
-   hour (e.g. 08:00 in the event's stored timezone; document the choice).
+   today and status ≠ DONE get a `TASK_DUE` notification at or after 08:00
+   UTC. The assignee receives it, or the creator when unassigned.
 3. **Optional per-event override (client-facing):** extend
    `EventCreateDto`/`EventUpdateDto` with `reminderMinutesBefore`
-   (nullable → default 30, `0`/null semantics documented) and return it in
+   (nullable → default 30, `0` disables, maximum seven days) and return it in
    `EventDto`.
 
 ## Why it matters
