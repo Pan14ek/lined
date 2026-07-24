@@ -8,13 +8,18 @@ import { LanguageCard } from '@/features/settings/cards/LanguageCard';
 import { DangerZoneCard } from '@/features/settings/cards/DangerZoneCard';
 
 export const UserSettingsPage = () => {
-  const { data: user, isLoading } = useCurrentUser();
+  const { data: user, isLoading, isError, refetch } = useCurrentUser();
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
       <SettingsMenu />
       <div className="flex-1 overflow-y-auto bg-bg p-4 md:p-8">
-        <ProfileCard user={user} isLoading={isLoading} />
+        <ProfileCard
+          user={user}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
+        />
         <PasswordCard userId={user?.id} />
         <NotificationsCard />
         <AppearanceCard />

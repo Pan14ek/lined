@@ -9,6 +9,9 @@ import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
 import { EmptyState } from '@/components/EmptyState';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 import { TaskRow } from './TaskRow';
 
@@ -20,6 +23,7 @@ interface TaskListContentProps {
   lobbyId: number;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
   tasks: TaskDto[] | undefined;
   sorted: TaskDto[];
   assigneesById: Map<number, UserDto | undefined>;
@@ -33,6 +37,7 @@ const TaskListContent = ({
   lobbyId,
   isLoading,
   isError,
+  onRetry,
   tasks,
   sorted,
   assigneesById,
@@ -42,20 +47,19 @@ const TaskListContent = ({
   onOpen,
 }: TaskListContentProps) => {
   const { t } = useTranslation('lobby');
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return <LoadErrorState onRetry={onRetry} message={t('tasks.loadError')} />;
+  }
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-tasks-loading">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-surface" />
+          <SkeletonRow key={i} className="h-16" />
         ))}
       </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <p className="text-sm text-text-secondary">{t('tasks.loadError')}</p>
     );
   }
 
@@ -96,7 +100,7 @@ interface LobbyTaskListProps {
 
 export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
   const { t } = useTranslation('lobby');
-  const { data: tasks, isLoading, isError } = useLobbyTasks(lobbyId);
+  const { data: tasks, isLoading, isError, refetch } = useLobbyTasks(lobbyId);
   const updateTask = useUpdateTask();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
   const openTaskDetail = useCreateMenuStore((s) => s.openTaskDetail);
@@ -163,6 +167,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
         lobbyId={lobbyId}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => void refetch()}
         tasks={tasks}
         sorted={sorted}
         assigneesById={assigneesById}

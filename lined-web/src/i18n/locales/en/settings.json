@@ -20,7 +20,8 @@
     "saving": "Saving…",
     "saveChanges": "Save changes",
     "errorTaken": "That username or email is already taken",
-    "errorInvalid": "Enter a valid username and email"
+    "errorInvalid": "Enter a valid username and email",
+    "loadError": "Couldn't load your profile"
   },
   "password": {
     "title": "Password & Security",
@@ -45,7 +46,8 @@
     "eventRemindersDescription": "Reminders 30 minutes before an event",
     "emailDigests": "Email digests",
     "emailDigestsDescription": "Weekly summary of shared activity",
-    "saveError": "Could not save that preference — please try again"
+    "saveError": "Could not save that preference — please try again",
+    "loadError": "Couldn't load notification preferences"
   },
   "appearance": {
     "title": "Appearance",

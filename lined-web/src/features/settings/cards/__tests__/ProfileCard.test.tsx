@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
@@ -17,14 +17,18 @@ describe('ProfileCard', () => {
 
   it('shows a loading skeleton while the user is loading', () => {
     expect.assertions(1);
-    renderWithProviders(<ProfileCard user={undefined} isLoading={true} />);
+    renderWithProviders(
+      <ProfileCard user={undefined} isLoading={true} isError={false} onRetry={vi.fn()} />,
+    );
 
     expect(screen.getByTestId('profile-card-loading')).toBeInTheDocument();
   });
 
   it('pre-fills username and email from the user', () => {
     expect.assertions(2);
-    renderWithProviders(<ProfileCard user={user} isLoading={false} />);
+    renderWithProviders(
+      <ProfileCard user={user} isLoading={false} isError={false} onRetry={vi.fn()} />,
+    );
 
     expect(screen.getByLabelText('Username')).toHaveValue(user.username);
     expect(screen.getByLabelText('Email address')).toHaveValue(user.email);
@@ -33,7 +37,9 @@ describe('ProfileCard', () => {
   it('keeps Save changes disabled until a field is edited', async () => {
     expect.assertions(2);
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<ProfileCard user={user} isLoading={false} />);
+    renderWithProviders(
+      <ProfileCard user={user} isLoading={false} isError={false} onRetry={vi.fn()} />,
+    );
 
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
 
@@ -52,7 +58,9 @@ describe('ProfileCard', () => {
       }),
     );
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<ProfileCard user={user} isLoading={false} />);
+    renderWithProviders(
+      <ProfileCard user={user} isLoading={false} isError={false} onRetry={vi.fn()} />,
+    );
 
     await userEventInstance.clear(screen.getByLabelText('Email address'));
     await userEventInstance.type(screen.getByLabelText('Email address'), 'new@lined.app');
@@ -69,7 +77,9 @@ describe('ProfileCard', () => {
       ),
     );
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<ProfileCard user={user} isLoading={false} />);
+    renderWithProviders(
+      <ProfileCard user={user} isLoading={false} isError={false} onRetry={vi.fn()} />,
+    );
 
     await userEventInstance.type(screen.getByLabelText('Username'), 'x');
     await userEventInstance.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -83,7 +93,9 @@ describe('ProfileCard', () => {
     expect.assertions(1);
     server.use(http.patch(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<ProfileCard user={user} isLoading={false} />);
+    renderWithProviders(
+      <ProfileCard user={user} isLoading={false} isError={false} onRetry={vi.fn()} />,
+    );
 
     await userEventInstance.type(screen.getByLabelText('Username'), 'x');
     await userEventInstance.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -91,5 +103,19 @@ describe('ProfileCard', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Something went wrong — please try again',
     );
+  });
+
+  it('shows an error state with a working retry action when the profile fails to load', async () => {
+    expect.assertions(2);
+    const onRetry = vi.fn();
+    const userEventInstance = userEvent.setup();
+    renderWithProviders(
+      <ProfileCard user={undefined} isLoading={false} isError onRetry={onRetry} />,
+    );
+
+    expect(screen.getByText("Couldn't load your profile")).toBeInTheDocument();
+
+    await userEventInstance.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

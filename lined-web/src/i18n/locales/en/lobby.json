@@ -135,7 +135,8 @@
       "newEvents": "New events in this lobby",
       "taskUpdates": "Task updates",
       "freeSlots": "Free slot notifications",
-      "saveError": "Could not save that preference — please try again"
+      "saveError": "Could not save that preference — please try again",
+      "loadError": "Couldn't load notification preferences"
     },
     "dangerZone": {
       "heading": "⚠ Danger Zone",

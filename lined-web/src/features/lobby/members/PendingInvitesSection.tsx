@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { LobbyInviteDto } from '@/features/lobby/model';
 import { useResendInvite, useCancelInvite } from '@/features/lobby/hooks/useInvites';
 import { useRowMutationState } from '@/hooks/useRowMutationState';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { PendingInviteRow } from './PendingInviteRow';
 
 interface PendingInvitesSectionProps {
@@ -42,9 +43,7 @@ export const PendingInvitesSection = ({
     <div className="mt-6">
       <h3 className="mb-3 text-sm font-semibold text-text-primary">{t('pendingInvites.heading')}</h3>
 
-      {isLoading && (
-        <div className="h-16 animate-pulse rounded-xl bg-surface" data-testid="pending-invites-loading" />
-      )}
+      {isLoading && <SkeletonCard testId="pending-invites-loading" />}
 
       {!isLoading && isError && (
         <p className="text-sm text-text-secondary">{t('pendingInvites.loadError')}</p>

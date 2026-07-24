@@ -5,6 +5,9 @@ import {
   useUpdateNotificationPreferences,
 } from '@/features/notifications/hooks/useNotifications';
 import { ToggleRow } from '@/components/ToggleRow';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '../SettingsCard';
 
 const TOGGLE_KEYS: {
@@ -51,15 +54,24 @@ const TOGGLE_KEYS: {
 
 export const NotificationsCard = () => {
   const { t } = useTranslation('settings');
-  const { data: preferences, isLoading } = useNotificationPreferences();
+  const { data: preferences, isLoading, isError, refetch } = useNotificationPreferences();
   const updatePreferences = useUpdateNotificationPreferences();
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return (
+      <SettingsCard id="notifications" title={t('notifications.title')}>
+        <LoadErrorState onRetry={() => void refetch()} message={t('notifications.loadError')} />
+      </SettingsCard>
+    );
+  }
 
   if (isLoading || !preferences) {
     return (
       <SettingsCard id="notifications" title={t('notifications.title')}>
         <div className="space-y-3 py-4" data-testid="notifications-card-loading">
           {TOGGLE_KEYS.map((toggle) => (
-            <div key={toggle.key} className="h-10 animate-pulse rounded-lg bg-bg" />
+            <SkeletonRow key={toggle.key} className="h-10" />
           ))}
         </div>
       </SettingsCard>
