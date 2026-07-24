@@ -1,7 +1,7 @@
 # API Proposal — Calendar ICS Export & Import
 
 **Branch:** `feature/calendar-ics-integration`
-**Status:** Proposed
+**Status:** Implemented
 **Motivation:** README Phase 1 ("Integration with Google Calendar /
 Outlook"). Full OAuth-based two-way sync is a large project; the standard
 iCalendar (RFC 5545) format gives 80% of the value with no third-party API

@@ -103,14 +103,32 @@ CREATE TABLE IF NOT EXISTS events
     start_at   TIMESTAMPTZ  NOT NULL,
     end_at     TIMESTAMPTZ  NOT NULL,
     timezone   VARCHAR(64)  NOT NULL,
+    ics_uid    VARCHAR(255),
     lobby_id   BIGINT       NOT NULL REFERENCES lobbies (id) ON DELETE CASCADE,
     owner_id   BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     ,version   BIGINT       NOT NULL DEFAULT 0
 );
 
+ALTER TABLE events ADD COLUMN IF NOT EXISTS ics_uid VARCHAR(255);
+
 CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events (lobby_id, start_at, end_at);
+CREATE INDEX IF NOT EXISTS idx_events_ics_uid ON events (ics_uid);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_events_owner_lobby_ics_uid
+    ON events (owner_id, lobby_id, ics_uid);
+
+CREATE TABLE IF NOT EXISTS calendar_feed_tokens
+(
+    id         BIGSERIAL PRIMARY KEY,
+    user_id    BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash VARCHAR(64)  NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    revoked_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_calendar_feed_tokens_user_active
+    ON calendar_feed_tokens (user_id) WHERE revoked_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS user_notification_preferences
 (
