@@ -7,6 +7,8 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWriteAction;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesDto;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesUpdateDto;
 import io.backend.lined.notification.api.NotificationDto;
@@ -44,6 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
   private final UserRepository userRepo;
   private final LobbyRepository lobbyRepo;
   private final LobbyAccessPolicy accessPolicy;
+  private final LobbyWritePolicy writePolicy;
   private final NotificationMapper mapper;
 
   @Override
@@ -208,6 +211,7 @@ public class NotificationServiceImpl implements NotificationService {
     var lobby = EntityFinder.findOrThrow(lobbyRepo.findById(lobbyId),
         () -> new NotFoundException("Lobby %d not found".formatted(lobbyId)));
     accessPolicy.ensureMember(lobby, currentUserId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.UPDATE_LOBBY);
     return lobby;
   }
 

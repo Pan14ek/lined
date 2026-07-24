@@ -11,12 +11,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.service.EventService;
@@ -113,6 +115,75 @@ class LobbyControllerTest {
     assertThatThrownBy(() -> controller.get(999L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
+  }
+
+  @Test
+  void selectAsFree_delegatesToService() {
+    when(lobbyService.selectAsFree(101L, 1L)).thenReturn(sampleLobby);
+
+    LobbyDto result = controller.selectAsFree(101L, 1L).getBody();
+
+    assertThat(result).isEqualTo(sampleLobby);
+    verify(lobbyService).selectAsFree(101L, 1L);
+  }
+
+  @Test
+  void selectAsFree_returnsStableConflict_whenMemberLimitIsExceeded() throws Exception {
+    when(lobbyService.selectAsFree(101L, 1L)).thenThrow(new ConflictException(
+        "LOBBY_MEMBER_LIMIT_EXCEEDED", "Remove members before selecting this lobby"));
+
+    mockMvc.perform(post("/api/lobbies/101/select-as-free").header("X-User-Id", "1"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("LOBBY_MEMBER_LIMIT_EXCEEDED"));
+  }
+
+  @Test
+  void selectAsFree_returnsForbidden_whenCallerIsNotOwner() throws Exception {
+    when(lobbyService.selectAsFree(101L, 2L))
+        .thenThrow(new ForbiddenException("Only lobby owner can perform this action"));
+
+    mockMvc.perform(post("/api/lobbies/101/select-as-free").header("X-User-Id", "2"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void selectAsFree_returnsNotFound_whenLobbyDoesNotExist() throws Exception {
+    when(lobbyService.selectAsFree(999L, 1L))
+        .thenThrow(new NotFoundException("Lobby 999 not found"));
+
+    mockMvc.perform(post("/api/lobbies/999/select-as-free").header("X-User-Id", "1"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void restore_delegatesToService() {
+    when(lobbyService.restore(101L, 1L)).thenReturn(sampleLobby);
+
+    LobbyDto result = controller.restore(101L, 1L).getBody();
+
+    assertThat(result).isEqualTo(sampleLobby);
+    verify(lobbyService).restore(101L, 1L);
+  }
+
+  @Test
+  void restore_returnsStableConflict_whenCapacityIsUnavailable() throws Exception {
+    when(lobbyService.restore(101L, 1L)).thenThrow(new ConflictException(
+        "LOBBY_LIMIT_EXCEEDED", "Lobby limit exceeded for current plan"));
+
+    mockMvc.perform(post("/api/lobbies/101/restore").header("X-User-Id", "1"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("LOBBY_LIMIT_EXCEEDED"));
+  }
+
+  @Test
+  void archived_delegatesToService() {
+    when(lobbyService.archivedLobbies(1L)).thenReturn(List.of(sampleLobby));
+
+    List<LobbyDto> result = controller.archived(
+        io.backend.lined.lobby.domain.LobbyLifecycleStatus.ARCHIVED, 1L);
+
+    assertThat(result).containsExactly(sampleLobby);
+    verify(lobbyService).archivedLobbies(1L);
   }
 
   @Test

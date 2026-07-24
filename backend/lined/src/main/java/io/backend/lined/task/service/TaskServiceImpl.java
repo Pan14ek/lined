@@ -7,6 +7,8 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWriteAction;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.task.api.TaskCreateDto;
 import io.backend.lined.task.api.TaskDto;
@@ -34,6 +36,7 @@ public class TaskServiceImpl implements TaskService {
   private final UserRepository userRepo;
   private final TaskMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final LobbyWritePolicy writePolicy;
   private final NotificationService notificationService;
 
   @Override
@@ -41,6 +44,7 @@ public class TaskServiceImpl implements TaskService {
     var creator = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
     accessPolicy.ensureMember(lobby, currentUserId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.TASK_MUTATION);
 
     var entity = TaskEntity.builder()
         .title(dto.title())
@@ -64,6 +68,7 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId, long expectedVersion) {
     var task = mustTask(id);
     accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    writePolicy.assertWritable(task.getLobby(), LobbyWriteAction.TASK_MUTATION);
     verifyVersion(task.getVersion(), expectedVersion);
 
     if (dto.title() != null && !dto.title().isBlank()) {
@@ -95,6 +100,7 @@ public class TaskServiceImpl implements TaskService {
   public void delete(Long id, Long currentUserId, long expectedVersion) {
     var task = mustTask(id);
     accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    writePolicy.assertWritable(task.getLobby(), LobbyWriteAction.TASK_MUTATION);
     verifyVersion(task.getVersion(), expectedVersion);
     repo.delete(task);
     if (expectedVersion >= 0) {

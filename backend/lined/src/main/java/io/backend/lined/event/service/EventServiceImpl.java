@@ -16,6 +16,8 @@ import io.backend.lined.event.domain.EventRepository;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWriteAction;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.notification.service.NotificationService;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
@@ -38,6 +40,7 @@ public class EventServiceImpl implements EventService {
   private final UserRepository userRepo;
   private final EventMapper mapper;
   private final LobbyAccessPolicy accessPolicy;
+  private final LobbyWritePolicy writePolicy;
   private final EventConflictAnalyzer conflictAnalyzer;
   private final FreeSlotCalculator freeSlotCalculator;
   private final NotificationService notificationService;
@@ -47,6 +50,7 @@ public class EventServiceImpl implements EventService {
     var owner = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
     accessPolicy.ensureMember(lobby, currentUserId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.EVENT_MUTATION);
     var window = eventWindow(dto.startAt(), dto.endAt());
 
     var entity = EventEntity.builder()
@@ -74,6 +78,7 @@ public class EventServiceImpl implements EventService {
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
     var e = mustEvent(id);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(e.getVersion(), expectedVersion);
     var window = eventWindow(
         dto.startAt() == null ? e.getStartAt() : dto.startAt(),
@@ -104,6 +109,7 @@ public class EventServiceImpl implements EventService {
   public void delete(Long id, Long currentUserId, long expectedVersion) {
     var e = mustEvent(id);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(e.getVersion(), expectedVersion);
     repo.delete(e);
     if (expectedVersion >= 0) {

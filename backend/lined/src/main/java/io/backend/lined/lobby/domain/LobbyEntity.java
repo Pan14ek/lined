@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -48,6 +49,27 @@ public class LobbyEntity {
   @ToString.Include
   @Column(length = 64, nullable = false)
   private String name;
+
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "lifecycle_status", nullable = false, length = 16)
+  private LobbyLifecycleStatus lifecycleStatus = LobbyLifecycleStatus.ACTIVE;
+
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "access_mode", nullable = false, length = 16)
+  private LobbyAccessMode accessMode = LobbyAccessMode.READ_WRITE;
+
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "restriction_reason", nullable = false, length = 32)
+  private LobbyRestrictionReason restrictionReason = LobbyRestrictionReason.NONE;
+
+  @Column(name = "archive_at")
+  private OffsetDateTime archiveAt;
+
+  @Column(name = "selected_as_free_at")
+  private OffsetDateTime selectedAsFreeAt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "lobby_type", nullable = false, length = 16)
