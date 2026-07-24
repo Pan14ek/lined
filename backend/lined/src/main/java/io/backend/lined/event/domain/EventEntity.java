@@ -11,7 +11,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -28,7 +30,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "events")
+@Table(name = "events", indexes = @Index(name = "idx_events_ics_uid", columnList = "ics_uid"),
+    uniqueConstraints = @UniqueConstraint(name = "uq_events_owner_lobby_ics_uid",
+        columnNames = {"owner_id", "lobby_id", "ics_uid"}))
 public class EventEntity {
 
   @Id
@@ -57,6 +61,9 @@ public class EventEntity {
 
   @Column(nullable = false, length = 64)
   private String timezone;
+
+  @Column(name = "ics_uid", length = 255)
+  private String icsUid;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "lobby_id", nullable = false)

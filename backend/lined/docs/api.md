@@ -418,6 +418,30 @@ Return whether the specified user has a conflict in the requested window.
 
 Response: `200 OK` with `UserConflictDto`.
 
+### `POST /api/calendar/feed-token` and `DELETE /api/calendar/feed-token`
+
+Authenticated `X-User-Id` endpoints that create a secret personal ICS URL or
+idempotently revoke every active URL. Creation returns `201 Created` with
+`{ "feedUrl": "/api/calendar/feed/{token}.ics" }`; treat that path as a
+bearer credential. Revocation returns `204 No Content`.
+
+### `GET /api/calendar/feed/{token}.ics`
+
+Unauthenticated `text/calendar; charset=UTF-8` calendar subscription endpoint.
+The token is the credential. It exports the owner's private events and shared
+events in their lobbies, never another member's private events. Unknown URLs
+return `404`; revoked URLs return `410 Gone`.
+
+### `POST /api/calendar/import?lobbyId={id}`
+
+Requires `X-User-Id` and accepts either a raw `text/calendar` body or a
+multipart `file` upload. Timed one-off VEVENTs with UID, DTSTART, and DTEND are
+upserted as private caller-owned events by `(owner, lobby, UID)`; all-day,
+floating, and recurring entries are skipped with errors. A wholly invalid ICS
+document returns `400`.
+
+Response example: `{ "imported": 14, "skipped": 2, "errors": [] }`.
+
 ## Roles
 
 ### `GET /api/roles`
