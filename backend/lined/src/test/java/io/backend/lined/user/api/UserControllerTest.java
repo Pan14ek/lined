@@ -6,6 +6,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.app.AccountApplicationService;
@@ -21,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -85,6 +90,43 @@ class UserControllerTest {
     assertThatThrownBy(() -> controller.get(99L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("99");
+  }
+
+  @Test
+  void me_returnsCurrentUserFromHeader() throws Exception {
+    when(userService.getById(1L)).thenReturn(sampleUser);
+
+    mockMvc.perform(get("/api/users/me").header("X-User-Id", "1"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("ETag", "\"0\""))
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.username").value("alice"));
+
+    verify(userService).getById(1L);
+  }
+
+  @Test
+  void me_rejectsMissingCurrentUserHeader() throws Exception {
+    mockMvc.perform(get("/api/users/me"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Bad request"))
+        .andExpect(jsonPath("$.status").value(400));
+
+    verifyNoInteractions(userService);
+  }
+
+  @Test
+  void me_mapsUnknownCurrentUserToNotFound() throws Exception {
+    when(userService.getById(99L)).thenThrow(new NotFoundException("User 99 not found"));
+
+    mockMvc.perform(get("/api/users/me").header("X-User-Id", "99"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Resource not found"))
+        .andExpect(jsonPath("$.status").value(404));
+
+    verify(userService).getById(99L);
   }
 
   @Test

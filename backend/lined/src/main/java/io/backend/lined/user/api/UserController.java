@@ -88,6 +88,18 @@ public class UserController {
   }
 
   @Operation(
+      summary = "Get current user",
+      description = "Returns the profile of the caller identified by the temporary MVP header."
+  )
+  @GetMapping("/me")
+  public ResponseEntity<UserDto> me(
+      @Parameter(description = "Current user id (temporary for MVP)", example = "1")
+      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId) {
+    UserDto user = userService.getById(currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
+  }
+
+  @Operation(
       summary = "Get user",
       description = "Returns a user by ID."
   )

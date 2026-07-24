@@ -1,19 +1,17 @@
 # API Proposal — `GET /api/users/me`
 
 **Branch:** `feature/users-me-endpoint`
-**Status:** Proposed
-**Motivation:** The web client still resolves the profile with
-`GET /api/users/{id}` using the id stored at sign-in, because no controller
-implements a caller-scoped `GET /api/users/me` endpoint yet. This proposal
-keeps that future endpoint documented without putting it in the implemented API
-surface.
+**Status:** Implemented
+**Motivation:** The web client can resolve the profile without supplying its
+own user ID. This delivery replaces the former `GET /api/users/{id}` caller
+lookup with a controller-faithful `GET /api/users/me` contract.
 
-## What the API should do
+## Implemented API behavior
 
 Return the profile of the **caller**, resolved from the request identity
 instead of a client-supplied id:
 
-- MVP path: resolve from the `X-User-Id` header.
+- MVP path: resolves from the `X-User-Id` header.
 - Token path: once request filtering validates the `POST /api/auth/login`
   Bearer token, resolve from the token subject — the endpoint contract does
   not change.
@@ -30,20 +28,21 @@ not resolve to an account (e.g. deleted account with a stale token/header).
 
 - Removes the last place the client must send its own user id explicitly,
   which is a prerequisite for retiring the `X-User-Id` header.
-- Keeps `docs/api.md` controller-faithful while preserving the intended
-  caller-scoped profile contract as a proposal.
+- Keeps `docs/api.md` controller-faithful with an implemented caller-scoped
+  profile contract.
 - The web `useCurrentUser()` hook switches from `users/{id}` to `users/me`
   with no other client change.
 
 ## Implementation notes
 
-- `UserController#me()` delegating to the existing user lookup service;
-  follow Controller → Service → Repository layering and `EntityFinder`.
-- Reuse the identity-resolution seam introduced by the account-deletion and
-  notification work rather than parsing the header inline.
-- Unit tests: happy path, missing header, unknown id.
+- `UserController#me()` delegates to the existing user lookup service;
+  Controller → Service → Repository layering and `EntityFinder` remain intact.
+- The endpoint binds the existing MVP header directly. A shared identity resolver
+  and Bearer-token request filtering remain future work.
+- Controller tests cover the happy path, missing header, and unknown id.
 
-## Definition of done
+## Delivered
 
 `GET /api/users/me` returns the caller's `UserDto`; `docs/api.md` matches the
-implementation; Checkstyle/SpotBugs/JaCoCo gates pass.
+implementation; Checkstyle/SpotBugs/JaCoCo verification is recorded with the
+feature delivery.
