@@ -8,7 +8,9 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadErrorState } from '@/components/LoadErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
+import { SKELETON_BONE_CLASS } from '@/components/skeletons/boneClass';
 import { useQueryStall } from '@/hooks/useQueryStall';
+import { cn } from '@/lib/utils';
 
 const getInviteErrorMessage = (
   error: unknown,
@@ -69,7 +71,7 @@ export const PendingInvitesBanner = () => {
   if (isLoading) {
     return (
       <section data-testid="pending-invites-loading">
-        <Skeleton className="mb-3 h-4 w-40 rounded" />
+        <Skeleton className={cn('mb-3 h-4 w-40 rounded', SKELETON_BONE_CLASS)} />
         <SkeletonCard />
       </section>
     );

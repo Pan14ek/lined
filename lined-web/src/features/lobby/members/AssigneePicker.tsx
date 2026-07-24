@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@/features/users/model';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SKELETON_BONE_CLASS } from '@/components/skeletons/boneClass';
 import { cn } from '@/lib/utils';
 
 interface AssigneePickerProps {
@@ -57,7 +58,7 @@ export const AssigneePicker = ({
     return (
       <div className="flex gap-2.5" data-testid="assignee-picker-loading">
         {[0, 1].map((i) => (
-          <Skeleton key={i} className="size-12 rounded-full" />
+          <Skeleton key={i} className={cn('size-12 rounded-full', SKELETON_BONE_CLASS)} />
         ))}
       </div>
     );

@@ -7,7 +7,9 @@ import { getApiErrorMessage } from '@/lib/apiErrors';
 import { Button } from '@/components/Button';
 import { LoadErrorState } from '@/components/LoadErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SKELETON_BONE_CLASS } from '@/components/skeletons/boneClass';
 import { useQueryStall } from '@/hooks/useQueryStall';
+import { cn } from '@/lib/utils';
 import { SettingsCard } from '../SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '../SettingsRow';
 
@@ -57,9 +59,9 @@ export const ProfileCard = ({ user, isLoading, isError, onRetry }: ProfileCardPr
     return (
       <SettingsCard id="profile" title={t('profile.title')}>
         <div className="space-y-3 py-4" data-testid="profile-card-loading">
-          <Skeleton className="size-16 rounded-full" />
-          <Skeleton className="h-10 rounded-lg" />
-          <Skeleton className="h-10 rounded-lg" />
+          <Skeleton className={cn('size-16 rounded-full', SKELETON_BONE_CLASS)} />
+          <Skeleton className={cn('h-10 rounded-lg', SKELETON_BONE_CLASS)} />
+          <Skeleton className={cn('h-10 rounded-lg', SKELETON_BONE_CLASS)} />
         </div>
       </SettingsCard>
     );

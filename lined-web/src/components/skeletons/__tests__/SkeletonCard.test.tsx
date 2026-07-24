@@ -18,4 +18,14 @@ describe('SkeletonCard', () => {
 
     expect(container.querySelector('[data-testid="card-skel"]')).toHaveClass('w-48', 'h-24');
   });
+
+  it('uses a bone color visible against a white light-theme surface, not just shadcn\'s low-contrast bg-muted', () => {
+    expect.assertions(1);
+    const { container } = renderWithProviders(<SkeletonCard testId="card-skel" />);
+
+    expect(container.querySelector('[data-testid="card-skel"]')).toHaveClass(
+      'bg-gray-200',
+      'dark:bg-gray-700',
+    );
+  });
 });

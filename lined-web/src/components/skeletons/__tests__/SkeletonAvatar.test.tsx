@@ -21,6 +21,16 @@ describe('SkeletonAvatar', () => {
     expect(container.querySelector('[data-testid="avatar-skel"]')).toHaveClass('px-5');
   });
 
+  it('defaults every inner block to a bone color visible against a white light-theme surface', () => {
+    expect.assertions(1);
+    const { container } = renderWithProviders(<SkeletonAvatar testId="avatar-skel" />);
+
+    const bones = container.querySelectorAll('[data-testid="avatar-skel"] .animate-pulse');
+    expect(
+      [...bones].every((bone) => bone.classList.contains('bg-gray-200')),
+    ).toBe(true);
+  });
+
   it('applies a custom bone color to every inner block, e.g. for a dark background', () => {
     expect.assertions(1);
     const { container } = renderWithProviders(

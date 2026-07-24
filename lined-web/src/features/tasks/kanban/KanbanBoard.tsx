@@ -13,7 +13,9 @@ import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } fr
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadErrorState } from '@/components/LoadErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { SKELETON_BONE_CLASS } from '@/components/skeletons/boneClass';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
 import { KANBAN_TEST_IDS } from './kanbanConstants';
@@ -29,7 +31,7 @@ const KanbanBoardSkeleton = () => (
   >
     {Array.from({ length: SKELETON_COLUMN_COUNT }, (_, columnIndex) => (
       <div key={columnIndex} className="flex min-w-full flex-col gap-2.5 snap-center md:min-w-0 md:flex-1 md:snap-align-none">
-        <Skeleton className="h-6 w-24 rounded" />
+        <Skeleton className={cn('h-6 w-24 rounded', SKELETON_BONE_CLASS)} />
         {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
           <SkeletonRow key={cardIndex} className="h-20" />
         ))}

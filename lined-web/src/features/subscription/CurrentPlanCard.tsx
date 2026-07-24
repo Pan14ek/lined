@@ -8,7 +8,9 @@ import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/su
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadErrorState } from '@/components/LoadErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SKELETON_BONE_CLASS } from '@/components/skeletons/boneClass';
 import { useQueryStall } from '@/hooks/useQueryStall';
+import { cn } from '@/lib/utils';
 import { SettingsCard } from '@/features/settings/SettingsCard';
 
 interface CurrentPlanCardProps {
@@ -52,7 +54,10 @@ export const CurrentPlanCard = ({
   if (isLoading) {
     return (
       <SettingsCard id="current-plan" title={t('currentPlan.title')}>
-        <Skeleton className="h-16 rounded-lg" data-testid="current-plan-loading" />
+        <Skeleton
+          className={cn('h-16 rounded-lg', SKELETON_BONE_CLASS)}
+          data-testid="current-plan-loading"
+        />
       </SettingsCard>
     );
   }
