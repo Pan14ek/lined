@@ -56,6 +56,8 @@ const inviteProps = {
   inviteErrors: {},
 };
 
+const baseProps = { onRetry: noop };
+
 describe('NotificationInbox', () => {
   it('shows a loading skeleton while notifications are loading', () => {
     expect.assertions(1);
@@ -68,6 +70,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -85,6 +88,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -102,6 +106,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -119,6 +124,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -136,6 +142,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -156,6 +163,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -175,6 +183,7 @@ describe('NotificationInbox', () => {
         onRowClick={onRowClick}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
@@ -196,12 +205,35 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={onMarkAllRead}
         {...inviteProps}
+        {...baseProps}
       />,
     );
 
     await user.click(screen.getByText('Mark all read'));
 
     expect(onMarkAllRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onRetry when the retry action is clicked in the error state', async () => {
+    expect.assertions(1);
+    const onRetry = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <NotificationInbox
+        notifications={undefined}
+        lobbies={undefined}
+        isLoading={false}
+        isError
+        onRetry={onRetry}
+        onRowClick={noop}
+        onMarkAllRead={noop}
+        {...inviteProps}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it('renders a pending invite above the notifications and wires accept/decline', async () => {
@@ -218,6 +250,7 @@ describe('NotificationInbox', () => {
         onRowClick={noop}
         onMarkAllRead={noop}
         {...inviteProps}
+        {...baseProps}
         invites={[INVITE]}
         onAcceptInvite={onAcceptInvite}
         onDeclineInvite={onDeclineInvite}

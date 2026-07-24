@@ -20,7 +20,7 @@ const getInviteErrorMessage = (error: unknown, fallback: string): string => {
 export const NotificationBell = () => {
   const { t } = useTranslation('notifications');
   const navigate = useNavigate();
-  const { data: notifications, isLoading, isError } = useMyNotifications();
+  const { data: notifications, isLoading, isError, refetch } = useMyNotifications();
   const { data: lobbies } = useMyLobbies();
   const { data: invites, refetch: refetchInvites } = useMyInvites();
   const markRead = useMarkNotificationRead();
@@ -95,6 +95,7 @@ export const NotificationBell = () => {
           lobbies={lobbies}
           isLoading={isLoading}
           isError={isError}
+          onRetry={() => void refetch()}
           onRowClick={handleRowClick}
           onMarkAllRead={handleMarkAllRead}
           invites={invites}

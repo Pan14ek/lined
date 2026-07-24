@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { LobbyDto, LobbyInviteDto } from '@/features/lobby/model';
 import type { NotificationDto, NotificationType } from '@/features/notifications/model';
 import { formatRelativeTimeAgo } from '@/features/calendar/lib/calendarUtils';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 import { InviteCard } from '../InviteCard';
 
@@ -16,6 +19,7 @@ interface NotificationInboxProps {
   lobbies: LobbyDto[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
   onRowClick: (notification: NotificationDto) => void;
   onMarkAllRead: () => void;
   invites: LobbyInviteDto[] | undefined;
@@ -31,6 +35,7 @@ export const NotificationInbox = ({
   lobbies,
   isLoading,
   isError,
+  onRetry,
   onRowClick,
   onMarkAllRead,
   invites,
@@ -43,6 +48,7 @@ export const NotificationInbox = ({
   const { t } = useTranslation('notifications');
   const lobbyMap = new Map((lobbies ?? []).map((l) => [l.id, l]));
   const hasUnread = notifications?.some((n) => n.readAt == null) ?? false;
+  const isStalled = useQueryStall(isLoading);
 
   return (
     <div className="flex max-h-96 w-80 flex-col">
@@ -76,16 +82,18 @@ export const NotificationInbox = ({
           </div>
         )}
 
-        {isLoading && (
+        {isLoading && !isStalled && (
           <div className="space-y-2 p-3" data-testid="notification-inbox-loading">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-bg" />
+              <SkeletonRow key={i} className="h-12" />
             ))}
           </div>
         )}
 
-        {!isLoading && isError && (
-          <p className="p-3 text-sm text-text-secondary">{t('inbox.loadError')}</p>
+        {(isStalled || (!isLoading && isError)) && (
+          <div className="p-3">
+            <LoadErrorState onRetry={onRetry} message={t('inbox.loadError')} />
+          </div>
         )}
 
         {!isLoading && !isError && notifications?.length === 0 && (
