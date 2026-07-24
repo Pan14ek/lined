@@ -109,7 +109,7 @@ class EventServiceImplTest {
 
     eventDto = new EventDto(
         9001L, 0L, "Dinner together", "Whole Foods Market", true,
-        startAt, endAt, "Europe/Kyiv",
+        startAt, endAt, "Europe/Kyiv", null,
         101L, 1L, now
     );
   }
@@ -140,7 +140,7 @@ class EventServiceImplTest {
   @Test
   void create_notifiesOtherMembers_whenRequestedForSharedEvent() {
     EventCreateDto dto = new EventCreateDto(
-        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", 101L, true);
+        "Dinner together", null, true, startAt, endAt, "Europe/Kyiv", null, 101L, true);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
@@ -516,5 +516,34 @@ class EventServiceImplTest {
     assertThatThrownBy(() -> eventService.list(101L, startAt, endAt, 99L))
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
+  }
+
+  @Test
+  void update_resetsReminderMarkerWhenStartOrReminderLeadChanges() {
+    eventEntity.setReminderSentAt(now);
+    eventEntity.setReminderMinutesBefore(30);
+    EventUpdateDto dto = new EventUpdateDto(null, null, null, startAt.plusHours(1),
+        endAt.plusHours(1), null, 45);
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    eventService.update(9001L, dto, 1L, -1L);
+
+    assertThat(eventEntity.getReminderSentAt()).isNull();
+    assertThat(eventEntity.getReminderMinutesBefore()).isEqualTo(45);
+  }
+
+  @Test
+  void update_doesNotResetReminderMarkerForExplicitDefaultLeadTime() {
+    eventEntity.setReminderSentAt(now);
+    eventEntity.setReminderMinutesBefore(null);
+    EventUpdateDto dto = new EventUpdateDto(null, null, null, null, null, null, 30);
+    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    eventService.update(9001L, dto, 1L, -1L);
+
+    assertThat(eventEntity.getReminderSentAt()).isEqualTo(now);
+    assertThat(eventEntity.getReminderMinutesBefore()).isEqualTo(30);
   }
 }

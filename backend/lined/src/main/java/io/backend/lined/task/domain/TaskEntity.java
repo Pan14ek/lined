@@ -24,6 +24,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Persisted lobby task, including the date for which its due reminder was processed.
+ *
+ * <p>For example, after a task due on 2026-07-25 receives its morning reminder,
+ * {@code dueReminderSentForDate} is 2026-07-25; moving it to the next day naturally permits a
+ * new occurrence without clearing historical state.</p>
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -70,6 +77,8 @@ public class TaskEntity {
   private UserEntity assignee;
 
   private LocalDate dueDate;
+
+  private LocalDate dueReminderSentForDate;
 
   @Column(nullable = false)
   private OffsetDateTime createdAt;

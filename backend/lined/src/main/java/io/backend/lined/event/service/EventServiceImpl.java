@@ -45,6 +45,12 @@ public class EventServiceImpl implements EventService {
   private final FreeSlotCalculator freeSlotCalculator;
   private final NotificationService notificationService;
 
+  /**
+   * Creates an event with its optional reminder policy.
+   *
+   * <p>For example, an omitted {@code reminderMinutesBefore} stores the default policy, while a
+   * value of {@code 0} stores an explicit opt-out and therefore produces no scheduled reminder.</p>
+   */
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId) {
     var owner = mustUser(currentUserId);
@@ -60,6 +66,7 @@ public class EventServiceImpl implements EventService {
         .startAt(window.start())
         .endAt(window.end())
         .timezone(dto.timezone())
+        .reminderMinutesBefore(dto.reminderMinutesBefore())
         .lobby(lobby)
         .owner(owner)
         .build();
@@ -74,6 +81,12 @@ public class EventServiceImpl implements EventService {
     return mapper.toDto(saved);
   }
 
+  /**
+   * Partially updates an event and re-enables a reminder when its occurrence changes.
+   *
+   * <p>For example, moving a dinner from 18:00 to 20:00 after its first reminder clears the
+   * marker, so the newly scheduled occurrence can emit exactly one fresh reminder.</p>
+   */
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
     var e = mustEvent(id);
@@ -84,6 +97,11 @@ public class EventServiceImpl implements EventService {
         dto.startAt() == null ? e.getStartAt() : dto.startAt(),
         dto.endAt() == null ? e.getEndAt() : dto.endAt());
 
+    boolean reminderOccurrenceChanged = (dto.startAt() != null
+        && !dto.startAt().equals(e.getStartAt()))
+        || (dto.reminderMinutesBefore() != null
+        && effectiveReminderMinutes(dto.reminderMinutesBefore())
+        != effectiveReminderMinutes(e.getReminderMinutesBefore()));
     if (dto.title() != null && !dto.title().isBlank()) {
       e.setTitle(dto.title());
     }
@@ -97,6 +115,12 @@ public class EventServiceImpl implements EventService {
     e.setEndAt(window.end());
     if (dto.timezone() != null && !dto.timezone().isBlank()) {
       e.setTimezone(dto.timezone());
+    }
+    if (dto.reminderMinutesBefore() != null) {
+      e.setReminderMinutesBefore(dto.reminderMinutesBefore());
+    }
+    if (reminderOccurrenceChanged) {
+      e.setReminderSentAt(null);
     }
 
     if (expectedVersion >= 0) {
@@ -192,6 +216,10 @@ public class EventServiceImpl implements EventService {
       return null;
     }
     return location.trim();
+  }
+
+  private int effectiveReminderMinutes(Integer reminderMinutesBefore) {
+    return reminderMinutesBefore == null ? 30 : reminderMinutesBefore;
   }
 
   private CalendarTimeWindow queryWindow(OffsetDateTime start, OffsetDateTime end) {

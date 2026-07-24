@@ -11,6 +11,7 @@ import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
 import io.backend.lined.lobby.service.LobbyWritePolicy;
+import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesDto;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesUpdateDto;
 import io.backend.lined.notification.api.NotificationDto;
@@ -155,6 +156,56 @@ class NotificationServiceImplTest {
     assertThat(captor.getValue().getType()).isEqualTo(
         io.backend.lined.notification.domain.NotificationType.SHARED_EVENT_CREATED);
     assertThat(captor.getValue().getEventId()).isEqualTo(77L);
+  }
+
+  @Test
+  void notifyEventReminder_queuesNotificationWhenGlobalAndLobbyPreferencesAllow() {
+    allowSharedEventNotifications();
+    var event = EventEntity.builder().id(77L).title("Dinner").lobby(lobby).owner(actor).build();
+    ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+
+    notificationService.notifyEventReminder(recipient, event);
+
+    verify(notificationRepo).save(captor.capture());
+    assertThat(captor.getValue().getType()).isEqualTo(
+        io.backend.lined.notification.domain.NotificationType.EVENT_REMINDER);
+    assertThat(captor.getValue().getEventId()).isEqualTo(77L);
+  }
+
+  @Test
+  void notifyEventReminder_skipsWhenGlobalReminderPreferenceIsDisabled() {
+    var global = UserNotificationPreferenceEntity.builder().eventRemindersEnabled(false).build();
+    var event = EventEntity.builder().id(77L).title("Dinner").lobby(lobby).owner(actor).build();
+    when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.of(global));
+
+    notificationService.notifyEventReminder(recipient, event);
+
+    verify(notificationRepo, never()).save(any());
+  }
+
+  @Test
+  void notifyTaskDue_usesTaskUpdateGate() {
+    var local = LobbyNotificationPreferenceEntity.builder().taskUpdatesEnabled(false).build();
+    when(userPreferenceRepo.findByUserId(recipient.getId())).thenReturn(Optional.empty());
+    when(lobbyPreferenceRepo.findByUserIdAndLobbyId(recipient.getId(), lobby.getId()))
+        .thenReturn(Optional.of(local));
+
+    notificationService.notifyTaskDue(recipient, task);
+
+    verify(notificationRepo, never()).save(any());
+  }
+
+  @Test
+  void notifyTaskDue_queuesDueNotificationWhenPreferencesAllow() {
+    allowTaskNotifications();
+    ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+
+    notificationService.notifyTaskDue(recipient, task);
+
+    verify(notificationRepo).save(captor.capture());
+    assertThat(captor.getValue().getType()).isEqualTo(
+        io.backend.lined.notification.domain.NotificationType.TASK_DUE);
+    assertThat(captor.getValue().getTaskId()).isEqualTo(55L);
   }
 
   @Test

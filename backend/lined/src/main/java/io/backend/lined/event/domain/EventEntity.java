@@ -23,6 +23,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Persisted calendar event and its scheduler-owned reminder state.
+ *
+ * <p>For example, a dinner can retain {@code reminderMinutesBefore = 45} and a non-null
+ * {@code reminderSentAt} after its notification is emitted; rescheduling it clears the marker so
+ * the revised occurrence becomes eligible again.</p>
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -61,6 +68,12 @@ public class EventEntity {
 
   @Column(nullable = false, length = 64)
   private String timezone;
+
+  @Column
+  private Integer reminderMinutesBefore;
+
+  @Column
+  private OffsetDateTime reminderSentAt;
 
   @Column(name = "ics_uid", length = 255)
   private String icsUid;

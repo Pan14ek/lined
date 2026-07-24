@@ -1,6 +1,7 @@
 package io.backend.lined.notification.service;
 
 import io.backend.lined.lobby.domain.LobbyEntity;
+import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesDto;
 import io.backend.lined.notification.api.LobbyNotificationPreferencesUpdateDto;
 import io.backend.lined.notification.api.NotificationDto;
@@ -43,4 +44,27 @@ public interface NotificationService {
 
   void notifySharedEventCreated(UserEntity recipient, UserEntity actor, Long eventId,
                                 LobbyEntity lobby, String eventTitle);
+
+  /**
+   * Emits one preference-gated reminder for an event recipient.
+   *
+   * <p>For example, a current member receives an {@code EVENT_REMINDER} inbox entry for a shared
+   * dinner, while a member with either reminders or new-event notifications disabled receives no
+   * entry.</p>
+   *
+   * @param recipient current owner or member receiving the reminder
+   * @param event event beginning within its effective reminder window
+   */
+  void notifyEventReminder(UserEntity recipient, EventEntity event);
+
+  /**
+   * Emits one preference-gated reminder for a task due today.
+   *
+   * <p>For example, an assigned grocery task creates a {@code TASK_DUE} inbox entry at 08:00 UTC
+   * when task updates and global reminders are enabled.</p>
+   *
+   * @param recipient task assignee, or creator when the task has no assignee
+   * @param task non-completed task whose due date is today
+   */
+  void notifyTaskDue(UserEntity recipient, TaskEntity task);
 }

@@ -56,7 +56,7 @@ class EventControllerTest {
     end = start.plusHours(1);
     sampleEvent = new EventDto(9001L, 0L, "Dinner together", "Whole Foods Market", true, start,
         end,
-        "Europe/Kyiv", 101L, 42L, OffsetDateTime.now());
+        "Europe/Kyiv", null, 101L, 42L, OffsetDateTime.now());
     createDto = new EventCreateDto("Dinner together", "Whole Foods Market", true, start, end,
         "Europe/Kyiv", 101L);
     updateDto = new EventUpdateDto("Late dinner", null, null, null, null, null);
