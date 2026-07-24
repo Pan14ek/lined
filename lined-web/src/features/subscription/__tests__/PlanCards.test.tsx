@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
@@ -12,7 +12,14 @@ describe('PlanCards', () => {
   it('shows a loading skeleton while loading', () => {
     expect.assertions(1);
     renderWithProviders(
-      <PlanCards userId={1} plans={undefined} isLoading currentPlanId={undefined} />,
+      <PlanCards
+        userId={1}
+        plans={undefined}
+        isLoading
+        isError={false}
+        onRetry={vi.fn()}
+        currentPlanId={undefined}
+      />,
     );
 
     expect(screen.getByTestId('plan-cards-loading')).toBeInTheDocument();
@@ -21,7 +28,14 @@ describe('PlanCards', () => {
   it('renders every plan and highlights/disables the current one', () => {
     expect.assertions(4);
     renderWithProviders(
-      <PlanCards userId={1} plans={MOCK_PLANS} isLoading={false} currentPlanId={2} />,
+      <PlanCards
+        userId={1}
+        plans={MOCK_PLANS}
+        isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
+        currentPlanId={2}
+      />,
     );
 
     expect(screen.getByText('CURRENT')).toBeInTheDocument();
@@ -53,7 +67,14 @@ describe('PlanCards', () => {
     );
     const user = userEvent.setup();
     renderWithProviders(
-      <PlanCards userId={7} plans={MOCK_PLANS} isLoading={false} currentPlanId={undefined} />,
+      <PlanCards
+        userId={7}
+        plans={MOCK_PLANS}
+        isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
+        currentPlanId={undefined}
+      />,
     );
 
     await user.click(screen.getAllByRole('button', { name: 'Subscribe' })[0]!);
@@ -70,7 +91,14 @@ describe('PlanCards', () => {
     );
     const user = userEvent.setup();
     renderWithProviders(
-      <PlanCards userId={1} plans={MOCK_PLANS} isLoading={false} currentPlanId={undefined} />,
+      <PlanCards
+        userId={1}
+        plans={MOCK_PLANS}
+        isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
+        currentPlanId={undefined}
+      />,
     );
 
     await user.click(screen.getAllByRole('button', { name: 'Subscribe' })[0]!);
@@ -78,5 +106,26 @@ describe('PlanCards', () => {
     expect(
       await screen.findByText('You already have an active plan — cancel it first to switch'),
     ).toBeInTheDocument();
+  });
+
+  it('shows an error state with a working retry action when plans fail to load', async () => {
+    expect.assertions(2);
+    const onRetry = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <PlanCards
+        userId={1}
+        plans={undefined}
+        isLoading={false}
+        isError
+        onRetry={onRetry}
+        currentPlanId={undefined}
+      />,
+    );
+
+    expect(screen.getByText("Couldn't load available plans")).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,12 +4,17 @@ import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice } from '@/features/subscription/lib/subscriptionUtils';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 
 interface PlanCardsProps {
   userId: number;
   plans: PlanDto[] | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   currentPlanId: number | undefined;
 }
 
@@ -24,14 +29,26 @@ const getSubscribeErrorMessage = (error: unknown, t: TFunction<'subscription'>):
 const PlanCardsSkeleton = () => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="plan-cards-loading">
     {Array.from({ length: 3 }, (_, i) => (
-      <div key={i} className="h-40 animate-pulse rounded-xl bg-surface" />
+      <SkeletonCard key={i} className="h-40" />
     ))}
   </div>
 );
 
-export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCardsProps) => {
+export const PlanCards = ({
+  userId,
+  plans,
+  isLoading,
+  isError,
+  onRetry,
+  currentPlanId,
+}: PlanCardsProps) => {
   const { t } = useTranslation('subscription');
   const startSubscription = useStartSubscription(userId);
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return <LoadErrorState onRetry={onRetry} message={t('planCards.errors.loadFailed')} />;
+  }
 
   if (isLoading) return <PlanCardsSkeleton />;
 

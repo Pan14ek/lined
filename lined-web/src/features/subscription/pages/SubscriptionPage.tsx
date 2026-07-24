@@ -11,9 +11,24 @@ export const SubscriptionPage = () => {
   const { data: user } = useCurrentUser();
   const userId = user?.id;
 
-  const { data: plans, isLoading: isPlansLoading } = usePlans();
-  const { data: activeSubscription, isLoading: isActiveLoading } = useActivePlan(userId);
-  const { data: history, isLoading: isHistoryLoading } = useSubscriptionHistory(userId);
+  const {
+    data: plans,
+    isLoading: isPlansLoading,
+    isError: isPlansError,
+    refetch: refetchPlans,
+  } = usePlans();
+  const {
+    data: activeSubscription,
+    isLoading: isActiveLoading,
+    isError: isActiveError,
+    refetch: refetchActive,
+  } = useActivePlan(userId);
+  const {
+    data: history,
+    isLoading: isHistoryLoading,
+    isError: isHistoryError,
+    refetch: refetchHistory,
+  } = useSubscriptionHistory(userId);
 
   const planPriceById = useMemo(
     () => new Map((plans ?? []).map((plan) => [plan.id, plan.priceUsd])),
@@ -30,6 +45,8 @@ export const SubscriptionPage = () => {
         activeSubscription={activeSubscription}
         activePlanDetails={activePlanDetails}
         isLoading={isActiveLoading}
+        isError={isActiveError}
+        onRetry={() => void refetchActive()}
       />
 
       <div className="mb-2 mt-2 text-sm font-bold text-text-primary">{t('page.availablePlans')}</div>
@@ -38,6 +55,8 @@ export const SubscriptionPage = () => {
           userId={userId ?? 0}
           plans={plans}
           isLoading={isPlansLoading}
+          isError={isPlansError}
+          onRetry={() => void refetchPlans()}
           currentPlanId={activeSubscription?.planId}
         />
       </div>
@@ -45,6 +64,8 @@ export const SubscriptionPage = () => {
       <SubscriptionHistoryCard
         history={history}
         isLoading={isHistoryLoading}
+        isError={isHistoryError}
+        onRetry={() => void refetchHistory()}
         planPriceById={planPriceById}
       />
     </div>

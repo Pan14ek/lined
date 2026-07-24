@@ -16,7 +16,8 @@
     },
     "errors": {
       "notFound": "You have no active subscription to cancel",
-      "generic": "Could not cancel your subscription — please try again"
+      "generic": "Could not cancel your subscription — please try again",
+      "loadFailed": "Couldn't load your current plan"
     }
   },
   "planCards": {
@@ -26,7 +27,8 @@
     "subscribe": "Subscribe",
     "errors": {
       "conflict": "You already have an active plan — cancel it first to switch",
-      "generic": "Could not start your subscription — please try again"
+      "generic": "Could not start your subscription — please try again",
+      "loadFailed": "Couldn't load available plans"
     }
   },
   "history": {
@@ -35,6 +37,7 @@
     "present": "present",
     "statusActive": "ACTIVE",
     "statusEnded": "ENDED",
-    "empty": "No subscription history yet."
+    "empty": "No subscription history yet.",
+    "loadError": "Couldn't load your subscription history"
   }
 }

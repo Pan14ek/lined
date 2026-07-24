@@ -6,6 +6,9 @@ import { useCancelSubscription } from '@/features/subscription/hooks/useSubscrip
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/subscriptionUtils';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '@/features/settings/SettingsCard';
 
 interface CurrentPlanCardProps {
@@ -13,6 +16,8 @@ interface CurrentPlanCardProps {
   activeSubscription: SubscriptionDto | null | undefined;
   activePlanDetails: PlanDto | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
 }
 
 const getCancelErrorMessage = (error: unknown, t: TFunction<'subscription'>): string => {
@@ -28,15 +33,26 @@ export const CurrentPlanCard = ({
   activeSubscription,
   activePlanDetails,
   isLoading,
+  isError,
+  onRetry,
 }: CurrentPlanCardProps) => {
   const { t } = useTranslation('subscription');
   const cancelSubscription = useCancelSubscription(userId);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return (
+      <SettingsCard id="current-plan" title={t('currentPlan.title')}>
+        <LoadErrorState onRetry={onRetry} message={t('currentPlan.errors.loadFailed')} />
+      </SettingsCard>
+    );
+  }
 
   if (isLoading) {
     return (
       <SettingsCard id="current-plan" title={t('currentPlan.title')}>
-        <div className="h-16 animate-pulse rounded-lg bg-input-bg" data-testid="current-plan-loading" />
+        <Skeleton className="h-16 rounded-lg" data-testid="current-plan-loading" />
       </SettingsCard>
     );
   }
