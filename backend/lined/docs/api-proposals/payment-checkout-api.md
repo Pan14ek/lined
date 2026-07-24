@@ -1,7 +1,14 @@
-# API Proposal — Payment Checkout (Hosted Provider)
+# Superseded — Payment Checkout (Hosted Provider)
+
+> Superseded by the provider-neutral billing delivery plan in
+> [`docs/billing/BILLING_TASKS.md`](../billing/BILLING_TASKS.md), especially BE-07 through BE-11.
+> That sequence replaces the removed client-controlled `/api/subscriptions` model with catalog,
+> provider-port, webhook-inbox, checkout, and lifecycle slices. Do not implement this proposal.
+
+This document is retained only as historical context for the original hosted-checkout rationale.
 
 **Branch:** `feature/payment-checkout-api`
-**Status:** Proposed
+**Status:** Superseded by `docs/billing/BILLING_TASKS.md`
 **Motivation:** The subscription domain is complete (`GET /api/plans`,
 `POST /api/subscriptions`, cancel/active/history) but entirely unpaid —
 `POST /api/subscriptions` activates any plan for free. Before Premium can
