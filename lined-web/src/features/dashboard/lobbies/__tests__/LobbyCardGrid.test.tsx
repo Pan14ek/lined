@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LobbyCardGrid } from '../LobbyCardGrid';
@@ -20,6 +20,7 @@ describe('LobbyCardGrid', () => {
         myTasks={MOCK_TASKS}
         isLoading={false}
         isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -39,6 +40,7 @@ describe('LobbyCardGrid', () => {
         myTasks={undefined}
         isLoading={true}
         isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -55,6 +57,7 @@ describe('LobbyCardGrid', () => {
         myTasks={[]}
         isLoading={false}
         isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -64,8 +67,10 @@ describe('LobbyCardGrid', () => {
     expect(useCreateMenuStore.getState().isCreateLobbyOpen).toBe(true);
   });
 
-  it('shows an inline error message when lobbies fail to load', () => {
-    expect.assertions(1);
+  it('shows an inline error message with a working retry action when lobbies fail to load', async () => {
+    expect.assertions(2);
+    const onRetry = vi.fn();
+    const user = userEvent.setup();
     renderWithProviders(
       <LobbyCardGrid
         lobbies={undefined}
@@ -73,9 +78,13 @@ describe('LobbyCardGrid', () => {
         myTasks={undefined}
         isLoading={false}
         isError={true}
+        onRetry={onRetry}
       />,
     );
 
     expect(screen.getByText(/couldn't load your lobbies/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,6 +4,9 @@ import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto } from '@/features/tasks/model';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { EmptyState } from '@/components/EmptyState';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { LobbyCard } from './LobbyCard';
 
 interface LobbyCardGridProps {
@@ -12,6 +15,7 @@ interface LobbyCardGridProps {
   myTasks: TaskDto[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
 }
 
 export const LobbyCardGrid = ({
@@ -20,9 +24,11 @@ export const LobbyCardGrid = ({
   myTasks,
   isLoading,
   isError,
+  onRetry,
 }: LobbyCardGridProps) => {
   const { t } = useTranslation('dashboard');
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
+  const isStalled = useQueryStall(isLoading);
 
   return (
     <section>
@@ -31,16 +37,16 @@ export const LobbyCardGrid = ({
         <span className="text-xs font-medium text-brand-green">{t('lobbies.seeAll')}</span>
       </div>
 
-      {isLoading && (
+      {isLoading && !isStalled && (
         <div className="flex gap-4" data-testid="lobby-cards-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 w-56 flex-shrink-0 animate-pulse rounded-xl bg-surface" />
+            <SkeletonCard key={i} className="w-56 flex-shrink-0" />
           ))}
         </div>
       )}
 
-      {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">{t('lobbies.loadError')}</p>
+      {(isStalled || (!isLoading && isError)) && (
+        <LoadErrorState onRetry={onRetry} message={t('lobbies.loadError')} />
       )}
 
       {!isLoading && !isError && lobbies?.length === 0 && (

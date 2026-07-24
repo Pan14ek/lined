@@ -10,7 +10,8 @@
     "deleteError": {
       "alreadyDeleted": "This event was already deleted",
       "generic": "Could not delete this event — please try again"
-    }
+    },
+    "loadError": "Couldn't load your calendar"
   },
   "topBar": {
     "previousMonth": "Previous month",

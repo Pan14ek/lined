@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { http, HttpResponse } from 'msw';
+import { act } from '@testing-library/react';
+import { http, HttpResponse, delay } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { CalendarPage } from '../CalendarPage';
@@ -176,6 +177,38 @@ describe('CalendarPage', () => {
     await user.click(screen.getByRole('button', { name: 'Create event' }));
 
     expect(useCalendarStore.getState().isCreateModalOpen).toBe(true);
+  });
+
+  it('shows a grid-shaped skeleton while events are loading', () => {
+    expect.assertions(1);
+    renderWithProviders(<CalendarPage />);
+
+    expect(screen.getByTestId('calendar-loading')).toBeInTheDocument();
+  });
+
+  it('falls back to the retry state after a 10s stall instead of shimmering forever', async () => {
+    expect.assertions(2);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    server.use(
+      http.get(`${BASE}/calendar/events`, async () => {
+        await delay('infinite');
+        return HttpResponse.json([]);
+      }),
+    );
+
+    try {
+      renderWithProviders(<CalendarPage />);
+
+      expect(screen.getByTestId('calendar-loading')).toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('does not show the empty-week state when events exist', async () => {
