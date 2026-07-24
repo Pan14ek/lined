@@ -31,6 +31,14 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+/**
+ * PostgreSQL regression proof that a reset token cannot change two passwords concurrently.
+ *
+ * <p>For example, two workers begin independent transactions, wait at the same barrier, and then
+ * submit one raw token with different replacement passwords. The expected result is one success,
+ * one generic invalid-token failure, one consumed row, and a stored password matching only the
+ * winning worker.</p>
+ */
 @SpringBootTest
 @Testcontainers(disabledWithoutDocker = true)
 class PasswordResetServiceConcurrencyTest {
@@ -84,6 +92,15 @@ class PasswordResetServiceConcurrencyTest {
     truncateTables();
   }
 
+  /**
+   * Proves the conditional claim has exactly one winner under concurrent PostgreSQL transactions.
+   *
+   * <p>For example, {@code FirstResetPassword!} and {@code SecondResetPassword!} race to redeem
+   * {@link #RAW_TOKEN}; the final assertion derives the winning attempt and verifies that only its
+   * encoded password is persisted.</p>
+   *
+   * @throws Exception when the executor or latch cannot complete within its bounded timeout
+   */
   @Test
   void reset_allowsExactlyOneConcurrentRedemptionOfTheSameToken() throws Exception {
     ExecutorService executor = Executors.newFixedThreadPool(2);
