@@ -43,6 +43,20 @@ public class EntitlementService {
    */
   public PlanEntitlements getEntitlements(Long billingAccountId) {
     PlanCode planCode = effectivePlanResolver.resolve(billingAccountId, Instant.now());
+    return getEntitlements(planCode);
+  }
+
+  /**
+   * Returns the matrix for an already resolved effective plan.
+   *
+   * <p>This overload lets {@code GET /api/billing/me} resolve a plan once and use the exact same
+   * result for both the exposed plan code and its limits. For example,
+   * {@code getEntitlements(PlanCode.FREE).lobbyMembersMax()} returns {@code 4}.</p>
+   *
+   * @param planCode effective plan resolved for the current request
+   * @return immutable entitlement matrix for {@code planCode}
+   */
+  public PlanEntitlements getEntitlements(PlanCode planCode) {
     return ENTITLEMENTS_BY_PLAN.get(planCode);
   }
 }

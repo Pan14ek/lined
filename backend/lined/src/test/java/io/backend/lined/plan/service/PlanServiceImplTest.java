@@ -49,7 +49,7 @@ class PlanServiceImplTest {
         .createdAt(OffsetDateTime.now())
         .build();
 
-    planDto = new PlanDto(1L, "PRO_MONTHLY", new BigDecimal("9.99"), 30, planEntity.getCreatedAt());
+    planDto = new PlanDto(1L, "PRO_MONTHLY", planEntity.getCreatedAt());
   }
 
   /* =======================
@@ -121,8 +121,7 @@ class PlanServiceImplTest {
         .durationDays(30)
         .createdAt(OffsetDateTime.now())
         .build();
-    PlanDto secondDto =
-        new PlanDto(2L, "BASIC_MONTHLY", new BigDecimal("4.99"), 30, second.getCreatedAt());
+    PlanDto secondDto = new PlanDto(2L, "BASIC_MONTHLY", second.getCreatedAt());
 
     when(repository.findAll()).thenReturn(List.of(planEntity, second));
     when(mapper.toDto(planEntity)).thenReturn(planDto);

@@ -462,84 +462,36 @@ Return one plan by unique plan name.
 
 Response: `200 OK` with `PlanDto`.
 
-### `POST /api/plans`
+Plan reads are temporary legacy compatibility endpoints. They expose only identifiers, names, and
+creation timestamps; pricing and duration are not returned. Plan writes are not available.
 
-Create a plan.
+## Billing
+
+### `GET /api/billing/me`
+
+Return the current caller's billing state. The endpoint requires `X-User-Id` and derives the
+personal billing account solely from that authenticated MVP principal. It accepts no `userId`
+path, query, or body field. A missing or invalid header returns `400 Bad Request`.
+
+```http
+GET /api/billing/me
+X-User-Id: 17
+```
 
 ```json
 {
-  "name": "PRO_MONTHLY",
-  "priceUsd": 9.99,
-  "durationDays": 30
+  "billingAccountId": 31,
+  "effectivePlan": "FREE",
+  "subscription": null,
+  "limits": {
+    "lobbiesMax": 1,
+    "lobbyMembersMax": 4
+  }
 }
 ```
 
-Response: `201 Created` with `PlanDto`.
-
-### `PUT /api/plans/{id}`
-
-Update a plan.
-
-Send the current plan version as `If-Match: "{version}"`; plan deletion requires the same header.
-
-Response: `200 OK` with `PlanDto`.
-
-### `DELETE /api/plans/{id}`
-
-Delete a plan.
-
-Response: `204 No Content`.
-
-## Subscriptions
-
-### `POST /api/subscriptions`
-
-Start a subscription for a user.
-
-```json
-{
-  "userId": 1,
-  "planId": 2,
-  "startDate": null,
-  "endDate": null,
-  "active": true
-}
-```
-
-Response: `201 Created` with `SubscriptionDto`.
-
-### `POST /api/subscriptions/{userId}/cancel-active`
-
-Cancel the current active subscription for one user.
-
-Response: `200 OK` with `SubscriptionDto`.
-
-### `GET /api/subscriptions/{userId}/active`
-
-Return the user's active subscription if one exists.
-
-Response: `200 OK` with `SubscriptionDto`, or `404` when absent.
-
-### `GET /api/subscriptions/{userId}/history`
-
-Return the user's subscription history ordered by service rules.
-
-Response: `200 OK` with `List<SubscriptionDto>`.
-
-Subscription responses use this shape:
-
-```json
-{
-  "id": 10,
-  "userId": 1,
-  "planId": 2,
-  "planName": "PRO_MONTHLY",
-  "startDate": "2025-01-01T10:00:00Z",
-  "endDate": "2025-01-31T10:00:00Z",
-  "active": true,
-  "createdAt": "2025-01-01T10:00:00Z"
-}
-```
+`subscription` remains `null` until provider-backed subscription lifecycle support is introduced.
+The removed `/api/subscriptions` routes and plan write routes return `404 Not Found`.
 
 ## Notifications
 
@@ -615,10 +567,6 @@ The following endpoints are not implemented by the current controllers:
 
 - `GET /api/users/me`
   See [docs/api-proposals/users-me-endpoint.md](api-proposals/users-me-endpoint.md).
-- `POST /api/plans/{planId}/subscribe`
-  Use `POST /api/subscriptions` instead.
-- `POST /api/plans/{planId}/cancel`
-  Use `POST /api/subscriptions/{userId}/cancel-active` instead.
 - `POST /api/auth/refresh`
 - `POST /api/auth/register`
 - `POST /api/auth/logout`

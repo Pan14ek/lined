@@ -88,11 +88,19 @@ public class OpenApiConfig {
         .build();
   }
 
+  /**
+   * Publishes the authenticated billing-state endpoint as one OpenAPI group.
+   *
+   * <p>For example, the {@code billing} Swagger group includes {@code GET /api/billing/me} but
+   * deliberately excludes the retired {@code /api/subscriptions/**} routes.</p>
+   *
+   * @return OpenAPI group for the provider-neutral billing web API
+   */
   @Bean
-  public GroupedOpenApi subscriptionApi() {
+  public GroupedOpenApi billingApi() {
     return GroupedOpenApi.builder()
-        .group("subscriptions")
-        .pathsToMatch("/api/subscriptions/**")
+        .group("billing")
+        .pathsToMatch("/api/billing/**")
         .build();
   }
 
