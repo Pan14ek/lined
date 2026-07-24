@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { UserPageDto } from '@/features/users/model';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { SearchResultRow } from './SearchResultRow';
 
 interface SearchResultsListProps {
@@ -32,7 +33,7 @@ export const SearchResultsList = ({
     return (
       <div className="flex flex-col gap-2" data-testid="add-member-search-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-hover" />
+          <SkeletonRow key={i} className="h-12 bg-surface-hover" />
         ))}
       </div>
     );

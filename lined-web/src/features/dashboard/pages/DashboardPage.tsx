@@ -19,10 +19,25 @@ import { useCreateMenuStore } from '@/store/createMenu';
 export const DashboardPage = () => {
   const { t } = useTranslation('dashboard');
   const { data: user } = useCurrentUser();
-  const { data: lobbies, isLoading: lobbiesLoading, isError: lobbiesError } = useMyLobbies();
+  const {
+    data: lobbies,
+    isLoading: lobbiesLoading,
+    isError: lobbiesError,
+    refetch: refetchLobbies,
+  } = useMyLobbies();
   const { data: invites, isLoading: invitesLoading, isError: invitesError } = useMyInvites();
-  const { data: events, isLoading: eventsLoading, isError: eventsError } = useUpcomingEvents();
-  const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    isError: eventsError,
+    refetch: refetchEvents,
+  } = useUpcomingEvents();
+  const {
+    data: tasks,
+    isLoading: tasksLoading,
+    isError: tasksError,
+    refetch: refetchTasks,
+  } = useMyTasks();
   const { slot, isLoading: slotLoading } = useFreeSlotBanner();
   const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
 
@@ -59,6 +74,7 @@ export const DashboardPage = () => {
             myTasks={tasks}
             isLoading={lobbiesLoading}
             isError={lobbiesError}
+            onRetry={() => void refetchLobbies()}
           />
         )}
 
@@ -68,10 +84,16 @@ export const DashboardPage = () => {
             lobbies={lobbies}
             isLoading={eventsLoading}
             isError={eventsError}
+            onRetry={() => void refetchEvents()}
           />
 
           <div>
-            <MyTasksList tasks={tasks} isLoading={tasksLoading} isError={tasksError} />
+            <MyTasksList
+              tasks={tasks}
+              isLoading={tasksLoading}
+              isError={tasksError}
+              onRetry={() => void refetchTasks()}
+            />
             <FreeSlotBanner
               slot={slot}
               isLoading={slotLoading}

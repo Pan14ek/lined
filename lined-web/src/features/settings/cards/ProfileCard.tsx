@@ -4,12 +4,18 @@ import type { TFunction } from 'i18next';
 import type { UserDto } from '@/features/users/model';
 import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
+import { Button } from '@/components/Button';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '../SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '../SettingsRow';
 
 interface ProfileCardProps {
   user: UserDto | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
 }
 
 const getProfileErrorMessage = (error: unknown, t: TFunction<['settings', 'common']>): string => {
@@ -23,12 +29,13 @@ const getProfileErrorMessage = (error: unknown, t: TFunction<['settings', 'commo
   );
 }
 
-export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
+export const ProfileCard = ({ user, isLoading, isError, onRetry }: ProfileCardProps) => {
   const { t } = useTranslation(['settings', 'common']);
   const updateUser = useUpdateUser(user?.id ?? 0);
   const [loadedUserId, setLoadedUserId] = useState<number | undefined>(undefined);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const isStalled = useQueryStall(isLoading);
 
   // Seed the form once the user loads (render-time state adjustment — see
   // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
@@ -38,13 +45,21 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
     setEmail(user.email);
   }
 
+  if (isStalled || (!isLoading && isError)) {
+    return (
+      <SettingsCard id="profile" title={t('profile.title')}>
+        <LoadErrorState onRetry={onRetry} message={t('profile.loadError')} />
+      </SettingsCard>
+    );
+  }
+
   if (isLoading || !user) {
     return (
       <SettingsCard id="profile" title={t('profile.title')}>
         <div className="space-y-3 py-4" data-testid="profile-card-loading">
-          <div className="h-16 w-16 animate-pulse rounded-full bg-bg" />
-          <div className="h-10 animate-pulse rounded-lg bg-bg" />
-          <div className="h-10 animate-pulse rounded-lg bg-bg" />
+          <Skeleton className="size-16 rounded-full" />
+          <Skeleton className="h-10 rounded-lg" />
+          <Skeleton className="h-10 rounded-lg" />
         </div>
       </SettingsCard>
     );
@@ -66,14 +81,15 @@ export const ProfileCard = ({ user, isLoading }: ProfileCardProps) => {
       id="profile"
       title={t('profile.title')}
       footer={
-        <button
+        <Button
           type="submit"
           form="profile-form"
-          disabled={!isDirty || updateUser.isPending}
-          className="h-[38px] rounded-lg bg-brand-green px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
+          disabled={!isDirty}
+          pending={updateUser.isPending}
+          className="h-[38px] px-5"
         >
-          {updateUser.isPending ? t('profile.saving') : t('profile.saveChanges')}
-        </button>
+          {t('profile.saveChanges')}
+        </Button>
       }
     >
       <div className="flex items-center gap-4 border-b border-border py-5">

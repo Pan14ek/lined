@@ -27,6 +27,20 @@ export const getErrorStatus = (error: unknown): number | undefined => {
 export const mockDelay = (ms = 250): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Opt-in artificial latency for MSW GET handlers, so skeletons are visible
+ * in dev. Controlled by VITE_MOCK_DELAY_MS (see .env.example) — a no-op
+ * unless set. Hard-disabled under Vitest regardless of that setting
+ * (`import.meta.env.VITEST`), since a developer's local delay must never
+ * slow down the test suite — Vite's dotenv loader does *not* skip
+ * `.env.local` in test mode, so this can't rely on that alone.
+ */
+export const mockNetworkDelay = (): Promise<void> => {
+  if (import.meta.env.VITEST) return Promise.resolve();
+  const ms = Number(import.meta.env.VITE_MOCK_DELAY_MS ?? 0);
+  return ms > 0 ? mockDelay(ms) : Promise.resolve();
+}
+
 export const api = ky.create({
     prefixUrl: API_BASE_URL,
     hooks: {

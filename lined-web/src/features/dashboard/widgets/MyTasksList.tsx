@@ -5,6 +5,9 @@ import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
 import { EmptyState } from '@/components/EmptyState';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { cn } from '@/lib/utils';
 
@@ -18,11 +21,13 @@ interface MyTasksListProps {
   tasks: TaskDto[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
 }
 
-export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => {
+export const MyTasksList = ({ tasks, isLoading, isError, onRetry }: MyTasksListProps) => {
   const { t } = useTranslation('dashboard');
   const sorted = tasks ? sortTasks(tasks) : [];
+  const isStalled = useQueryStall(isLoading);
 
   return (
     <section>
@@ -33,16 +38,16 @@ export const MyTasksList = ({ tasks, isLoading, isError }: MyTasksListProps) => 
         </Link>
       </div>
 
-      {isLoading && (
+      {isLoading && !isStalled && (
         <div className="flex flex-col gap-2" data-testid="my-tasks-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded-lg bg-surface" />
+            <SkeletonRow key={i} className="h-12" />
           ))}
         </div>
       )}
 
-      {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">{t('tasks.loadError')}</p>
+      {(isStalled || (!isLoading && isError)) && (
+        <LoadErrorState onRetry={onRetry} message={t('tasks.loadError')} />
       )}
 
       {!isLoading && !isError && tasks?.length === 0 && (

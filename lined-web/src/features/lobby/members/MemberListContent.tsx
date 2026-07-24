@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { UserDto } from '@/features/users/model';
 import type { useUsers } from '@/features/users/hooks/useUsers';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { MemberCard } from './MemberCard';
 
 interface MemberListContentProps {
@@ -27,7 +28,7 @@ export const MemberListContent = ({
     return (
       <div className="flex flex-col gap-2" data-testid="lobby-members-loading">
         {[0, 1].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-lg bg-surface" />
+          <SkeletonCard key={i} className="h-20" />
         ))}
       </div>
     );

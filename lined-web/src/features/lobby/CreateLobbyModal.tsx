@@ -6,6 +6,7 @@ import type { TFunction } from 'i18next';
 import type { LobbyType } from '@/features/lobby/model';
 import { useCreateLobby } from '@/features/lobby/hooks/useLobbies';
 import { LobbyTypePicker } from '@/features/lobby/settings/LobbyTypePicker';
+import { Button } from '@/components/Button';
 import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { getApiErrorMessage } from '@/lib/apiErrors';
@@ -95,20 +96,21 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-2.5 px-6 pb-5">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={onClose}
-              className="h-10 rounded-lg border border-border bg-surface px-4 text-sm text-text-secondary hover:bg-surface-hover"
+              className="px-4"
             >
               {t('createModal.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={createLobby.isPending || !name.trim()}
-              className="h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors"
+              disabled={!name.trim()}
+              pending={createLobby.isPending}
+              className="px-6"
             >
-              {createLobby.isPending ? t('createModal.creating') : t('createModal.submit')}
-            </button>
+              {t('createModal.submit')}
+            </Button>
           </div>
         </form>
       </div>

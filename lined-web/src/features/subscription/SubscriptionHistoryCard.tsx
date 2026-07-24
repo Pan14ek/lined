@@ -2,31 +2,41 @@ import { useTranslation } from 'react-i18next';
 import type { SubscriptionDto } from '@/features/subscription/model';
 import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/subscriptionUtils';
 import { SettingsCard } from '@/features/settings/SettingsCard';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 
 interface SubscriptionHistoryCardProps {
   history: SubscriptionDto[] | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   planPriceById: Map<number, number>;
 }
 
 const SubscriptionHistorySkeleton = () => (
   <div className="space-y-2 py-3.5" data-testid="subscription-history-loading">
-    <div className="h-10 animate-pulse rounded-lg bg-input-bg" />
-    <div className="h-10 animate-pulse rounded-lg bg-input-bg" />
+    <SkeletonRow className="h-10" />
+    <SkeletonRow className="h-10" />
   </div>
 );
 
 export const SubscriptionHistoryCard = ({
   history,
   isLoading,
+  isError,
+  onRetry,
   planPriceById,
 }: SubscriptionHistoryCardProps) => {
   const { t } = useTranslation('subscription');
+  const isStalled = useQueryStall(isLoading);
 
   return (
     <SettingsCard id="subscription-history" title={t('history.title')}>
-      {isLoading ? (
+      {isStalled || (!isLoading && isError) ? (
+        <LoadErrorState onRetry={onRetry} message={t('history.loadError')} />
+      ) : isLoading ? (
         <SubscriptionHistorySkeleton />
       ) : history && history.length > 0 ? (
         history.map((sub) => {

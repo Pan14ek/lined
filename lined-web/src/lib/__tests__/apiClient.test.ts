@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { HTTPError } from 'ky';
-import { MockHttpError, getErrorStatus, mockDelay, toSearchParams } from '../apiClient';
+import { MockHttpError, getErrorStatus, mockDelay, mockNetworkDelay, toSearchParams } from '../apiClient';
 import { HTTP_STATUS } from '@/test/httpStatus';
 
 describe('MockHttpError', () => {
@@ -52,6 +52,49 @@ describe('mockDelay', () => {
     await mockDelay(10);
 
     expect(Date.now() - start).toBeGreaterThanOrEqual(9);
+  });
+});
+
+describe('mockNetworkDelay', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('resolves immediately when VITE_MOCK_DELAY_MS is unset (the default test-mode behavior)', async () => {
+    expect.assertions(1);
+    const start = Date.now();
+    await mockNetworkDelay();
+
+    expect(Date.now() - start).toBeLessThan(9);
+  });
+
+  it('stays instant under Vitest even when VITE_MOCK_DELAY_MS is set, so a developer\'s local .env.local setting can never slow down the test suite', async () => {
+    expect.assertions(1);
+    vi.stubEnv('VITE_MOCK_DELAY_MS', '50');
+    const start = Date.now();
+    await mockNetworkDelay();
+
+    expect(Date.now() - start).toBeLessThan(9);
+  });
+
+  it('resolves after roughly VITE_MOCK_DELAY_MS outside of Vitest (simulated by stubbing VITEST away)', async () => {
+    expect.assertions(1);
+    vi.stubEnv('VITEST', '');
+    vi.stubEnv('VITE_MOCK_DELAY_MS', '10');
+    const start = Date.now();
+    await mockNetworkDelay();
+
+    expect(Date.now() - start).toBeGreaterThanOrEqual(9);
+  });
+
+  it('resolves immediately outside of Vitest when VITE_MOCK_DELAY_MS is set to 0', async () => {
+    expect.assertions(1);
+    vi.stubEnv('VITEST', '');
+    vi.stubEnv('VITE_MOCK_DELAY_MS', '0');
+    const start = Date.now();
+    await mockNetworkDelay();
+
+    expect(Date.now() - start).toBeLessThan(9);
   });
 });
 

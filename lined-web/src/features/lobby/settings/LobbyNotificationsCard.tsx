@@ -5,6 +5,9 @@ import {
   useUpdateLobbyNotificationPreferences,
 } from '@/features/notifications/hooks/useNotifications';
 import { ToggleRow } from '@/components/ToggleRow';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '@/features/settings/SettingsCard';
 
 const TOGGLES: {
@@ -22,15 +25,24 @@ interface LobbyNotificationsCardProps {
 
 export const LobbyNotificationsCard = ({ lobbyId }: LobbyNotificationsCardProps) => {
   const { t } = useTranslation('lobby');
-  const { data: preferences, isLoading } = useLobbyNotificationPreferences(lobbyId);
+  const { data: preferences, isLoading, isError, refetch } = useLobbyNotificationPreferences(lobbyId);
   const updatePreferences = useUpdateLobbyNotificationPreferences(lobbyId);
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return (
+      <SettingsCard id="lobby-notifications" title={t('settings.notifications.title')}>
+        <LoadErrorState onRetry={() => void refetch()} message={t('settings.notifications.loadError')} />
+      </SettingsCard>
+    );
+  }
 
   if (isLoading || !preferences) {
     return (
       <SettingsCard id="lobby-notifications" title={t('settings.notifications.title')}>
         <div className="space-y-3 py-4" data-testid="lobby-notifications-card-loading">
           {TOGGLES.map((toggle) => (
-            <div key={toggle.key} className="h-10 animate-pulse rounded-lg bg-bg" />
+            <SkeletonRow key={toggle.key} className="h-10" />
           ))}
         </div>
       </SettingsCard>

@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useQueryStall } from '@/hooks/useQueryStall';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { CalendarSkeleton } from '@/features/calendar/CalendarSkeleton';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
 import { CreateEventModal } from '@/features/calendar/events/CreateEventModal';
 import { EventDetailPanel } from '@/features/calendar/panels/EventDetailPanel';
@@ -69,9 +72,12 @@ export const CalendarPage = () => {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const dayWeekStart = getWeekStart(dayAnchor);
-  const { data: allWeekEvents = [] } = useWeekEvents(weekStart);
-  const { data: allMonthEvents = [] } = useMonthEvents(monthAnchor);
-  const { data: allDayWeekEvents = [] } = useWeekEvents(dayWeekStart);
+  const weekQuery = useWeekEvents(weekStart);
+  const monthQuery = useMonthEvents(monthAnchor);
+  const dayWeekQuery = useWeekEvents(dayWeekStart);
+  const allWeekEvents = weekQuery.data ?? [];
+  const allMonthEvents = monthQuery.data ?? [];
+  const allDayWeekEvents = dayWeekQuery.data ?? [];
   // Lobby-filter dropdown decluttering: same intent as Google/Outlook's
   // per-calendar checkboxes — hidden lobbies vanish from the grid entirely,
   // including free-slot detection (a hidden lobby's time isn't "free").
@@ -81,6 +87,8 @@ export const CalendarPage = () => {
     (e) => !hiddenLobbyIds.includes(e.lobbyId) && eventTouchesDay(e, dayAnchor),
   );
   const events = isPhone ? dayEvents : viewMode === 'month' ? monthEvents : weekEvents;
+  const activeQuery = isPhone ? dayWeekQuery : viewMode === 'month' ? monthQuery : weekQuery;
+  const isStalled = useQueryStall(activeQuery.isLoading);
   const { data: lobbies = [] } = useMyLobbies();
   const deleteEvent = useDeleteEvent();
   const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
@@ -163,18 +171,30 @@ export const CalendarPage = () => {
         />
       )}
 
-      {!isPhone && viewMode === 'week' && weekEvents.length === 0 && (
-        <WeekEmptyBanner
-          message={t('page.weekEmpty.message')}
-          action={{ label: t('page.weekEmpty.action'), onClick: openCreateModal }}
-        />
-      )}
+      {!isPhone &&
+        viewMode === 'week' &&
+        !activeQuery.isLoading &&
+        !isStalled &&
+        weekEvents.length === 0 && (
+          <WeekEmptyBanner
+            message={t('page.weekEmpty.message')}
+            action={{ label: t('page.weekEmpty.action'), onClick: openCreateModal }}
+          />
+        )}
 
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
         {isPhone && <DayChipStrip selectedDay={dayAnchor} onSelectDay={goToDay} />}
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          {isPhone ? (
+          {isStalled || (!activeQuery.isLoading && activeQuery.isError) ? (
+            <LoadErrorState
+              className="flex-1"
+              onRetry={() => void activeQuery.refetch()}
+              message={t('page.loadError')}
+            />
+          ) : activeQuery.isLoading ? (
+            <CalendarSkeleton dayCount={isPhone ? 1 : 7} testId="calendar-loading" />
+          ) : isPhone ? (
             <WeekGrid
               weekStart={dayWeekStart}
               days={[dayAnchor]}

@@ -1,14 +1,17 @@
 import { http, HttpResponse } from 'msw';
+import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_LOBBIES, MOCK_FREE_SLOT, MOCK_LOBBY_INVITES } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export const lobbyHandlers = [
-  http.get(`${BASE}/lobbies/mine`, () => {
+  http.get(`${BASE}/lobbies/mine`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(MOCK_LOBBIES);
   }),
 
-  http.get(`${BASE}/lobbies/:id`, ({ params }) => {
+  http.get(`${BASE}/lobbies/:id`, async ({ params }) => {
+    await mockNetworkDelay();
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
     if (!lobby) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(lobby);
@@ -47,7 +50,8 @@ export const lobbyHandlers = [
     return HttpResponse.json({ ...lobby, ...body });
   }),
 
-  http.get(`${BASE}/lobbies/:id/free-slots`, ({ params, request }) => {
+  http.get(`${BASE}/lobbies/:id/free-slots`, async ({ params, request }) => {
+    await mockNetworkDelay();
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
     if (!lobby) return new HttpResponse(null, { status: 404 });
     const url = new URL(request.url);
@@ -137,7 +141,8 @@ export const lobbyHandlers = [
     );
   }),
 
-  http.get(`${BASE}/lobbies/:lobbyId/invites`, ({ params }) => {
+  http.get(`${BASE}/lobbies/:lobbyId/invites`, async ({ params }) => {
+    await mockNetworkDelay();
     const lobbyId = Number(params['lobbyId']);
     return HttpResponse.json(
       MOCK_LOBBY_INVITES.filter((i) => i.lobbyId === lobbyId && i.status === 'PENDING'),
@@ -156,7 +161,8 @@ export const lobbyHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.get(`${BASE}/lobby-invites/mine`, () => {
+  http.get(`${BASE}/lobby-invites/mine`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(MOCK_LOBBY_INVITES.filter((i) => i.status === 'PENDING'));
   }),
 

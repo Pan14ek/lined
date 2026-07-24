@@ -4,12 +4,18 @@ import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice } from '@/features/subscription/lib/subscriptionUtils';
+import { Button } from '@/components/Button';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 
 interface PlanCardsProps {
   userId: number;
   plans: PlanDto[] | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   currentPlanId: number | undefined;
 }
 
@@ -24,14 +30,26 @@ const getSubscribeErrorMessage = (error: unknown, t: TFunction<'subscription'>):
 const PlanCardsSkeleton = () => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="plan-cards-loading">
     {Array.from({ length: 3 }, (_, i) => (
-      <div key={i} className="h-40 animate-pulse rounded-xl bg-surface" />
+      <SkeletonCard key={i} className="h-40" />
     ))}
   </div>
 );
 
-export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCardsProps) => {
+export const PlanCards = ({
+  userId,
+  plans,
+  isLoading,
+  isError,
+  onRetry,
+  currentPlanId,
+}: PlanCardsProps) => {
   const { t } = useTranslation('subscription');
   const startSubscription = useStartSubscription(userId);
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || (!isLoading && isError)) {
+    return <LoadErrorState onRetry={onRetry} message={t('planCards.errors.loadFailed')} />;
+  }
 
   if (isLoading) return <PlanCardsSkeleton />;
 
@@ -60,19 +78,17 @@ export const PlanCards = ({ userId, plans, isLoading, currentPlanId }: PlanCards
                   <span className="text-xs font-normal text-text-secondary">{t('planCards.perMonth')}</span>
                 )}
               </div>
-              <button
-                type="button"
-                disabled={isCurrent || startSubscription.isPending}
+              <Button
+                disabled={isCurrent}
+                pending={!isCurrent && startSubscription.isPending}
                 onClick={() => startSubscription.mutate(plan.id)}
                 className={cn(
-                  'mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60',
-                  isCurrent
-                    ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
-                    : 'bg-brand-green text-white hover:bg-brand-green-dark',
+                  'mt-4 h-9 w-full',
+                  isCurrent && 'bg-brand-green-light text-brand-green-dark dark:text-brand-green',
                 )}
               >
                 {isCurrent ? t('planCards.yourPlan') : t('planCards.subscribe')}
-              </button>
+              </Button>
             </div>
           );
         })}

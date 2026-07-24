@@ -48,6 +48,27 @@ describe('PendingInvitesBanner', () => {
     expect(await screen.findByText("Couldn't load your invites. Try again later.")).toBeInTheDocument();
   });
 
+  it('refetches when the retry action is clicked after a failed request', async () => {
+    expect.assertions(2);
+    let requestCount = 0;
+    server.use(
+      http.get(`${BASE}/lobby-invites/mine`, () => {
+        requestCount += 1;
+        return new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
+      }),
+    );
+    const user = userEvent.setup();
+    renderBanner();
+    await screen.findByRole('button', { name: 'Retry' });
+    const countAfterInitialLoad = requestCount;
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await screen.findByRole('button', { name: 'Retry' });
+    expect(requestCount).toBeGreaterThan(countAfterInitialLoad);
+    expect(countAfterInitialLoad).toBeGreaterThan(0);
+  });
+
   it('renders nothing when there are no pending invites', async () => {
     expect.assertions(2);
     server.use(http.get(`${BASE}/lobby-invites/mine`, () => HttpResponse.json([])));

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import { server } from '@/test/server';
@@ -19,6 +19,8 @@ describe('CurrentPlanCard', () => {
         activeSubscription={undefined}
         activePlanDetails={undefined}
         isLoading
+        isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -28,7 +30,14 @@ describe('CurrentPlanCard', () => {
   it('shows the free-plan message when there is no active subscription', () => {
     expect.assertions(2);
     renderWithProviders(
-      <CurrentPlanCard userId={1} activeSubscription={null} activePlanDetails={undefined} isLoading={false} />,
+      <CurrentPlanCard
+        userId={1}
+        activeSubscription={null}
+        activePlanDetails={undefined}
+        isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
+      />,
     );
 
     expect(screen.getByText('You are on the free plan.')).toBeInTheDocument();
@@ -43,6 +52,8 @@ describe('CurrentPlanCard', () => {
         activeSubscription={activeSubscription}
         activePlanDetails={proPlan}
         isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -59,6 +70,8 @@ describe('CurrentPlanCard', () => {
         activeSubscription={activeSubscription}
         activePlanDetails={proPlan}
         isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -79,6 +92,8 @@ describe('CurrentPlanCard', () => {
         activeSubscription={activeSubscription}
         activePlanDetails={proPlan}
         isLoading={false}
+        isError={false}
+        onRetry={vi.fn()}
       />,
     );
 
@@ -88,5 +103,26 @@ describe('CurrentPlanCard', () => {
     expect(
       await screen.findByText('You have no active subscription to cancel'),
     ).toBeInTheDocument();
+  });
+
+  it('shows an error state with a working retry action when the active plan fails to load', async () => {
+    expect.assertions(2);
+    const onRetry = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CurrentPlanCard
+        userId={1}
+        activeSubscription={undefined}
+        activePlanDetails={undefined}
+        isLoading={false}
+        isError
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.getByText("Couldn't load your current plan")).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

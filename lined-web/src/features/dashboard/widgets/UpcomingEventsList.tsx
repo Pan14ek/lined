@@ -6,6 +6,9 @@ import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { formatRelativeEventTime } from '@/features/calendar/lib/calendarUtils';
 import { EmptyState } from '@/components/EmptyState';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
 
 interface UpcomingEventsListProps {
@@ -13,6 +16,7 @@ interface UpcomingEventsListProps {
   lobbies: LobbyDto[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
 }
 
 export const UpcomingEventsList = ({
@@ -20,9 +24,11 @@ export const UpcomingEventsList = ({
   lobbies,
   isLoading,
   isError,
+  onRetry,
 }: UpcomingEventsListProps) => {
   const { t } = useTranslation('dashboard');
   const lobbyMap = new Map((lobbies ?? []).map((l) => [l.id, l]));
+  const isStalled = useQueryStall(isLoading);
 
   return (
     <section>
@@ -33,16 +39,16 @@ export const UpcomingEventsList = ({
         </Link>
       </div>
 
-      {isLoading && (
+      {isLoading && !isStalled && (
         <div className="flex flex-col gap-2" data-testid="upcoming-events-loading">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg bg-surface" />
+            <SkeletonRow key={i} />
           ))}
         </div>
       )}
 
-      {!isLoading && isError && (
-        <p className="text-sm text-text-secondary">{t('events.loadError')}</p>
+      {(isStalled || (!isLoading && isError)) && (
+        <LoadErrorState onRetry={onRetry} message={t('events.loadError')} />
       )}
 
       {!isLoading && !isError && events?.length === 0 && (

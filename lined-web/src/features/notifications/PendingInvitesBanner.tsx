@@ -5,6 +5,10 @@ import { useMyInvites, useAcceptInvite, useDeclineInvite } from '@/features/lobb
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { InviteCard } from './InviteCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
+import { useQueryStall } from '@/hooks/useQueryStall';
 
 const getInviteErrorMessage = (
   error: unknown,
@@ -22,6 +26,7 @@ export const PendingInvitesBanner = () => {
   const navigate = useNavigate();
   const [cardErrors, setCardErrors] = useState<Record<number, string>>({});
   const [decliningInviteId, setDecliningInviteId] = useState<number | null>(null);
+  const isStalled = useQueryStall(isLoading);
 
   const setCardError = (inviteId: number, message: string) =>
     setCardErrors((prev) => ({ ...prev, [inviteId]: message }));
@@ -57,17 +62,17 @@ export const PendingInvitesBanner = () => {
     });
   };
 
+  if (isStalled || (!isLoading && isError)) {
+    return <LoadErrorState onRetry={() => void refetch()} message={t('pendingInvites.loadError')} />;
+  }
+
   if (isLoading) {
     return (
       <section data-testid="pending-invites-loading">
-        <div className="mb-3 h-4 w-40 animate-pulse rounded bg-surface" />
-        <div className="h-16 animate-pulse rounded-xl bg-surface" />
+        <Skeleton className="mb-3 h-4 w-40 rounded" />
+        <SkeletonCard />
       </section>
     );
-  }
-
-  if (isError) {
-    return <p className="text-sm text-text-secondary">{t('pendingInvites.loadError')}</p>;
   }
 
   if (!invites || invites.length === 0) return null;

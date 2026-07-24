@@ -1,10 +1,12 @@
 import { http, HttpResponse } from 'msw';
+import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_EVENTS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export const eventHandlers = [
-  http.get(`${BASE}/calendar/events`, ({ request }) => {
+  http.get(`${BASE}/calendar/events`, async ({ request }) => {
+    await mockNetworkDelay();
     const url = new URL(request.url);
     let events = [...MOCK_EVENTS];
 
@@ -57,11 +59,13 @@ export const eventHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.get(`${BASE}/calendar/conflicts`, () => {
+  http.get(`${BASE}/calendar/conflicts`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json([]);
   }),
 
-  http.get(`${BASE}/calendar/user-conflict`, () => {
+  http.get(`${BASE}/calendar/user-conflict`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json({
       userId: 1,
       hasConflict: false,

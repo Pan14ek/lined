@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { fireEvent, within } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { describe, it, expect, vi } from 'vitest';
+import { act, fireEvent, within } from '@testing-library/react';
+import { http, HttpResponse, delay } from 'msw';
 import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { useCreateMenuStore } from '@/store/createMenu';
@@ -52,6 +52,31 @@ describe('KanbanBoard', () => {
     renderWithProviders(<KanbanBoard />);
 
     expect(await screen.findByText(KANBAN_TEXT.loadError)).toBeInTheDocument();
+  });
+
+  it('falls back to the retry state after a 10s stall instead of shimmering forever', async () => {
+    expect.assertions(2);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    server.use(
+      http.get(`${BASE}/tasks/mine`, async () => {
+        await delay('infinite');
+        return HttpResponse.json([]);
+      }),
+    );
+
+    try {
+      renderWithProviders(<KanbanBoard />);
+
+      expect(screen.getByTestId(KANBAN_TEST_IDS.loading)).toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      expect(screen.getByText(KANBAN_TEXT.loadError)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('renders done tasks dimmed, struck through, with a checkmark badge', async () => {

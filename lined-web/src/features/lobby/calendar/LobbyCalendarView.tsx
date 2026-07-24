@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import type { LobbyDto } from '@/features/lobby/model';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { useQueryStall } from '@/hooks/useQueryStall';
+import { CalendarSkeleton } from '@/features/calendar/CalendarSkeleton';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
 import { CreateEventModal } from '@/features/calendar/events/CreateEventModal';
 import { EventDetailPanel } from '@/features/calendar/panels/EventDetailPanel';
@@ -46,8 +49,9 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
   const [agendaDay, setAgendaDay] = useState<Date | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { data: events, isLoading, isError } = useLobbyWeekEvents(lobby.id, weekStart);
+  const { data: events, isLoading, isError, refetch } = useLobbyWeekEvents(lobby.id, weekStart);
   const { data: freeSlots } = useLobbyFreeSlots(lobby.id, weekStart);
+  const isStalled = useQueryStall(isLoading);
   const deleteEvent = useDeleteEvent();
   const openReserveSlot = useCreateMenuStore((s) => s.openReserveSlot);
 
@@ -85,14 +89,14 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
         onNewEvent={() => setIsCreateModalOpen(true)}
       />
 
-      {isLoading ? (
-        <div className="flex-1 p-6" data-testid="lobby-calendar-loading">
-          <div className="h-full animate-pulse rounded-xl bg-bg" />
-        </div>
-      ) : isError ? (
-        <p className="p-6 text-sm text-text-secondary">
-          {t('calendar.loadError')}
-        </p>
+      {isStalled || (!isLoading && isError) ? (
+        <LoadErrorState
+          className="flex-1"
+          onRetry={() => void refetch()}
+          message={t('calendar.loadError')}
+        />
+      ) : isLoading ? (
+        <CalendarSkeleton testId="lobby-calendar-loading" />
       ) : (
         <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
           {(events ?? []).length === 0 && (
