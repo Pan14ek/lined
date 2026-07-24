@@ -7,9 +7,13 @@ import { useMyTasks, useUpdateTaskStatus, useDeleteTask } from '@/features/tasks
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { useRowMutationState } from '@/hooks/useRowMutationState';
+import { useQueryStall } from '@/hooks/useQueryStall';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } from '@/features/tasks/lib/taskUtils';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { LoadErrorState } from '@/components/LoadErrorState';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { Skeleton } from '@/components/ui/skeleton';
 import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
 import { KANBAN_TEST_IDS } from './kanbanConstants';
@@ -25,9 +29,9 @@ const KanbanBoardSkeleton = () => (
   >
     {Array.from({ length: SKELETON_COLUMN_COUNT }, (_, columnIndex) => (
       <div key={columnIndex} className="flex min-w-full flex-col gap-2.5 snap-center md:min-w-0 md:flex-1 md:snap-align-none">
-        <div className="h-6 w-24 animate-pulse rounded bg-surface" />
+        <Skeleton className="h-6 w-24 rounded" />
         {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
-          <div key={cardIndex} className="h-20 animate-pulse rounded-lg bg-surface" />
+          <SkeletonRow key={cardIndex} className="h-20" />
         ))}
       </div>
     ))}
@@ -37,6 +41,7 @@ const KanbanBoardSkeleton = () => (
 interface KanbanBoardContentProps {
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
   grouped: Record<TaskStatus, TaskDto[]>;
   lobbiesById: Map<number, LobbyDto>;
   assigneesById: Map<number, UserDto | undefined>;
@@ -44,10 +49,11 @@ interface KanbanBoardContentProps {
   actions: KanbanActions;
 }
 
-/** Loading skeleton, error message, or the 3-column board — whichever applies. */
+/** Loading skeleton, stalled/error state, or the 3-column board — whichever applies. */
 const KanbanBoardContent = ({
   isLoading,
   isError,
+  onRetry,
   grouped,
   lobbiesById,
   assigneesById,
@@ -55,12 +61,13 @@ const KanbanBoardContent = ({
   actions,
 }: KanbanBoardContentProps) => {
   const { t } = useTranslation('tasks');
+  const isStalled = useQueryStall(isLoading);
+
+  if (isStalled || isError) {
+    return <LoadErrorState onRetry={onRetry} message={t('kanban.loadError')} />;
+  }
 
   if (isLoading) return <KanbanBoardSkeleton />;
-
-  if (isError) {
-    return <p className="text-sm text-text-secondary">{t('kanban.loadError')}</p>;
-  }
 
   return (
     <div className="flex flex-1 snap-x snap-mandatory gap-6 overflow-x-auto pb-2 md:snap-none">
@@ -81,7 +88,7 @@ const KanbanBoardContent = ({
 
 export const KanbanBoard = () => {
   const { t } = useTranslation('tasks');
-  const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useMyTasks();
+  const { data: tasks, isLoading: tasksLoading, isError: tasksError, refetch: refetchTasks } = useMyTasks();
   const { data: lobbies = [] } = useMyLobbies();
   const openOverlay = useCreateMenuStore((s) => s.openOverlay);
   const openTaskDetail = useCreateMenuStore((s) => s.openTaskDetail);
@@ -180,6 +187,7 @@ export const KanbanBoard = () => {
       <KanbanBoardContent
         isLoading={tasksLoading}
         isError={tasksError}
+        onRetry={() => void refetchTasks()}
         grouped={grouped}
         lobbiesById={lobbiesById}
         assigneesById={assigneesById}

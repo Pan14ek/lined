@@ -3,6 +3,8 @@ import { Settings, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
+import { SkeletonAvatar } from '@/components/skeletons/SkeletonAvatar';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { useAuthStore } from '@/store/auth';
@@ -79,10 +81,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
         {lobbiesLoading && (
           <div className="flex flex-col gap-1 px-3 py-1" data-testid="lobbies-loading">
             {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-8 animate-pulse rounded-lg bg-brand-sidebar-hover"
-              />
+              <SkeletonRow key={i} className="h-8 bg-brand-sidebar-hover" />
             ))}
           </div>
         )}
@@ -145,13 +144,11 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
 
       {/* User Footer */}
       {userLoading && (
-        <div className="flex items-center gap-3 px-5 py-4" data-testid="user-loading">
-          <div className="h-9 w-9 animate-pulse rounded-full bg-brand-sidebar-hover" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="h-3 w-24 animate-pulse rounded bg-brand-sidebar-hover" />
-            <div className="h-3 w-32 animate-pulse rounded bg-brand-sidebar-hover" />
-          </div>
-        </div>
+        <SkeletonAvatar
+          className="px-5 py-4"
+          boneClassName="bg-brand-sidebar-hover"
+          testId="user-loading"
+        />
       )}
 
       {!userLoading && user && (

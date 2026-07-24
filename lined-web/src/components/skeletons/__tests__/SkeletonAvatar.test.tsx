@@ -20,4 +20,16 @@ describe('SkeletonAvatar', () => {
 
     expect(container.querySelector('[data-testid="avatar-skel"]')).toHaveClass('px-5');
   });
+
+  it('applies a custom bone color to every inner block, e.g. for a dark background', () => {
+    expect.assertions(1);
+    const { container } = renderWithProviders(
+      <SkeletonAvatar boneClassName="bg-brand-sidebar-hover" testId="avatar-skel" />,
+    );
+
+    const bones = container.querySelectorAll('[data-testid="avatar-skel"] .animate-pulse');
+    expect([...bones].every((bone) => bone.classList.contains('bg-brand-sidebar-hover'))).toBe(
+      true,
+    );
+  });
 });
