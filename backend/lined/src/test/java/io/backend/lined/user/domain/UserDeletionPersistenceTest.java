@@ -22,7 +22,6 @@ class UserDeletionPersistenceTest {
 
     jdbcTemplate.update("delete from users where id = ?", 1L);
 
-    assertThat(count("user_subscriptions")).isZero();
     assertThat(count("user_roles")).isZero();
     assertThat(count("lobby_members")).isEqualTo(1);
     assertThat(count("lobby_invites")).isZero();
@@ -40,7 +39,6 @@ class UserDeletionPersistenceTest {
   private void insertFixtures() {
     jdbcTemplate.update("insert into users (id, username) values (1, 'deleted'), (2, 'retained')");
     jdbcTemplate.update("insert into lobbies (id, owner_id) values (10, 2)");
-    jdbcTemplate.update("insert into user_subscriptions (id, user_id) values (1, 1)");
     jdbcTemplate.update("insert into user_roles (user_id, role_id) values (1, 1)");
     jdbcTemplate.update("insert into lobby_members (lobby_id, user_id) values (10, 1), (10, 2)");
     jdbcTemplate.update("insert into lobby_invites (id, inviter_id, invitee_id) values (1, 2, 1)");

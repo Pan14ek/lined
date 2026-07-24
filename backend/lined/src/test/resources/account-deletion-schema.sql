@@ -3,11 +3,6 @@ CREATE TABLE users (
     username VARCHAR(64) NOT NULL
 );
 
-CREATE TABLE user_subscriptions (
-    id BIGINT PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE
-);
-
 CREATE TABLE user_roles (
     user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL

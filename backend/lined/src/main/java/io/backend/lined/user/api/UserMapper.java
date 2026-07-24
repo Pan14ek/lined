@@ -2,9 +2,7 @@ package io.backend.lined.user.api;
 
 import io.backend.lined.role.api.RoleMapper;
 import io.backend.lined.role.domain.RoleEntity;
-import io.backend.lined.subscription.domain.UserSubscriptionEntity;
 import io.backend.lined.user.domain.UserEntity;
-import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.mapstruct.BeanMapping;
@@ -18,16 +16,28 @@ import org.mapstruct.ReportingPolicy;
     unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface UserMapper {
 
-  @Mapping(target = "roles", expression = "java(mapRoleNames(entity.getRoles()))")
-  @Mapping(target = "activePlan", expression = "java(extractActivePlanName(entity))")
-  @Mapping(target = "activeUntil", expression = "java(extractActiveEndDate(entity))")
-  UserDto toDto(UserEntity entity);
+  /**
+   * Maps a user while preserving the legacy subscription fields as null placeholders.
+   *
+   * <p>For example, an existing user named {@code alice} is returned with her roles and profile
+   * data, but {@code activePlan} and {@code activeUntil} are null until a provider-backed billing
+   * projection is introduced.</p>
+   *
+   * @param entity persisted user to represent, or {@code null}
+   * @return mapped user response, or {@code null} when {@code entity} is null
+   */
+  default UserDto toDto(UserEntity entity) {
+    if (entity == null) {
+      return null;
+    }
+    return new UserDto(entity.getId(), entity.getVersion(), entity.getUsername(), entity.getEmail(),
+        entity.getCreatedAt(), mapRoleNames(entity.getRoles()), null, null);
+  }
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "version", ignore = true)
   @Mapping(target = "createdAt", expression = "java(java.time.OffsetDateTime.now())")
   @Mapping(target = "roles", ignore = true)
-  @Mapping(target = "subscriptions", ignore = true)
   UserEntity toEntity(UserCreateDto dto);
 
   @BeanMapping(ignoreByDefault = true)
@@ -42,28 +52,6 @@ public interface UserMapper {
       return Set.of();
     }
     return roles.stream().map(RoleEntity::getName).collect(Collectors.toUnmodifiableSet());
-  }
-
-  default String extractActivePlanName(UserEntity user) {
-    UserSubscriptionEntity s = activeSub(user);
-    return s != null ? s.getPlan().getName() : null;
-  }
-
-  default java.time.OffsetDateTime extractActiveEndDate(UserEntity user) {
-    UserSubscriptionEntity s = activeSub(user);
-    return s != null ? s.getEndDate() : null;
-  }
-
-  private UserSubscriptionEntity activeSub(UserEntity user) {
-    if (user == null || user.getSubscriptions() == null) {
-      return null;
-    }
-
-    OffsetDateTime now = OffsetDateTime.now();
-    return user.getSubscriptions().stream()
-        .filter(UserSubscriptionEntity::isActive)
-        .filter(s -> s.getEndDate() == null || !s.getEndDate().isBefore(now))
-        .findFirst().orElse(null);
   }
 
   UserSearchResultDto toSearchResultDto(UserEntity entity);

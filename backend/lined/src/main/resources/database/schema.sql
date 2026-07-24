@@ -21,42 +21,10 @@ CREATE TABLE IF NOT EXISTS user_roles
     PRIMARY KEY (user_id, role_id)
 );
 
-CREATE TABLE IF NOT EXISTS plans
-(
-    id            BIGSERIAL PRIMARY KEY,
-    name          VARCHAR(50)    NOT NULL UNIQUE, -- FREE, PRO, FAMILY
-    price_usd     NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    duration_days INT            NOT NULL DEFAULT 30,
-    created_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    version       BIGINT         NOT NULL DEFAULT 0,
-    CHECK (price_usd >= 0),
-    CHECK (duration_days >= 0)                    -- 0 for FREE, otherwise 30
-);
-
-CREATE TABLE IF NOT EXISTS user_subscriptions
-(
-    id         BIGSERIAL PRIMARY KEY,
-    user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    plan_id    BIGINT      NOT NULL REFERENCES plans (id),
-    start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    end_date   TIMESTAMPTZ,
-    is_active  BOOLEAN     NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (end_date IS NULL OR end_date >= start_date)
-);
-
 CREATE UNIQUE INDEX IF NOT EXISTS uq_users_username_nocase ON users (LOWER(username));
 CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_nocase ON users (LOWER(email));
 CREATE UNIQUE INDEX IF NOT EXISTS uq_roles_name_nocase ON roles (LOWER(name));
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles (user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_plans_name_nocase ON plans (LOWER(name));
-CREATE INDEX IF NOT EXISTS idx_user_sub_user_active ON user_subscriptions (user_id, is_active);
-CREATE INDEX IF NOT EXISTS idx_user_sub_dates ON user_subscriptions (user_id, start_date);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_user_active_sub
-    ON user_subscriptions (user_id)
-    WHERE is_active;
-
 INSERT INTO roles (name)
 SELECT 'ROLE_USER'
 WHERE NOT EXISTS (
@@ -67,17 +35,6 @@ INSERT INTO roles (name)
 SELECT 'ROLE_ADMIN'
 WHERE NOT EXISTS (
     SELECT 1 FROM roles WHERE LOWER(name) = LOWER('ROLE_ADMIN')
-);
-
-INSERT INTO plans (name, price_usd, duration_days, created_at)
-SELECT seed.name, seed.price_usd, seed.duration_days, NOW()
-FROM (
-    VALUES ('FREE', 0.00, 0),
-           ('PRO', 9.99, 30),
-           ('FAMILY', 19.99, 30)
-) AS seed(name, price_usd, duration_days)
-WHERE NOT EXISTS (
-    SELECT 1 FROM plans existing WHERE LOWER(existing.name) = LOWER(seed.name)
 );
 
 CREATE TABLE IF NOT EXISTS lobbies
@@ -207,7 +164,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
     ON notifications (recipient_id, created_at DESC);
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE plans ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE lobbies ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE lobbies ADD COLUMN IF NOT EXISTS lifecycle_status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE';
 ALTER TABLE lobbies ADD COLUMN IF NOT EXISTS access_mode VARCHAR(16) NOT NULL DEFAULT 'READ_WRITE';
@@ -253,3 +209,38 @@ WHERE NOT EXISTS (
     WHERE accounts.owner_user_id = users.id
       AND accounts.type = 'PERSONAL'
 );
+
+DROP TABLE IF EXISTS user_subscriptions;
+DROP TABLE IF EXISTS plans;
+
+CREATE TABLE IF NOT EXISTS billing_plans
+(
+    code         VARCHAR(16) PRIMARY KEY,
+    display_name VARCHAR(64) NOT NULL,
+    active       BOOLEAN     NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS billing_prices
+(
+    code              VARCHAR(32)  PRIMARY KEY,
+    plan_code         VARCHAR(16)  NOT NULL REFERENCES billing_plans (code),
+    billing_interval  VARCHAR(8)   NOT NULL CHECK (billing_interval IN ('MONTH', 'YEAR')),
+    provider          VARCHAR(32)  NOT NULL,
+    provider_price_id VARCHAR(128) NOT NULL,
+    active            BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO billing_plans (code, display_name, active, created_at, updated_at)
+VALUES ('FREE', 'Free', TRUE, NOW(), NOW()),
+       ('PRO', 'Pro', TRUE, NOW(), NOW())
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO billing_prices (
+    code, plan_code, billing_interval, provider, provider_price_id, active, created_at, updated_at)
+VALUES ('PRO_MONTHLY', 'PRO', 'MONTH', 'sandbox', 'sandbox-pro-monthly', TRUE, NOW(), NOW()),
+       ('PRO_YEARLY', 'PRO', 'YEAR', 'sandbox', 'sandbox-pro-yearly', TRUE, NOW(), NOW())
+ON CONFLICT (code) DO NOTHING;
