@@ -110,6 +110,20 @@ return `400 Bad Request`; stale writes return an RFC 7807 `409 Conflict`.
 
 Response: `200 OK` with `UserDto`.
 
+### `GET /api/users/me`
+
+Return the caller's profile. The current MVP identity contract requires the
+`X-User-Id` header; the caller does not provide a user ID in the path, query,
+or body. A missing header returns `400 Bad Request`, and an unknown caller
+returns `404 Not Found`.
+
+```http
+GET /api/users/me
+X-User-Id: 42
+```
+
+Response: `200 OK` with `UserDto` and an `ETag` for the response version.
+
 ### `GET /api/users/{id}`
 
 Return one user by id.
@@ -542,8 +556,6 @@ Inbox entries use this shape:
 
 The following endpoints are not implemented by the current controllers:
 
-- `GET /api/users/me`
-  See [docs/api-proposals/users-me-endpoint.md](api-proposals/users-me-endpoint.md).
 - `POST /api/auth/refresh`
 - `POST /api/auth/register`
 - `POST /api/auth/logout`
