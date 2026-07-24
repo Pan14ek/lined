@@ -93,7 +93,8 @@ class PasswordResetServiceImplTest {
         .tokenHash("stored-hash")
         .expiresAt(OffsetDateTime.now().plusMinutes(10))
         .build();
-    when(tokenRepository.findByTokenHashAndUsedAtIsNull(anyString())).thenReturn(Optional.of(tokenEntity));
+    when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(1);
+    when(tokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(tokenEntity));
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
     when(tokenRepository.findAllByUser_IdAndUsedAtIsNull(USER_ID)).thenReturn(List.of(tokenEntity));
 
@@ -110,7 +111,8 @@ class PasswordResetServiceImplTest {
         .id(1L).user(user).tokenHash("hash-1").expiresAt(OffsetDateTime.now().plusMinutes(10)).build();
     var other = PasswordResetTokenEntity.builder()
         .id(2L).user(user).tokenHash("hash-2").expiresAt(OffsetDateTime.now().plusMinutes(10)).build();
-    when(tokenRepository.findByTokenHashAndUsedAtIsNull(anyString())).thenReturn(Optional.of(redeemed));
+    when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(1);
+    when(tokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(redeemed));
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
     when(tokenRepository.findAllByUser_IdAndUsedAtIsNull(USER_ID)).thenReturn(List.of(redeemed, other));
 
@@ -123,21 +125,21 @@ class PasswordResetServiceImplTest {
   @Test
   void reset_expiredToken_throwsGenericBadRequest() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
-    var expired = PasswordResetTokenEntity.builder()
-        .id(1L).user(user).tokenHash("hash").expiresAt(OffsetDateTime.now().minusMinutes(1)).build();
-    when(tokenRepository.findByTokenHashAndUsedAtIsNull(anyString())).thenReturn(Optional.of(expired));
+    when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
 
     assertThatThrownBy(() -> service.reset(dto))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid or expired reset token");
 
     verify(passwordEncoder, never()).encode(anyString());
+    verify(tokenRepository, never()).findByTokenHash(anyString());
+    verify(tokenRepository, never()).findAllByUser_IdAndUsedAtIsNull(USER_ID);
   }
 
   @Test
   void reset_unknownToken_throwsGenericBadRequest() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
-    when(tokenRepository.findByTokenHashAndUsedAtIsNull(anyString())).thenReturn(Optional.empty());
+    when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
 
     assertThatThrownBy(() -> service.reset(dto))
         .isInstanceOf(BadRequestException.class)
@@ -146,11 +148,8 @@ class PasswordResetServiceImplTest {
 
   @Test
   void reset_alreadyUsedToken_throwsGenericBadRequest() {
-    // The repository query itself excludes used tokens (findBy...AndUsedAtIsNull), so a
-    // reused token surfaces as "not found" from the service's point of view — same generic
-    // 400 as an unknown token, with no distinguishable response.
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
-    when(tokenRepository.findByTokenHashAndUsedAtIsNull(anyString())).thenReturn(Optional.empty());
+    when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
 
     assertThatThrownBy(() -> service.reset(dto)).isInstanceOf(BadRequestException.class);
   }

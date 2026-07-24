@@ -25,6 +25,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+/**
+ * Persists the server-side state of one password-reset credential without storing its raw value.
+ *
+ * <p>A reset request for user {@code 42} creates a row containing the user relationship, an
+ * HMAC hash of the opaque token, and an expiry such as {@code 2026-07-24T20:30:00Z}. Before a
+ * successful redemption {@link #usedAt} is {@code null}; the atomic claim sets it once, making a
+ * second submission of the same token invalid. Deleting the user cascades to its reset rows.</p>
+ */
 @Entity
 @Table(name = "password_reset_tokens")
 public class PasswordResetTokenEntity {
@@ -50,6 +58,13 @@ public class PasswordResetTokenEntity {
   @Column(name = "created_at", nullable = false, updatable = false)
   private OffsetDateTime createdAt;
 
+  /**
+   * Supplies a creation timestamp when a caller builds a token without one.
+   *
+   * <p>For example, a service can build a token with its hash and expiry only; JPA then fills
+   * {@code createdAt} during insertion. Explicit test fixtures may still set a known creation
+   * time before persistence.</p>
+   */
   @PrePersist
   void prePersist() {
     if (createdAt == null) {
