@@ -5,18 +5,18 @@ import java.util.Optional;
 /**
  * Boundary through which effective-plan resolution obtains paid subscription state.
  *
- * <p>The port lets the resolver remain independent of the later subscription schema and any
- * payment provider. For example, a future repository adapter can return a current Pro period for
- * account {@code 17}, while the BE-01 no-op adapter returns no value.</p>
+ * <p>The port lets the resolver remain independent of JPA mapping and payment-provider details.
+ * For example, the repository adapter returns an active Pro period for account {@code 17}, while
+ * an account with only terminal history returns no current subscription.</p>
  */
 public interface PaidSubscriptionLookupPort {
 
   /**
    * Looks up the current paid subscription for one billing account.
    *
-   * <p>Example: an account with an active Pro period returns
-   * {@code Optional.of(new PaidSubscription(PlanCode.PRO, periodEnd))}; an account with no paid
-   * state returns {@code Optional.empty()}.</p>
+   * <p>Example: an account with an active Pro period returns a value with {@code status=ACTIVE}
+   * and its provider period end; an account with no non-terminal paid state returns
+   * {@code Optional.empty()}.</p>
    *
    * @param billingAccountId identifier of the account whose subscription is requested
    * @return the current paid subscription when one is available
