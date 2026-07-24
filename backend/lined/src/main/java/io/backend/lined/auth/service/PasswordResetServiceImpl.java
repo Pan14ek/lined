@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -65,9 +66,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   @Override
   public void reset(PasswordResetDto dto) {
     String hash = hash(dto.token());
-    OffsetDateTime now = OffsetDateTime.now();
-    PasswordResetTokenEntity resetToken = tokenRepository.findByTokenHashAndUsedAtIsNull(hash)
-        .filter(token -> token.getExpiresAt().isAfter(now))
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    int claimed = tokenRepository.claimUnusedUnexpired(hash, now, now);
+    if (claimed != 1) {
+      throw new BadRequestException(INVALID_TOKEN_MESSAGE);
+    }
+    PasswordResetTokenEntity resetToken = tokenRepository.findByTokenHash(hash)
         .orElseThrow(() -> new BadRequestException(INVALID_TOKEN_MESSAGE));
 
     UserEntity user = resetToken.getUser();
@@ -84,7 +88,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
   private void issueToken(UserEntity user) {
     String rawToken = generateRawToken();
-    OffsetDateTime now = OffsetDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     PasswordResetTokenEntity token = PasswordResetTokenEntity.builder()
         .user(user)
         .tokenHash(hash(rawToken))
