@@ -4,6 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
+/**
+ * Public representation of a user with compatibility placeholders for billing projection fields.
+ *
+ * <p>For example, a user response still contains {@code activePlan} and {@code activeUntil}, but
+ * both are {@code null} until a later billing subscription projection populates them.</p>
+ */
 @Schema(name = "UserDto", description = "Representation of a user")
 public record UserDto(
     @Schema(description = "Unique user id", example = "42")

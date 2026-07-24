@@ -80,14 +80,6 @@ public class OpenApiConfig {
         .build();
   }
 
-  @Bean
-  public GroupedOpenApi plansApi() {
-    return GroupedOpenApi.builder()
-        .group("plans")
-        .pathsToMatch("/api/plans/**")
-        .build();
-  }
-
   /**
    * Publishes the authenticated billing-state endpoint as one OpenAPI group.
    *

@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.billing.application.BillingAccountService;
-import io.backend.lined.plan.domain.BuiltInPlan;
 import io.backend.lined.role.domain.BuiltInRole;
 import io.backend.lined.role.service.RoleService;
 import io.backend.lined.user.api.UserCreateDto;
@@ -28,7 +27,6 @@ class AccountApplicationServiceImplTest {
 
   private static final long USER_ID = 1L;
   private static final long ADMIN_USER_ID = 2L;
-  private static final int PLAN_DURATION_DAYS = 30;
   private static final String USERNAME = "testuser";
   private static final String USER_EMAIL = "test@example.com";
   private static final String PASSWORD = "password";
@@ -37,8 +35,6 @@ class AccountApplicationServiceImplTest {
   private static final String USER_ROLE = BuiltInRole.USER.value();
   private static final String ADMIN_ROLE = BuiltInRole.ADMIN.value();
   private static final String MODERATOR_ROLE = "ROLE_MODERATOR";
-  private static final String FREE_PLAN_NAME = BuiltInPlan.FREE.value();
-  private static final String STARTER_PLAN_NAME = "STARTER";
 
   @Mock
   private UserService userService;
@@ -75,37 +71,11 @@ class AccountApplicationServiceImplTest {
     when(userService.create(createDto)).thenReturn(userDto);
     when(userService.getById(USER_ID)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
-        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE)));
 
     UserDto result = accountService.registerUser(createDto);
 
     assertThat(result).isEqualTo(userDto);
-    verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
-    verify(billingAccountService).ensurePersonalAccount(USER_ID);
-  }
-
-  @Test
-  void registerUser_usesPolicyPlanNameForDefaultSubscription() {
-    when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(USER_ID)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRegistration())
-        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), STARTER_PLAN_NAME, true));
-
-    accountService.registerUser(createDto);
-
-    verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
-    verify(billingAccountService).ensurePersonalAccount(USER_ID);
-  }
-
-  @Test
-  void registerUser_usesPolicyActiveFlagForDefaultSubscription() {
-    when(userService.create(createDto)).thenReturn(userDto);
-    when(userService.getById(USER_ID)).thenReturn(userDto);
-    when(provisioningPolicy.defaultRegistration())
-        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, false));
-
-    accountService.registerUser(createDto);
-
     verify(roleService).setUserRoles(USER_ID, Set.of(USER_ROLE));
     verify(billingAccountService).ensurePersonalAccount(USER_ID);
   }
@@ -121,7 +91,7 @@ class AccountApplicationServiceImplTest {
     when(userService.create(adminDto)).thenReturn(adminUserDto);
     when(userService.getById(ADMIN_USER_ID)).thenReturn(adminUserDto);
     when(provisioningPolicy.defaultRegistration())
-        .thenReturn(new AccountProvisioningSpec(policyRoles, FREE_PLAN_NAME, true));
+        .thenReturn(new AccountProvisioningSpec(policyRoles));
 
     accountService.registerUser(adminDto);
 
@@ -133,13 +103,11 @@ class AccountApplicationServiceImplTest {
   @Test
   void registerUser_returnsRefreshedUser_fromGetById() {
     UserDto refreshedUser = new UserDto(
-        USER_ID, USERNAME, USER_EMAIL, now, Set.of(USER_ROLE), FREE_PLAN_NAME,
-        now.plusDays(PLAN_DURATION_DAYS)
-    );
+        USER_ID, USERNAME, USER_EMAIL, now, Set.of(USER_ROLE), null, null);
 
     when(userService.create(createDto)).thenReturn(userDto);
     when(provisioningPolicy.defaultRegistration())
-        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE), FREE_PLAN_NAME, true));
+        .thenReturn(new AccountProvisioningSpec(Set.of(USER_ROLE)));
     when(userService.getById(USER_ID)).thenReturn(refreshedUser);
 
     UserDto result = accountService.registerUser(createDto);

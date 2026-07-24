@@ -77,14 +77,12 @@ class BillingAccountRepositoryIT {
   }
 
   @Test
-  void registerUser_createsPersonalAccountWithoutLegacyFreeSubscription() {
+  void registerUser_createsPersonalAccountWithoutLegacySubscriptionPersistence() {
     accountApplicationService.registerUser(new UserCreateDto(
         "billing-registration", "billing-registration@example.com", "password", Set.of()));
 
     assertThat(jdbcTemplate.queryForObject("select count(*) from billing_accounts", Integer.class))
         .isEqualTo(1);
-    assertThat(jdbcTemplate.queryForObject("select count(*) from user_subscriptions", Integer.class))
-        .isZero();
   }
 
   @Test

@@ -96,7 +96,7 @@ Response: `200 OK` with `UserDto`.
 
 Partially update a user.
 
-All mutable Event, Task, Lobby, User, Plan, and notification-preference endpoints require
+All mutable Event, Task, Lobby, User, and notification-preference endpoints require
 `If-Match: "{version}"`, using the `version` in the last representation (or its `ETag`
 header). Missing preconditions return `428 Precondition Required`; malformed preconditions
 return `400 Bad Request`; stale writes return an RFC 7807 `409 Conflict`.
@@ -442,29 +442,6 @@ All three endpoints accept the same request shape:
 
 Response: `200 OK` with `Set<String>`.
 
-## Plans
-
-### `GET /api/plans`
-
-List all plans.
-
-Response: `200 OK` with `List<PlanDto>`.
-
-### `GET /api/plans/{id}`
-
-Return one plan by id.
-
-Response: `200 OK` with `PlanDto`.
-
-### `GET /api/plans/by-name?name={planName}`
-
-Return one plan by unique plan name.
-
-Response: `200 OK` with `PlanDto`.
-
-Plan reads are temporary legacy compatibility endpoints. They expose only identifiers, names, and
-creation timestamps; pricing and duration are not returned. Plan writes are not available.
-
 ## Billing
 
 ### `GET /api/billing/me`
@@ -491,7 +468,7 @@ X-User-Id: 17
 ```
 
 `subscription` remains `null` until provider-backed subscription lifecycle support is introduced.
-The removed `/api/subscriptions` routes and plan write routes return `404 Not Found`.
+The removed `/api/subscriptions` and `/api/plans` routes return `404 Not Found`.
 
 ## Notifications
 
