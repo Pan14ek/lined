@@ -4,6 +4,7 @@ import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice } from '@/features/subscription/lib/subscriptionUtils';
+import { Button } from '@/components/Button';
 import { LoadErrorState } from '@/components/LoadErrorState';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { useQueryStall } from '@/hooks/useQueryStall';
@@ -77,19 +78,17 @@ export const PlanCards = ({
                   <span className="text-xs font-normal text-text-secondary">{t('planCards.perMonth')}</span>
                 )}
               </div>
-              <button
-                type="button"
-                disabled={isCurrent || startSubscription.isPending}
+              <Button
+                disabled={isCurrent}
+                pending={!isCurrent && startSubscription.isPending}
                 onClick={() => startSubscription.mutate(plan.id)}
                 className={cn(
-                  'mt-4 h-9 w-full rounded-lg text-sm font-semibold transition-colors disabled:opacity-60',
-                  isCurrent
-                    ? 'bg-brand-green-light text-brand-green-dark dark:text-brand-green'
-                    : 'bg-brand-green text-white hover:bg-brand-green-dark',
+                  'mt-4 h-9 w-full',
+                  isCurrent && 'bg-brand-green-light text-brand-green-dark dark:text-brand-green',
                 )}
               >
                 {isCurrent ? t('planCards.yourPlan') : t('planCards.subscribe')}
-              </button>
+              </Button>
             </div>
           );
         })}

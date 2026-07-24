@@ -12,6 +12,7 @@ import { getApiErrorMessage } from '@/lib/apiErrors';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/features/calendar/lib/calendarUtils';
 import { AuthAlert } from '@/features/auth/AuthAlert';
+import { Button } from '@/components/Button';
 import { FormField } from '@/components/FormField';
 import { ToggleRow } from '@/components/ToggleRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -331,22 +332,13 @@ export const TaskDrawer = ({
               >
                 {t('drawer.cancel')}
               </button>
-              <button
+              <Button
                 type="submit"
-                disabled={mutation.isPending}
-                className={cn(
-                  'h-10 rounded-lg bg-brand-green px-6 text-sm font-semibold text-white hover:bg-brand-green-dark disabled:opacity-60 transition-colors',
-                  !isEditMode && 'flex-[2]',
-                )}
+                pending={mutation.isPending}
+                className={cn('px-6', !isEditMode && 'flex-[2]')}
               >
-                {isEditMode
-                  ? mutation.isPending
-                    ? t('drawer.saving')
-                    : t('drawer.save')
-                  : mutation.isPending
-                    ? t('drawer.adding')
-                    : t('drawer.add')}
-              </button>
+                {isEditMode ? t('drawer.save') : t('drawer.add')}
+              </Button>
             </SheetFooter>
           </form>
         </SheetContent>
