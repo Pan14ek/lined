@@ -286,6 +286,9 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 48 | `feature/ui-48-customer-portal-button` | "Manage billing" button opens provider portal in a new tab | [tasks/UI-48-customer-portal-button.md](tasks/UI-48-customer-portal-button.md) | TODO |
 | 49 | `feature/ui-49-admin-billing-view` | Admin `/admin/billing`: search, account detail, resync, retry event, audit log (permission-gated) | [tasks/UI-49-admin-billing-view.md](tasks/UI-49-admin-billing-view.md) | TODO |
 | 50 | `feature/ui-50-admin-refund-flow` | Admin refund preview + issue flow with `BILLING_REFUND` permission gate and `withinDefaultWindow` flag | [tasks/UI-50-admin-refund-flow.md](tasks/UI-50-admin-refund-flow.md) | TODO |
+| 51 | `feature/ui-51-private-events` | Event-form visibility selector, owner-only lock badge, notify-members disable, shared-to-private warning | [tasks/UI-51-private-events.md](tasks/UI-51-private-events.md) | TODO |
+| 52 | `feature/ui-52-private-tasks` | Task-form visibility selector, self-locked assignee, lock badge on task cards | [tasks/UI-52-private-tasks.md](tasks/UI-52-private-tasks.md) | TODO |
+| 53 | `feature/ui-53-private-data-cache-safety` | Logout/account-switch cache clearing + visibility-transition query invalidation + privacy regression tests | [tasks/UI-53-private-data-cache-safety.md](tasks/UI-53-private-data-cache-safety.md) | TODO |
 
 ## Suggested order
 
@@ -350,6 +353,15 @@ UI-38 ← BE-04; UI-39 ← BE-10; UI-40 ← BE-10 + BE-11; UI-41/42 ← BE-11;
 UI-43 ← BE-11 (+BE-15 for lobby DTO hint); UI-44/45/46 ← BE-03 + BE-12;
 UI-47 ← BE-13; UI-48 ← BE-11/BE-15 portal endpoint;
 UI-49 ← BE-14; UI-50 ← BE-13 + BE-14.
+
+Private events/tasks batch (**51 → 53**) implements
+`backend/lined/docs/private-events-and-tasks-system-design.md`. **51**
+(event visibility) depends on backend PE-BE-01 + PE-BE-02. **52** (task
+visibility) depends on backend PE-BE-03. **51** and **52** are independent
+of each other and can land in parallel once their respective backend task
+is stable. **53** (logout/account-switch cache safety) depends on both 51
+and 52 landing first, plus backend PE-BE-04, since it needs every
+visibility-aware query key to exist before it can audit cache clearing.
 
 ## Conventions for every task
 
