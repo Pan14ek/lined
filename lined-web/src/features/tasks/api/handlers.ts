@@ -1,10 +1,12 @@
 import { http, HttpResponse } from 'msw';
+import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_TASKS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export const taskHandlers = [
-  http.get(`${BASE}/tasks`, ({ request }) => {
+  http.get(`${BASE}/tasks`, async ({ request }) => {
+    await mockNetworkDelay();
     const url = new URL(request.url);
     let tasks = [...MOCK_TASKS];
 
@@ -21,7 +23,8 @@ export const taskHandlers = [
     return HttpResponse.json(tasks);
   }),
 
-  http.get(`${BASE}/tasks/mine`, () => {
+  http.get(`${BASE}/tasks/mine`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(MOCK_TASKS);
   }),
 

@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_SUBSCRIPTIONS, MOCK_PLANS } from './mockData';
 import type { SubscriptionDto } from '@/features/subscription/model';
 
@@ -12,20 +13,23 @@ const findActive = (userId: number): SubscriptionDto | undefined => {
 }
 
 export const planHandlers = [
-  http.get(`${BASE}/plans`, () => {
+  http.get(`${BASE}/plans`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(MOCK_PLANS);
   }),
 ];
 
 export const subscriptionHandlers = [
-  http.get(`${BASE}/subscriptions/:userId/active`, ({ params }) => {
+  http.get(`${BASE}/subscriptions/:userId/active`, async ({ params }) => {
+    await mockNetworkDelay();
     const userId = Number(params['userId']);
     const active = findActive(userId);
     if (!active) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(active);
   }),
 
-  http.get(`${BASE}/subscriptions/:userId/history`, ({ params }) => {
+  http.get(`${BASE}/subscriptions/:userId/history`, async ({ params }) => {
+    await mockNetworkDelay();
     const userId = Number(params['userId']);
     return HttpResponse.json(
       mockSubscriptions

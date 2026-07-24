@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_NOTIFICATIONS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -25,7 +26,8 @@ const getLobbyPreferences = (lobbyId: number) => {
 }
 
 export const notificationHandlers = [
-  http.get(`${BASE}/notifications/preferences`, () => {
+  http.get(`${BASE}/notifications/preferences`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(mockPreferences);
   }),
 
@@ -35,7 +37,8 @@ export const notificationHandlers = [
     return HttpResponse.json(mockPreferences);
   }),
 
-  http.get(`${BASE}/lobbies/:lobbyId/notification-preferences`, ({ params }) => {
+  http.get(`${BASE}/lobbies/:lobbyId/notification-preferences`, async ({ params }) => {
+    await mockNetworkDelay();
     const lobbyId = Number(params['lobbyId']);
     return HttpResponse.json(getLobbyPreferences(lobbyId));
   }),
@@ -48,7 +51,8 @@ export const notificationHandlers = [
     return HttpResponse.json(updated);
   }),
 
-  http.get(`${BASE}/notifications/mine`, () => {
+  http.get(`${BASE}/notifications/mine`, async () => {
+    await mockNetworkDelay();
     return HttpResponse.json(MOCK_NOTIFICATIONS);
   }),
 
