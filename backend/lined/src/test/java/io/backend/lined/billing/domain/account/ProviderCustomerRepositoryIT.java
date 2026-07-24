@@ -1,8 +1,9 @@
 package io.backend.lined.billing.domain.account;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,21 @@ class ProviderCustomerRepositoryIT {
     assertThatThrownBy(() -> providerCustomerRepository.saveAndFlush(
         customer(secondAccountId, "stripe", "cus_shared")))
         .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void save_preservesExplicitCreationTimeAndRefreshesUpdateTime() {
+    ProviderCustomerEntity customer = customer(accountId("audited-customer"), "sandbox", "cus_audited");
+    OffsetDateTime importedAt = OffsetDateTime.parse("2000-01-01T00:00:00Z");
+    customer.setCreatedAt(importedAt);
+    customer.setUpdatedAt(importedAt);
+
+    ProviderCustomerEntity saved = providerCustomerRepository.saveAndFlush(customer);
+    saved.setProviderCustomerId("cus_audited_updated");
+    ProviderCustomerEntity updated = providerCustomerRepository.saveAndFlush(saved);
+
+    assertThat(updated.getCreatedAt()).isEqualTo(importedAt);
+    assertThat(updated.getUpdatedAt()).isAfter(importedAt);
   }
 
   private long accountId(String username) {

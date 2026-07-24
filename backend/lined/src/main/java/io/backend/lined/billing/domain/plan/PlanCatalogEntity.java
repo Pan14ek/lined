@@ -1,14 +1,12 @@
 package io.backend.lined.billing.domain.plan;
 
+import io.backend.lined.billing.domain.common.BillingAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -25,13 +23,13 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
 @Table(name = "billing_plans")
-public class PlanCatalogEntity {
+public class PlanCatalogEntity extends BillingAuditableEntity {
 
   @Id
   @Enumerated(EnumType.STRING)
@@ -45,37 +43,4 @@ public class PlanCatalogEntity {
   @Column(nullable = false)
   private boolean active;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
-
-  /**
-   * Initializes timestamps when a catalog plan is first persisted.
-   *
-   * <p>For example, a seed-like entity with no timestamps receives one current UTC value for
-   * both {@code createdAt} and {@code updatedAt}; explicitly supplied values are retained.</p>
-   */
-  @PrePersist
-  void prePersist() {
-    OffsetDateTime now = OffsetDateTime.now();
-    if (createdAt == null) {
-      createdAt = now;
-    }
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
-  }
-
-  /**
-   * Refreshes the catalog plan update timestamp before a persistence update.
-   *
-   * <p>For example, disabling {@code PRO} changes {@code updatedAt} but preserves the original
-   * {@code createdAt} value.</p>
-   */
-  @PreUpdate
-  void preUpdate() {
-    updatedAt = OffsetDateTime.now();
-  }
 }

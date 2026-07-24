@@ -1,5 +1,6 @@
 package io.backend.lined.billing.domain.plan;
 
+import io.backend.lined.billing.domain.common.BillingAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,10 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -28,13 +26,13 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
 @Table(name = "billing_prices")
-public class PriceCatalogEntity {
+public class PriceCatalogEntity extends BillingAuditableEntity {
 
   @Id
   @Enumerated(EnumType.STRING)
@@ -59,37 +57,4 @@ public class PriceCatalogEntity {
   @Column(nullable = false)
   private boolean active;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
-
-  /**
-   * Initializes timestamps when a price mapping is first persisted.
-   *
-   * <p>For example, persisting {@code PRO_YEARLY} without timestamps assigns matching current
-   * UTC values to {@code createdAt} and {@code updatedAt}.</p>
-   */
-  @PrePersist
-  void prePersist() {
-    OffsetDateTime now = OffsetDateTime.now();
-    if (createdAt == null) {
-      createdAt = now;
-    }
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
-  }
-
-  /**
-   * Refreshes the price mapping update timestamp before a persistence update.
-   *
-   * <p>For example, replacing a sandbox identifier during a future provider migration updates
-   * {@code updatedAt} without modifying {@code createdAt}.</p>
-   */
-  @PreUpdate
-  void preUpdate() {
-    updatedAt = OffsetDateTime.now();
-  }
 }

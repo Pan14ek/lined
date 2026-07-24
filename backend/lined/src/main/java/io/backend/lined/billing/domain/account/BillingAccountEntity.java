@@ -1,5 +1,6 @@
 package io.backend.lined.billing.domain.account;
 
+import io.backend.lined.billing.domain.common.BillingAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,12 +8,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
-import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -22,7 +20,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -40,7 +38,7 @@ import lombok.Setter;
  * <p>The version column supports optimistic locking, while lifecycle callbacks assign UTC
  * creation and update timestamps when callers do not provide them.</p>
  */
-public class BillingAccountEntity {
+public class BillingAccountEntity extends BillingAuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,37 +60,4 @@ public class BillingAccountEntity {
   @Column(nullable = false)
   private long version;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
-
-  /**
-   * Initializes creation and update timestamps immediately before the first insert.
-   *
-   * <p>Example: a builder-created account with no timestamps receives the same current UTC value
-   * for both fields; explicitly supplied timestamps are retained.</p>
-   */
-  @PrePersist
-  void prePersist() {
-    OffsetDateTime now = OffsetDateTime.now();
-    if (createdAt == null) {
-      createdAt = now;
-    }
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
-  }
-
-  /**
-   * Refreshes the mutable update timestamp before an existing account is written.
-   *
-   * <p>Example: changing an account's status updates {@code updatedAt} while retaining its
-   * original {@code createdAt} value.</p>
-   */
-  @PreUpdate
-  void preUpdate() {
-    updatedAt = OffsetDateTime.now();
-  }
 }

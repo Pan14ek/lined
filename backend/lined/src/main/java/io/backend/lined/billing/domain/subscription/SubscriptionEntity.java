@@ -1,6 +1,7 @@
 package io.backend.lined.billing.domain.subscription;
 
 import io.backend.lined.billing.domain.account.BillingAccountEntity;
+import io.backend.lined.billing.domain.common.BillingAuditableEntity;
 import io.backend.lined.billing.domain.plan.PlanCode;
 import io.backend.lined.billing.domain.plan.PriceCode;
 import jakarta.persistence.Column;
@@ -13,12 +14,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -36,13 +34,13 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
 @Table(name = "billing_subscriptions")
-public class SubscriptionEntity {
+public class SubscriptionEntity extends BillingAuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,38 +101,4 @@ public class SubscriptionEntity {
   @Column(nullable = false)
   private long version;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
-
-  /**
-   * Initializes local audit timestamps before inserting a subscription projection.
-   *
-   * <p>For example, a webhook-created subscription keeps its provider timestamp in
-   * {@code providerUpdatedAt} while this callback assigns matching UTC timestamps to the local
-   * {@code createdAt} and {@code updatedAt} fields when they were not supplied.</p>
-   */
-  @PrePersist
-  void prePersist() {
-    OffsetDateTime now = OffsetDateTime.now();
-    if (createdAt == null) {
-      createdAt = now;
-    }
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
-  }
-
-  /**
-   * Refreshes the local audit timestamp after a projection update.
-   *
-   * <p>For example, applying a verified payment-recovered event changes status and updates
-   * {@code updatedAt}, but does not manufacture a replacement provider timestamp.</p>
-   */
-  @PreUpdate
-  void preUpdate() {
-    updatedAt = OffsetDateTime.now();
-  }
 }
