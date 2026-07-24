@@ -156,11 +156,40 @@ Return lobbies where the caller is a member.
 
 Response: `200 OK` with `List<LobbyDto>`.
 
+### `GET /api/lobbies?lifecycleStatus=ARCHIVED`
+
+Return archived lobbies accessible to the authenticated caller. Owners see all
+of their archived lobbies; non-owner members see only archived lobbies they
+belong to.
+
+Response: `200 OK` with `List<LobbyDto>`.
+
 ### `GET /api/lobbies/{id}`
 
 Return one lobby by id.
 
 Response: `200 OK` with `LobbyDto`.
+
+`LobbyDto` includes lifecycle fields: `lifecycleStatus`, `accessMode`,
+`restrictionReason`, `archiveAt`, and `selectedAsFreeAt`.
+
+### `POST /api/lobbies/{id}/select-as-free`
+
+Owner-only. Select the caller's one writable Free-plan lobby. The effective
+plan must allow one lobby and the target must have no more than four members.
+Any earlier Free selection for the same owner is cleared.
+
+Response: `200 OK` with `LobbyDto`. A member-limit violation returns `409`
+with code `LOBBY_MEMBER_LIMIT_EXCEEDED`; a non-Free selection returns `409`
+with code `LOBBY_LIMIT_EXCEEDED`.
+
+### `POST /api/lobbies/{id}/restore`
+
+Owner-only. Restore an archived lobby when the owner has effective-plan active
+lobby capacity.
+
+Response: `200 OK` with `LobbyDto`. Insufficient capacity returns `409` with
+code `LOBBY_LIMIT_EXCEEDED`.
 
 ### `GET /api/lobbies/{id}/free-slots?from={timestamp}&to={timestamp}`
 
@@ -209,6 +238,10 @@ Response: `200 OK` with `LobbyDto`.
 Delete a lobby. Owner-only.
 
 Response: `200 OK` with an empty body.
+
+Read-only lobbies reject ordinary task, event, invitation, lobby-metadata, and
+preference writes with `409` and code `LOBBY_READ_ONLY_DUE_TO_PLAN`. Removing
+members and deleting a lobby remain available as reduction actions.
 
 ## Lobby Invites
 

@@ -18,6 +18,7 @@ import io.backend.lined.lobby.invite.domain.LobbyInviteEntity;
 import io.backend.lined.lobby.invite.domain.LobbyInviteRepository;
 import io.backend.lined.lobby.invite.domain.LobbyInviteStatus;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
+import io.backend.lined.lobby.service.LobbyWritePolicy;
 import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
@@ -53,6 +54,8 @@ class LobbyInviteServiceImplTest {
   private LimitEvaluator limitEvaluator;
   @Spy
   private LobbyAccessPolicy accessPolicy;
+  @Mock
+  private LobbyWritePolicy writePolicy;
 
   @InjectMocks
   private LobbyInviteServiceImpl inviteService;
