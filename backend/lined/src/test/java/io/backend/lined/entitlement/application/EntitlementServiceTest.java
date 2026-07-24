@@ -41,4 +41,10 @@ class EntitlementServiceTest {
     assertThat(entitlementService.getEntitlements(BILLING_ACCOUNT_ID))
         .isEqualTo(EntitlementService.PRO);
   }
+
+  @Test
+  void getEntitlements_returnsMatrixForAlreadyResolvedPlan() {
+    assertThat(entitlementService.getEntitlements(PlanCode.FREE))
+        .isEqualTo(EntitlementService.FREE);
+  }
 }

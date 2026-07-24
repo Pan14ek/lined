@@ -13,6 +13,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -67,6 +68,23 @@ public class GlobalExceptionHandler {
         HttpStatus.BAD_REQUEST, "Missing required request header: " + ex.getHeaderName());
     pd.setTitle("Bad request");
     return ResponseEntity.badRequest().body(pd);
+  }
+
+  /**
+   * Returns a not-found problem when Spring MVC cannot map a request to a controller or resource.
+   *
+   * <p>For example, after retirement of {@code POST /api/subscriptions}, Spring raises this
+   * exception rather than allowing the generic handler to turn the absent route into a
+   * {@code 500 Internal Server Error}.</p>
+   *
+   * @param ex Spring MVC missing-resource exception for the requested path
+   * @return RFC 7807 response with {@code 404 Not Found}
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ProblemDetail> handleNoResourceFound(NoResourceFoundException ex) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Resource not found");
+    pd.setTitle("Resource not found");
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
