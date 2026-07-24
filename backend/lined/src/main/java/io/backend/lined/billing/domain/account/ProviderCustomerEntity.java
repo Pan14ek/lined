@@ -1,5 +1,6 @@
 package io.backend.lined.billing.domain.account;
 
+import io.backend.lined.billing.domain.common.BillingAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,11 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -29,7 +27,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -39,7 +37,7 @@ import lombok.Setter;
         columnNames = {"billing_account_id", "provider"}),
     @UniqueConstraint(name = "uq_billing_provider_customers_provider_customer",
         columnNames = "provider_customer_id")})
-public class ProviderCustomerEntity {
+public class ProviderCustomerEntity extends BillingAuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,37 +54,4 @@ public class ProviderCustomerEntity {
   @Column(name = "provider_customer_id", nullable = false, length = 128)
   private String providerCustomerId;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
-
-  /**
-   * Initializes timestamps for a newly created provider-customer mapping.
-   *
-   * <p>For example, persisting a new sandbox mapping without timestamps assigns one UTC instant
-   * to both {@code createdAt} and {@code updatedAt}; supplied values are preserved.</p>
-   */
-  @PrePersist
-  void prePersist() {
-    OffsetDateTime now = OffsetDateTime.now();
-    if (createdAt == null) {
-      createdAt = now;
-    }
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
-  }
-
-  /**
-   * Refreshes the audit timestamp whenever an existing mapping is written.
-   *
-   * <p>For example, a provider migration that replaces the provider customer identifier updates
-   * {@code updatedAt} while retaining the original creation time.</p>
-   */
-  @PreUpdate
-  void preUpdate() {
-    updatedAt = OffsetDateTime.now();
-  }
 }
