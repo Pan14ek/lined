@@ -186,6 +186,30 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
   status/priority accent hues and the free-slot band opacity overlay were
   left unchanged as already legible in both themes.
 
+- **Loading states & skeleton system** — shadcn `Skeleton` adopted plus
+  shared `SkeletonRow`/`SkeletonCard`/`SkeletonAvatar` primitives
+  (`src/components/skeletons/`), a new `useQueryStall` hook (10s
+  `isLoading` → stalled), a shared `LoadErrorState` (error message +
+  retry, reusing `common:errors.generic`/`actions.retry`), and a
+  pending-aware `Button` (spinner over an invisible label, width
+  preserved) wrapping the app's existing button visual language. Every
+  ad-hoc `animate-pulse` div across dashboard, calendar, kanban, lobby
+  (tasks/calendar/members/settings), user settings, subscription, and
+  notifications now renders through the shared primitives, keyed off
+  `isLoading` (never `isFetching`) so a background refetch doesn't
+  flash a skeleton. `CalendarPage` had no loading handling at all
+  before this task despite fetching event ranges — it now shows a new
+  `CalendarSkeleton` (reused by the lobby Calendar tab) and falls back
+  to `LoadErrorState` on a 10s stall or a real fetch error, same as
+  dashboard widgets, kanban, lobby tasks, subscription cards, and the
+  notification inbox/pending-invites banner, each wired to that
+  section's own `refetch`. A representative sample of mutation buttons
+  (`CreateLobbyModal`, `TaskDrawer`'s save, `ProfileCard`'s save,
+  `PlanCards`' subscribe — the last of which previously had no pending
+  indication at all) were swept onto the shared `Button`; already-
+  optimistic mutations (task status toggle, notification mark-read)
+  were left untouched, staying spinner-free per spec.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -236,7 +260,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 22 | `feature/ui-22-responsive-layout` | Mobile/tablet responsive layout: sidebar drawer, bottom tabs, calendar day view, kanban scroll-snap, sheet modals | [tasks/UI-22-responsive-layout.md](tasks/UI-22-responsive-layout.md) | DONE |
 | 23 | `feature/ui-23-dark-mode-audit` | Dark-mode token layer + screen-by-screen audit of the theme toggle shipped in Task 12 | [tasks/UI-23-dark-mode-audit.md](tasks/UI-23-dark-mode-audit.md) | DONE |
 | 24 | `feature/ui-24-i18n-localization` | Localization (react-i18next): English + Ukrainian, plurals, locale dates, settings switcher | [tasks/UI-24-i18n-localization.md](tasks/UI-24-i18n-localization.md) | DONE |
-| 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | TODO |
+| 25 | `feature/ui-25-loading-states-audit` | Skeleton system: route/section/action loading tiers, zero layout shift, no full-page spinners | [tasks/UI-25-loading-states-audit.md](tasks/UI-25-loading-states-audit.md) | DONE |
 | 26 | `feature/ui-26-payment-checkout` | Payment flow: checkout modal → provider-hosted payment → return states + payment history | [tasks/UI-26-payment-checkout.md](tasks/UI-26-payment-checkout.md) | SUPERSEDED — see UI-38..UI-50 |
 | 27 | `feature/ui-27-dashboard-summary` | Adopt `GET /api/dashboard/summary`: one request, accurate lobby-card counts, 404 fallback | [tasks/UI-27-dashboard-summary.md](tasks/UI-27-dashboard-summary.md) | TODO |
 | 28 | `feature/ui-28-lobby-chat` | Lobby Chat tab: polling message list, optimistic send, edit/delete, chat notifications | [tasks/UI-28-lobby-chat.md](tasks/UI-28-lobby-chat.md) | TODO |
