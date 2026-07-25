@@ -216,7 +216,7 @@ useful.
 | `WORKLOAD` | `baseline` | `smoke`, `baseline`, `read-heavy`, `write-heavy`, `mixed`, `stress`, or `negative-smoke`. |
 | `RUN_ID` | current timestamp | Prefix used for synthetic users and seeded data. |
 | `USER_COUNT` | `4` | Synthetic users created during setup; minimum `2`. |
-| `SEED_TASK_COUNT` | `12` | Seeded tasks in the bounded task corpus; minimum `2`. |
+| `SEED_TASK_COUNT` | `12` | Minimum seeded tasks in the bounded corpus; the script expands it to at least the active mutation VU capacity so each mutating VU owns a task version. |
 | `SEED_EVENT_COUNT` | `8` | Seeded events in the bounded event corpus; minimum `2`. |
 | `VUS` | `5` | Virtual users for `baseline`, `read-heavy`, `write-heavy`, and `mixed`. |
 | `DURATION` | `2m` | Duration for `baseline`, `read-heavy`, `write-heavy`, and `mixed`. |
@@ -229,6 +229,12 @@ The script rejects malformed numeric values and unknown workload names so a
 mistyped smoke run does not silently become a longer baseline run. The
 `negative-smoke` profile marks expected validation/conflict/not-found responses
 as expected k6 responses so they do not count as `http_req_failed`.
+
+All caller-scoped reads use `X-User-Id`. Task updates and task/event/lobby
+deletes derive quoted `If-Match` values from the response version. Baseline,
+mixed, and stress workloads assign one seeded task per mutating VU and retain
+the returned version after each successful update, avoiding artificial
+optimistic-lock conflicts between VUs.
 
 ## Expected k6 Signals
 

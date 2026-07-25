@@ -79,6 +79,7 @@ const ENDPOINTS = {
     lobbyId,
     status: STATUSES.inProgress,
   }),
+  tasksByLobby: (lobbyId) => queryPath('/api/tasks', { lobbyId }),
   user: (userId) => `/api/users/${userId}`,
   userConflict: (userId, requesterId) => queryPath('/api/calendar/user-conflict', {
     end: EVENT_WINDOW.to,
@@ -259,7 +260,7 @@ export const baselineWorkflow = (data) => {
   const user = data.users[exec.vu.idInTest % data.users.length];
   const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
   const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
-  const task = data.tasks[exec.scenario.iterationInTest % data.tasks.length];
+  const task = taskForCurrentVu(data);
 
   group('users', () => {
     expectStatus(get(ENDPOINTS.user(user.id), 'users', 'get'), MESSAGES.getUser);
@@ -269,20 +270,19 @@ export const baselineWorkflow = (data) => {
     expectStatus(
         getForUser(ENDPOINTS.myLobbies, user.id, 'lobbies', 'mine'),
         MESSAGES.listLobbies);
-    expectStatus(get(ENDPOINTS.lobby(data.lobby.id), 'lobbies', 'get'), MESSAGES.getLobby);
+    expectStatus(
+        getForUser(ENDPOINTS.lobby(data.lobby.id), user.id, 'lobbies', 'get'),
+        MESSAGES.getLobby);
   });
 
   group('tasks', () => {
+    updateTask(task, user.id, `Updated ${iterationLabel}`);
     expectStatus(
-        patchJsonForUser(
-            ENDPOINTS.task(task.id),
-            { status: STATUSES.inProgress, title: `Updated ${iterationLabel}` },
+        getForUser(
+            ENDPOINTS.tasksByAssignee(data.lobby.id, assignee.id),
             user.id,
             'tasks',
-            'update'),
-        MESSAGES.updateTask);
-    expectStatus(
-        get(ENDPOINTS.tasksByAssignee(data.lobby.id, assignee.id), 'tasks', 'list'),
+            'list'),
         MESSAGES.listTasks);
   });
 
@@ -321,12 +321,18 @@ export const readHeavyWorkflow = (data) => {
     expectStatus(
         getForUser(ENDPOINTS.myLobbies, user.id, 'lobbies', 'mine'),
         MESSAGES.listLobbies);
-    expectStatus(get(ENDPOINTS.lobby(data.lobby.id), 'lobbies', 'get'), MESSAGES.getLobby);
+    expectStatus(
+        getForUser(ENDPOINTS.lobby(data.lobby.id), user.id, 'lobbies', 'get'),
+        MESSAGES.getLobby);
   });
 
   group('read-heavy tasks', () => {
     expectStatus(
-        get(ENDPOINTS.tasksByAssigneeAnyStatus(data.lobby.id, assignee.id), 'tasks', 'list'),
+        getForUser(
+            ENDPOINTS.tasksByAssigneeAnyStatus(data.lobby.id, assignee.id),
+            user.id,
+            'tasks',
+            'list'),
         MESSAGES.listTasks);
   });
 
@@ -362,14 +368,7 @@ export const writeHeavyWorkflow = (data) => {
     let task = null;
     try {
       task = createTask(user.id, data.lobby.id, assignee.id, `Write task ${iterationLabel}`);
-      expectStatus(
-          patchJsonForUser(
-              ENDPOINTS.task(task.id),
-              { status: STATUSES.inProgress, title: `Write updated ${iterationLabel}` },
-              user.id,
-              'tasks',
-              'update'),
-          MESSAGES.updateTask);
+      task = updateTask(task, user.id, `Write updated ${iterationLabel}`);
     } finally {
       deleteCreatedTask(task, user.id);
     }
@@ -390,7 +389,7 @@ export const writeHeavyWorkflow = (data) => {
 export const mixedWorkflow = (data) => {
   const user = data.users[exec.vu.idInTest % data.users.length];
   const assignee = data.users[(exec.vu.idInTest + 1) % data.users.length];
-  const task = data.tasks[exec.scenario.iterationInTest % data.tasks.length];
+  const task = taskForCurrentVu(data);
   const iterationLabel = `${data.runId}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
 
   group('mixed reads', () => {
@@ -404,14 +403,7 @@ export const mixedWorkflow = (data) => {
   });
 
   group('mixed updates', () => {
-    expectStatus(
-        patchJsonForUser(
-            ENDPOINTS.task(task.id),
-            { status: STATUSES.inProgress, title: `Mixed updated ${iterationLabel}` },
-            user.id,
-            'tasks',
-            'update'),
-        MESSAGES.updateTask);
+    updateTask(task, user.id, `Mixed updated ${iterationLabel}`);
   });
 
   group('mixed writes', () => {
@@ -421,7 +413,7 @@ export const mixedWorkflow = (data) => {
         assignee.id,
         `Mixed task ${iterationLabel}`);
     expectStatus(
-        delForUser(ENDPOINTS.task(createdTask.id), user.id, 'tasks', 'delete'),
+        delForUser(ENDPOINTS.task(createdTask.id), user.id, 'tasks', 'delete', createdTask.version),
         MESSAGES.deleteTask);
   });
 
@@ -468,17 +460,23 @@ export const teardown = (data) => {
 
   data.events.forEach((event) => {
     expectStatus(
-        delForUser(ENDPOINTS.event(event.id), data.users[0].id, 'calendar', 'delete-event'),
+        delForUser(
+            ENDPOINTS.event(event.id),
+            data.users[0].id,
+            'calendar',
+            'delete-event',
+            event.version),
         MESSAGES.deleteEvent);
   });
   data.tasks.forEach((task) => {
     expectStatus(
-        delForUser(ENDPOINTS.task(task.id), data.users[0].id, 'tasks', 'delete'),
+        deleteSeededTask(task.id, data.users[0].id, data.lobby.id),
         MESSAGES.deleteTask);
   });
-  expectStatus(
-      delForUser(ENDPOINTS.lobby(data.lobby.id), data.users[0].id, 'lobbies', 'delete'),
-      MESSAGES.deleteLobby);
+  const lobby = getResourceForUser(ENDPOINTS.lobby(data.lobby.id), data.users[0].id,
+      'lobbies', 'get');
+  expectStatus(delForUser(ENDPOINTS.lobby(lobby.id), data.users[0].id, 'lobbies', 'delete',
+      lobby.version), MESSAGES.deleteLobby);
   console.warn(
       `Seeded tasks, events, and lobby ${data.lobby.id} were deleted. `
       + `Synthetic users with username prefix `
@@ -534,7 +532,7 @@ const inviteAndAcceptMember = (lobbyId, ownerId, memberId) => {
   expectStatus(acceptRes, MESSAGES.acceptLobbyInvite);
 };
 
-const seedTasks = (ownerId, lobbyId, users) => range(SEED_TASK_COUNT).map((index) => {
+const seedTasks = (ownerId, lobbyId, users) => range(seedTaskCountForWorkload()).map((index) => {
   const assignee = users[(index + 1) % users.length];
   return createTask(ownerId, lobbyId, assignee.id, `Seed task ${RUN_ID}-${index}`);
 });
@@ -549,6 +547,38 @@ const createTask = (currentUserId, lobbyId, assigneeId, title) => {
   const res = postJsonForUser(ENDPOINTS.tasks, payload, currentUserId, 'tasks', 'create');
   expectStatus(res, MESSAGES.createTask);
   return responseJson(res, 'create task');
+};
+
+const updateTask = (task, userId, title) => {
+  const res = patchJsonForUser(
+      ENDPOINTS.task(task.id),
+      { status: STATUSES.inProgress, title },
+      userId,
+      'tasks',
+      'update',
+      task.version);
+  expectStatus(res, MESSAGES.updateTask);
+  const updated = responseJson(res, 'update task');
+  task.version = updated.version;
+  return updated;
+};
+
+const deleteSeededTask = (taskId, userId, lobbyId) => {
+  const response = getForUser(
+      ENDPOINTS.tasksByLobby(lobbyId), userId, 'tasks', 'list-for-delete');
+  expectStatus(response, MESSAGES.listTasks);
+  const task = responseJson(response, 'list tasks for delete')
+      .find((candidate) => candidate.id === taskId);
+  if (!task) {
+    exec.test.abort(`seeded task ${taskId} was not visible for teardown`);
+  }
+  return delForUser(ENDPOINTS.task(taskId), userId, 'tasks', 'delete', task.version);
+};
+
+const getResourceForUser = (path, userId, domain, endpoint) => {
+  const response = getForUser(path, userId, domain, endpoint);
+  expectStatus(response, `${endpoint} succeeds`);
+  return responseJson(response, endpoint);
 };
 
 const seedEvents = (ownerId, lobbyId) => range(SEED_EVENT_COUNT)
@@ -580,7 +610,7 @@ const deleteCreatedTask = (task, userId) => {
     return;
   }
   expectStatus(
-      delForUser(ENDPOINTS.task(task.id), userId, 'tasks', 'delete'),
+      delForUser(ENDPOINTS.task(task.id), userId, 'tasks', 'delete', task.version),
       MESSAGES.deleteTask);
 };
 
@@ -589,7 +619,7 @@ const deleteCreatedEvent = (event, userId) => {
     return;
   }
   expectStatus(
-      delForUser(ENDPOINTS.event(event.id), userId, 'calendar', 'delete-event'),
+      delForUser(ENDPOINTS.event(event.id), userId, 'calendar', 'delete-event', event.version),
       MESSAGES.deleteEvent);
 };
 
@@ -622,21 +652,18 @@ const postJsonForUser = (
     JSON.stringify(payload),
     requestParams(domain, endpoint, userId, expectedStatuses));
 
-const patchJsonForUser = (path, payload, userId, domain, endpoint) => http.patch(
+const patchJsonForUser = (path, payload, userId, domain, endpoint, version) => http.patch(
     url(path),
     JSON.stringify(payload),
-    requestParams(domain, endpoint, userId));
+    requestParams(domain, endpoint, userId, [200], version));
 
-const delForUser = (path, userId, domain, endpoint) => http.del(
+const delForUser = (path, userId, domain, endpoint, version) => http.del(
     url(path),
     null,
-    requestParams(domain, endpoint, userId));
+    requestParams(domain, endpoint, userId, [200], version));
 
-const requestParams = (domain, endpoint, userId = null, expectedStatuses = [200]) => ({
-  headers: userId === null ? JSON_HEADERS : {
-    ...JSON_HEADERS,
-    'X-User-Id': String(userId),
-  },
+const requestParams = (domain, endpoint, userId = null, expectedStatuses = [200], version) => ({
+  headers: requestHeaders(userId, version),
   responseCallback: http.expectedStatuses(...expectedStatuses),
   tags: {
     domain,
@@ -644,6 +671,19 @@ const requestParams = (domain, endpoint, userId = null, expectedStatuses = [200]
     workload: WORKLOAD,
   },
 });
+
+const requestHeaders = (userId, version) => ({
+  ...JSON_HEADERS,
+  ...(userId === null ? {} : { 'X-User-Id': String(userId) }),
+  ...(version === undefined ? {} : { 'If-Match': etagForVersion(version) }),
+});
+
+const etagForVersion = (version) => {
+  if (!Number.isInteger(version) || version < 0) {
+    exec.test.abort(`resource version must be a non-negative integer, got ${version}`);
+  }
+  return `"${version}"`;
+};
 
 const responseJson = (res, label) => {
   if (!res.body) {
@@ -671,5 +711,19 @@ const queryPath = (path, params) => {
 };
 
 const range = (count) => Array.from({ length: count }, (_, index) => index);
+
+const taskForCurrentVu = (data) => data.tasks[(exec.vu.idInTest - 1) % data.tasks.length];
+
+const seedTaskCountForWorkload = () => Math.max(SEED_TASK_COUNT, mutationVuCapacity());
+
+const mutationVuCapacity = () => {
+  if (WORKLOAD === WORKLOADS.stress) {
+    return STRESS_MAX_VUS;
+  }
+  if (WORKLOAD === WORKLOADS.baseline || WORKLOAD === WORKLOADS.mixed) {
+    return BASELINE_VUS;
+  }
+  return 0;
+};
 
 const url = (path) => `${BASE_URL}${path}`;
