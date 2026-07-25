@@ -180,7 +180,8 @@ Response: `200 OK` with `List<LobbyDto>`.
 
 ### `GET /api/lobbies/{id}`
 
-Return one lobby by id.
+Return one lobby by id. The caller must be an owner or member and supplies the
+temporary MVP `X-User-Id` header.
 
 Response: `200 OK` with `LobbyDto`.
 

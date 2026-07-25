@@ -176,6 +176,26 @@ class LobbyServiceImplTest {
         .hasMessageContaining("999");
   }
 
+  @Test
+  void getById_returnsLobby_whenRequesterIsMember() {
+    lobbyEntity.getMembers().add(member);
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+    when(mapper.toDto(lobbyEntity)).thenReturn(lobbyDto);
+
+    LobbyDto result = lobbyService.getById(101L, 2L);
+
+    assertThat(result).isEqualTo(lobbyDto);
+  }
+
+  @Test
+  void getById_throwsForbidden_whenRequesterIsNotMember() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
+
+    assertThatThrownBy(() -> lobbyService.getById(101L, 99L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("not a member");
+  }
+
   /* =======================
      MY LOBBIES
   ======================= */

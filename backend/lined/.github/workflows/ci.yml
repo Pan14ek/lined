@@ -41,6 +41,9 @@ jobs:
       - name: Run static checks (Checkstyle + SpotBugs + Tests)
         run: ./gradlew check
 
+      - name: Run PostgreSQL API integration tests
+        run: ./gradlew integrationTest
+
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

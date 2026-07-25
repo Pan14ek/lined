@@ -75,6 +75,13 @@ public class LobbyServiceImpl implements LobbyService {
   }
 
   @Override
+  public LobbyDto getById(Long id, Long requesterId) {
+    var lobby = mustLobby(id);
+    accessPolicy.ensureMember(lobby, requesterId);
+    return mapper.toDto(lobby);
+  }
+
+  @Override
   public List<LobbyDto> myLobbies(Long userId) {
     var list = lobbyRepo.findAllByMemberId(userId);
     return list.stream().map(mapper::toDto).toList();
