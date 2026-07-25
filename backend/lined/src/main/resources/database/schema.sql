@@ -89,10 +89,15 @@ CREATE TABLE IF NOT EXISTS tasks
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(16) NOT NULL DEFAULT 'MEDIUM';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'SHARED';
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_visibility;
+ALTER TABLE tasks ADD CONSTRAINT chk_tasks_visibility CHECK (visibility IN ('PRIVATE', 'SHARED'));
 
 CREATE INDEX IF NOT EXISTS idx_tasks_lobby ON tasks (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks (assignee_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status);
+CREATE INDEX IF NOT EXISTS idx_tasks_lobby_visibility_creator
+    ON tasks (lobby_id, visibility, creator_id);
 
 CREATE TABLE IF NOT EXISTS events
 (

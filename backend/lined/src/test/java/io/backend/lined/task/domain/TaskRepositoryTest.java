@@ -21,28 +21,48 @@ class TaskRepositoryTest {
   private EntityManager entityManager;
 
   @Test
-  void findAllByLobbyMemberId_returnsOnlyTasksFromMemberLobbies() {
+  void findVisible_hidesAnotherCreatorsPrivateTask() {
     UserEntity member = persistUser("member");
-    UserEntity outsider = persistUser("outsider");
-    LobbyEntity memberLobby = persistLobby("Member lobby", member, Set.of(member));
-    LobbyEntity outsiderLobby = persistLobby("Outsider lobby", outsider, Set.of(outsider));
-    TaskEntity visibleTask = persistTask("Visible task", memberLobby, member);
-    persistTask("Hidden task", outsiderLobby, outsider);
+    UserEntity creator = persistUser("creator");
+    LobbyEntity lobby = persistLobby("Shared lobby", member, Set.of(member, creator));
+    TaskEntity sharedTask = persistTask("Shared task", lobby, creator, TaskVisibility.SHARED, member);
+    TaskEntity ownPrivateTask = persistTask("Own private task", lobby, member,
+        TaskVisibility.PRIVATE, member);
+    persistTask("Hidden private task", lobby, creator, TaskVisibility.PRIVATE, creator);
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(taskRepository.findAllByLobbyMemberId(member.getId()))
+    assertThat(taskRepository.findVisible(member.getId(), lobby.getId(), null, null))
         .extracting(TaskEntity::getId)
-        .containsExactly(visibleTask.getId());
+        .containsExactlyInAnyOrder(sharedTask.getId(), ownPrivateTask.getId());
   }
 
   @Test
-  void findAllByLobbyMemberId_returnsEmptyList_whenUserBelongsToNoLobbies() {
+  void findVisibleMine_returnsAssignedSharedAndOwnPrivateTasksOnly() {
+    UserEntity member = persistUser("member-mine");
+    UserEntity creator = persistUser("creator-mine");
+    LobbyEntity lobby = persistLobby("Mine lobby", member, Set.of(member, creator));
+    TaskEntity assignedShared = persistTask("Assigned shared", lobby, creator,
+        TaskVisibility.SHARED, member);
+    TaskEntity ownPrivate = persistTask("Own private", lobby, member, TaskVisibility.PRIVATE,
+        member);
+    persistTask("Other private", lobby, creator, TaskVisibility.PRIVATE, creator);
+    persistTask("Unassigned shared", lobby, creator, TaskVisibility.SHARED, null);
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(taskRepository.findVisibleMine(member.getId()))
+        .extracting(TaskEntity::getId)
+        .containsExactlyInAnyOrder(assignedShared.getId(), ownPrivate.getId());
+  }
+
+  @Test
+  void findVisible_returnsEmptyList_whenUserBelongsToNoLobbies() {
     UserEntity user = persistUser("no-lobbies");
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(taskRepository.findAllByLobbyMemberId(user.getId())).isEmpty();
+    assertThat(taskRepository.findVisible(user.getId(), null, null, null)).isEmpty();
   }
 
   private UserEntity persistUser(String username) {
@@ -66,11 +86,15 @@ class TaskRepositoryTest {
     return lobby;
   }
 
-  private TaskEntity persistTask(String title, LobbyEntity lobby, UserEntity creator) {
+  private TaskEntity persistTask(String title, LobbyEntity lobby, UserEntity creator,
+                                 TaskVisibility visibility, UserEntity assignee) {
     TaskEntity task = TaskEntity.builder()
         .title(title)
         .lobby(lobby)
         .creator(creator)
+        .assignee(assignee)
+        .status(TaskStatus.TODO)
+        .visibility(visibility)
         .build();
     entityManager.persist(task);
     return task;

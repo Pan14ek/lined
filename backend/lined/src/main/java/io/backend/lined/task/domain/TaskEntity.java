@@ -64,6 +64,10 @@ public class TaskEntity {
   @Column(nullable = false, length = 16)
   private TaskStatus status;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  private TaskVisibility visibility;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "lobby_id", nullable = false)
   private LobbyEntity lobby;
@@ -93,6 +97,9 @@ public class TaskEntity {
     }
     if (priority == null) {
       priority = TaskPriority.MEDIUM;
+    }
+    if (visibility == null) {
+      visibility = TaskVisibility.SHARED;
     }
   }
 

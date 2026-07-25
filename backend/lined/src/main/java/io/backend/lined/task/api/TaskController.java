@@ -23,6 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 
+/**
+ * HTTP boundary for requester-aware task operations.
+ *
+ * <p>For example, a list request carries {@code X-User-Id: 42} so the service can return shared
+ * tasks plus user {@code 42}'s private tasks without exposing another creator's private work.</p>
+ */
 @Tag(name = "Tasks", description = "Shared tasks management")
 @RestController
 @RequestMapping("/api/tasks")
@@ -31,6 +37,13 @@ public class TaskController {
 
   private final TaskService service;
 
+  /**
+   * Creates a shared or creator-owned private task for the caller.
+   *
+   * @param currentUserId requester identity from the MVP header
+   * @param dto validated creation payload; private tasks are self-assigned
+   * @return created task with its optimistic-lock ETag
+   */
   @Operation(summary = "Create task", description = "Creates a task in a lobby; creator is the requester.")
   @PostMapping
   public ResponseEntity<TaskDto> create(
@@ -41,14 +54,20 @@ public class TaskController {
           description = "Task payload",
           content = @Content(schema = @Schema(implementation = TaskCreateDto.class),
               examples = @ExampleObject(value = """
-                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "notifyAssignee":true }
+                    { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "visibility":"SHARED", "notifyAssignee":true }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
     TaskDto created = service.create(dto, currentUserId);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
-  @Operation(summary = "Update task", description = "Partial update (status, assignee, title, dueDate, description, priority).")
+  /**
+   * Applies a partial task update after privacy and version checks.
+   *
+   * <p>For example, a creator may send {@code visibility=PRIVATE} with their own assignee ID,
+   * while another lobby member cannot hide a shared task.</p>
+   */
+  @Operation(summary = "Update task", description = "Partial update including creator-only visibility changes.")
   @PatchMapping("/{id}")
   public ResponseEntity<TaskDto> update(
       @Parameter(description = "Task ID", example = "555") @PathVariable Long id,
@@ -59,7 +78,7 @@ public class TaskController {
           required = true,
           content = @Content(schema = @Schema(implementation = TaskUpdateDto.class),
               examples = @ExampleObject(value = """
-                    { "status":"IN_PROGRESS", "assigneeId":77, "dueDate":"2025-11-25", "description":"Pick up milk and bread", "priority":"HIGH" }
+                    { "status":"IN_PROGRESS", "assigneeId":77, "dueDate":"2025-11-25", "description":"Pick up milk and bread", "priority":"HIGH", "visibility":"SHARED" }
                   """)))
       @Valid @RequestBody TaskUpdateDto dto) {
     TaskDto updated = service.update(id, dto, currentUserId, VersionPrecondition.parse(ifMatch));
@@ -71,16 +90,27 @@ public class TaskController {
     return service.update(id, dto, currentUserId);
   }
 
-  @Operation(summary = "List tasks", description = "Filter by lobbyId, assigneeId, status={TODO|IN_PROGRESS|DONE}.")
+  /**
+   * Lists only database-filtered tasks visible to the requester.
+   *
+   * <p>For example, user {@code 42} sees shared member-lobby tasks and private tasks created by
+   * user {@code 42}, never a partner's private task.</p>
+   */
+  @Operation(summary = "List visible tasks", description = "Filters requester-visible tasks by lobby, assignee, and status.")
   @GetMapping
   public List<TaskDto> list(
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId,
       @Parameter(example = "101") @RequestParam(required = false) Long lobbyId,
       @Parameter(example = "77") @RequestParam(required = false) Long assigneeId,
       @Parameter(example = "TODO") @RequestParam(required = false) String status) {
-    return service.list(lobbyId, assigneeId, status);
+    return service.list(lobbyId, assigneeId, status, currentUserId);
   }
 
-  @Operation(summary = "List my tasks", description = "Returns tasks in every lobby where the requester is a member.")
+  /**
+   * Lists the caller's actionable shared tasks and their own private tasks.
+   */
+  @Operation(summary = "List my tasks", description = "Returns assigned shared tasks and creator-owned private tasks.")
   @GetMapping("/mine")
   public List<TaskDto> mine(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
@@ -88,6 +118,9 @@ public class TaskController {
     return service.listMine(currentUserId);
   }
 
+  /**
+   * Deletes a visible task after the requester satisfies privacy and lobby-write rules.
+   */
   @Operation(summary = "Delete task", description = "Delete task (lobby owner or member).")
   @DeleteMapping("/{id}")
   public void delete(
