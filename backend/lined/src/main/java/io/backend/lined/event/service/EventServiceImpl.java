@@ -89,7 +89,7 @@ public class EventServiceImpl implements EventService {
    */
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
-    var e = mustEvent(id);
+    var e = mustVisibleEvent(id, currentUserId);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
     writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(e.getVersion(), expectedVersion);
@@ -129,9 +129,17 @@ public class EventServiceImpl implements EventService {
     return mapper.toDto(e);
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public EventDto get(Long id, Long currentUserId) {
+    var event = mustVisibleEvent(id, currentUserId);
+    accessPolicy.ensureMember(event.getLobby(), currentUserId);
+    return mapper.toDto(event);
+  }
+
   @Override
   public void delete(Long id, Long currentUserId, long expectedVersion) {
-    var e = mustEvent(id);
+    var e = mustVisibleEvent(id, currentUserId);
     accessPolicy.ensureMember(e.getLobby(), currentUserId);
     writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(e.getVersion(), expectedVersion);
@@ -148,7 +156,7 @@ public class EventServiceImpl implements EventService {
     accessPolicy.ensureMember(lobby, currentUserId);
     var window = queryWindow(from, to);
 
-    return repo.findOverlapping(lobbyId, window.start(), window.end()).stream()
+    return repo.findVisibleOverlapping(lobbyId, currentUserId, window.start(), window.end()).stream()
         .map(mapper::toDto)
         .toList();
   }
@@ -161,7 +169,7 @@ public class EventServiceImpl implements EventService {
     accessPolicy.ensureMember(lobby, requesterId);
     var window = conflictWindow(start, end);
     var events = repo.findOverlapping(lobbyId, window.start(), window.end());
-    return conflictAnalyzer.findConflicts(events);
+    return conflictAnalyzer.findConflicts(events, requesterId);
   }
 
   @Override
@@ -196,8 +204,20 @@ public class EventServiceImpl implements EventService {
         () -> new NotFoundException("Lobby %d not found".formatted(id)));
   }
 
-  private EventEntity mustEvent(Long id) {
-    return EntityFinder.findOrThrow(repo.findById(id),
+  /**
+   * Loads an event through the privacy predicate before any mutation is attempted.
+   *
+   * <p>For example, a lobby member updating event {@code 9001} receives the normal not-found
+   * response when it is private and owned by another member. A shared event remains available for
+   * the existing lobby write-policy checks.</p>
+   *
+   * @param id requested event identifier
+   * @param requesterId caller identity
+   * @return visible event
+   * @throws NotFoundException if the event is unknown or private to another owner
+   */
+  private EventEntity mustVisibleEvent(Long id, Long requesterId) {
+    return EntityFinder.findOrThrow(repo.findVisibleById(id, requesterId),
         () -> new NotFoundException("Event %d not found".formatted(id)));
   }
 

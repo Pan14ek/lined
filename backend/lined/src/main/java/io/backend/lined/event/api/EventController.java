@@ -97,6 +97,27 @@ public class EventController {
     return service.list(lobbyId, from, to, currentUserId);
   }
 
+  /**
+   * Reads one event through the server-side privacy boundary.
+   *
+   * <p>For example, a lobby member can open a shared event or their own private event. Requesting
+   * another member's private ID returns the same {@code 404 Not Found} response as an unknown
+   * ID, so the endpoint never confirms private-event existence.</p>
+   *
+   * @param id event identifier
+   * @param currentUserId temporary MVP caller identity
+   * @return visible event with its optimistic-lock ETag
+   */
+  @Operation(summary = "Get event", description = "Get a shared or caller-owned private event.")
+  @GetMapping("/events/{id}")
+  public ResponseEntity<EventDto> get(
+      @Parameter(example = "9001") @PathVariable Long id,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    EventDto event = service.get(id, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(event.version())).body(event);
+  }
+
   @Operation(summary = "Delete event", description = "Delete event (lobby owner/member).")
   @DeleteMapping("/events/{id}")
   public void delete(

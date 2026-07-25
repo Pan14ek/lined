@@ -405,9 +405,18 @@ Send the current event version as `If-Match: "{version}"`; deletion requires the
 
 Response: `200 OK` with `EventDto`.
 
+### `GET /api/calendar/events/{id}`
+
+Return one event visible to the `X-User-Id` caller. A caller may read a shared event or their own
+private event. Another member's private event returns the normal `404 Not Found` response, so the
+endpoint does not disclose that the requested identifier exists.
+
+Response: `200 OK` with `EventDto` and an `ETag` version header.
+
 ### `GET /api/calendar/events?lobbyId={id}&from={timestamp}&to={timestamp}`
 
-List events overlapping the requested time window.
+List events overlapping the requested time window. The response includes shared events plus the
+caller's own private events; another lobby member's private events are omitted.
 
 Response: `200 OK` with `List<EventDto>`.
 
@@ -422,7 +431,9 @@ Response: `200 OK` with an empty body.
 Return event conflicts for the specified lobby and time window. `requesterId`
 must match the caller's `X-User-Id` header.
 
-Response: `200 OK` with `List<EventConflictDto>`.
+Response: `200 OK` with `List<EventConflictDto>`. A private conflict owned by another member has
+`detailsAvailable=false` and no event ID or content; its owner ID and `shared=false` remain only as
+an opaque availability explanation.
 
 ### `GET /api/calendar/user-conflict?userId={id}&start={timestamp}&end={timestamp}&requesterId={id}`
 

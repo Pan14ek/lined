@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -164,6 +165,25 @@ class EventControllerTest {
   /* =======================
      list
   ======================= */
+
+  @Test
+  void get_delegatesToService() {
+    when(service.get(9001L, 42L)).thenReturn(sampleEvent);
+
+    EventDto result = controller.get(9001L, 42L).getBody();
+
+    assertThat(result).isEqualTo(sampleEvent);
+    verify(service).get(9001L, 42L);
+  }
+
+  @Test
+  void get_returnsNotFoundForPrivateEventOutsideOwnerScope() throws Exception {
+    when(service.get(9001L, 77L)).thenThrow(new NotFoundException("Event 9001 not found"));
+
+    mockMvc.perform(get("/api/calendar/events/9001").header("X-User-Id", "77"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+  }
 
   @Test
   void list_delegatesToService() {

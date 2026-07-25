@@ -45,6 +45,21 @@ public interface EventService {
    */
   EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion);
 
+  /**
+   * Resolves one event only when its details are visible to the requesting lobby member.
+   *
+   * <p>For example, user {@code 42} can retrieve their private appointment, while user
+   * {@code 77} receives the ordinary not-found response for the same identifier. This avoids
+   * turning a guessed private identifier into an existence oracle.</p>
+   *
+   * @param id event identifier
+   * @param currentUserId requester identity
+   * @return visible event response
+   * @throws NotFoundException if the event is absent or private to another owner
+   * @throws ForbiddenException if a visible shared event belongs to an inaccessible lobby
+   */
+  EventDto get(Long id, Long currentUserId);
+
   @Deprecated
   default EventDto update(Long id, EventUpdateDto dto, Long currentUserId) {
     return update(id, dto, currentUserId, -1L);

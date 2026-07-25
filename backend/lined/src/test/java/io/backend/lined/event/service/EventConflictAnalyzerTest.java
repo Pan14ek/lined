@@ -71,10 +71,10 @@ class EventConflictAnalyzerTest {
     List<EventConflictDto> result = analyzer.findConflicts(List.of(first, second, third));
 
     assertThat(result).hasSize(2);
-    assertThat(result.get(0).first()).isEqualTo(dto1);
-    assertThat(result.get(0).second()).isEqualTo(dto2);
-    assertThat(result.get(1).first()).isEqualTo(dto2);
-    assertThat(result.get(1).second()).isEqualTo(dto3);
+    assertThat(result.get(0).first().event()).isEqualTo(dto1);
+    assertThat(result.get(0).second().event()).isEqualTo(dto2);
+    assertThat(result.get(1).first().event()).isEqualTo(dto2);
+    assertThat(result.get(1).second().event()).isEqualTo(dto3);
   }
 
   @Test
@@ -106,6 +106,31 @@ class EventConflictAnalyzerTest {
   }
 
   @Test
+  void findConflicts_hidesAnotherOwnersPrivateDetails() {
+    var owner = new io.backend.lined.user.domain.UserEntity();
+    owner.setId(1L);
+    var otherOwner = new io.backend.lined.user.domain.UserEntity();
+    otherOwner.setId(2L);
+    var mine = event(1L, base, base.plusHours(2));
+    mine.setOwner(owner);
+    var privateOther = event(2L, base.plusHours(1), base.plusHours(3));
+    privateOther.setShared(false);
+    privateOther.setOwner(otherOwner);
+    when(mapper.toDto(mine)).thenReturn(dto(1L));
+
+    List<EventConflictDto> result = analyzer.findConflicts(List.of(mine, privateOther), 1L);
+
+    assertThat(result).singleElement().satisfies(conflict -> {
+      assertThat(conflict.second().eventId()).isNull();
+      assertThat(conflict.second().ownerId()).isEqualTo(2L);
+      assertThat(conflict.second().shared()).isFalse();
+      assertThat(conflict.second().detailsAvailable()).isFalse();
+      assertThat(conflict.second().event()).isNull();
+    });
+    verify(mapper, never()).toDto(privateOther);
+  }
+
+  @Test
   void findConflicts_throwsIllegalState_whenEntityHasInvalidWindow() {
     var invalid = event(1L, base.plusHours(1), base);
     var valid = event(2L, base, base.plusHours(2));
@@ -125,6 +150,8 @@ class EventConflictAnalyzerTest {
   }
 
   private EventEntity event(Long id, OffsetDateTime start, OffsetDateTime end) {
+    var owner = new io.backend.lined.user.domain.UserEntity();
+    owner.setId(1L);
     return EventEntity.builder()
         .id(id)
         .title("Event " + id)
@@ -132,6 +159,7 @@ class EventConflictAnalyzerTest {
         .startAt(start)
         .endAt(end)
         .timezone("Europe/Kyiv")
+        .owner(owner)
         .build();
   }
 
