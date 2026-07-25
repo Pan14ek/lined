@@ -1,8 +1,12 @@
+export type EventVisibility = 'PRIVATE' | 'SHARED';
+
 export interface EventDto {
   id: number;
   title: string;
   location: string | null;
+  /** @deprecated use `visibility` */
   shared: boolean;
+  visibility: EventVisibility;
   startAt: string;
   endAt: string;
   timezone: string;
@@ -14,7 +18,7 @@ export interface EventDto {
 export interface EventCreateDto {
   title: string;
   location?: string;
-  shared: boolean;
+  visibility: EventVisibility;
   startAt: string;
   endAt: string;
   timezone: string;
@@ -26,7 +30,7 @@ export interface EventUpdateDto {
   title?: string;
   /** Omit to keep the current location; send '' to clear it. */
   location?: string;
-  shared?: boolean;
+  visibility?: EventVisibility;
   startAt?: string;
   endAt?: string;
   timezone?: string;
