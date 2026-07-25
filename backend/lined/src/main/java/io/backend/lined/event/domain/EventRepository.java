@@ -48,7 +48,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       WHERE e.lobby.id = :lobbyId
         AND e.startAt < :to
         AND e.endAt > :from
-        AND (e.shared = true OR e.owner.id = :requesterId)
+        AND (e.visibility = io.backend.lined.event.domain.EventVisibility.SHARED
+             OR e.owner.id = :requesterId)
       ORDER BY e.startAt ASC
       """)
   List<EventEntity> findVisibleOverlapping(@Param("lobbyId") Long lobbyId,
@@ -70,7 +71,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
   @Query("""
       SELECT e FROM EventEntity e
       WHERE e.id = :eventId
-        AND (e.shared = true OR e.owner.id = :requesterId)
+        AND (e.visibility = io.backend.lined.event.domain.EventVisibility.SHARED
+             OR e.owner.id = :requesterId)
       """)
   Optional<EventEntity> findVisibleById(@Param("eventId") Long eventId,
                                          @Param("requesterId") Long requesterId);
@@ -99,7 +101,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
         AND (
           e.owner.id IN :memberIds
           OR (
-            e.shared = true
+            e.visibility = io.backend.lined.event.domain.EventVisibility.SHARED
             AND (e.lobby.owner.id IN :memberIds OR sharedMember.id IN :memberIds)
           )
         )
@@ -125,7 +127,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       SELECT DISTINCT e FROM EventEntity e
       LEFT JOIN e.lobby.members member
       WHERE e.owner.id = :userId
-         OR (e.shared = true AND (e.lobby.owner.id = :userId OR member.id = :userId))
+         OR (e.visibility = io.backend.lined.event.domain.EventVisibility.SHARED
+             AND (e.lobby.owner.id = :userId OR member.id = :userId))
       ORDER BY e.startAt ASC
       """)
   List<EventEntity> findFeedEvents(@Param("userId") Long userId);

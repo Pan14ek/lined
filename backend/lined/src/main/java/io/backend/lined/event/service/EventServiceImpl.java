@@ -13,6 +13,9 @@ import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.event.api.UserConflictDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
+import io.backend.lined.event.domain.EventVisibility;
+import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.exception.PrivateItemNotificationException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -44,6 +47,7 @@ public class EventServiceImpl implements EventService {
   private final EventConflictAnalyzer conflictAnalyzer;
   private final FreeSlotCalculator freeSlotCalculator;
   private final NotificationService notificationService;
+  private final EventAccessPolicy eventAccessPolicy;
 
   /**
    * Creates an event with its optional reminder policy.
@@ -58,11 +62,18 @@ public class EventServiceImpl implements EventService {
     accessPolicy.ensureMember(lobby, currentUserId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.EVENT_MUTATION);
     var window = eventWindow(dto.startAt(), dto.endAt());
+    EventVisibility visibility = resolveVisibility(dto.shared(), dto.visibility(), EventVisibility.SHARED);
+    boolean privateEventNotifyingMembers = visibility == EventVisibility.PRIVATE
+        && dto.notifyMembers();
+    if (privateEventNotifyingMembers) {
+      throw new PrivateItemNotificationException();
+    }
 
     var entity = EventEntity.builder()
         .title(dto.title())
         .location(normalizeLocation(dto.location()))
-        .shared(dto.shared())
+        .shared(visibility == EventVisibility.SHARED)
+        .visibility(visibility)
         .startAt(window.start())
         .endAt(window.end())
         .timezone(dto.timezone())
@@ -72,7 +83,7 @@ public class EventServiceImpl implements EventService {
         .build();
 
     var saved = repo.save(entity);
-    if (dto.notifyMembers() && saved.isShared()) {
+    if (dto.notifyMembers() && visibility == EventVisibility.SHARED) {
       lobby.getMembers().stream()
           .filter(member -> !member.getId().equals(owner.getId()))
           .forEach(member -> notificationService.notifySharedEventCreated(
@@ -89,44 +100,48 @@ public class EventServiceImpl implements EventService {
    */
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
-    var e = mustVisibleEvent(id, currentUserId);
-    accessPolicy.ensureMember(e.getLobby(), currentUserId);
-    writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
-    verifyVersion(e.getVersion(), expectedVersion);
+    var event = mustVisibleEvent(id, currentUserId);
+    accessPolicy.ensureMember(event.getLobby(), currentUserId);
+    writePolicy.assertWritable(event.getLobby(), LobbyWriteAction.EVENT_MUTATION);
+    verifyVersion(event.getVersion(), expectedVersion);
+    EventVisibility currentVisibility = currentVisibility(event);
+    EventVisibility visibility = resolveVisibility(dto.shared(), dto.visibility(), currentVisibility);
+    if (visibility != currentVisibility) {
+      eventAccessPolicy.ensureCanChangeVisibility(event, currentUserId);
+    }
     var window = eventWindow(
-        dto.startAt() == null ? e.getStartAt() : dto.startAt(),
-        dto.endAt() == null ? e.getEndAt() : dto.endAt());
+        dto.startAt() == null ? event.getStartAt() : dto.startAt(),
+        dto.endAt() == null ? event.getEndAt() : dto.endAt());
 
     boolean reminderOccurrenceChanged = (dto.startAt() != null
-        && !dto.startAt().equals(e.getStartAt()))
+        && !dto.startAt().equals(event.getStartAt()))
         || (dto.reminderMinutesBefore() != null
         && effectiveReminderMinutes(dto.reminderMinutesBefore())
-        != effectiveReminderMinutes(e.getReminderMinutesBefore()));
+        != effectiveReminderMinutes(event.getReminderMinutesBefore()));
     if (dto.title() != null && !dto.title().isBlank()) {
-      e.setTitle(dto.title());
+      event.setTitle(dto.title());
     }
     if (dto.location() != null) {
-      e.setLocation(normalizeLocation(dto.location()));
+      event.setLocation(normalizeLocation(dto.location()));
     }
-    if (dto.shared() != null) {
-      e.setShared(dto.shared());
-    }
-    e.setStartAt(window.start());
-    e.setEndAt(window.end());
+    event.setVisibility(visibility);
+    event.setShared(visibility == EventVisibility.SHARED);
+    event.setStartAt(window.start());
+    event.setEndAt(window.end());
     if (dto.timezone() != null && !dto.timezone().isBlank()) {
-      e.setTimezone(dto.timezone());
+      event.setTimezone(dto.timezone());
     }
     if (dto.reminderMinutesBefore() != null) {
-      e.setReminderMinutesBefore(dto.reminderMinutesBefore());
+      event.setReminderMinutesBefore(dto.reminderMinutesBefore());
     }
     if (reminderOccurrenceChanged) {
-      e.setReminderSentAt(null);
+      event.setReminderSentAt(null);
     }
 
     if (expectedVersion >= 0) {
-      repo.saveAndFlush(e);
+      repo.saveAndFlush(event);
     }
-    return mapper.toDto(e);
+    return mapper.toDto(event);
   }
 
   /** {@inheritDoc} */
@@ -219,6 +234,42 @@ public class EventServiceImpl implements EventService {
   private EventEntity mustVisibleEvent(Long id, Long requesterId) {
     return EntityFinder.findOrThrow(repo.findVisibleById(id, requesterId),
         () -> new NotFoundException("Event %d not found".formatted(id)));
+  }
+
+  /**
+   * Resolves the enum-first compatibility contract and rejects contradictory client fields.
+   *
+   * <p>For example, {@code shared=false} maps to {@code PRIVATE}; supplying it together with
+   * {@code visibility=SHARED} fails rather than silently choosing one privacy level.</p>
+   */
+  private EventVisibility resolveVisibility(Boolean shared, EventVisibility visibility,
+                                            EventVisibility fallback) {
+    if (hasContradictoryVisibility(shared, visibility)) {
+      throw new BadRequestException("shared and visibility must agree");
+    }
+    if (visibility != null) {
+      return visibility;
+    }
+    if (shared != null) {
+      return shared ? EventVisibility.SHARED : EventVisibility.PRIVATE;
+    }
+    return fallback;
+  }
+
+  private boolean hasContradictoryVisibility(Boolean shared, EventVisibility visibility) {
+    return shared != null && visibility != null
+        && shared.booleanValue() != isShared(visibility);
+  }
+
+  private boolean isShared(EventVisibility visibility) {
+    return visibility == EventVisibility.SHARED;
+  }
+
+  private EventVisibility currentVisibility(EventEntity event) {
+    if (event.getVisibility() != null) {
+      return event.getVisibility();
+    }
+    return event.isShared() ? EventVisibility.SHARED : EventVisibility.PRIVATE;
   }
 
   private void verifyVersion(long actualVersion, long expectedVersion) {
