@@ -1,0 +1,17 @@
+spring:
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    org.testcontainers: INFO

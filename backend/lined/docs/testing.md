@@ -74,7 +74,27 @@ is already readable.
 - Prefer real DTO records over mocks for request/response values.
 - Mock mappers unless the mapper itself is the subject of the test.
 
-## Integration Tests
+## HTTP API Integration Tests
+
+Full HTTP API integration tests live in `src/integrationTest/`. They start Spring Boot on a
+random port and connect it to a disposable PostgreSQL Testcontainer; ordinary unit-test runs do
+not start Docker.
+
+```bash
+docker info
+./gradlew integrationTest
+./gradlew test integrationTest
+```
+
+The integration profile uses `ddl-auto=create-drop` only for its disposable container database.
+Its reports are written to `build/test-results/integrationTest/` and
+`build/reports/tests/integrationTest/`. Before treating a run as PostgreSQL proof, inspect the
+XML reports and confirm zero failures, errors, and skips.
+
+Caller-scoped scenarios use the current MVP `X-User-Id` header. Login is verified as an API
+contract, but the application does not yet install a Bearer-token filter.
+
+## Other Integration Tests
 
 Use integration tests when validating:
 

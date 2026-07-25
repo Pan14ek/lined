@@ -86,7 +86,15 @@ public class LobbyController {
   @Operation(summary = "Lobby details", description = "Get lobby by ID.")
   @GetMapping("/{id}")
   public ResponseEntity<LobbyDto> get(
-      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id) {
+      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
+      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
+      @RequestHeader("X-User-Id") Long currentUserId) {
+    LobbyDto lobby = lobbyService.getById(id, currentUserId);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(lobby.version())).body(lobby);
+  }
+
+  @Deprecated
+  public ResponseEntity<LobbyDto> get(Long id) {
     LobbyDto lobby = lobbyService.getById(id);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(lobby.version())).body(lobby);
   }
