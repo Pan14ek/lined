@@ -46,9 +46,12 @@
   "eventDetail": {
     "close": "Close",
     "sharedEvent": "Shared event",
+    "privateEvent": "Private event",
     "editEvent": "Edit event",
     "delete": "Delete"
   },
+  "privateEventAriaLabel": "Private",
+  "privateEventDotAriaLabel": "Private: {{title}}",
   "dayAgenda": {
     "close": "Close",
     "noEventsToday": "No events today."
@@ -64,9 +67,21 @@
     "endLabel": "End",
     "locationLabel": "Location (optional)",
     "locationPlaceholder": "e.g. Home, Central Park…",
-    "sharedToggle": {
-      "label": "Shared event",
-      "description": "Visible to all lobby members"
+    "visibility": {
+      "label": "Visibility",
+      "shared": {
+        "label": "Shared with lobby",
+        "description": "Everyone in this lobby can see the event."
+      },
+      "private": {
+        "label": "Private",
+        "description": "Only you can see the event details. It still blocks your availability when Lined searches for shared free time."
+      },
+      "sharedToPrivateWarning": "Making this private removes it from other members' views, but anyone who already saw it may remember its details."
+    },
+    "notifyToggle": {
+      "label": "Notify members",
+      "description": "They'll get a notification about this event"
     },
     "cancel": "Cancel",
     "submit": {

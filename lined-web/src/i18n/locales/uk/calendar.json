@@ -50,9 +50,12 @@
   "eventDetail": {
     "close": "Закрити",
     "sharedEvent": "Спільна подія",
+    "privateEvent": "Приватна подія",
     "editEvent": "Редагувати подію",
     "delete": "Видалити"
   },
+  "privateEventAriaLabel": "Приватна",
+  "privateEventDotAriaLabel": "Приватна: {{title}}",
   "dayAgenda": {
     "close": "Закрити",
     "noEventsToday": "Сьогодні подій немає."
@@ -68,9 +71,21 @@
     "endLabel": "Кінець",
     "locationLabel": "Місце (необов'язково)",
     "locationPlaceholder": "напр. Вдома, Центральний парк…",
-    "sharedToggle": {
-      "label": "Спільна подія",
-      "description": "Видима всім учасникам лобі"
+    "visibility": {
+      "label": "Видимість",
+      "shared": {
+        "label": "Спільна з лобі",
+        "description": "Усі учасники цього лобі можуть бачити подію."
+      },
+      "private": {
+        "label": "Приватна",
+        "description": "Тільки ви бачите деталі події. Вона все одно блокує ваш вільний час при пошуку спільного часу в Lined."
+      },
+      "sharedToPrivateWarning": "Якщо зробити подію приватною, вона зникне з переглядів інших учасників, але той, хто вже її бачив, може пам'ятати деталі."
+    },
+    "notifyToggle": {
+      "label": "Сповістити учасників",
+      "description": "Вони отримають сповіщення про цю подію"
     },
     "cancel": "Скасувати",
     "submit": {
