@@ -4,7 +4,9 @@ import io.backend.lined.event.api.EventConflictDto;
 import io.backend.lined.event.api.EventConflictSideDto;
 import io.backend.lined.event.api.EventMapper;
 import io.backend.lined.event.domain.EventEntity;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -25,18 +27,26 @@ public class EventConflictAnalyzer {
    * their own complete event. The other side is opaque, preserving availability information
    * without leaking a title, location, or private event ID.</p>
    *
-   * @param events events that already match the scheduling search window
+   * <p>The repository supplies events ordered by start time. The sweep retains only events whose
+   * end is after the current start, so it performs {@code O(n * m)} comparisons, where {@code m}
+   * is the number of concurrently active events, rather than comparing every possible pair.</p>
+   *
+   * @param events start-time-ordered events that already match the scheduling search window
    * @param requesterId member allowed to inspect their own private details
    * @return privacy-safe conflict pairs with calculated overlap bounds
    */
   public List<EventConflictDto> findConflicts(List<EventEntity> events, Long requesterId) {
-    var windows = events.stream().map(this::windowOf).toList();
     List<EventConflictDto> conflicts = new ArrayList<>();
-    for (int i = 0; i < events.size(); i++) {
-      for (int j = i + 1; j < events.size(); j++) {
-        addConflict(events.get(i), windows.get(i), events.get(j), windows.get(j), requesterId,
-            conflicts);
+    Deque<ConflictCandidate> active = new ArrayDeque<>();
+    for (EventEntity event : events) {
+      CalendarTimeWindow window = windowOf(event);
+      while (!active.isEmpty() && !active.peekFirst().window().end().isAfter(window.start())) {
+        active.removeFirst();
       }
+      for (ConflictCandidate candidate : active) {
+        addConflict(candidate.event(), candidate.window(), event, window, requesterId, conflicts);
+      }
+      active.addLast(new ConflictCandidate(event, window));
     }
     return conflicts;
   }
@@ -90,5 +100,9 @@ public class EventConflictAnalyzer {
           "Stored event %d has invalid time window".formatted(event.getId()));
     }
     return new CalendarTimeWindow(event.getStartAt(), event.getEndAt());
+  }
+
+  /** Start-time-ordered event retained while its interval can overlap later events. */
+  private record ConflictCandidate(EventEntity event, CalendarTimeWindow window) {
   }
 }
