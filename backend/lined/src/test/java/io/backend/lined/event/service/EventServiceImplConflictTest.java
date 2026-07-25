@@ -204,8 +204,8 @@ class EventServiceImplConflictTest {
     List<EventConflictDto> result = eventService.findConflicts(101L, windowStart, windowEnd, 1L);
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).first()).isEqualTo(dtoA);
-    assertThat(result.get(0).second()).isEqualTo(dtoB);
+    assertThat(result.get(0).first().event()).isEqualTo(dtoA);
+    assertThat(result.get(0).second().event()).isEqualTo(dtoB);
   }
 
   @Test

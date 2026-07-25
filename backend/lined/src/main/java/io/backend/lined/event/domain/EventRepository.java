@@ -29,6 +29,52 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
       @Param("to") OffsetDateTime to
   );
 
+  /**
+   * Finds only events whose details may be shown to one lobby member.
+   *
+   * <p>For example, requester {@code 42} receives every shared dinner in lobby {@code 101} and
+   * their own private appointment, but the database never returns user {@code 77}'s private
+   * appointment for later in-memory filtering. Keeping the predicate in this query prevents
+   * titles and locations from reaching a mapper, logger, or caller that should not see them.</p>
+   *
+   * @param lobbyId lobby containing the events
+   * @param requesterId member requesting the calendar window
+   * @param from inclusive window start
+   * @param to exclusive window end
+   * @return visible overlapping events, ordered by start time
+   */
+  @Query("""
+      SELECT e FROM EventEntity e
+      WHERE e.lobby.id = :lobbyId
+        AND e.startAt < :to
+        AND e.endAt > :from
+        AND (e.shared = true OR e.owner.id = :requesterId)
+      ORDER BY e.startAt ASC
+      """)
+  List<EventEntity> findVisibleOverlapping(@Param("lobbyId") Long lobbyId,
+                                            @Param("requesterId") Long requesterId,
+                                            @Param("from") OffsetDateTime from,
+                                            @Param("to") OffsetDateTime to);
+
+  /**
+   * Resolves an event only when it is shared or owned by the requester.
+   *
+   * <p>For example, a guessed identifier for another member's private event produces an empty
+   * result, allowing the service to return the same {@code 404 Not Found} as an unknown ID rather
+   * than confirming that a private event exists.</p>
+   *
+   * @param eventId requested event identifier
+   * @param requesterId caller identity
+   * @return visible event, if one exists
+   */
+  @Query("""
+      SELECT e FROM EventEntity e
+      WHERE e.id = :eventId
+        AND (e.shared = true OR e.owner.id = :requesterId)
+      """)
+  Optional<EventEntity> findVisibleById(@Param("eventId") Long eventId,
+                                         @Param("requesterId") Long requesterId);
+
   @Query("""
       SELECT e FROM EventEntity e
       WHERE e.owner.id = :userId

@@ -3,6 +3,7 @@ package io.backend.lined.event.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -112,6 +113,7 @@ class EventServiceImplTest {
         startAt, endAt, "Europe/Kyiv", null,
         101L, 1L, now
     );
+    lenient().when(repo.findVisibleById(9001L, 1L)).thenReturn(Optional.of(eventEntity));
   }
 
   /* =======================
@@ -295,7 +297,6 @@ class EventServiceImplTest {
     EventUpdateDto dto = new EventUpdateDto("Updated title", "  Central Park  ", false,
         null, null, null);
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     EventDto result = eventService.update(9001L, dto, 1L);
@@ -310,7 +311,6 @@ class EventServiceImplTest {
   void update_updatesOnlyNonNullFields() {
     EventUpdateDto dto = new EventUpdateDto(null, null, null, null, null, "UTC");
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     eventService.update(9001L, dto, 1L);
@@ -324,7 +324,6 @@ class EventServiceImplTest {
   void update_clearsLocation_whenLocationIsBlank() {
     EventUpdateDto dto = new EventUpdateDto(null, " ", null, null, null, null);
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     eventService.update(9001L, dto, 1L);
@@ -336,7 +335,6 @@ class EventServiceImplTest {
   void update_rejectsStaleVersion_withoutOverwritingEvent() {
     EventUpdateDto dto = new EventUpdateDto("Stale title", null, null, null, null, null);
     eventEntity.setVersion(3L);
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L, 2L))
         .isInstanceOf(ConflictException.class);
@@ -349,7 +347,6 @@ class EventServiceImplTest {
   void update_throwsBadRequest_whenUpdatedDatesAreInvalid() {
     EventUpdateDto dto = new EventUpdateDto(null, null, null, endAt, startAt, null);
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
         .isInstanceOf(BadRequestException.class)
@@ -361,7 +358,6 @@ class EventServiceImplTest {
     EventUpdateDto dto = new EventUpdateDto("Invalid update", null, false, endAt, startAt,
         "UTC");
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
         .isInstanceOf(BadRequestException.class);
@@ -378,7 +374,6 @@ class EventServiceImplTest {
     EventUpdateDto dto = new EventUpdateDto("Invalid update", null, false, endAt.plusHours(1),
         null, "UTC");
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 1L))
         .isInstanceOf(BadRequestException.class)
@@ -395,7 +390,7 @@ class EventServiceImplTest {
   void update_throwsNotFound_whenEventNotFound() {
     EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null, null);
 
-    when(repo.findById(999L)).thenReturn(Optional.empty());
+    when(repo.findVisibleById(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.update(999L, dto, 1L))
         .isInstanceOf(NotFoundException.class)
@@ -406,11 +401,24 @@ class EventServiceImplTest {
   void update_throwsForbidden_whenUserIsNotLobbyMember() {
     EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null, null);
 
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+    when(repo.findVisibleById(9001L, 99L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 99L))
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("not a member");
+  }
+
+  @Test
+  void update_throwsNotFound_whenAnotherMemberTargetsPrivateEvent() {
+    eventEntity.setShared(false);
+    when(repo.findVisibleById(9001L, 2L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> eventService.update(9001L,
+        new EventUpdateDto("Leaked", null, null, null, null, null), 2L))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("9001");
+
+    verify(repo, never()).save(any());
   }
 
   /* =======================
@@ -418,8 +426,25 @@ class EventServiceImplTest {
   ======================= */
 
   @Test
+  void get_returnsOwnPrivateEvent() {
+    eventEntity.setShared(false);
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    assertThat(eventService.get(9001L, 1L)).isEqualTo(eventDto);
+  }
+
+  @Test
+  void get_throwsNotFound_whenAnotherMemberTargetsPrivateEvent() {
+    eventEntity.setShared(false);
+    when(repo.findVisibleById(9001L, 2L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> eventService.get(9001L, 2L))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("9001");
+  }
+
+  @Test
   void delete_success() {
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
 
     eventService.delete(9001L, 1L);
 
@@ -428,7 +453,7 @@ class EventServiceImplTest {
 
   @Test
   void delete_throwsNotFound_whenEventNotFound() {
-    when(repo.findById(999L)).thenReturn(Optional.empty());
+    when(repo.findVisibleById(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> eventService.delete(999L, 1L))
         .isInstanceOf(NotFoundException.class)
@@ -439,7 +464,7 @@ class EventServiceImplTest {
 
   @Test
   void delete_throwsForbidden_whenUserIsNotLobbyMember() {
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
+    when(repo.findVisibleById(9001L, 99L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.delete(9001L, 99L))
         .isInstanceOf(ForbiddenException.class)
@@ -455,7 +480,7 @@ class EventServiceImplTest {
   @Test
   void list_success() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
-    when(repo.findOverlapping(101L, startAt, endAt)).thenReturn(List.of(eventEntity));
+    when(repo.findVisibleOverlapping(101L, 1L, startAt, endAt)).thenReturn(List.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     List<EventDto> result = eventService.list(101L, startAt, endAt, 1L);
@@ -466,11 +491,22 @@ class EventServiceImplTest {
   @Test
   void list_returnsEmpty_whenNoEventsInWindow() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
-    when(repo.findOverlapping(101L, startAt, endAt)).thenReturn(List.of());
+    when(repo.findVisibleOverlapping(101L, 1L, startAt, endAt)).thenReturn(List.of());
 
     List<EventDto> result = eventService.list(101L, startAt, endAt, 1L);
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void list_usesRequesterAwareRepositoryPredicate() {
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.findVisibleOverlapping(101L, 2L, startAt, endAt)).thenReturn(List.of());
+
+    assertThat(eventService.list(101L, startAt, endAt, 2L)).isEmpty();
+
+    verify(repo).findVisibleOverlapping(101L, 2L, startAt, endAt);
+    verify(repo, never()).findOverlapping(101L, startAt, endAt);
   }
 
   @Test
@@ -524,7 +560,6 @@ class EventServiceImplTest {
     eventEntity.setReminderMinutesBefore(30);
     EventUpdateDto dto = new EventUpdateDto(null, null, null, startAt.plusHours(1),
         endAt.plusHours(1), null, 45);
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     eventService.update(9001L, dto, 1L, -1L);
@@ -538,7 +573,6 @@ class EventServiceImplTest {
     eventEntity.setReminderSentAt(now);
     eventEntity.setReminderMinutesBefore(null);
     EventUpdateDto dto = new EventUpdateDto(null, null, null, null, null, null, 30);
-    when(repo.findById(9001L)).thenReturn(Optional.of(eventEntity));
     when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
     eventService.update(9001L, dto, 1L, -1L);
