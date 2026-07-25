@@ -18,6 +18,7 @@ import io.backend.lined.event.api.EventMapper;
 import io.backend.lined.event.api.EventUpdateDto;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
+import io.backend.lined.event.domain.EventVisibility;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -61,6 +62,8 @@ class EventServiceImplTest {
   private FreeSlotCalculator freeSlotCalculator;
   @Mock
   private NotificationService notificationService;
+  @Spy
+  private EventAccessPolicy eventAccessPolicy;
 
   @InjectMocks
   private EventServiceImpl eventService;
@@ -137,6 +140,35 @@ class EventServiceImplTest {
     var entityCaptor = ArgumentCaptor.forClass(EventEntity.class);
     verify(repo).save(entityCaptor.capture());
     assertThat(entityCaptor.getValue().getLocation()).isEqualTo("Whole Foods Market");
+  }
+
+  @Test
+  void create_usesVisibilityWhenLegacySharedIsOmitted() {
+    EventCreateDto dto = new EventCreateDto("Private appointment", null, null,
+        EventVisibility.PRIVATE, startAt, endAt, "Europe/Kyiv", null, 101L, false);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(mapper.toDto(any())).thenReturn(eventDto);
+
+    eventService.create(dto, 1L);
+
+    ArgumentCaptor<EventEntity> captor = ArgumentCaptor.forClass(EventEntity.class);
+    verify(repo).save(captor.capture());
+    assertThat(captor.getValue().getVisibility()).isEqualTo(EventVisibility.PRIVATE);
+    assertThat(captor.getValue().isShared()).isFalse();
+  }
+
+  @Test
+  void create_rejectsContradictoryVisibilityAndSharedValues() {
+    EventCreateDto dto = new EventCreateDto("Contradiction", null, true,
+        EventVisibility.PRIVATE, startAt, endAt, "Europe/Kyiv", null, 101L, false);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> eventService.create(dto, 1L))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("must agree");
   }
 
   @Test
@@ -419,6 +451,19 @@ class EventServiceImplTest {
         .hasMessageContaining("9001");
 
     verify(repo, never()).save(any());
+  }
+
+  @Test
+  void update_allowsMemberToRepeatUnchangedSharedVisibility() {
+    eventEntity.setVisibility(EventVisibility.SHARED);
+    when(repo.findVisibleById(9001L, 2L)).thenReturn(Optional.of(eventEntity));
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    assertThat(eventService.update(9001L,
+        new EventUpdateDto("Moved", null, Boolean.TRUE, null, null, null), 2L))
+        .isEqualTo(eventDto);
+
+    assertThat(eventEntity.getTitle()).isEqualTo("Moved");
   }
 
   /* =======================

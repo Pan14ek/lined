@@ -118,11 +118,21 @@ CREATE TABLE IF NOT EXISTS events
 ALTER TABLE events ADD COLUMN IF NOT EXISTS ics_uid VARCHAR(255);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS reminder_minutes_before INTEGER;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS visibility VARCHAR(16);
+UPDATE events SET visibility = CASE WHEN shared THEN 'SHARED' ELSE 'PRIVATE' END
+    WHERE visibility IS NULL;
+ALTER TABLE events ALTER COLUMN visibility SET DEFAULT 'SHARED';
+ALTER TABLE events ALTER COLUMN visibility SET NOT NULL;
+ALTER TABLE events DROP CONSTRAINT IF EXISTS chk_events_visibility;
+ALTER TABLE events ADD CONSTRAINT chk_events_visibility
+    CHECK (visibility IN ('PRIVATE', 'SHARED'));
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_reminder_sent_for_date DATE;
 
 CREATE INDEX IF NOT EXISTS idx_events_lobby ON events (lobby_id);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events (lobby_id, start_at, end_at);
+CREATE INDEX IF NOT EXISTS idx_events_lobby_visibility_owner_time
+    ON events (lobby_id, visibility, owner_id, start_at, end_at);
 CREATE INDEX IF NOT EXISTS idx_events_ics_uid ON events (ics_uid);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_events_owner_lobby_ics_uid
     ON events (owner_id, lobby_id, ics_uid);

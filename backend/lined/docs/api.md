@@ -374,6 +374,10 @@ All calendar endpoints use the `/api/calendar` base path.
 
 Create an event.
 
+`visibility` is the primary value (`SHARED` or `PRIVATE`). The legacy `shared` boolean remains
+temporarily supported and must agree with `visibility` when both are supplied; it is deprecated in
+responses. Omitting both creates a shared event. A private event cannot notify lobby members.
+
 ```json
 {
   "title": "Dinner together",

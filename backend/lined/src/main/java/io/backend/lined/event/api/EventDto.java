@@ -1,5 +1,6 @@
 package io.backend.lined.event.api;
 
+import io.backend.lined.event.domain.EventVisibility;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 
@@ -16,6 +17,7 @@ public record EventDto(
     @Schema(example = "Dinner together") String title,
     @Schema(example = "Whole Foods Market") String location,
     @Schema(example = "true") boolean shared,
+    @Schema(example = "SHARED") EventVisibility visibility,
     @Schema(example = "2025-11-20T17:00:00Z") OffsetDateTime startAt,
     @Schema(example = "2025-11-20T19:00:00Z") OffsetDateTime endAt,
     @Schema(example = "Europe/Kyiv") String timezone,
@@ -25,5 +27,20 @@ public record EventDto(
     @Schema(example = "42") Long ownerId,
     @Schema(example = "2025-11-13T10:00:00Z") OffsetDateTime createdAt
 ) {
+
+  /**
+   * Retains the response constructor used before the enum was added.
+   *
+   * <p>For example, an old test constructing {@code shared=false} receives the equivalent
+   * {@code visibility=PRIVATE}, keeping old Java callers source-compatible during Release A.</p>
+   */
+  public EventDto(Long id, long version, String title, String location, boolean shared,
+                  OffsetDateTime startAt, OffsetDateTime endAt, String timezone,
+                  Integer reminderMinutesBefore, Long lobbyId, Long ownerId,
+                  OffsetDateTime createdAt) {
+    this(id, version, title, location, shared,
+        shared ? EventVisibility.SHARED : EventVisibility.PRIVATE, startAt, endAt, timezone,
+        reminderMinutesBefore, lobbyId, ownerId, createdAt);
+  }
 
 }
