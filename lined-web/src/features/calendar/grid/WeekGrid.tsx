@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
+import { PrivateEventLabel } from '@/features/calendar/PrivateEventLabel';
 import {
   addDays,
   assignEventLanes,
@@ -109,7 +110,9 @@ const CalendarEvent = ({
         outlineOffset: '-2px',
       }}
     >
-      <div className="text-[11px] font-semibold leading-tight truncate">{event.title}</div>
+      <div className="flex items-center gap-1 text-[11px] font-semibold leading-tight truncate">
+        <PrivateEventLabel event={event} iconClassName="h-2.5 w-2.5" />
+      </div>
       {lobby && height > 36 && (
         <div className="text-[10px] leading-tight mt-0.5 truncate" style={{ opacity: 0.85 }}>
           {lobby.name}

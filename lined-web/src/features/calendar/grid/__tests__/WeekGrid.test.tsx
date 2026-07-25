@@ -31,6 +31,7 @@ const makeEvent = (id: number, offsetDays: number, hour: number, durationHours =
     title: `Event ${id}`,
     location: null,
     shared: true,
+    visibility: 'SHARED',
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     timezone: 'UTC',
@@ -241,6 +242,41 @@ describe('WeekGrid — onDayClick opt-in (lobby calendar behavior)', () => {
   });
 });
 
+describe('WeekGrid — private events', () => {
+  it('renders a lock icon with an accessible label for a private event, and none for a shared one', () => {
+    expect.assertions(2);
+    const privateEvent: EventDto = { ...makeEvent(30, 0, 9), visibility: 'PRIVATE', shared: false };
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[privateEvent]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    const button = screen.getByText(privateEvent.title).closest('button');
+    expect(button).toHaveTextContent('Private');
+    expect(button?.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+  });
+
+  it('does not render a lock icon or private label for a shared event', () => {
+    expect.assertions(1);
+    render(
+      <WeekGrid
+        weekStart={WEEK_START}
+        events={[makeEvent(31, 0, 9)]}
+        lobbies={[LOBBY]}
+        selectedEventId={null}
+        onEventClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Private')).not.toBeInTheDocument();
+  });
+});
+
 describe('WeekGrid — hour labels', () => {
   it('shows the grid start hour and a closing "12 AM" label at the end', () => {
     expect.assertions(2);
@@ -265,6 +301,7 @@ describe('WeekGrid — midnight-spanning events', () => {
     title: 'Movie Night',
     location: null,
     shared: true,
+    visibility: 'SHARED',
     startAt: dayAt(0, 23).toISOString(), // Monday 11 PM
     endAt: new Date(dayAt(1, 2).getTime()).toISOString(), // Tuesday 2 AM
     timezone: 'UTC',

@@ -18,6 +18,7 @@ const makeEvent = (id: number, lobbyId: number, hour: number, title: string): Ev
   title,
   location: null,
   shared: true,
+  visibility: 'SHARED',
   startAt: `${todayStr}T${String(hour).padStart(2, '0')}:00:00Z`,
   endAt: `${todayStr}T${String(hour + 1).padStart(2, '0')}:00:00Z`,
   timezone: 'UTC',

@@ -1,4 +1,4 @@
-import { Clock, Link, MapPin, X } from 'lucide-react';
+import { Clock, Link, Lock, MapPin, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
@@ -71,8 +71,13 @@ export const EventDetailPanel = ({
           </div>
         )}
 
-        {/* Shared badge */}
-        {event.shared && (
+        {/* Visibility badge */}
+        {event.visibility === 'PRIVATE' ? (
+          <div className="mb-2 flex items-center gap-2 text-sm text-text-primary">
+            <Lock className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
+            <span>{t('eventDetail.privateEvent')}</span>
+          </div>
+        ) : (
           <div className="mb-2 flex items-center gap-2 text-sm text-text-primary">
             <Link className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
             <span>{t('eventDetail.sharedEvent')}</span>

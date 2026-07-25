@@ -18,6 +18,7 @@ const BASE_EVENT: EventDto = {
   title: 'Grocery Run',
   location: null,
   shared: true,
+  visibility: 'SHARED',
   startAt: '2026-03-28T17:00:00Z',
   endAt: '2026-03-28T18:00:00Z',
   timezone: 'UTC',
@@ -94,6 +95,32 @@ describe('EventDetailPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the private-event badge with an accessible label for a private event', () => {
+    expect.assertions(2);
+    render(
+      <EventDetailPanel
+        event={{ ...BASE_EVENT, visibility: 'PRIVATE', shared: false }}
+        lobby={LOBBY}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Private event')).toBeInTheDocument();
+    expect(screen.queryByText('Shared event')).not.toBeInTheDocument();
+  });
+
+  it('shows the shared-event badge for a shared event', () => {
+    expect.assertions(2);
+    render(
+      <EventDetailPanel event={BASE_EVENT} lobby={LOBBY} onClose={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Shared event')).toBeInTheDocument();
+    expect(screen.queryByText('Private event')).not.toBeInTheDocument();
   });
 
   it('shows a delete error message when deleteError is set', () => {

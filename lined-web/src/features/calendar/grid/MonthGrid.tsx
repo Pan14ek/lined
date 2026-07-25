@@ -1,13 +1,18 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { CalendarLegend } from './CalendarLegend';
+import { PrivateEventLabel } from '@/features/calendar/PrivateEventLabel';
 import { getMonthGridDays, isSameDay, isSameMonth, isToday } from '@/features/calendar/lib/calendarUtils';
 import { lobbyAccentColor } from '@/features/lobby/lib/constants';
 import { cn } from '@/lib/utils';
 
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MAX_VISIBLE_CHIPS = 3;
+
+const dotAriaLabel = (event: EventDto, t: TFunction<'calendar'>): string =>
+  event.visibility === 'PRIVATE' ? t('privateEventDotAriaLabel', { title: event.title }) : event.title;
 
 interface MonthDayCellProps {
   day: Date;
@@ -55,7 +60,7 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
           return (
             <span
               key={event.id}
-              aria-label={event.title}
+              aria-label={dotAriaLabel(event, t)}
               className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
               style={{ backgroundColor: accentColor }}
             />
@@ -75,10 +80,10 @@ const MonthDayCell = ({ day, monthAnchor, events, lobbyMap, onDayClick }: MonthD
           return (
             <span
               key={event.id}
-              className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+              className="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
               style={{ backgroundColor: accentColor }}
             >
-              {event.title}
+              <PrivateEventLabel event={event} iconClassName="h-2.5 w-2.5" />
             </span>
           );
         })}

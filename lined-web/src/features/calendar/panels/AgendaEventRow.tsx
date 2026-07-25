@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { EventDto } from '@/features/calendar/model';
 import { formatClockTime } from '@/features/calendar/lib/calendarUtils';
+import { PrivateEventLabel } from '@/features/calendar/PrivateEventLabel';
 import { cn } from '@/lib/utils';
 
 interface AgendaEventRowProps {
@@ -28,7 +29,9 @@ export const AgendaEventRow = ({ event, accentColor, isSelected, secondaryConten
           {formatClockTime(new Date(event.startAt))} – {formatClockTime(new Date(event.endAt))}
         </span>
       </div>
-      <div className="mt-1 text-sm text-text-primary">{event.title}</div>
+      <div className="mt-1 flex items-center gap-1 text-sm text-text-primary">
+        <PrivateEventLabel event={event} />
+      </div>
       {secondaryContent}
     </button>
   );
