@@ -1,5 +1,6 @@
 package io.backend.lined.event.api;
 
+import io.backend.lined.event.domain.EventVisibility;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -17,6 +18,7 @@ public record EventUpdateDto(
     @Schema(example = "Lunch together") String title,
     @Schema(example = "Whole Foods Market") @Size(max = 255) String location,
     @Schema(example = "false") Boolean shared,
+    @Schema(example = "PRIVATE") EventVisibility visibility,
     @Schema(example = "2025-11-20T18:00:00Z") OffsetDateTime startAt,
     @Schema(example = "2025-11-20T20:00:00Z") OffsetDateTime endAt,
     @Schema(example = "Europe/Kyiv") String timezone,
@@ -32,6 +34,12 @@ public record EventUpdateDto(
    */
   public EventUpdateDto(String title, String location, Boolean shared, OffsetDateTime startAt,
                         OffsetDateTime endAt, String timezone) {
-    this(title, location, shared, startAt, endAt, timezone, null);
+    this(title, location, shared, null, startAt, endAt, timezone, null);
+  }
+
+  /** Retains the pre-visibility constructor used by existing Java callers. */
+  public EventUpdateDto(String title, String location, Boolean shared, OffsetDateTime startAt,
+                        OffsetDateTime endAt, String timezone, Integer reminderMinutesBefore) {
+    this(title, location, shared, null, startAt, endAt, timezone, reminderMinutesBefore);
   }
 }

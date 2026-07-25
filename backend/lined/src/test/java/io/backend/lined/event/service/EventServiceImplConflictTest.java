@@ -90,7 +90,8 @@ class EventServiceImplConflictTest {
     setupDtos();
     eventService = new EventServiceImpl(
         repo, lobbyRepo, userRepo, mapper, accessPolicy, writePolicy,
-        new EventConflictAnalyzer(mapper), new FreeSlotCalculator(), notificationService);
+        new EventConflictAnalyzer(mapper), new FreeSlotCalculator(), notificationService,
+        new EventAccessPolicy());
   }
 
   private void setupDtos() {

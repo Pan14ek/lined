@@ -4,6 +4,8 @@ import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.user.domain.UserEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -60,6 +63,10 @@ public class EventEntity {
   @Column(nullable = false)
   private boolean shared;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  private EventVisibility visibility;
+
   @Column(nullable = false)
   private OffsetDateTime startAt;
 
@@ -94,6 +101,21 @@ public class EventEntity {
     if (createdAt == null) {
       createdAt = OffsetDateTime.now();
     }
+    synchronizeLegacyShared();
+  }
+
+  /**
+   * Dual-writes the legacy boolean during the Release-A compatibility window.
+   *
+   * <p>For example, a {@code PRIVATE} event persists with {@code shared=false}, allowing older
+   * clients to observe the same access intent until Release B removes the boolean.</p>
+   */
+  @PreUpdate
+  void synchronizeLegacyShared() {
+    if (visibility == null) {
+      visibility = shared ? EventVisibility.SHARED : EventVisibility.PRIVATE;
+    }
+    shared = visibility == EventVisibility.SHARED;
   }
 
 }
