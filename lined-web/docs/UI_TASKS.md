@@ -210,6 +210,22 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
   optimistic mutations (task status toggle, notification mark-read)
   were left untouched, staying spinner-free per spec.
 
+- **Private events** — `visibility: 'PRIVATE' | 'SHARED'` on the event
+  contract (`src/features/calendar/model`), mirroring the backend's
+  already-shipped `EventVisibility` enum (deprecated `shared` boolean kept
+  read-only for backward compatibility, never written by the UI). A new
+  two-option Visibility control on `CreateEventModal` (owner-only, hidden
+  entirely for a non-owner editing a shared event) defaults new events to
+  `SHARED`; selecting `PRIVATE` disables and clears the create-mode-only
+  Notify Members toggle (there's no `notifyMembers` on `EventUpdateDto`), and
+  switching an existing shared event to private shows the non-retroactive
+  secrecy warning from the design doc. `WeekGrid`, `MonthGrid`,
+  `AgendaEventRow` (and its lobby-calendar/day-agenda consumers), and
+  `EventDetailPanel` render an accessible lock badge for `PRIVATE` events; no
+  ownership check is needed at render time since the backend's list endpoint
+  already excludes another member's private events entirely, so any private
+  event reaching the client is by construction the viewer's own.
+
 ## Backend API summary
 
 | Domain | Endpoints |
@@ -286,7 +302,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 | 48 | `feature/ui-48-customer-portal-button` | "Manage billing" button opens provider portal in a new tab | [tasks/UI-48-customer-portal-button.md](tasks/UI-48-customer-portal-button.md) | TODO |
 | 49 | `feature/ui-49-admin-billing-view` | Admin `/admin/billing`: search, account detail, resync, retry event, audit log (permission-gated) | [tasks/UI-49-admin-billing-view.md](tasks/UI-49-admin-billing-view.md) | TODO |
 | 50 | `feature/ui-50-admin-refund-flow` | Admin refund preview + issue flow with `BILLING_REFUND` permission gate and `withinDefaultWindow` flag | [tasks/UI-50-admin-refund-flow.md](tasks/UI-50-admin-refund-flow.md) | TODO |
-| 51 | `feature/ui-51-private-events` | Event-form visibility selector, owner-only lock badge, notify-members disable, shared-to-private warning | [tasks/UI-51-private-events.md](tasks/UI-51-private-events.md) | TODO |
+| 51 | `feature/ui-51-private-events` | Event-form visibility selector, owner-only lock badge, notify-members disable, shared-to-private warning | [tasks/UI-51-private-events.md](tasks/UI-51-private-events.md) | DONE |
 | 52 | `feature/ui-52-private-tasks` | Task-form visibility selector, self-locked assignee, lock badge on task cards | [tasks/UI-52-private-tasks.md](tasks/UI-52-private-tasks.md) | TODO |
 | 53 | `feature/ui-53-private-data-cache-safety` | Logout/account-switch cache clearing + visibility-transition query invalidation + privacy regression tests | [tasks/UI-53-private-data-cache-safety.md](tasks/UI-53-private-data-cache-safety.md) | TODO |
 
