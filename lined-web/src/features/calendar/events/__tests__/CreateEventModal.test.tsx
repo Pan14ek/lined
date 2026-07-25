@@ -202,6 +202,98 @@ describe('CreateEventModal — edit mode', () => {
   });
 });
 
+describe('CreateEventModal — visibility', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ userId: 1 });
+  });
+
+  it('defaults to Shared and Notify members enabled in create mode', async () => {
+    expect.assertions(1);
+    const onCreated = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CreateEventModal lobbies={[LOBBY]} lockedLobbyId={LOBBY.id} onClose={vi.fn()} onCreated={onCreated} />,
+    );
+
+    await user.type(screen.getByPlaceholderText(/movie night/i), 'Board game night');
+    await user.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    await waitFor(() =>
+      expect(onCreated).toHaveBeenCalledWith(
+        expect.objectContaining({ visibility: 'SHARED', notifyMembers: true }),
+      ),
+    );
+  });
+
+  it('selecting Private disables and clears Notify members before submit', async () => {
+    expect.assertions(2);
+    const onCreated = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CreateEventModal lobbies={[LOBBY]} lockedLobbyId={LOBBY.id} onClose={vi.fn()} onCreated={onCreated} />,
+    );
+
+    await user.type(screen.getByPlaceholderText(/movie night/i), 'Board game night');
+    await user.click(screen.getByRole('button', { name: 'Private' }));
+    expect(screen.getByRole('switch')).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    await waitFor(() =>
+      expect(onCreated).toHaveBeenCalledWith(
+        expect.objectContaining({ visibility: 'PRIVATE', notifyMembers: false }),
+      ),
+    );
+  });
+
+  it('does not render the visibility control when editing another member\'s event', () => {
+    expect.assertions(1);
+    useAuthStore.setState({ userId: 2 }); // EVENT is owned by user 1
+    renderWithProviders(
+      <CreateEventModal lobbies={MOCK_LOBBIES} event={EVENT} onClose={vi.fn()} onSaved={vi.fn()} />,
+    );
+
+    expect(screen.queryByText('Visibility')).not.toBeInTheDocument();
+  });
+
+  it('renders the visibility control for the event owner in edit mode', () => {
+    expect.assertions(1);
+    renderWithProviders(
+      <CreateEventModal lobbies={MOCK_LOBBIES} event={EVENT} onClose={vi.fn()} onSaved={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Visibility')).toBeInTheDocument();
+  });
+
+  it('shows the shared-to-private warning only on that transition', async () => {
+    expect.assertions(3);
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CreateEventModal lobbies={MOCK_LOBBIES} event={EVENT} onClose={vi.fn()} onSaved={vi.fn()} />,
+    );
+
+    expect(screen.queryByText(/removes it from other members' views/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Private' }));
+    expect(screen.getByText(/removes it from other members' views/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Shared with lobby' }));
+    expect(screen.queryByText(/removes it from other members' views/)).not.toBeInTheDocument();
+  });
+
+  it('does not show the shared-to-private warning in create mode', async () => {
+    expect.assertions(1);
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CreateEventModal lobbies={[LOBBY]} lockedLobbyId={LOBBY.id} onClose={vi.fn()} onCreated={vi.fn()} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Private' }));
+
+    expect(screen.queryByText(/removes it from other members' views/)).not.toBeInTheDocument();
+  });
+});
+
 describe('CreateEventModal — conflict warnings', () => {
   beforeEach(() => {
     useAuthStore.setState({ userId: 1 });

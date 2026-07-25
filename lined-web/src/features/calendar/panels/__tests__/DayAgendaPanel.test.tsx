@@ -28,6 +28,7 @@ const makeEvent = (id: number, startHour: number, lobbyId = LOBBY.id): EventDto 
   title: `Event ${id}`,
   location: null,
   shared: true,
+  visibility: 'SHARED',
   startAt: `2026-03-28T${String(startHour).padStart(2, '0')}:00:00`,
   endAt: `2026-03-28T${String(startHour + 1).padStart(2, '0')}:00:00`,
   timezone: 'UTC',

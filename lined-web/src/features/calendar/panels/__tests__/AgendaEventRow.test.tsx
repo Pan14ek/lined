@@ -8,6 +8,7 @@ const event: EventDto = {
   title: 'Dinner reservation',
   location: 'Bistro',
   shared: true,
+  visibility: 'SHARED',
   startAt: '2026-07-20T18:00:00Z',
   endAt: '2026-07-20T19:00:00Z',
   timezone: 'UTC',
@@ -35,6 +36,31 @@ describe('AgendaEventRow', () => {
     expect(screen.getByText('Bistro')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /dinner reservation/i }));
     expect(onClick).toHaveBeenCalledWith(11);
+  });
+
+  it('renders a lock icon with an accessible label for a private event', () => {
+    expect.assertions(2);
+    renderWithProviders(
+      <AgendaEventRow
+        event={{ ...event, visibility: 'PRIVATE', shared: false }}
+        accentColor="var(--color-lobby-couple)"
+        isSelected={false}
+        onClick={vi.fn()}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: /dinner reservation/i });
+    expect(button).toHaveTextContent('Private');
+    expect(button.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+  });
+
+  it('renders no lock icon or private label for a shared event', () => {
+    expect.assertions(1);
+    renderWithProviders(
+      <AgendaEventRow event={event} accentColor="var(--color-lobby-couple)" isSelected={false} onClick={vi.fn()} />,
+    );
+
+    expect(screen.queryByText('Private')).not.toBeInTheDocument();
   });
 
   it('applies the selected border state', () => {

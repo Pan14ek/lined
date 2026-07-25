@@ -20,6 +20,7 @@ const makeEvent = (id: number, isoDate: string, title = `Event ${id}`): EventDto
   title,
   location: null,
   shared: true,
+  visibility: 'SHARED',
   startAt: `${isoDate}T10:00:00`,
   endAt: `${isoDate}T11:00:00`,
   timezone: 'UTC',
@@ -76,6 +77,22 @@ describe('MonthGrid', () => {
     await user.click(screen.getByText('10'));
 
     expect(onDayClick).toHaveBeenCalledWith(expect.any(Date));
+  });
+
+  it('renders a lock icon on the desktop chip and a private aria-label on the compact dot', () => {
+    expect.assertions(2);
+    const privateEvent: EventDto = {
+      ...makeEvent(1, '2026-03-10', 'Pick up the gift'),
+      visibility: 'PRIVATE',
+      shared: false,
+    };
+    render(
+      <MonthGrid monthAnchor={MONTH_ANCHOR} events={[privateEvent]} lobbies={[LOBBY]} onDayClick={vi.fn()} />,
+    );
+
+    const chip = screen.getByText('Pick up the gift').parentElement;
+    expect(chip?.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+    expect(screen.getByLabelText('Private: Pick up the gift')).toBeInTheDocument();
   });
 
   it('renders the shared calendar legend', () => {

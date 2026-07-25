@@ -20,6 +20,7 @@ const makeEvent = (id: number, startHour: number, location: string | null = null
   title: `Event ${id}`,
   location,
   shared: true,
+  visibility: 'SHARED',
   startAt: `2026-03-28T${String(startHour).padStart(2, '0')}:00:00`,
   endAt: `2026-03-28T${String(startHour + 1).padStart(2, '0')}:00:00`,
   timezone: 'UTC',
