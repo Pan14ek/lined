@@ -28,6 +28,9 @@ public record EventDto(
     @Schema(example = "2025-11-13T10:00:00Z") OffsetDateTime createdAt
 ) {
 
+  private static final EventVisibility SHARED_VISIBILITY = EventVisibility.SHARED;
+  private static final EventVisibility PRIVATE_VISIBILITY = EventVisibility.PRIVATE;
+
   /**
    * Retains the response constructor used before the enum was added.
    *
@@ -38,9 +41,12 @@ public record EventDto(
                   OffsetDateTime startAt, OffsetDateTime endAt, String timezone,
                   Integer reminderMinutesBefore, Long lobbyId, Long ownerId,
                   OffsetDateTime createdAt) {
-    this(id, version, title, location, shared,
-        shared ? EventVisibility.SHARED : EventVisibility.PRIVATE, startAt, endAt, timezone,
+    this(id, version, title, location, shared, legacyVisibility(shared), startAt, endAt, timezone,
         reminderMinutesBefore, lobbyId, ownerId, createdAt);
+  }
+
+  private static EventVisibility legacyVisibility(boolean shared) {
+    return shared ? SHARED_VISIBILITY : PRIVATE_VISIBILITY;
   }
 
 }

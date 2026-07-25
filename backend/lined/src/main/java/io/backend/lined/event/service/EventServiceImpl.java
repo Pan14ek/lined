@@ -63,7 +63,9 @@ public class EventServiceImpl implements EventService {
     writePolicy.assertWritable(lobby, LobbyWriteAction.EVENT_MUTATION);
     var window = eventWindow(dto.startAt(), dto.endAt());
     EventVisibility visibility = resolveVisibility(dto.shared(), dto.visibility(), EventVisibility.SHARED);
-    if (visibility == EventVisibility.PRIVATE && dto.notifyMembers()) {
+    boolean privateEventNotifyingMembers = visibility == EventVisibility.PRIVATE
+        && dto.notifyMembers();
+    if (privateEventNotifyingMembers) {
       throw new PrivateItemNotificationException();
     }
 
@@ -98,49 +100,48 @@ public class EventServiceImpl implements EventService {
    */
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
-    var e = mustVisibleEvent(id, currentUserId);
-    accessPolicy.ensureMember(e.getLobby(), currentUserId);
-    writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
-    verifyVersion(e.getVersion(), expectedVersion);
-    EventVisibility currentVisibility = e.getVisibility() == null
-        ? (e.isShared() ? EventVisibility.SHARED : EventVisibility.PRIVATE) : e.getVisibility();
+    var event = mustVisibleEvent(id, currentUserId);
+    accessPolicy.ensureMember(event.getLobby(), currentUserId);
+    writePolicy.assertWritable(event.getLobby(), LobbyWriteAction.EVENT_MUTATION);
+    verifyVersion(event.getVersion(), expectedVersion);
+    EventVisibility currentVisibility = currentVisibility(event);
     EventVisibility visibility = resolveVisibility(dto.shared(), dto.visibility(), currentVisibility);
     if (visibility != currentVisibility) {
-      eventAccessPolicy.ensureCanChangeVisibility(e, currentUserId);
+      eventAccessPolicy.ensureCanChangeVisibility(event, currentUserId);
     }
     var window = eventWindow(
-        dto.startAt() == null ? e.getStartAt() : dto.startAt(),
-        dto.endAt() == null ? e.getEndAt() : dto.endAt());
+        dto.startAt() == null ? event.getStartAt() : dto.startAt(),
+        dto.endAt() == null ? event.getEndAt() : dto.endAt());
 
     boolean reminderOccurrenceChanged = (dto.startAt() != null
-        && !dto.startAt().equals(e.getStartAt()))
+        && !dto.startAt().equals(event.getStartAt()))
         || (dto.reminderMinutesBefore() != null
         && effectiveReminderMinutes(dto.reminderMinutesBefore())
-        != effectiveReminderMinutes(e.getReminderMinutesBefore()));
+        != effectiveReminderMinutes(event.getReminderMinutesBefore()));
     if (dto.title() != null && !dto.title().isBlank()) {
-      e.setTitle(dto.title());
+      event.setTitle(dto.title());
     }
     if (dto.location() != null) {
-      e.setLocation(normalizeLocation(dto.location()));
+      event.setLocation(normalizeLocation(dto.location()));
     }
-    e.setVisibility(visibility);
-    e.setShared(visibility == EventVisibility.SHARED);
-    e.setStartAt(window.start());
-    e.setEndAt(window.end());
+    event.setVisibility(visibility);
+    event.setShared(visibility == EventVisibility.SHARED);
+    event.setStartAt(window.start());
+    event.setEndAt(window.end());
     if (dto.timezone() != null && !dto.timezone().isBlank()) {
-      e.setTimezone(dto.timezone());
+      event.setTimezone(dto.timezone());
     }
     if (dto.reminderMinutesBefore() != null) {
-      e.setReminderMinutesBefore(dto.reminderMinutesBefore());
+      event.setReminderMinutesBefore(dto.reminderMinutesBefore());
     }
     if (reminderOccurrenceChanged) {
-      e.setReminderSentAt(null);
+      event.setReminderSentAt(null);
     }
 
     if (expectedVersion >= 0) {
-      repo.saveAndFlush(e);
+      repo.saveAndFlush(event);
     }
-    return mapper.toDto(e);
+    return mapper.toDto(event);
   }
 
   /** {@inheritDoc} */
@@ -243,8 +244,7 @@ public class EventServiceImpl implements EventService {
    */
   private EventVisibility resolveVisibility(Boolean shared, EventVisibility visibility,
                                             EventVisibility fallback) {
-    if (visibility != null && shared != null
-        && (shared != (visibility == EventVisibility.SHARED))) {
+    if (hasContradictoryVisibility(shared, visibility)) {
       throw new BadRequestException("shared and visibility must agree");
     }
     if (visibility != null) {
@@ -254,6 +254,22 @@ public class EventServiceImpl implements EventService {
       return shared ? EventVisibility.SHARED : EventVisibility.PRIVATE;
     }
     return fallback;
+  }
+
+  private boolean hasContradictoryVisibility(Boolean shared, EventVisibility visibility) {
+    return shared != null && visibility != null
+        && shared.booleanValue() != isShared(visibility);
+  }
+
+  private boolean isShared(EventVisibility visibility) {
+    return visibility == EventVisibility.SHARED;
+  }
+
+  private EventVisibility currentVisibility(EventEntity event) {
+    if (event.getVisibility() != null) {
+      return event.getVisibility();
+    }
+    return event.isShared() ? EventVisibility.SHARED : EventVisibility.PRIVATE;
   }
 
   private void verifyVersion(long actualVersion, long expectedVersion) {
