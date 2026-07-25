@@ -59,22 +59,28 @@ public interface TaskService {
   }
 
   /**
-   * Lists tasks with optional filtering by lobby, assignee, and status.
-   * All filter parameters are optional — omitting one means no filter on that field.
+   * Lists the requester's visible tasks with optional filtering by lobby, assignee, and status.
+   *
+   * <p>For example, requester {@code 42} receives shared tasks from their lobbies and their own
+   * private tasks, but never a private task created by user {@code 77}.</p>
    *
    * @param lobbyId    the lobby ID to filter by, or null for all lobbies
    * @param assigneeId the assignee user ID to filter by, or null for all assignees
    * @param status     the task status string to filter by (e.g. "TODO", "DONE"), or null for all
+   * @param currentUserId authenticated requester whose membership and visibility determine results
    * @return a list of matching tasks
    * @throws BadRequestException if {@code status} is not a valid {@link io.backend.lined.task.domain.TaskStatus} value
    */
-  List<TaskDto> list(Long lobbyId, Long assigneeId, String status);
+  List<TaskDto> list(Long lobbyId, Long assigneeId, String status, Long currentUserId);
 
   /**
-   * Lists all tasks in lobbies where the current user is a member.
+   * Lists the requester's actionable shared tasks and creator-owned private tasks.
+   *
+   * <p>For example, a shared task assigned to the requester is included, as is a private task the
+   * requester created; a partner's private task is absent even when both users share a lobby.</p>
    *
    * @param currentUserId the ID of the requesting user
-   * @return tasks visible to the requester through lobby membership
+   * @return tasks visible under the task privacy rule
    */
   List<TaskDto> listMine(Long currentUserId);
 

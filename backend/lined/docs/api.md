@@ -317,6 +317,7 @@ Create a task in a lobby.
   "description": "Pick up milk and bread",
   "priority": "MEDIUM",
   "status": "TODO",
+  "visibility": "SHARED",
   "notifyAssignee": true
 }
 ```
@@ -336,7 +337,8 @@ new version and ETag.
   "assigneeId": 77,
   "dueDate": "2025-11-25",
   "description": "Pick up milk and bread",
-  "priority": "HIGH"
+  "priority": "HIGH",
+  "visibility": "PRIVATE"
 }
 ```
 
@@ -344,13 +346,16 @@ Response: `200 OK` with `TaskDto`.
 
 ### `GET /api/tasks?lobbyId={id}&assigneeId={id}&status={status}`
 
-List tasks with optional filters. All query parameters are optional.
+List requester-visible tasks with optional filters. `X-User-Id` is required. The response contains
+shared tasks in the requester's member lobbies plus the requester's own private tasks, never another
+creator's private task.
 
 Response: `200 OK` with `List<TaskDto>`.
 
 ### `GET /api/tasks/mine`
 
-Return tasks across all lobbies where the caller is a member.
+Return shared tasks assigned to the caller plus private tasks created by the caller, restricted to
+lobbies where the caller remains a member.
 
 Response: `200 OK` with `List<TaskDto>`.
 

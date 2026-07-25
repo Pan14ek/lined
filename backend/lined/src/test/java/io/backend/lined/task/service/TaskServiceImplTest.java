@@ -25,6 +25,7 @@ import io.backend.lined.task.domain.TaskEntity;
 import io.backend.lined.task.domain.TaskPriority;
 import io.backend.lined.task.domain.TaskRepository;
 import io.backend.lined.task.domain.TaskStatus;
+import io.backend.lined.task.domain.TaskVisibility;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.util.HashSet;
@@ -57,6 +58,8 @@ class TaskServiceImplTest {
   private LobbyWritePolicy writePolicy;
   @Mock
   private NotificationService notificationService;
+  @Spy
+  private TaskAccessPolicy taskAccessPolicy;
 
   @InjectMocks
   private TaskServiceImpl taskService;
@@ -91,7 +94,7 @@ class TaskServiceImplTest {
         .build();
 
     taskDto = new TaskDto(555L, 0L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
-        TaskStatus.TODO, 101L, 1L, null, null, null);
+        TaskStatus.TODO, TaskVisibility.SHARED, 101L, 1L, null, null, null);
   }
 
   /* =======================
@@ -121,7 +124,7 @@ class TaskServiceImplTest {
     assignee.setUsername("assignee");
     taskEntity.setAssignee(assignee);
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, 2L, null,
-        null, null, null, true);
+        null, null, null, TaskVisibility.SHARED, true);
 
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
     when(userRepo.findById(2L)).thenReturn(Optional.of(assignee));
@@ -222,7 +225,7 @@ class TaskServiceImplTest {
     TaskUpdateDto dto = new TaskUpdateDto(TaskStatus.IN_PROGRESS, null, null, "Updated title",
         "Updated description", TaskPriority.HIGH);
 
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
 
     TaskDto result = taskService.update(555L, dto, 1L);
@@ -239,7 +242,7 @@ class TaskServiceImplTest {
   void update_skipsNullFields() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, null, null);
 
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
 
     taskService.update(555L, dto, 1L);
@@ -254,7 +257,7 @@ class TaskServiceImplTest {
   void update_clearsDescription_whenBlank() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, "  ", null);
 
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
 
     taskService.update(555L, dto, 1L);
@@ -266,7 +269,7 @@ class TaskServiceImplTest {
   void update_rejectsStaleVersion_withoutMutatingTask() {
     TaskUpdateDto dto = new TaskUpdateDto(TaskStatus.DONE, null, null, null, null, null);
     taskEntity.setVersion(2L);
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.update(555L, dto, 1L, 1L))
         .isInstanceOf(ConflictException.class);
@@ -279,7 +282,7 @@ class TaskServiceImplTest {
   void update_throwsNotFound_whenTaskNotFound() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title", null, null);
 
-    when(repo.findById(999L)).thenReturn(Optional.empty());
+    when(repo.findVisibleById(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.update(999L, dto, 1L))
         .isInstanceOf(NotFoundException.class)
@@ -290,7 +293,7 @@ class TaskServiceImplTest {
   void update_throwsForbidden_whenUserIsNotLobbyMember() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title", null, null);
 
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 99L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.update(555L, dto, 99L))
         .isInstanceOf(ForbiddenException.class)
@@ -303,7 +306,7 @@ class TaskServiceImplTest {
 
   @Test
   void delete_success() {
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
 
     taskService.delete(555L, 1L);
 
@@ -313,7 +316,7 @@ class TaskServiceImplTest {
 
   @Test
   void delete_throwsNotFound_whenTaskNotFound() {
-    when(repo.findById(999L)).thenReturn(Optional.empty());
+    when(repo.findVisibleById(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> taskService.delete(999L, 1L))
         .isInstanceOf(NotFoundException.class)
@@ -324,7 +327,7 @@ class TaskServiceImplTest {
 
   @Test
   void delete_throwsForbidden_whenUserIsNotLobbyMember() {
-    when(repo.findById(555L)).thenReturn(Optional.of(taskEntity));
+    when(repo.findVisibleById(555L, 99L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.delete(555L, 99L))
         .isInstanceOf(ForbiddenException.class)
@@ -339,50 +342,124 @@ class TaskServiceImplTest {
 
   @Test
   void list_returnsMatchingTasks() {
-    when(repo.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
+    when(repo.findVisible(1L, 101L, null, null))
         .thenReturn(List.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
 
-    List<TaskDto> result = taskService.list(101L, null, null);
+    List<TaskDto> result = taskService.list(101L, null, null, 1L);
 
     assertThat(result).hasSize(1).containsExactly(taskDto);
   }
 
   @Test
   void list_returnsEmpty_whenNoTasksMatch() {
-    when(repo.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
+    when(repo.findVisible(1L, 101L, null, null))
         .thenReturn(List.of());
 
-    List<TaskDto> result = taskService.list(101L, null, null);
+    List<TaskDto> result = taskService.list(101L, null, null, 1L);
 
     assertThat(result).isEmpty();
   }
 
   @Test
   void list_throwsBadRequest_whenStatusIsInvalid() {
-    assertThatThrownBy(() -> taskService.list(null, null, "INVALID_STATUS"))
+    assertThatThrownBy(() -> taskService.list(null, null, "INVALID_STATUS", 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid status value");
   }
 
   @Test
   void listMine_returnsTasksVisibleToCurrentUser() {
-    when(repo.findAllByLobbyMemberId(1L)).thenReturn(List.of(taskEntity));
+    when(repo.findVisibleMine(1L)).thenReturn(List.of(taskEntity));
     when(mapper.toDto(taskEntity)).thenReturn(taskDto);
 
     List<TaskDto> result = taskService.listMine(1L);
 
     assertThat(result).containsExactly(taskDto);
-    verify(repo).findAllByLobbyMemberId(1L);
+    verify(repo).findVisibleMine(1L);
   }
 
   @Test
   void listMine_returnsEmptyList_whenUserHasNoLobbyTasks() {
-    when(repo.findAllByLobbyMemberId(99L)).thenReturn(List.of());
+    when(repo.findVisibleMine(99L)).thenReturn(List.of());
 
     List<TaskDto> result = taskService.listMine(99L);
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void create_normalizesPrivateTaskWithoutAssigneeToCreator() {
+    TaskCreateDto dto = new TaskCreateDto("Order flowers", 101L, null, null,
+        null, null, null, TaskVisibility.PRIVATE, false);
+    ArgumentCaptor<TaskEntity> captor = ArgumentCaptor.forClass(TaskEntity.class);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+    when(repo.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(mapper.toDto(any())).thenReturn(taskDto);
+
+    taskService.create(dto, 1L);
+
+    assertThat(captor.getValue().getVisibility()).isEqualTo(TaskVisibility.PRIVATE);
+    assertThat(captor.getValue().getAssignee()).isSameAs(owner);
+    verify(notificationService, never()).notifyTaskAssigned(any(), any(), any());
+  }
+
+  @Test
+  void create_rejectsPrivateTaskAssignedToAnotherUserBeforeSaving() {
+    UserEntity partner = new UserEntity();
+    partner.setId(2L);
+    TaskCreateDto dto = new TaskCreateDto("Order flowers", 101L, 2L, null,
+        null, null, null, TaskVisibility.PRIVATE, false);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(userRepo.findById(2L)).thenReturn(Optional.of(partner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> taskService.create(dto, 1L))
+        .isInstanceOf(io.backend.lined.common.exception.PrivateTaskAssigneeException.class);
+    verify(repo, never()).save(any());
+  }
+
+  @Test
+  void create_rejectsPrivateNotificationBeforeSaving() {
+    TaskCreateDto dto = new TaskCreateDto("Order flowers", 101L, null, null,
+        null, null, null, TaskVisibility.PRIVATE, true);
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+
+    assertThatThrownBy(() -> taskService.create(dto, 1L))
+        .isInstanceOf(io.backend.lined.common.exception.PrivateItemNotificationException.class);
+    verify(repo, never()).save(any());
+  }
+
+  @Test
+  void update_rejectsSharedToPrivateWhenPartnerRemainsAssignee() {
+    UserEntity partner = new UserEntity();
+    partner.setId(2L);
+    taskEntity.setAssignee(partner);
+    TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, null, null,
+        TaskVisibility.PRIVATE);
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
+
+    assertThatThrownBy(() -> taskService.update(555L, dto, 1L))
+        .isInstanceOf(io.backend.lined.common.exception.PrivateTaskAssigneeException.class);
+  }
+
+  @Test
+  void update_allowsSharedToPrivateWhenReassignedToCreator() {
+    UserEntity partner = new UserEntity();
+    partner.setId(2L);
+    taskEntity.setAssignee(partner);
+    TaskUpdateDto dto = new TaskUpdateDto(null, 1L, null, null, null, null,
+        TaskVisibility.PRIVATE);
+    when(repo.findVisibleById(555L, 1L)).thenReturn(Optional.of(taskEntity));
+    when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
+    when(mapper.toDto(taskEntity)).thenReturn(taskDto);
+
+    taskService.update(555L, dto, 1L);
+
+    assertThat(taskEntity.getVisibility()).isEqualTo(TaskVisibility.PRIVATE);
+    assertThat(taskEntity.getAssignee()).isSameAs(owner);
   }
 
 }

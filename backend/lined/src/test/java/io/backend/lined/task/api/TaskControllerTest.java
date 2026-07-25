@@ -11,6 +11,7 @@ import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.task.domain.TaskStatus;
 import io.backend.lined.task.domain.TaskPriority;
+import io.backend.lined.task.domain.TaskVisibility;
 import io.backend.lined.task.service.TaskService;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -33,7 +34,7 @@ class TaskControllerTest {
   void setUp() {
     controller = new TaskController(taskService);
     sampleTask = new TaskDto(555L, 0L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
-        TaskStatus.TODO, 101L, 42L, 77L, null, OffsetDateTime.now());
+        TaskStatus.TODO, TaskVisibility.SHARED, 101L, 42L, 77L, null, OffsetDateTime.now());
   }
 
   @Test
@@ -108,20 +109,20 @@ class TaskControllerTest {
 
   @Test
   void list_delegatesToService() {
-    when(taskService.list(101L, 77L, "TODO")).thenReturn(List.of(sampleTask));
+    when(taskService.list(101L, 77L, "TODO", 42L)).thenReturn(List.of(sampleTask));
 
-    List<TaskDto> result = controller.list(101L, 77L, "TODO");
+    List<TaskDto> result = controller.list(42L, 101L, 77L, "TODO");
 
     assertThat(result).containsExactly(sampleTask);
-    verify(taskService).list(101L, 77L, "TODO");
+    verify(taskService).list(101L, 77L, "TODO", 42L);
   }
 
   @Test
   void list_propagatesBadRequest_whenStatusInvalid() {
-    when(taskService.list(null, null, "INVALID"))
+    when(taskService.list(null, null, "INVALID", 42L))
         .thenThrow(new BadRequestException("Unknown task status: INVALID"));
 
-    assertThatThrownBy(() -> controller.list(null, null, "INVALID"))
+    assertThatThrownBy(() -> controller.list(42L, null, null, "INVALID"))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("INVALID");
   }
