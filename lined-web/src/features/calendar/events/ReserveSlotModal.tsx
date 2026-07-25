@@ -148,7 +148,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           {
             title: title.trim(),
             lobbyId: lobby.id,
-            shared: true,
+            visibility: 'SHARED',
             startAt: fromDatetimeLocal(startAt).toISOString(),
             endAt: fromDatetimeLocal(endAt).toISOString(),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

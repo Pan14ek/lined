@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Lock, TriangleAlert, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import type { EventDto } from '@/features/calendar/model';
+import type { EventDto, EventVisibility } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useUpdateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
 import { useAuthStore } from '@/store/auth';
@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { ConflictBanner } from './ConflictBanner';
 import { ToggleRow } from '@/components/ToggleRow';
+import { cn } from '@/lib/utils';
 
 interface CreateEventModalProps {
   lobbies: LobbyDto[];
@@ -25,13 +26,21 @@ interface CreateEventModalProps {
   onSaved?: (event: EventDto) => void;
 }
 
+const VISIBILITY_OPTION_BASE_CLASS =
+  'flex h-11 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors';
+const VISIBILITY_OPTION_ACTIVE_CLASS =
+  'border-brand-green bg-brand-green-light text-brand-green-dark dark:text-brand-green';
+const VISIBILITY_OPTION_INACTIVE_CLASS = 'border-border text-text-secondary hover:bg-surface-hover';
+
 interface FormState {
   title: string;
   lobbyId: string;
   startAt: string;
   endAt: string;
   location: string;
-  shared: boolean;
+  visibility: EventVisibility;
+  /** Create-mode only — there's no `notifyMembers` field on `EventUpdateDto`. */
+  notifyMembers: boolean;
 }
 
 export const CreateEventModal = ({
@@ -52,6 +61,10 @@ export const CreateEventModal = ({
     lockedLobbyIdResolved != null
       ? lobbies.find((l) => l.id === lockedLobbyIdResolved)
       : undefined;
+  // Only the event owner may see/change the visibility control; a
+  // non-owner never gets to edit it, even read-only (design §17.1).
+  const isOwner = !isEditMode || event.ownerId === currentUserId;
+  const initialVisibility: EventVisibility = event?.visibility ?? 'SHARED';
 
   // Default: start = now rounded to next hour, end = +1h
   const defaultStart = (() => {
@@ -71,7 +84,8 @@ export const CreateEventModal = ({
           startAt: toDatetimeLocal(new Date(event.startAt)),
           endAt: toDatetimeLocal(new Date(event.endAt)),
           location: initialLocation,
-          shared: event.shared,
+          visibility: initialVisibility,
+          notifyMembers: false,
         }
       : {
           title: '',
@@ -79,12 +93,21 @@ export const CreateEventModal = ({
           startAt: toDatetimeLocal(defaultStart),
           endAt: toDatetimeLocal(defaultEnd),
           location: '',
-          shared: true,
+          visibility: 'SHARED',
+          notifyMembers: true,
         },
   );
 
   const set = <K extends keyof FormState,>(key: K, value: FormState[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
+      }
+
+  const setVisibility = (visibility: EventVisibility) => {
+        setForm((prev) => ({
+          ...prev,
+          visibility,
+          notifyMembers: visibility === 'PRIVATE' ? false : prev.notifyMembers,
+        }));
       }
 
   const mutation = isEditMode ? updateEvent : createEvent;
@@ -115,7 +138,7 @@ export const CreateEventModal = ({
                 startAt: startDate.toISOString(),
                 endAt: endDate.toISOString(),
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                shared: form.shared,
+                visibility: form.visibility,
                 // Only send location if it changed — omitting preserves the current value.
                 ...(trimmedLocation !== initialLocation ? { location: trimmedLocation } : {}),
               },
@@ -132,7 +155,8 @@ export const CreateEventModal = ({
             startAt: startDate.toISOString(),
             endAt: endDate.toISOString(),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            shared: form.shared,
+            visibility: form.visibility,
+            notifyMembers: form.visibility === 'SHARED' ? form.notifyMembers : false,
             ...(trimmedLocation ? { location: trimmedLocation } : {}),
           },
           {
@@ -262,13 +286,68 @@ export const CreateEventModal = ({
               />
             </div>
 
-            {/* Shared toggle */}
-            <ToggleRow
-              label={t('createEventModal.sharedToggle.label')}
-              description={t('createEventModal.sharedToggle.description')}
-              checked={form.shared}
-              onChange={(v) => set('shared', v)}
-            />
+            {/* Visibility — owner-only per design §17.1 */}
+            {isOwner && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                  {t('createEventModal.visibility.label')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('SHARED')}
+                    aria-pressed={form.visibility === 'SHARED'}
+                    className={cn(
+                      VISIBILITY_OPTION_BASE_CLASS,
+                      form.visibility === 'SHARED' ? VISIBILITY_OPTION_ACTIVE_CLASS : VISIBILITY_OPTION_INACTIVE_CLASS,
+                    )}
+                  >
+                    <Users className="h-4 w-4" />
+                    {t('createEventModal.visibility.shared.label')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('PRIVATE')}
+                    aria-pressed={form.visibility === 'PRIVATE'}
+                    className={cn(
+                      VISIBILITY_OPTION_BASE_CLASS,
+                      form.visibility === 'PRIVATE' ? VISIBILITY_OPTION_ACTIVE_CLASS : VISIBILITY_OPTION_INACTIVE_CLASS,
+                    )}
+                  >
+                    <Lock className="h-4 w-4" />
+                    {t('createEventModal.visibility.private.label')}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-xs text-text-secondary">
+                  {form.visibility === 'SHARED'
+                    ? t('createEventModal.visibility.shared.description')
+                    : t('createEventModal.visibility.private.description')}
+                </p>
+
+                {isEditMode && initialVisibility === 'SHARED' && form.visibility === 'PRIVATE' && (
+                  <div
+                    role="status"
+                    className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 dark:border-amber-800/60 dark:bg-amber-950/30"
+                  >
+                    <TriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700 dark:text-amber-400" />
+                    <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+                      {t('createEventModal.visibility.sharedToPrivateWarning')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Notify members — create-mode only; there's no notifyMembers field on edit */}
+            {!isEditMode && (
+              <ToggleRow
+                label={t('createEventModal.notifyToggle.label')}
+                description={t('createEventModal.notifyToggle.description')}
+                checked={form.notifyMembers}
+                onChange={(v) => set('notifyMembers', v)}
+                disabled={form.visibility === 'PRIVATE'}
+              />
+            )}
 
             {mutation.isError && (
               <AuthAlert
