@@ -1,50 +1,39 @@
 # Lined Backend Documentation
 
 This directory is the documentation home for the Spring Boot backend and the
-scientific experiment work based on it. Start here before making backend
-changes.
+scientific experiment work based on it. Start with [Documentation Context](CONTEXT.md)
+to choose the domain, then open the document needed for the change.
 
-| Name                | Description                                                                                                     | Path                           | When you should use it                                                                      | Cases for using                                                                          |
-|---------------------|-----------------------------------------------------------------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| Backend Agent Guide | Backend-specific instructions for coding agents.                                                                | `../AGENTS.md`                 | Use before changing anything under `backend/lined/`.                                        | Commands, conventions, quality gates, experiment constraints.                            |
-| Architecture Guide  | Backend modules, layers, domain boundaries, current architecture ideas, constraints, and known inconsistencies. | `architecture.md`              | Use before changing backend structure, adding modules, or refactoring.                      | Feature design, domain modeling, layering checks, architecture decisions.                |
-| Testing Guide       | How backend tests are written and what new backend work must cover.                                             | `testing.md`                   | Use before adding or changing backend tests.                                                | Unit tests, service tests, integration-test decisions, test naming and mocking patterns. |
-| API Documentation   | Backend API reference moved from the legacy `documentation/` directory.                                         | `api.md`                       | Use when changing endpoints, DTOs, request headers, or response behavior.                   | Endpoint review, API examples, Swagger/API alignment, client integration checks.         |
-| Containerization    | Docker image build and local container run flow for the Spring Boot backend.                                    | `containerization.md`          | Use before building or running the backend Docker image.                                    | Docker image creation, local container smoke checks, runtime environment variables.      |
-| kind Baseline       | Local kind deployment flow for PostgreSQL and the backend baseline.                                             | `kind-baseline.md`             | Use before deploying the backend baseline to local Kubernetes with kind.                    | kind cluster setup, image loading, manifest apply, Service port-forward, health checks.  |
-| Runtime Metrics     | Prometheus-compatible Actuator metrics baseline and runtime signal map.                                         | `runtime-metrics-baseline.md`  | Use before collecting backend runtime metrics or designing runtime-aware fitness inputs.    | `/actuator/prometheus`, latency/error/resource signals, Prometheus scrape metadata.      |
-| Load-Test Baseline  | Repeatable k6 workload for users, lobbies, tasks, and calendar event flows.                                    | `load-test-baseline.md`        | Use before running baseline workload traffic against the local kind backend.                | k6 smoke run, local workload profile, synthetic data behavior, runtime metrics checks.   |
-| HPA Resource Scenarios | Local kind variants for backend resource requests/limits, fixed replicas, and CPU-based HPA behavior.       | `hpa-resource-scenarios.md`    | Use before comparing deployment/runtime trade-offs under k6 workload traffic.               | Resource pressure, fixed replica comparison, HPA prerequisites, scenario cleanup.        |
-| Runtime Scenario Summaries | Scenario-runner seam for producing sanitized runtime-summary artifacts for one scenario or one comparable scenario set. | `runtime-scenario-summaries.md` | Use before generating collector-ready runtime evidence for local scenario comparisons. | Scenario runner CLI, scenario-set collection, k6 summary export, Kubernetes state summaries, provenance manifest. |
-| Runtime Fitness Extension | Runtime-aware fitness metric contract and optional collector input shape.                                  | `runtime-fitness-extension.md` | Use before adding runtime-aware scoring or attaching runtime summaries to metrics documents. | Structural/runtime score separation, runtime metric schema, normalization, compatibility. |
-| Runtime-Aware Scoring | Versioned scalar runtime score that compares current runtime summaries against baseline evidence. | `runtime-aware-scoring.md` | Use before running or interpreting runtime-aware fitness scoring. | Local baseline input, score fields, SLO classification, missing metrics, metrics-store fallback. |
-| Adaptive Weighted Fitness | Context-sensitive scalar score over structural and runtime signals. | `adaptive-weighted-fitness.md` | Use before running or interpreting adaptive weighted fitness scoring. | Adaptive context selection, active weights, missing signals, comparison with fixed structural/runtime scores. |
-| Pareto Optimization Baseline | Deterministic Pareto front ranking over runtime scenario summaries. | `pareto-optimization-baseline.md` | Use before comparing deployment variants as multi-objective trade-offs. | Runtime objective directions, scenario set inputs, non-dominated fronts, crowding distance metadata. |
-| Decision-Usefulness Reporting | Reporting layer that compares Pareto trade-off alternatives against a fixed scalar runtime comparator. | `decision-usefulness-reporting.md` | Use before interpreting whether Pareto outputs add actionable deployment alternatives beyond scalar ranking. | Candidate-level trade-off rationales, fixed scalar reporting comparator, decision-usefulness reason codes. |
-| Experiment Results Reporting | Article-evidence reporting workflow for Results, Discussion, and Limitations. | `experiment-results-reporting.md` | Use before turning experiment artifacts into paper-ready tables, plots, and provenance. | Score-lane tables, runtime summary tables, Pareto/decision-usefulness outputs, evidence exclusions. |
-| Runtime Quality Scenario Catalog | Architecture-driver scenario catalog for runtime quality evidence. | `runtime-quality-scenario-catalog.md` | Use before mapping workload/deployment scenarios to quality attributes, KPIs, SLO roles, or evidence kinds. | ISO/IEC 25010 mapping, live telemetry vs provenance vs surrogate evidence, scenario traceability. |
-| Prometheus Telemetry Pipeline | Local Prometheus deployment and scrape workflow for kind backend metrics.                              | `prometheus-telemetry-pipeline.md` | Use before collecting persistent-enough Prometheus samples from local scenario runs.       | Prometheus pod discovery, Actuator scrape verification, PromQL checks, telemetry cleanup. |
-| SLO Constraint Thresholds | Initial runtime SLO and constraint thresholds for classifying local experiment variants. | `slo-constraint-thresholds.md` | Use before interpreting runtime-summary evidence or adding runtime-aware scoring. | Latency, error-rate, availability, restart, readiness, and resource-pressure constraints. |
-| LLM Support Service | Plan for a separate advisory service that proposes candidate fitness rules and trade-off explanations. | `llm-support-service.md` | Use before designing or implementing LLM-assisted rule synthesis for the experiment. | Service boundary, serverless/manual triggers, input/output contracts, review workflow. |
-| LLM Rule Review Workflow | Manual review and promotion workflow for candidate LLM rules. | `llm-rule-review-workflow.md` | Use before accepting or promoting candidate rules into a versioned configuration artifact. | Reviewer decisions, traceability, promotion eligibility, provenance, non-blocking workflow. |
-| LLM Rule Validation Checklist | Evidence checklist for reviewed LLM rules before promotion or article use. | `llm-rule-validation-checklist.md` | Use after review decisions exist and before relying on a reviewed rule as promotion-ready evidence. | Source evidence, telemetry linkage, explicit classification, threshold rationale, expert approval. |
-| LLM Trade-off Explanations | Reviewed explanation workflow for Pareto and decision-usefulness outputs. | `llm-tradeoff-explanations.md` | Use after generating `results-report.json` when you need article-facing explanation drafts with explicit caveats. | Candidate-level trade-off drafts, comparison-summary drafts, review status, article-readiness metadata. |
-| LLM Guardrail Evaluation | Repo-local guardrail enforcement over rule-promotion and article-claim artifact chains. | `llm-guardrail-evaluation.md` | Use after reviewed rule and explanation artifacts exist and before treating them as promotion-ready or article-claim-ready. | Advisory-only scope, cross-artifact promotion invariants, repo-local consumer scan, article-claim blocking rules. |
-| Agent Evaluation Harness | Fixture-based evaluation harness for research-agent outputs. | `agent-evaluation-harness.md` | Use before trusting agent-produced rule suggestions or research summaries in experiment work. | Versioned eval cases, local Notion snapshots, runtime-summary fixtures, rubric checks, pass/fail report. |
-| Feature Flags       | Runtime capability catalog, persistence/cache rules, public/admin API contracts, enforcement boundaries, and multi-instance synchronization. | `feature-flags.md` | Before implementing or changing feature availability in the backend or web app. | Flag semantics, capability ownership, environment defaults, disabled errors, cache propagation, admin security. |
-| Notion KB Workflow  | Rules for using Notion as the durable research knowledge base for backend experiment work.                     | `notion-knowledge-base-workflow.md` | Use when research or experiment analysis should be stored in Notion.                        | Notion write-back checklist, verification after write, fallback policy, entry template. |
-| Experiment Plan     | Detailed plan for adapting Lined to Kubernetes and runtime telemetry experiments for the article.               | `experiment-plan.md`           | Use before containerization, kind, Kubernetes, telemetry, load-test, or fitness-model work. | Research scope, experiment platform design, metrics, baselines, expected evidence.       |
-| Experiment Tasks    | One-PR task table for iterative experiment implementation.                                                      | `experiment-tasks.md`          | Use before starting an experiment branch or PR.                                             | Branch naming, PR scope, implementation order, final-work expectations.                  |
-| PR and Commit Guide | Pull request title/body template and commit-splitting rules.                                                    | `pull-requests-and-commits.md` | Use before opening a PR or creating commits.                                                | PR title selection, PR descriptions, fitness expectations, commit hygiene.               |
+## Foundation
 
-## Documentation Rules
+- [Architecture](foundation/architecture.md)
+- [API reference](foundation/api.md)
+- [Testing guide](foundation/testing.md)
 
-- Keep backend documentation in this `docs/` directory.
-- Update this index when adding, moving, or renaming backend documentation.
-- Keep feature-flag implementation tasks linked from `feature-flags.md`,
-  `experiment-tasks.md`, and the corresponding web task files.
-- Keep experiment work linked to `experiment-tasks.md`.
-- Use `notion-knowledge-base-workflow.md` when backend experiment work changes
-  durable research knowledge that should be stored in Notion.
-- Use `pull-requests-and-commits.md` before opening PRs or splitting commits.
+## Governance
+
+- [Notion knowledge-base workflow](governance/notion-knowledge-base-workflow.md)
+- [Pull requests and commits](governance/pull-requests-and-commits.md)
+
+## Product domains
+
+- [Billing plan](product/billing/BILLING_TASKS.md) and [billing tasks](product/billing/tasks/)
+- [Feature flags](product/feature-flags/feature-flags.md) and [feature-flag tasks](product/feature-flags/tasks/)
+- [Private events and tasks](product/privacy/private-events-and-tasks-system-design.md) and [privacy tasks](product/privacy/tasks/)
+- API proposals: [calendar](product/calendar/proposals/), [dashboard](product/dashboard/proposals/), [events](product/events/proposals/), [lobbies](product/lobbies/proposals/), [users](product/users/proposals/), and [billing](product/billing/proposals/)
+
+## Research
+
+- [Experiment roadmap](research/experiment/experiment-tasks.md), [plan](research/experiment/experiment-plan.md), [results reporting](research/experiment/experiment-results-reporting.md), and [concurrency audits](research/experiment/audits/)
+- [Runtime platform](research/platform/): containerization, kind, workload, telemetry, scenarios, and SLOs
+- [Fitness models](research/fitness/): runtime, adaptive, Pareto, and decision-usefulness scoring
+- [Advisory AI](research/ai/): LLM workflow, guardrails, validation, and agent evaluation
+
+## Documentation rules
+
+- Keep each document in the domain folder defined by [CONTEXT.md](CONTEXT.md).
+- Update this index, `CONTEXT.md`, and `AGENTS.md` when adding, moving, or renaming a document.
+- Keep feature-flag implementation tasks linked from the feature-flag design,
+  the experiment roadmap, and the corresponding web task files.
+- Keep experiment work linked to `research/experiment/experiment-tasks.md`.
 - Use English for backend agent and documentation files.
