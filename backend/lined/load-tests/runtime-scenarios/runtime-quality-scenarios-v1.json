@@ -40,10 +40,10 @@
     }
   ],
   "source_artifacts": [
-    "docs/runtime-scenario-summaries.md",
-    "docs/hpa-resource-scenarios.md",
-    "docs/slo-constraint-thresholds.md",
-    "docs/runtime-fitness-extension.md",
+    "docs/research/platform/runtime-scenario-summaries.md",
+    "docs/research/platform/hpa-resource-scenarios.md",
+    "docs/research/platform/slo-constraint-thresholds.md",
+    "docs/research/fitness/runtime-fitness-extension.md",
     "load-tests/runtime-scenarios/fixture-profiles-v1.json",
     "load-tests/runtime-scenarios/slo-thresholds-v1.json"
   ],

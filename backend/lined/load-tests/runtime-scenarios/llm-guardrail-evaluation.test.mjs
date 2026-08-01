@@ -51,7 +51,7 @@ const reviewInput = (candidateId) => ({
   reviewed_at: '2026-06-14T11:00:00.000Z',
   advisory_metadata: {
     prompt_version: 'llm-support-service-prototype-v1-prompt',
-    retrieved_sources: ['docs/llm-support-service.md'],
+    retrieved_sources: ['docs/research/ai/llm-support-service.md'],
     latency_ms: 811,
     cost_usd: 0.03,
     failure_mode: '',

@@ -12,7 +12,7 @@
         {
           "source_id": "repo-llm-support-service",
           "kind": "repo-doc",
-          "path": "docs/llm-support-service.md",
+          "path": "docs/research/ai/llm-support-service.md",
           "title": "LLM Support Service Plan"
         },
         {
@@ -86,7 +86,7 @@
         {
           "source_id": "repo-runtime-quality-catalog",
           "kind": "repo-doc",
-          "path": "docs/runtime-quality-scenario-catalog.md",
+          "path": "docs/research/platform/runtime-quality-scenario-catalog.md",
           "title": "Runtime Quality Scenario Catalog"
         },
         {
