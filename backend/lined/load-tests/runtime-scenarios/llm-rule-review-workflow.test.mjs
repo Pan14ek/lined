@@ -56,7 +56,7 @@ const reviewInputArtifact = (candidateIds) => ({
   reviewed_at: '2026-06-13T11:00:00.000Z',
   advisory_metadata: {
     prompt_version: 'llm-support-service-prototype-v1-prompt',
-    retrieved_sources: ['docs/llm-support-service.md', 'load-tests/runtime-scenarios/slo-thresholds-v1.json'],
+    retrieved_sources: ['docs/research/ai/llm-support-service.md', 'load-tests/runtime-scenarios/slo-thresholds-v1.json'],
     latency_ms: 812,
     cost_usd: 0.03,
   },
