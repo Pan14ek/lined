@@ -183,9 +183,14 @@ CREATE TABLE IF NOT EXISTS notifications
     message      VARCHAR(500) NOT NULL,
     task_id      BIGINT,
     event_id     BIGINT,
+    business_key VARCHAR(255),
     read_at      TIMESTAMPTZ,
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS business_key VARCHAR(255);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notifications_business_key
+    ON notifications (business_key) WHERE business_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS notification_deliveries
 (
@@ -199,6 +204,18 @@ CREATE TABLE IF NOT EXISTS notification_deliveries
 
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
     ON notifications (recipient_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS idempotency_requests
+(
+    id              BIGSERIAL PRIMARY KEY,
+    requester_id    BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    operation       VARCHAR(32)  NOT NULL,
+    idempotency_key VARCHAR(255) NOT NULL,
+    payload_hash    VARCHAR(64)  NOT NULL,
+    resource_id     BIGINT,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UNIQUE (requester_id, operation, idempotency_key)
+);
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE lobbies ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;

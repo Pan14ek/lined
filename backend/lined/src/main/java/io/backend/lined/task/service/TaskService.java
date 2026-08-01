@@ -23,7 +23,12 @@ public interface TaskService {
    * @throws ForbiddenException if the user is not a lobby member
    * @throws NotFoundException  if the lobby or user is not found
    */
-  TaskDto create(TaskCreateDto dto, Long currentUserId);
+  TaskDto create(TaskCreateDto dto, Long currentUserId, String idempotencyKey);
+
+  @Deprecated
+  default TaskDto create(TaskCreateDto dto, Long currentUserId) {
+    return create(dto, currentUserId, null);
+  }
 
   /**
    * Updates an existing task.

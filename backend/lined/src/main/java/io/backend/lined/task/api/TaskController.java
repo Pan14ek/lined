@@ -49,6 +49,8 @@ public class TaskController {
   public ResponseEntity<TaskDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @Parameter(description = "Optional retry key; same requester, key, and body replay one task")
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           description = "Task payload",
@@ -57,6 +59,14 @@ public class TaskController {
                     { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "visibility":"SHARED", "notifyAssignee":true }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
+    TaskDto created = idempotencyKey == null
+        ? service.create(dto, currentUserId)
+        : service.create(dto, currentUserId, idempotencyKey);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
+  }
+
+  @Deprecated
+  public ResponseEntity<TaskDto> create(Long currentUserId, TaskCreateDto dto) {
     TaskDto created = service.create(dto, currentUserId);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }

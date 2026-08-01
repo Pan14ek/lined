@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.common.idempotency.IdempotencyService;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.event.api.EventConflictDto;
@@ -62,6 +63,9 @@ class EventServiceImplConflictTest {
   @Mock
   private NotificationService notificationService;
 
+  @Mock
+  private IdempotencyService idempotencyService;
+
   private EventServiceImpl eventService;
 
   private UserEntity owner;
@@ -91,7 +95,7 @@ class EventServiceImplConflictTest {
     eventService = new EventServiceImpl(
         repo, lobbyRepo, userRepo, mapper, accessPolicy, writePolicy,
         new EventConflictAnalyzer(mapper), new FreeSlotCalculator(), notificationService,
-        new EventAccessPolicy());
+        new EventAccessPolicy(), idempotencyService);
   }
 
   private void setupDtos() {

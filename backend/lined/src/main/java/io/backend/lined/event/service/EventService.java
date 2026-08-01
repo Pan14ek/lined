@@ -29,7 +29,12 @@ public interface EventService {
    * @throws ForbiddenException  if the user is not a lobby member
    * @throws NotFoundException   if the lobby or user is not found
    */
-  EventDto create(EventCreateDto dto, Long currentUserId);
+  EventDto create(EventCreateDto dto, Long currentUserId, String idempotencyKey);
+
+  @Deprecated
+  default EventDto create(EventCreateDto dto, Long currentUserId) {
+    return create(dto, currentUserId, null);
+  }
 
   /**
    * Updates an existing event.

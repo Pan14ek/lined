@@ -121,7 +121,9 @@ public class NotificationServiceImpl implements NotificationService {
       return;
     }
     saveNotification(recipient, task.getLobby(), NotificationType.TASK_ASSIGNED,
-        "New task assigned", "%s assigned you: %s".formatted(actor.getUsername(), task.getTitle()),
+        new NotificationDetails("New task assigned",
+            "%s assigned you: %s".formatted(actor.getUsername(), task.getTitle()),
+            "task-assigned:%d:recipient:%d".formatted(task.getId(), recipient.getId())),
         task.getId(), null);
   }
 
@@ -134,8 +136,9 @@ public class NotificationServiceImpl implements NotificationService {
       return;
     }
     saveNotification(recipient, lobby, NotificationType.SHARED_EVENT_CREATED,
-        "New shared event", "%s created: %s".formatted(actor.getUsername(), eventTitle),
-        null, eventId);
+        new NotificationDetails("New shared event", "%s created: %s".formatted(
+            actor.getUsername(), eventTitle),
+            "event-created:%d:recipient:%d".formatted(eventId, recipient.getId())), null, eventId);
   }
 
   @Override
@@ -145,7 +148,9 @@ public class NotificationServiceImpl implements NotificationService {
       return;
     }
     saveNotification(recipient, event.getLobby(), NotificationType.EVENT_REMINDER,
-        "Event reminder", "%s starts soon".formatted(event.getTitle()), null, event.getId());
+        new NotificationDetails("Event reminder", "%s starts soon".formatted(event.getTitle()),
+            "event-reminder:%d:%s:recipient:%d".formatted(event.getId(),
+                event.getStartAt().toInstant(), recipient.getId())), null, event.getId());
   }
 
   @Override
@@ -155,19 +160,22 @@ public class NotificationServiceImpl implements NotificationService {
       return;
     }
     saveNotification(recipient, task.getLobby(), NotificationType.TASK_DUE,
-        "Task due today", "%s is due today".formatted(task.getTitle()), task.getId(), null);
+        new NotificationDetails("Task due today", "%s is due today".formatted(task.getTitle()),
+            "task-due:%d:%s:recipient:%d".formatted(task.getId(), task.getDueDate(),
+                recipient.getId())), task.getId(), null);
   }
 
   private void saveNotification(UserEntity recipient, LobbyEntity lobby, NotificationType type,
-                                String title, String message, Long taskId, Long eventId) {
+                                NotificationDetails details, Long taskId, Long eventId) {
     var notification = NotificationEntity.builder()
         .recipient(recipient)
         .lobby(lobby)
         .type(type)
-        .title(title)
-        .message(message)
+        .title(details.title())
+        .message(details.message())
         .taskId(taskId)
         .eventId(eventId)
+        .businessKey(details.businessKey())
         .build();
     notification.getDeliveries().add(delivery(notification, NotificationDeliveryChannel.IN_APP,
         NotificationDeliveryStatus.DELIVERED));
@@ -190,6 +198,8 @@ public class NotificationServiceImpl implements NotificationService {
         .deliveredAt(status == NotificationDeliveryStatus.DELIVERED ? now : null)
         .build();
   }
+
+  private record NotificationDetails(String title, String message, String businessKey) { }
 
   private boolean allowsTaskAssignment(UserEntity user, LobbyEntity lobby) {
     var global = globalPreferences(user.getId());
