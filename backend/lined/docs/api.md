@@ -309,6 +309,12 @@ Accepting an invite that has been cancelled or declined returns `409 Conflict`.
 
 Create a task in a lobby.
 
+`Idempotency-Key` is optional. With a supplied non-blank key of at most 255 characters, the
+backend permanently scopes the key to the requester and this create operation. Retrying the same
+key and equivalent body returns the first task without creating another notification delivery set.
+Reusing the key with a different body returns `409 IDEMPOTENCY_KEY_PAYLOAD_MISMATCH`. Omitting the
+header retains normal independent-create behavior.
+
 ```json
 {
   "title": "Buy groceries",
@@ -374,6 +380,12 @@ All calendar endpoints use the `/api/calendar` base path.
 ### `POST /api/calendar/events`
 
 Create an event.
+
+`Idempotency-Key` is optional. With a supplied non-blank key of at most 255 characters, the
+backend permanently scopes the key to the requester and this create operation. Retrying the same
+key and equivalent body returns the first event without creating another notification delivery set.
+Reusing the key with a different body returns `409 IDEMPOTENCY_KEY_PAYLOAD_MISMATCH`. Omitting the
+header retains normal independent-create behavior.
 
 `visibility` is the primary value (`SHARED` or `PRIVATE`). The legacy `shared` boolean remains
 temporarily supported and must agree with `visibility` when both are supplied; it is deprecated in

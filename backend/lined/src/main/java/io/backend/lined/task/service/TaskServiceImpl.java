@@ -1,6 +1,9 @@
 package io.backend.lined.task.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.idempotency.IdempotencyOperation;
+import io.backend.lined.common.idempotency.IdempotencyClaim;
+import io.backend.lined.common.idempotency.IdempotencyService;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -47,6 +50,7 @@ public class TaskServiceImpl implements TaskService {
   private final LobbyWritePolicy writePolicy;
   private final NotificationService notificationService;
   private final TaskAccessPolicy taskAccessPolicy;
+  private final IdempotencyService idempotencyService;
 
   /**
    * Creates a task after normalizing the private-task assignee invariant.
@@ -55,7 +59,14 @@ public class TaskServiceImpl implements TaskService {
    * to assign it to a partner is rejected before it can be saved or notified.</p>
    */
   @Override
-  public TaskDto create(TaskCreateDto dto, Long currentUserId) {
+  public TaskDto create(TaskCreateDto dto, Long currentUserId, String idempotencyKey) {
+    var claim = idempotencyKey == null
+        ? IdempotencyClaim.withoutKey()
+        : idempotencyService.claim(IdempotencyOperation.TASK_CREATE, currentUserId,
+            idempotencyKey, dto);
+    if (claim.replay()) {
+      return mapper.toDto(mustTask(claim.resourceId(), currentUserId));
+    }
     var creator = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
     accessPolicy.ensureMember(lobby, currentUserId);
@@ -81,6 +92,10 @@ public class TaskServiceImpl implements TaskService {
     if (visibility == TaskVisibility.SHARED && dto.notifyAssignee()
         && saved.getAssignee() != null) {
       notificationService.notifyTaskAssigned(saved.getAssignee(), creator, saved);
+    }
+    if (idempotencyKey != null) {
+      idempotencyService.complete(IdempotencyOperation.TASK_CREATE, currentUserId, claim,
+          saved.getId());
     }
     return mapper.toDto(saved);
   }

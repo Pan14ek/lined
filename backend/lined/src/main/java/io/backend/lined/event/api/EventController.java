@@ -39,6 +39,8 @@ public class EventController {
   public ResponseEntity<EventDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
+      @Parameter(description = "Optional retry key; same requester, key, and body replay one event")
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
           content = @Content(schema = @Schema(implementation = EventCreateDto.class),
@@ -56,6 +58,14 @@ public class EventController {
                     }
                   """)))
       @Valid @RequestBody EventCreateDto dto) {
+    EventDto created = idempotencyKey == null
+        ? service.create(dto, currentUserId)
+        : service.create(dto, currentUserId, idempotencyKey);
+    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
+  }
+
+  @Deprecated
+  public ResponseEntity<EventDto> create(Long currentUserId, EventCreateDto dto) {
     EventDto created = service.create(dto, currentUserId);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }

@@ -1,6 +1,9 @@
 package io.backend.lined.event.service;
 
 import io.backend.lined.common.EntityFinder;
+import io.backend.lined.common.idempotency.IdempotencyOperation;
+import io.backend.lined.common.idempotency.IdempotencyClaim;
+import io.backend.lined.common.idempotency.IdempotencyService;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -48,6 +51,7 @@ public class EventServiceImpl implements EventService {
   private final FreeSlotCalculator freeSlotCalculator;
   private final NotificationService notificationService;
   private final EventAccessPolicy eventAccessPolicy;
+  private final IdempotencyService idempotencyService;
 
   /**
    * Creates an event with its optional reminder policy.
@@ -56,7 +60,14 @@ public class EventServiceImpl implements EventService {
    * value of {@code 0} stores an explicit opt-out and therefore produces no scheduled reminder.</p>
    */
   @Override
-  public EventDto create(EventCreateDto dto, Long currentUserId) {
+  public EventDto create(EventCreateDto dto, Long currentUserId, String idempotencyKey) {
+    var claim = idempotencyKey == null
+        ? IdempotencyClaim.withoutKey()
+        : idempotencyService.claim(IdempotencyOperation.EVENT_CREATE, currentUserId,
+            idempotencyKey, dto);
+    if (claim.replay()) {
+      return mapper.toDto(mustVisibleEvent(claim.resourceId(), currentUserId));
+    }
     var owner = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
     accessPolicy.ensureMember(lobby, currentUserId);
@@ -88,6 +99,10 @@ public class EventServiceImpl implements EventService {
           .filter(member -> !member.getId().equals(owner.getId()))
           .forEach(member -> notificationService.notifySharedEventCreated(
               member, owner, saved.getId(), lobby, saved.getTitle()));
+    }
+    if (idempotencyKey != null) {
+      idempotencyService.complete(IdempotencyOperation.EVENT_CREATE, currentUserId, claim,
+          saved.getId());
     }
     return mapper.toDto(saved);
   }

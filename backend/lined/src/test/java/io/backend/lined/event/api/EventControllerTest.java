@@ -78,6 +78,16 @@ class EventControllerTest {
   }
 
   @Test
+  void create_delegatesOptionalIdempotencyKeyToService() {
+    when(service.create(createDto, 42L, "retry-1")).thenReturn(sampleEvent);
+
+    EventDto result = controller.create(42L, "retry-1", createDto).getBody();
+
+    assertThat(result).isEqualTo(sampleEvent);
+    verify(service).create(createDto, 42L, "retry-1");
+  }
+
+  @Test
   void create_propagatesForbidden_whenNotMember() {
     when(service.create(createDto, 99L))
         .thenThrow(new ForbiddenException("Not a lobby member"));

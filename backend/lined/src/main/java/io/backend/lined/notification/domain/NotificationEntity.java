@@ -63,6 +63,9 @@ public class NotificationEntity {
 
   private Long eventId;
 
+  @Column(name = "business_key", unique = true, length = 255)
+  private String businessKey;
+
   private OffsetDateTime readAt;
 
   @Column(nullable = false, updatable = false)
