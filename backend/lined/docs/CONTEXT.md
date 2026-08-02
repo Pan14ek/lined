@@ -8,13 +8,21 @@ documents for their domain.
 |---|---|---|
 | Foundation | Backend-wide architecture, API contract, and testing conventions. | `docs/foundation/` |
 | Governance | Contribution workflow and durable research-knowledge guidance. | `docs/governance/` |
-| Product billing | Billing design, roadmap, historical checkout proposal, and implementation task specifications. | `docs/product/billing/` |
+| Product authentication | Login and password-reset behavior, architecture, and persistence context. | `docs/product/authentication/` |
+| Product users | Account profile, registration, and identity-record behavior. | `docs/product/users/` |
+| Product lobbies | Shared-space membership, lifecycle, and access behavior. | `docs/product/lobbies/` |
+| Product lobby invitations | Consent-based lobby membership invitation behavior. | `docs/product/lobby-invitations/` |
+| Product tasks | Shared and private task behavior, persistence, and access policy. | `docs/product/tasks/` |
+| Product calendar | Event scheduling, conflicts, free slots, and ICS exchange. | `docs/product/calendar/` |
+| Product notifications | Inbox, delivery preferences, and scheduled reminder behavior. | `docs/product/notifications/` |
+| Product roles | Built-in role catalog and user-role assignment behavior. | `docs/product/roles/` |
+| Product billing | Billing behavior, design, roadmap, historical checkout proposal, and implementation task specifications. | `docs/product/billing/` |
 | Product feature flags | Capability-management design and related backend tasks. | `docs/product/feature-flags/` |
-| Product privacy | Private events/tasks design and privacy task specifications. | `docs/product/privacy/` |
-| Product calendar proposals | Calendar API proposals that are not part of the implemented API contract. | `docs/product/calendar/proposals/` |
+| Product privacy | Cross-feature private event/task policy, design, and task specifications. | `docs/product/privacy/` |
+| Product calendar proposals | Calendar proposals that are not part of the implemented API contract. | `docs/product/calendar/proposals/` |
 | Product dashboard proposals | Dashboard API proposals that are not part of the implemented API contract. | `docs/product/dashboard/proposals/` |
 | Product event proposals | Event API proposals that are not part of the implemented API contract. | `docs/product/events/proposals/` |
-| Product lobby proposals | Lobby API proposals that are not part of the implemented API contract. | `docs/product/lobbies/proposals/` |
+| Product lobby proposals | Lobby proposals that are not part of the implemented API contract. | `docs/product/lobbies/proposals/` |
 | Product user proposals | User and authentication API proposals that are not part of the implemented API contract. | `docs/product/users/proposals/` |
 | Research experiment | Experiment plan, roadmap, results reporting, and concurrency audits. | `docs/research/experiment/` |
 | Research platform | Container, Kubernetes, workload, telemetry, scenario, and SLO evidence. | `docs/research/platform/` |
