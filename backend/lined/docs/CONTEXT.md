@@ -8,6 +8,7 @@ documents for their domain.
 |---|---|---|
 | Foundation | Backend-wide architecture, API contract, and testing conventions. | `docs/foundation/` |
 | Governance | Contribution workflow and durable research-knowledge guidance. | `docs/governance/` |
+| Product feature context | Source-grounded guides to implemented backend product features. | `docs/product/features/` |
 | Product billing | Billing design, roadmap, historical checkout proposal, and implementation task specifications. | `docs/product/billing/` |
 | Product feature flags | Capability-management design and related backend tasks. | `docs/product/feature-flags/` |
 | Product privacy | Private events/tasks design and privacy task specifications. | `docs/product/privacy/` |

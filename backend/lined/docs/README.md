@@ -17,6 +17,7 @@ to choose the domain, then open the document needed for the change.
 
 ## Product domains
 
+- [Implemented backend features](product/features/README.md): source-grounded feature context for the current API.
 - [Billing plan](product/billing/BILLING_TASKS.md) and [billing tasks](product/billing/tasks/)
 - [Feature flags](product/feature-flags/feature-flags.md) and [feature-flag tasks](product/feature-flags/tasks/)
 - [Private events and tasks](product/privacy/private-events-and-tasks-system-design.md) and [privacy tasks](product/privacy/tasks/)
