@@ -56,5 +56,5 @@ acceptance from creating duplicate membership outcomes.
 
 - [Lobby Invitations endpoints in the API reference](../../foundation/api.md#lobby-invites)
 - [Lobby invitation source package](../../../src/main/java/io/backend/lined/lobby/invite/)
-- [Lobbies context](../lobbies/context.md)
+- [Lobbies context](../lobbies/CONTEXT.md)
 - No additional invitation proposal, migration, or operational document exists in this repository.

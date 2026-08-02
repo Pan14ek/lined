@@ -54,5 +54,5 @@ the user relation is updated as part of the application transaction.
 
 - [Roles endpoints in the API reference](../../foundation/api.md#roles)
 - [Roles source package](../../../src/main/java/io/backend/lined/role/)
-- [Users context](../users/context.md)
+- [Users context](../users/CONTEXT.md)
 - No additional role proposal, migration, or operational document exists in this repository.

@@ -34,7 +34,7 @@ Use `docs/README.md` as the backend documentation index.
 ### Feature Context Maintenance
 
 Before committing a change, identify every affected product feature. Update
-the `context.md` in each affected feature folder whenever code, API behavior,
+the `CONTEXT.md` in each affected feature folder whenever code, API behavior,
 persistence or data-model behavior, cross-feature interaction, class ownership,
 or linked documentation changes. When one change spans multiple features,
 update every applicable context file. In the pull request's testing notes,
