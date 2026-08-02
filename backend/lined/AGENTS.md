@@ -31,6 +31,23 @@ Use `docs/README.md` as the backend documentation index.
 | LLM Support Service | Plan for a separate advisory LLM service for candidate rule synthesis.    | `docs/research/ai/llm-support-service.md`       | Before designing LLM-assisted fitness-rule synthesis or explanation support. | Serverless/manual triggers, sanitized inputs, advisory outputs, review workflow.        |
 | PR and Commit Guide | Pull request title/body and commit-splitting rules.                       | `docs/governance/pull-requests-and-commits.md` | Before opening a PR or creating commits.                                     | PR descriptions, fitness expectations, commit scope, review readiness.                  |
 
+### Feature Context Maintenance
+
+Before repository analysis, bug diagnosis, or editing feature-related work,
+first read `docs/CONTEXT.md` to identify every relevant product feature; then
+read each corresponding `docs/product/<feature>/CONTEXT.md` and its linked API
+and feature-specific documentation; then use that context to plan and perform
+the work. This happens before implementation or diagnosis, not merely before
+committing.
+
+Before committing a change, identify every affected product feature. Update
+the `CONTEXT.md` in each affected feature folder whenever code, API behavior,
+persistence or data-model behavior, cross-feature interaction, class ownership,
+or linked documentation changes. When one change spans multiple features,
+update every applicable context file. In the pull request's testing notes,
+state which context files were updated or explain why no feature context was
+applicable.
+
 ## Commands
 
 Run commands from `backend/lined/` unless noted otherwise.

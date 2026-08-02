@@ -17,9 +17,17 @@ to choose the domain, then open the document needed for the change.
 
 ## Product domains
 
+- [Authentication context](product/authentication/CONTEXT.md)
+- [Users context](product/users/CONTEXT.md)
+- [Lobbies context](product/lobbies/CONTEXT.md) and [lobby invitations context](product/lobby-invitations/CONTEXT.md)
+- [Tasks context](product/tasks/CONTEXT.md)
+- [Calendar context](product/calendar/CONTEXT.md)
+- [Notifications context](product/notifications/CONTEXT.md)
+- [Roles context](product/roles/CONTEXT.md)
 - [Billing plan](product/billing/BILLING_TASKS.md) and [billing tasks](product/billing/tasks/)
+- [Billing context](product/billing/CONTEXT.md)
 - [Feature flags](product/feature-flags/feature-flags.md) and [feature-flag tasks](product/feature-flags/tasks/)
-- [Private events and tasks](product/privacy/private-events-and-tasks-system-design.md) and [privacy tasks](product/privacy/tasks/)
+- [Privacy context](product/privacy/CONTEXT.md), [private events and tasks design](product/privacy/private-events-and-tasks-system-design.md), and [privacy tasks](product/privacy/tasks/)
 - API proposals: [calendar](product/calendar/proposals/), [dashboard](product/dashboard/proposals/), [events](product/events/proposals/), [lobbies](product/lobbies/proposals/), [users](product/users/proposals/), and [billing](product/billing/proposals/)
 
 ## Research
