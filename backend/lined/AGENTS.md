@@ -33,10 +33,12 @@ Use `docs/README.md` as the backend documentation index.
 
 ### Feature Context Maintenance
 
-Before analysis, bug diagnosis, or editing a feature-related change, identify
-every affected product feature; read each corresponding
-`docs/product/<feature>/CONTEXT.md`; read the linked API and feature-specific
-documentation relevant to the task; and use that context to plan the change.
+Before repository analysis, bug diagnosis, or editing feature-related work,
+first read `docs/CONTEXT.md` to identify every relevant product feature; then
+read each corresponding `docs/product/<feature>/CONTEXT.md` and its linked API
+and feature-specific documentation; then use that context to plan and perform
+the work. This happens before implementation or diagnosis, not merely before
+committing.
 
 Before committing a change, identify every affected product feature. Update
 the `CONTEXT.md` in each affected feature folder whenever code, API behavior,
