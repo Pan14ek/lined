@@ -33,7 +33,7 @@ to choose the domain, then open the document needed for the change.
 ## Research
 
 - [Experiment roadmap](research/experiment/experiment-tasks.md), [plan](research/experiment/experiment-plan.md), [results reporting](research/experiment/experiment-results-reporting.md), and [concurrency audits](research/experiment/audits/)
-- [Runtime platform](research/platform/): containerization, kind, workload, telemetry, scenarios, and SLOs
+- [Runtime platform](research/platform/): containerization, kind, workload, telemetry, scenarios, SLOs, and [DynamoDB metrics storage](research/platform/dynamodb-metrics-store.md)
 - [Fitness models](research/fitness/): runtime, adaptive, Pareto, and decision-usefulness scoring
 - [Advisory AI](research/ai/): LLM workflow, guardrails, validation, and agent evaluation
 

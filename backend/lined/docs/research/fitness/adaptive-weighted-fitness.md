@@ -142,7 +142,7 @@ ADAPTIVE_FITNESS_CONTEXT=resource-pressure npm run metrics
 
 ## Compatibility Rules
 
-- Existing Cosmos DB documents remain valid when adaptive fields are absent.
+- Existing DynamoDB documents remain valid when adaptive fields are absent.
 - Historical `fitnessScore` charts remain structural-only.
 - Runtime-aware scoring remains available for fixed runtime scalar comparison.
 - Adaptive scoring is an experiment output, not a merge gate or production SLO.

@@ -1,0 +1,55 @@
+name: Persist pull-request metrics
+
+on:
+  workflow_run:
+    workflows: [CI backend pipeline]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+jobs:
+  persist:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.repository.default_branch }}
+
+      - name: Download pull-request metrics document
+        uses: actions/download-artifact@v4
+        with:
+          name: metrics-document
+          path: metrics-artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install metrics collector dependencies
+        working-directory: fitness-metrics-collector
+        run: npm ci
+
+      - name: Configure AWS credentials for trusted metrics persistence
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.AWS_METRICS_REGION }}
+          role-to-assume: ${{ vars.AWS_METRICS_MAIN_WRITE_ROLE_ARN }}
+          role-session-name: lined-metrics-pr-artifact-${{ github.event.workflow_run.id }}
+
+      - name: Persist pull-request metrics document
+        working-directory: fitness-metrics-collector
+        env:
+          AWS_METRICS_REGION: ${{ vars.AWS_METRICS_REGION }}
+          AWS_METRICS_TABLE_NAME: ${{ vars.AWS_METRICS_TABLE_NAME }}
+          BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          METRICS_DOCUMENT_INPUT_JSON: ../metrics-artifact/metrics-document.json
+          METRICS_PERSIST: true
+        run: npm run metrics

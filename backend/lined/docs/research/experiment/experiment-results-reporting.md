@@ -5,7 +5,7 @@ This guide describes the article-evidence reporting workflow for
 
 The workflow is additive. It reads explicit experiment artifacts and produces
 tables, plots, provenance, and narrative-ready sections for Results,
-Discussion, and Limitations. It does not run Kubernetes, run k6, query Cosmos
+Discussion, and Limitations. It does not run Kubernetes, run k6, query DynamoDB
 DB, change backend behavior, or redefine any score.
 
 ## Scope

@@ -148,7 +148,7 @@ that candidate-level evidence.
 
 ## Compatibility Rules
 
-- Existing Cosmos DB documents remain valid when decision-usefulness fields are
+- Existing DynamoDB documents remain valid when decision-usefulness fields are
   absent.
 - Historical `fitnessScore`, `runtimeFitnessScore`, `adaptiveFitnessScore`, and
   `paretoOptimization` semantics do not change.

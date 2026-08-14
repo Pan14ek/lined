@@ -111,7 +111,7 @@ compare trade-off alternatives before relying on a single scalar score.
 
 ## Compatibility Rules
 
-- Existing Cosmos DB documents remain valid when Pareto fields are absent.
+- Existing DynamoDB documents remain valid when Pareto fields are absent.
 - Historical `fitnessScore`, `runtimeFitnessScore`, and `adaptiveFitnessScore`
   semantics do not change.
 - Pareto ranking is deterministic and local to the supplied scenario set.

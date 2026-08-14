@@ -23,7 +23,7 @@ The repository already supports a fixed-weight CI fitness baseline through:
 - JaCoCo line coverage
 - SonarCloud metrics
 - GitHub Actions
-- Cosmos DB storage for pipeline-run metrics
+- DynamoDB storage for pipeline-run metrics
 - Python analysis scripts for charts and statistics
 
 This baseline should remain available for comparison against runtime-aware and
