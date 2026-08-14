@@ -1,12 +1,12 @@
 """
 fitness-metrics-analyzer
 ========================
-Fetches experiment data from Azure Cosmos DB and generates
+Fetches experiment data from Amazon DynamoDB and generates
 analysis charts for the fitness function research paper.
 
 Usage:
-    python main.py --connection-string "AccountEndpoint=..."
-    python main.py  # uses COSMOS_DB_CONNECTION_STRING env variable
+    python main.py --table-name pipeline-runs --region eu-north-1
+    python main.py  # uses AWS_METRICS_TABLE_NAME and AWS_METRICS_REGION
 
 Output:
     Charts are saved to the ./output/ directory.
@@ -17,7 +17,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 
-from cosmos_client import fetch_experiments
+from dynamodb_client import fetch_experiments
 from data import build_dataframe
 from statistics_analysis import print_full_report, export_stats_csv
 from charts import (
@@ -33,13 +33,19 @@ from charts import (
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Fetch and analyze fitness function experiment data from Cosmos DB."
+        description="Fetch and analyze fitness function experiment data from DynamoDB."
     )
     parser.add_argument(
-        "--connection-string", "-c",
+        "--table-name",
         type=str,
         default=None,
-        help="Azure Cosmos DB connection string. Defaults to COSMOS_DB_CONNECTION_STRING env variable.",
+        help="DynamoDB table name. Defaults to AWS_METRICS_TABLE_NAME.",
+    )
+    parser.add_argument(
+        "--region",
+        type=str,
+        default=None,
+        help="AWS region. Defaults to AWS_METRICS_REGION.",
     )
     parser.add_argument(
         "--no-save",
@@ -60,15 +66,15 @@ def main():
     args = parse_args()
     save = not args.no_save
 
-    print("Connecting to Cosmos DB...")
+    print("Connecting to DynamoDB...")
     try:
-        items = fetch_experiments(args.connection_string)
+        items = fetch_experiments(table_name=args.table_name, region=args.region)
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
 
     if not items:
-        print("No experiment data found in Cosmos DB.")
+        print("No experiment data found in DynamoDB.")
         sys.exit(0)
 
     print(f"Fetched {len(items)} experiment run(s).")

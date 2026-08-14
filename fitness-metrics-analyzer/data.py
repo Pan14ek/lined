@@ -43,7 +43,7 @@ def short_name(branch: str) -> str:
 
 
 def build_dataframe(items: List[dict]) -> pd.DataFrame:
-    """Convert raw Cosmos DB items into a clean analysis DataFrame."""
+    """Convert normalized DynamoDB items into a clean analysis DataFrame."""
     rows = []
     for item in items:
         sonar_main = item.get("sonar_cloud_main_branch_metrics") or {}
