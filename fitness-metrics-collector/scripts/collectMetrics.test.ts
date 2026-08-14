@@ -2,9 +2,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {describe, it, type TestContext} from "node:test";
+import type {DynamoDBDocumentClient} from "@aws-sdk/lib-dynamodb";
 
 import {
     collectRuntimeOnlyMetrics,
+    createMetricsStore,
+    readMetricsDocumentInput,
+    createRuntimeBaselineKey,
+    DynamoDbMetricsStore,
+    type MetricsDocument,
     parseRuntimeMetrics,
     readRuntimeMetricSet,
     readRuntimeMetrics,
@@ -430,6 +436,218 @@ const runtimeFitnessMetadata = computeRuntimeFitness(
 
 const minimalDecisionUsefulness = (): DecisionUsefulnessMetadata =>
     computeDecisionUsefulness(computeParetoOptimization([])).decisionUsefulness;
+
+class FakeDynamoDbClient {
+    readonly calls: Array<{input: unknown; name: string}> = [];
+
+    constructor(private readonly responses: Array<unknown>) {}
+
+    async send(command: {input: unknown; constructor: {name: string}}): Promise<unknown> {
+        this.calls.push({input: command.input, name: command.constructor.name});
+        const response = this.responses.shift();
+        if (response instanceof Error) {
+            throw response;
+        }
+        return response ?? {};
+    }
+}
+
+const dynamoDocument = (overrides: Partial<MetricsDocument> = {}): MetricsDocument => ({
+    id: "main-commit-1",
+    timestamp: ISO_TIMESTAMP,
+    branch: "main",
+    commitHash: "commit-1",
+    metrics: {
+        checkstyle_violations: 2,
+        jacoco_line_coverage: 85,
+        spotbugs_total: 1,
+    },
+    fitnessScore: 0.2,
+    runtimeFitnessScore: null,
+    runtimeFitnessScoreVersion: RUNTIME_SCORE_VERSION,
+    adaptiveFitnessScore: null,
+    adaptiveFitnessScoreVersion: ADAPTIVE_SCORE_VERSION,
+    paretoOptimizationVersion: PARETO_OPTIMIZATION_VERSION,
+    decisionUsefulnessVersion: DECISION_VERSION,
+    decisionUsefulness: minimalDecisionUsefulness(),
+    ...overrides,
+});
+
+describe("DynamoDbMetricsStore", () => {
+    it("requires both DynamoDB configuration variables", (t: TestContext) => {
+        t.plan(1);
+
+        t.assert.throws(
+            () => createMetricsStore({
+                checkstylePath: "",
+                spotbugsXmlPath: "",
+                spotbugsHtmlPath: "",
+                jacocoPath: "",
+                runtimeBaselineScenario: SCENARIO_FIXED_MEDIUM,
+                paretoRuntimeMetricsJsonPaths: [],
+                runtimeOnly: false,
+                adaptiveFitnessContext: "auto",
+                sloThresholdsJsonPath: "",
+                persistMetrics: true,
+                awsMetricsRegion: "eu-north-1",
+            }),
+            /must be configured together/
+        );
+    });
+
+    it("loads the newest main baseline for non-main runs", async (t: TestContext) => {
+        t.plan(3);
+        const document = dynamoDocument();
+        const client = new FakeDynamoDbClient([
+            {Items: [{branch: "main", commitHash: "commit-1"}]},
+            {Item: document},
+        ]);
+        const store = new DynamoDbMetricsStore(
+            "pipeline-runs",
+            client as unknown as DynamoDBDocumentClient
+        );
+
+        const result = await store.findStructuralBaseline(false);
+
+        t.assert.deepStrictEqual(result, document.metrics);
+        t.assert.strictEqual(client.calls[0].name, "QueryCommand");
+        t.assert.strictEqual(
+            (client.calls[0].input as {IndexName: string}).IndexName,
+            "branch-timestamp-index"
+        );
+    });
+
+    it("uses the previous main snapshot while collecting main", async (t: TestContext) => {
+        t.plan(2);
+        const previous = dynamoDocument({commitHash: "previous"});
+        const client = new FakeDynamoDbClient([
+            {
+                Items: [
+                    {branch: "main", commitHash: "current"},
+                    {branch: "main", commitHash: "previous"},
+                ],
+            },
+            {Item: previous},
+        ]);
+        const store = new DynamoDbMetricsStore(
+            "pipeline-runs",
+            client as unknown as DynamoDBDocumentClient
+        );
+
+        const result = await store.findStructuralBaseline(true);
+
+        t.assert.deepStrictEqual(result, previous.metrics);
+        t.assert.deepStrictEqual((client.calls[1].input as {Key: unknown}).Key, {
+            branch: "main",
+            commitHash: "previous",
+        });
+    });
+
+    it("looks up a runtime baseline through its sparse index key", async (t: TestContext) => {
+        t.plan(3);
+        const runtimeMetrics = parseRuntimeMetrics(runtimeJson(RUNTIME_BASELINE_PAYLOAD));
+        const document = dynamoDocument({
+            metrics: {runtime_metrics: runtimeMetrics},
+            runtimeBaselineKey: createRuntimeBaselineKey(
+                SCENARIO_FIXED_MEDIUM,
+                WORKLOAD_BASELINE,
+                SOURCE_LOCAL_KIND
+            ),
+        });
+        const client = new FakeDynamoDbClient([
+            {Items: [{branch: "main", commitHash: "commit-1"}]},
+            {Item: document},
+        ]);
+        const store = new DynamoDbMetricsStore(
+            "pipeline-runs",
+            client as unknown as DynamoDBDocumentClient
+        );
+
+        const result = await store.findRuntimeBaseline(
+            SCENARIO_FIXED_MEDIUM,
+            WORKLOAD_BASELINE,
+            SOURCE_LOCAL_KIND
+        );
+
+        t.assert.deepStrictEqual(result?.runtimeMetrics, runtimeMetrics);
+        t.assert.strictEqual(client.calls[0].name, "QueryCommand");
+        t.assert.strictEqual(
+            (client.calls[0].input as {IndexName: string}).IndexName,
+            "runtime-baseline-index"
+        );
+    });
+
+    it("treats a conditional write conflict as an idempotent rerun", async (t: TestContext) => {
+        t.plan(2);
+        const conflict = Object.assign(new Error("already exists"), {
+            name: "ConditionalCheckFailedException",
+        });
+        const client = new FakeDynamoDbClient([conflict]);
+        const store = new DynamoDbMetricsStore(
+            "pipeline-runs",
+            client as unknown as DynamoDBDocumentClient
+        );
+
+        await store.save(dynamoDocument());
+
+        t.assert.strictEqual(client.calls[0].name, "PutCommand");
+        t.assert.strictEqual(
+            (client.calls[0].input as {ConditionExpression: string}).ConditionExpression,
+            "attribute_not_exists(#branch) AND attribute_not_exists(#commitHash)"
+        );
+    });
+});
+
+describe("readMetricsDocumentInput", () => {
+    it("reads a persisted metrics artifact with its DynamoDB key", (t: TestContext) => {
+        t.plan(2);
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-input-"));
+        const file = path.join(directory, "metrics-document.json");
+
+        try {
+            const document = dynamoDocument({branch: "experiment/dynamodb-store"});
+            fs.writeFileSync(file, JSON.stringify(document), "utf-8");
+
+            const result = readMetricsDocumentInput(file);
+
+            t.assert.strictEqual(result.branch, "experiment/dynamodb-store");
+            t.assert.strictEqual(result.commitHash, "commit-1");
+        } finally {
+            fs.rmSync(directory, {recursive: true, force: true});
+        }
+    });
+
+    it("rejects artifacts without the DynamoDB primary key", (t: TestContext) => {
+        t.plan(1);
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-input-"));
+        const file = path.join(directory, "metrics-document.json");
+
+        try {
+            fs.writeFileSync(file, JSON.stringify({branch: "experiment/dynamodb-store"}), "utf-8");
+
+            t.assert.throws(() => readMetricsDocumentInput(file), /branch and commitHash/);
+        } finally {
+            fs.rmSync(directory, {recursive: true, force: true});
+        }
+    });
+
+    it("rejects an artifact that does not match its triggering workflow", (t: TestContext) => {
+        t.plan(1);
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lined-metrics-input-"));
+        const file = path.join(directory, "metrics-document.json");
+
+        try {
+            fs.writeFileSync(file, JSON.stringify(dynamoDocument()), "utf-8");
+
+            t.assert.throws(
+                () => readMetricsDocumentInput(file, "experiment/dynamodb-store", "commit-1"),
+                /branch does not match/
+            );
+        } finally {
+            fs.rmSync(directory, {recursive: true, force: true});
+        }
+    });
+});
 
 describe("parseRuntimeMetrics", () => {
     it("parses a valid summarized runtime metrics document", (t: TestContext) => {
@@ -1458,6 +1676,7 @@ describe("collectRuntimeOnlyMetrics", () => {
                 runtimeOnly: true,
                 adaptiveFitnessContext: "auto",
                 sloThresholdsJsonPath: "",
+                persistMetrics: true,
             }),
             /RUNTIME_ONLY=true requires RUNTIME_METRICS_JSON/
         );

@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import {CosmosClient} from "@azure/cosmos";
+import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
+import {
+    DynamoDBDocumentClient,
+    GetCommand,
+    PutCommand,
+    QueryCommand,
+    type DynamoDBDocumentClient as DynamoDBDocumentClientType,
+} from "@aws-sdk/lib-dynamodb";
 import {
     computeAdaptiveFitness,
     parseAdaptiveFitnessContext,
@@ -47,7 +54,7 @@ export {
 ======================= */
 type FitnessScore = number | null;
 
-type Metrics = {
+export type Metrics = {
     checkstyle_violations?: number;
     spotbugs_total?: number;
     spotbugs_total_classes?: number;
@@ -59,7 +66,7 @@ type Metrics = {
     runtime_metrics?: RuntimeMetrics;
 };
 
-type MetricsDocument = {
+export type MetricsDocument = {
     id: string;
     timestamp: string;
     branch: string;
@@ -78,6 +85,7 @@ type MetricsDocument = {
     decisionUsefulnessVersion: typeof DECISION_USEFULNESS_VERSION;
     decisionUsefulness: DecisionUsefulnessMetadata;
     runtimeProvenance?: RuntimeProvenanceMetadata;
+    runtimeBaselineKey?: string;
 };
 
 type RuntimeArtifactProvenanceStatus =
@@ -124,7 +132,7 @@ type RuntimeBaselineRecord = {
     provenance: RuntimeArtifactProvenance;
 };
 
-type MetricsStore = {
+export type MetricsStore = {
     findStructuralBaseline(isMainBranch: boolean): Promise<Metrics | undefined>;
     findRuntimeBaseline(
         scenario: string,
@@ -169,7 +177,7 @@ type Result = {
     spotbugs_valid: boolean;
 };
 
-type Config = {
+export type Config = {
     checkstylePath: string;
     spotbugsXmlPath: string;
     spotbugsHtmlPath: string;
@@ -182,8 +190,11 @@ type Config = {
     adaptiveFitnessContext: AdaptiveFitnessContext;
     sloThresholdsJsonPath: string;
     metricsOutputJsonPath?: string;
+    metricsDocumentInputJsonPath?: string;
+    persistMetrics: boolean;
     commitHash?: string;
-    cosmosDbConnectionString?: string;
+    awsMetricsRegion?: string;
+    dynamoDbMetricsTableName?: string;
     pullRequestId?: string;
     branchName?: string;
 };
@@ -275,10 +286,13 @@ const getConfig = (): Config => {
         adaptiveFitnessContext: parseAdaptiveFitnessContext(process.env.ADAPTIVE_FITNESS_CONTEXT),
         sloThresholdsJsonPath: process.env.SLO_THRESHOLDS_JSON ?? DEFAULT_PATHS.SLO_THRESHOLDS,
         metricsOutputJsonPath: process.env.METRICS_OUTPUT_JSON,
+        metricsDocumentInputJsonPath: process.env.METRICS_DOCUMENT_INPUT_JSON,
+        persistMetrics: process.env.METRICS_PERSIST === undefined || isEnabled(process.env.METRICS_PERSIST),
         branchName: process.env.BRANCH_NAME,
         pullRequestId: process.env.PR_NUMBER,
         commitHash: process.env.GITHUB_SHA,
-        cosmosDbConnectionString: process.env.COSMOS_DB_CONNECTION_STRING,
+        awsMetricsRegion: process.env.AWS_METRICS_REGION,
+        dynamoDbMetricsTableName: process.env.AWS_METRICS_TABLE_NAME,
     };
 };
 
@@ -389,25 +403,52 @@ const resolveRuntimeBaseline = async (
 };
 
 /* =======================
-   SAVE DATA IN COSMOS DB
+   SAVE DATA IN DYNAMODB
 ======================= */
-const sanitizeBranchName = (name: string): string =>
-    name.replaceAll(/[/\\#?]/g, '-');
+const BRANCH_TIMESTAMP_INDEX = "branch-timestamp-index";
+const RUNTIME_BASELINE_INDEX = "runtime-baseline-index";
+const MAIN_BRANCH = "main";
 
-class CosmosMetricsStore implements MetricsStore {
-    private readonly container: ReturnType<ReturnType<CosmosClient["database"]>["container"]>;
+type DynamoKey = {
+    branch: string;
+    commitHash: string;
+};
 
-    constructor(connectionString: string) {
-        const client = new CosmosClient(connectionString);
-        this.container = client.database("metrics").container("pipeline-runs");
+export const createRuntimeBaselineKey = (
+    scenario: string,
+    workload: string,
+    source: string
+): string => JSON.stringify([MAIN_BRANCH, scenario, workload, source]);
+
+const asDynamoKey = (value: Record<string, unknown> | undefined): DynamoKey | undefined => {
+    if (!value || typeof value.branch !== "string" || typeof value.commitHash !== "string") {
+        return undefined;
     }
 
+    return {
+        branch: value.branch,
+        commitHash: value.commitHash,
+    };
+};
+
+export class DynamoDbMetricsStore implements MetricsStore {
+    constructor(
+        private readonly tableName: string,
+        private readonly client: DynamoDBDocumentClientType
+    ) {}
+
     async findStructuralBaseline(isMainBranch: boolean): Promise<Metrics | undefined> {
-        const query = isMainBranch
-            ? "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 1 LIMIT 1"
-            : "SELECT * FROM c WHERE c.branch = 'main' ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
-        const {resources} = await this.container.items.query(query).fetchAll();
-        const snapshot = resources[0] as { metrics: Metrics } | undefined;
+        const {Items: items = []} = await this.client.send(new QueryCommand({
+            TableName: this.tableName,
+            IndexName: BRANCH_TIMESTAMP_INDEX,
+            KeyConditionExpression: "#branch = :branch",
+            ExpressionAttributeNames: {"#branch": "branch"},
+            ExpressionAttributeValues: {":branch": MAIN_BRANCH},
+            ScanIndexForward: false,
+            Limit: isMainBranch ? 2 : 1,
+        }));
+        const key = asDynamoKey(items[isMainBranch ? 1 : 0]);
+        const snapshot = key ? await this.getDocument(key) : undefined;
         return snapshot?.metrics;
     }
 
@@ -416,21 +457,19 @@ class CosmosMetricsStore implements MetricsStore {
         workload: string,
         source: string
     ): Promise<RuntimeBaselineRecord | undefined> {
-        const query =
-            "SELECT * FROM c WHERE c.branch = 'main' " +
-            "AND c.metrics.runtime_metrics.scenario = @scenario " +
-            "AND c.metrics.runtime_metrics.workload = @workload " +
-            "AND c.metrics.runtime_metrics.source = @source " +
-            "ORDER BY c.timestamp DESC OFFSET 0 LIMIT 1";
-        const {resources} = await this.container.items.query({
-            query,
-            parameters: [
-                {name: "@scenario", value: scenario},
-                {name: "@workload", value: workload},
-                {name: "@source", value: source},
-            ],
-        }).fetchAll();
-        const snapshot = resources[0] as MetricsDocument | undefined;
+        const {Items: items = []} = await this.client.send(new QueryCommand({
+            TableName: this.tableName,
+            IndexName: RUNTIME_BASELINE_INDEX,
+            KeyConditionExpression: "#runtimeBaselineKey = :runtimeBaselineKey",
+            ExpressionAttributeNames: {"#runtimeBaselineKey": "runtimeBaselineKey"},
+            ExpressionAttributeValues: {
+                ":runtimeBaselineKey": createRuntimeBaselineKey(scenario, workload, source),
+            },
+            ScanIndexForward: false,
+            Limit: 1,
+        }));
+        const key = asDynamoKey(items[0]);
+        const snapshot = key ? await this.getDocument(key) : undefined;
         if (!snapshot?.metrics.runtime_metrics) {
             return undefined;
         }
@@ -448,23 +487,49 @@ class CosmosMetricsStore implements MetricsStore {
     }
 
     async save(document: MetricsDocument): Promise<void> {
-        const {resource} = await this.container.item(document.id, document.branch).read();
-
-        if (resource) {
-            console.log(`[metrics] already saved for commit ${document.commitHash}, skipping`);
-            return;
+        try {
+            await this.client.send(new PutCommand({
+                TableName: this.tableName,
+                Item: document,
+                ConditionExpression: "attribute_not_exists(#branch) AND attribute_not_exists(#commitHash)",
+                ExpressionAttributeNames: {
+                    "#branch": "branch",
+                    "#commitHash": "commitHash",
+                },
+            }));
+        } catch (error) {
+            if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+                console.log(`[metrics] already saved for commit ${document.commitHash}, skipping`);
+                return;
+            }
+            throw error;
         }
+    }
 
-        await this.container.items.create(document);
+    private async getDocument(key: DynamoKey): Promise<MetricsDocument | undefined> {
+        const {Item} = await this.client.send(new GetCommand({
+            TableName: this.tableName,
+            Key: key,
+        }));
+        return Item as MetricsDocument | undefined;
     }
 }
 
-const createMetricsStore = (config: Config): MetricsStore | undefined => {
-    if (!config.cosmosDbConnectionString) {
+export const createMetricsStore = (config: Config): MetricsStore | undefined => {
+    const region = config.awsMetricsRegion;
+    const tableName = config.dynamoDbMetricsTableName;
+    if (!region && !tableName) {
         return undefined;
     }
+    if (!region || !tableName) {
+        throw new Error("AWS_METRICS_REGION and AWS_METRICS_TABLE_NAME must be configured together");
+    }
+    if (!config.branchName || !config.commitHash) {
+        throw new Error("BRANCH_NAME and GITHUB_SHA are required when DynamoDB metrics storage is enabled");
+    }
 
-    return new CosmosMetricsStore(config.cosmosDbConnectionString);
+    const client = DynamoDBDocumentClient.from(new DynamoDBClient({region}));
+    return new DynamoDbMetricsStore(tableName, client);
 };
 
 const LOCAL_BASELINE_STORE: MetricsStore = {
@@ -489,8 +554,9 @@ const buildMetricsDocument = (
     paretoOptimizationResult: ParetoOptimizationResult,
     decisionUsefulnessResult: DecisionUsefulnessResult
 ): MetricsDocument => {
-    const branch = sanitizeBranchName(config.branchName ?? "unknown");
+    const branch = config.branchName?.trim() || "unknown";
     const id = `${branch}-${config.commitHash ?? "unknown"}`;
+    const runtimeMetrics = data.runtime_metrics;
 
     return {
         id,
@@ -499,6 +565,13 @@ const buildMetricsDocument = (
         commitHash: config.commitHash,
         pullRequestId: config.pullRequestId,
         metrics: data,
+        ...(branch === MAIN_BRANCH && runtimeMetrics ? {
+            runtimeBaselineKey: createRuntimeBaselineKey(
+                runtimeMetrics.scenario,
+                runtimeMetrics.workload,
+                runtimeMetrics.source
+            ),
+        } : {}),
         fitnessScore,
         runtimeFitnessScore: runtimeFitnessResult.runtimeFitnessScore,
         runtimeFitnessScoreVersion: runtimeFitnessResult.runtimeFitnessScoreVersion,
@@ -521,6 +594,25 @@ export const writeMetricsOutput = (path: string | undefined, document: MetricsDo
 
     fs.writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`, "utf-8");
 }
+
+export const readMetricsDocumentInput = (
+    path: string,
+    expectedBranch?: string,
+    expectedCommitHash?: string
+): MetricsDocument => {
+    const value: unknown = JSON.parse(readFile(path));
+    if (!isRecord(value) || typeof value.branch !== "string" || typeof value.commitHash !== "string") {
+        throw new Error("Metrics document input requires string branch and commitHash fields");
+    }
+    if (expectedBranch && value.branch !== expectedBranch) {
+        throw new Error("Metrics document input branch does not match the triggering workflow run");
+    }
+    if (expectedCommitHash && value.commitHash !== expectedCommitHash) {
+        throw new Error("Metrics document input commitHash does not match the triggering workflow run");
+    }
+
+    return value as MetricsDocument;
+};
 
 /* =======================
    PARSERS
@@ -1070,12 +1162,26 @@ export const collectRuntimeOnlyMetrics = (config: Config): Metrics => {
 const main = async (): Promise<void> => {
     try {
         const config: Config = getConfig();
+        const store = createMetricsStore(config);
+        if (config.metricsDocumentInputJsonPath) {
+            if (!store) {
+                throw new Error("DynamoDB storage must be enabled when persisting a metrics document artifact");
+            }
+
+            const document = readMetricsDocumentInput(
+                config.metricsDocumentInputJsonPath,
+                config.branchName,
+                config.commitHash
+            );
+            await store.save(document);
+            console.log(`[metrics] persisted artifact for commit ${document.commitHash}`);
+            return;
+        }
         const currentRuntimeArtifact = readRuntimeArtifact(config.runtimeMetricsJsonPath);
         const metrics: Metrics = config.runtimeOnly
             ? collectRuntimeOnlyMetrics(config)
             : await collectMetrics(config);
         const result: Result = validateMetrics(metrics);
-        const store = createMetricsStore(config);
 
         console.log(JSON.stringify(result, null, 2));
 
@@ -1150,8 +1256,11 @@ const main = async (): Promise<void> => {
         );
         writeMetricsOutput(config.metricsOutputJsonPath, document);
 
-        if (!store) {
-            console.log(`We cannot save metrics to the database. Missing COSMOS_DB_CONNECTION_STRING environment variable.`);
+        if (!store || !config.persistMetrics) {
+            console.log(
+                "Skipping database persistence. Set AWS_METRICS_REGION and AWS_METRICS_TABLE_NAME " +
+                "and enable METRICS_PERSIST to write DynamoDB metrics."
+            );
             return;
         }
 

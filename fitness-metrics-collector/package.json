@@ -11,6 +11,7 @@
     "test": "npm run build && node --test dist/scripts/*.test.js"
   },
   "dependencies": {
-    "@azure/cosmos": "^4.9.1"
+    "@aws-sdk/client-dynamodb": "^3.1111.0",
+    "@aws-sdk/lib-dynamodb": "^3.1111.0"
   }
 }
