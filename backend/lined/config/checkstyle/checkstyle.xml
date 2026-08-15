@@ -4,6 +4,10 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
+        <property name="optional" value="true"/>
+    </module>
     <module name="TreeWalker">
 
         <!-- Already have -->
@@ -33,9 +37,5 @@
             <property name="max" value="7"/>
         </module>
 
-    </module>
-    <module name="SuppressionFilter">
-        <property name="file" value="config/checkstyle/checkstyle-suppressions.xml"/>
-        <property name="optional" value="true"/>
     </module>
 </module>

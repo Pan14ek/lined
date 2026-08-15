@@ -161,7 +161,8 @@ class NotificationServiceImplTest {
   @Test
   void notifyEventReminder_queuesNotificationWhenGlobalAndLobbyPreferencesAllow() {
     allowSharedEventNotifications();
-    var event = EventEntity.builder().id(77L).title("Dinner").lobby(lobby).owner(actor).build();
+    var event = EventEntity.builder().id(77L).title("Dinner").lobby(lobby).owner(actor)
+        .startAt(OffsetDateTime.parse("2026-08-15T18:00:00Z")).build();
     ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
 
     notificationService.notifyEventReminder(recipient, event);

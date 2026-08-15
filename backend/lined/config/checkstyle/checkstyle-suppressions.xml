@@ -6,4 +6,7 @@
     <suppress files="GlobalExceptionHandler.java" checks="Indentation"/>
     <suppress files="SubscriptionController.java" checks="Indentation"/>
     <suppress files="PlanController.java" checks="Indentation"/>
+    <!-- Compatibility constructors mirror the public event DTO schema. -->
+    <suppress files="EventCreateDto.java" checks="ParameterNumber"/>
+    <suppress files="EventDto.java" checks="ParameterNumber"/>
 </suppressions>
