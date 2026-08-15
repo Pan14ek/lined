@@ -17,6 +17,10 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    env:
+      AWS_METRICS_REGION: ${{ secrets.AWS_METRICS_REGION }}
+      AWS_METRICS_TABLE_NAME: ${{ secrets.AWS_METRICS_TABLE_NAME }}
+      AWS_METRICS_MAIN_WRITE_ROLE_ARN: ${{ secrets.AWS_METRICS_MAIN_WRITE_ROLE_ARN }}
 
     steps:
       - name: Checkout trusted default branch
@@ -39,15 +43,13 @@ jobs:
       - name: Configure AWS credentials for trusted metrics persistence
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-region: ${{ vars.AWS_METRICS_REGION }}
-          role-to-assume: ${{ vars.AWS_METRICS_MAIN_WRITE_ROLE_ARN }}
+          aws-region: ${{ env.AWS_METRICS_REGION }}
+          role-to-assume: ${{ env.AWS_METRICS_MAIN_WRITE_ROLE_ARN }}
           role-session-name: lined-metrics-pr-artifact-${{ github.event.workflow_run.id }}
 
       - name: Persist pull-request metrics document
         working-directory: fitness-metrics-collector
         env:
-          AWS_METRICS_REGION: ${{ vars.AWS_METRICS_REGION }}
-          AWS_METRICS_TABLE_NAME: ${{ vars.AWS_METRICS_TABLE_NAME }}
           BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           METRICS_DOCUMENT_INPUT_JSON: ../metrics-artifact/metrics-document.json

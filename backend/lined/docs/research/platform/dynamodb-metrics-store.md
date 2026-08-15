@@ -30,9 +30,13 @@ sparse. ISO-8601 UTC timestamps sort chronologically as strings.
    [`dynamodb-metrics-store/policies`](dynamodb-metrics-store/policies/).
    Replace `<AWS_ACCOUNT_ID>` in trust policies and `<TABLE_ARN>` in permissions
    policies before applying them.
-3. Configure these repository Actions variables:
+3. Configure these repository Actions secrets. The role ARNs, region, and table
+   name are not credentials by themselves, but this repository intentionally
+   keeps all AWS metrics configuration in the Actions secrets store. Secrets are
+   unavailable to workflows triggered from forks; those fork PRs run without a
+   DynamoDB baseline.
 
-   | Variable | Value |
+   | Secret | Value |
    |---|---|
    | `AWS_METRICS_REGION` | `eu-north-1` |
    | `AWS_METRICS_TABLE_NAME` | `pipeline-runs` |
