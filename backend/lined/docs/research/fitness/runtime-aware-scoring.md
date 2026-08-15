@@ -15,7 +15,7 @@ This task provides:
 - local scoring from explicit current and baseline runtime summary files;
 - optional persisted baseline lookup through the collector metrics-store seam;
 - SLO constraint classification from `slo-thresholds-v1.json`;
-- optional local output when Cosmos DB or another metrics database is not
+- optional local output when DynamoDB or another metrics database is not
   configured.
 
 This task does not add adaptive weighting, Pareto optimization, new backend
@@ -167,7 +167,8 @@ METRICS_OUTPUT_JSON=/absolute/path/output/metrics-document.json \
 npm run metrics
 ```
 
-If `COSMOS_DB_CONNECTION_STRING` is absent, the collector writes the local
-output document when `METRICS_OUTPUT_JSON` is set and skips database
-persistence. Omit `RUNTIME_ONLY=true` when structural reports and `SONAR_TOKEN`
-are available and the run should also compute the structural `fitnessScore`.
+If `AWS_METRICS_REGION` and `AWS_METRICS_TABLE_NAME` are absent, the collector
+writes the local output document when `METRICS_OUTPUT_JSON` is set and skips
+database persistence. Omit `RUNTIME_ONLY=true` when structural reports and
+`SONAR_TOKEN` are available and the run should also compute the structural
+`fitnessScore`.

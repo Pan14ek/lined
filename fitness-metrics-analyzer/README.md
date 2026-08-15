@@ -3,7 +3,7 @@
 Analysis tool for the research paper:
 **"Study of Variability of Architectural Metrics During the Evolution of a Software System in CI/CD Conditions"**
 
-Fetches experiment pipeline run data from Azure Cosmos DB, generates publication-ready charts, and performs statistical analysis of fitness function scores across 11 controlled experiments on the [Lined](https://github.com/Pan14ek/lined) Spring Boot backend.
+Fetches experiment pipeline run data from Amazon DynamoDB, generates publication-ready charts, and performs statistical analysis of fitness function scores across controlled experiments on the [Lined](https://github.com/Pan14ek/lined) Spring Boot backend.
 
 ## Background
 
@@ -33,14 +33,15 @@ Requires Python 3.9+.
 ## Usage
 
 ```bash
-# Set connection string (get from Azure Portal → Cosmos DB → Keys)
-export COSMOS_DB_CONNECTION_STRING="AccountEndpoint=https://..."
+# Configure an AWS profile or other standard AWS credentials, then select the table.
+export AWS_METRICS_REGION="eu-north-1"
+export AWS_METRICS_TABLE_NAME="pipeline-runs"
 
 # Run everything (charts + statistics)
 python3 main.py
 
-# Or pass connection string directly
-python3 main.py --connection-string "AccountEndpoint=..."
+# Or pass the DynamoDB location directly
+python3 main.py --region eu-north-1 --table-name pipeline-runs
 
 # Generate a specific chart only
 python3 main.py --chart bar        # F score bar chart
@@ -83,7 +84,7 @@ All files are saved to `./output/`:
 ```
 fitness-metrics-analyzer/
 ├── main.py                 # Entry point and CLI
-├── cosmos_client.py        # Azure Cosmos DB connection and queries
+├── dynamodb_client.py      # DynamoDB access and document normalization
 ├── data.py                 # Data processing, categorization, statistics
 ├── charts.py               # Chart generation (matplotlib)
 ├── statistics_analysis.py  # Statistical tests (scipy)
@@ -94,6 +95,12 @@ fitness-metrics-analyzer/
 ## Experiment categories
 
 Only `experiment/` branches are included in the analysis. Feature branches are excluded.
+
+## Storage boundary
+
+The DynamoDB table starts a new collection period. Historical Cosmos DB documents
+are intentionally not migrated, so figures generated from DynamoDB contain only
+runs collected after this migration.
 
 | Category | Branch pattern | Expected F | N |
 |----------|---------------|------------|---|

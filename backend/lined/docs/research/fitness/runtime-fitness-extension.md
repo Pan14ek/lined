@@ -15,7 +15,7 @@ This task provides:
 - a runtime fitness metric contract for local kind experiments;
 - a backward-compatible collector input shape for summarized runtime metrics;
 - normalization direction and missing-data rules for later scoring;
-- a Cosmos DB document extension that preserves the existing `fitnessScore`.
+- a DynamoDB document extension that preserves the existing `fitnessScore`.
 
 This task does not add a Prometheus server, OpenTelemetry Collector, live
 GitHub Actions deployment, adaptive weighting implementation, Pareto optimizer,
@@ -26,7 +26,7 @@ dashboard, or product endpoint.
 The current top-level `fitnessScore` remains the structural CI score computed
 from Checkstyle, SpotBugs, JaCoCo, and SonarCloud metrics. Do not reinterpret
 or reweight that field with runtime data because the analyzer and historical
-Cosmos DB documents already use it as the CI baseline.
+DynamoDB documents use it as the CI baseline.
 
 Runtime-aware evaluation must use separate fields:
 
@@ -74,7 +74,7 @@ inside the existing CI collector.
 
 Store summarized values only. Do not store raw Prometheus exposition text,
 full pod YAML, secrets, environment variables, or generated load-test output in
-Cosmos DB.
+DynamoDB.
 
 Use the scenario runner in `docs/research/platform/runtime-scenario-summaries.md` to produce
 collector-ready local runtime summaries. The runner owns local Kubernetes/k6
@@ -175,7 +175,7 @@ without changing numeric scores or requiring a new CLI flag.
 
 ## Compatibility Rules
 
-- Existing Cosmos DB documents remain valid when `metrics.runtime_metrics` is
+- Existing DynamoDB documents remain valid when `metrics.runtime_metrics` is
   absent.
 - The Python analyzer keeps using top-level `fitnessScore` for structural
   fitness charts unless a later task explicitly adds runtime charts.

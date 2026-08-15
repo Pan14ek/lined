@@ -25,6 +25,6 @@ documents for their domain.
 | Product lobby proposals | Lobby proposals that are not part of the implemented API contract. | `docs/product/lobbies/proposals/` |
 | Product user proposals | User and authentication API proposals that are not part of the implemented API contract. | `docs/product/users/proposals/` |
 | Research experiment | Experiment plan, roadmap, results reporting, and concurrency audits. | `docs/research/experiment/` |
-| Research platform | Container, Kubernetes, workload, telemetry, scenario, and SLO evidence. | `docs/research/platform/` |
+| Research platform | Container, Kubernetes, workload, telemetry, scenario, SLO, and DynamoDB metrics-store evidence. | `docs/research/platform/` |
 | Research fitness | Runtime and adaptive scoring, Pareto analysis, and decision reporting. | `docs/research/fitness/` |
 | Research AI | Advisory LLM workflow, guardrails, validation, and agent evaluation. | `docs/research/ai/` |

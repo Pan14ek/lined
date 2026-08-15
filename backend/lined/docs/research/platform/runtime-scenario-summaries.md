@@ -20,7 +20,7 @@ This workflow provides:
 - sanitized `runtime-summary-manifest.json` files for provenance;
 - a set-level provenance and discovery index for batch runs.
 
-This workflow does not add runtime-aware scoring, SLO classification, Cosmos
+This workflow does not add runtime-aware scoring, SLO classification, DynamoDB
 DB writes, cluster creation, image build/load steps, Secret management,
 production monitoring, or backend product behavior changes.
 

@@ -95,7 +95,7 @@ Use `./gradlew sonarqube` only when `SONAR_TOKEN` is configured.
 - SpotBugs reports are generated in CI and uploaded as SARIF.
 - JaCoCo line coverage feeds the fitness metrics collector.
 - SonarCloud project key is `Pan14ek_lined`.
-- The CI metrics collector stores pipeline-run quality metrics in Cosmos DB.
+- The CI metrics collector stores pipeline-run quality metrics in DynamoDB through GitHub Actions OIDC roles.
 
 ## Experiment Constraints
 
