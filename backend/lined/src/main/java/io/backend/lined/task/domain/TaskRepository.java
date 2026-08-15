@@ -68,6 +68,26 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>,
                                         @Param("requesterId") Long requesterId);
 
   /**
+   * Detects a private task denied by the visibility predicate without selecting its content.
+   *
+   * <p>For example, this permits a bounded counter when user {@code 42} attempts to resolve user
+   * {@code 77}'s private surprise task, while returning the same {@code 404} as an unknown task.
+   * The query returns only a boolean and never exposes task fields.</p>
+   *
+   * @param taskId requested task identifier
+   * @param requesterId caller identity
+   * @return whether a private task exists with a different creator
+   */
+  @Query("""
+      SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TaskEntity t
+      WHERE t.id = :taskId
+        AND t.visibility = io.backend.lined.task.domain.TaskVisibility.PRIVATE
+        AND t.creator.id <> :requesterId
+      """)
+  boolean existsPrivateTaskCreatedByAnotherUser(@Param("taskId") Long taskId,
+                                                 @Param("requesterId") Long requesterId);
+
+  /**
    * Finds unfinished tasks due on the supplied UTC calendar date that have not yet been reminded.
    *
    * <p>For example, a {@code TODO} task due today is included even if it was rescheduled from a

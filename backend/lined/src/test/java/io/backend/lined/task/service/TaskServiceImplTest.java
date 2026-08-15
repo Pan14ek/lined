@@ -11,6 +11,8 @@ import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -60,6 +62,8 @@ class TaskServiceImplTest {
   private NotificationService notificationService;
   @Spy
   private TaskAccessPolicy taskAccessPolicy;
+  @Mock
+  private PrivateItemMetrics privateItemMetrics;
 
   @InjectMocks
   private TaskServiceImpl taskService;
@@ -403,6 +407,7 @@ class TaskServiceImplTest {
     assertThat(captor.getValue().getVisibility()).isEqualTo(TaskVisibility.PRIVATE);
     assertThat(captor.getValue().getAssignee()).isSameAs(owner);
     verify(notificationService, never()).notifyTaskAssigned(any(), any(), any());
+    verify(privateItemMetrics).recordPrivateItemCreated(PrivateItemType.TASK);
   }
 
   @Test
@@ -460,6 +465,21 @@ class TaskServiceImplTest {
 
     assertThat(taskEntity.getVisibility()).isEqualTo(TaskVisibility.PRIVATE);
     assertThat(taskEntity.getAssignee()).isSameAs(owner);
+    verify(privateItemMetrics).recordVisibilityChange(PrivateItemType.TASK,
+        TaskVisibility.SHARED, TaskVisibility.PRIVATE);
+  }
+
+  @Test
+  void delete_recordsDeniedPrivateTaskWithoutChangingNotFoundResponse() {
+    when(repo.findVisibleById(555L, 2L)).thenReturn(Optional.empty());
+    when(repo.existsPrivateTaskCreatedByAnotherUser(555L, 2L)).thenReturn(true);
+
+    assertThatThrownBy(() -> taskService.delete(555L, 2L))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("555");
+
+    verify(privateItemMetrics).recordAccessDenied(PrivateItemType.TASK);
+    verify(repo, never()).delete(any(TaskEntity.class));
   }
 
 }

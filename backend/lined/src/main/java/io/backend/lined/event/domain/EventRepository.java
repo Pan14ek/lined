@@ -77,6 +77,26 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
   Optional<EventEntity> findVisibleById(@Param("eventId") Long eventId,
                                          @Param("requesterId") Long requesterId);
 
+  /**
+   * Detects a private event denied by the visibility predicate without selecting its content.
+   *
+   * <p>For example, this permits a bounded operational counter for user {@code 42} attempting to
+   * read user {@code 77}'s private event, while the HTTP response remains the same {@code 404} as
+   * an unknown event and no title, location, or owner data reaches application code.</p>
+   *
+   * @param eventId requested event identifier
+   * @param requesterId caller identity
+   * @return whether a private event exists with a different owner
+   */
+  @Query("""
+      SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM EventEntity e
+      WHERE e.id = :eventId
+        AND e.visibility = io.backend.lined.event.domain.EventVisibility.PRIVATE
+        AND e.owner.id <> :requesterId
+      """)
+  boolean existsPrivateEventOwnedByAnotherUser(@Param("eventId") Long eventId,
+                                                @Param("requesterId") Long requesterId);
+
   @Query("""
       SELECT e FROM EventEntity e
       WHERE e.owner.id = :userId
