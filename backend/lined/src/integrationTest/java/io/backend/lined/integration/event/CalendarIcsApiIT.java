@@ -3,11 +3,13 @@ package io.backend.lined.integration.event;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.backend.lined.integration.AbstractApiIntegrationTest;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,6 +20,9 @@ class CalendarIcsApiIT extends AbstractApiIntegrationTest {
 
   private static final OffsetDateTime EVENT_START = OffsetDateTime.parse("2026-08-10T18:00:00Z");
   private static final OffsetDateTime EVENT_END = OffsetDateTime.parse("2026-08-10T20:00:00Z");
+
+  @Autowired
+  private MeterRegistry meterRegistry;
 
   @Test
   void importCalendar_persistsPrivateVisibility() {
@@ -38,6 +43,7 @@ class CalendarIcsApiIT extends AbstractApiIntegrationTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.parseMediaType("text/calendar"));
     headers.set("X-User-Id", String.valueOf(ownerId));
+    double createdBefore = counterCount("lined.private.item.created", "item.type", "event");
 
     var response = restTemplate.exchange("/api/calendar/import?lobbyId=" + lobby.path("id").asLong(),
         HttpMethod.POST, new HttpEntity<>(document.getBytes(StandardCharsets.UTF_8), headers),
@@ -48,6 +54,8 @@ class CalendarIcsApiIT extends AbstractApiIntegrationTest {
     assertThat(jdbcTemplate.queryForObject("select visibility from events", String.class))
         .isEqualTo("PRIVATE");
     assertThat(jdbcTemplate.queryForObject("select shared from events", Boolean.class)).isFalse();
+    assertThat(counterCount("lined.private.item.created", "item.type", "event"))
+        .isEqualTo(createdBefore + 1.0);
   }
 
   @Test
@@ -96,5 +104,10 @@ class CalendarIcsApiIT extends AbstractApiIntegrationTest {
         values (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         """, title, shared, visibility, EVENT_START, EVENT_END, "UTC", lobbyId, ownerId,
         EVENT_START.minusDays(1));
+  }
+
+  private double counterCount(String metric, String... tags) {
+    var counter = meterRegistry.find(metric).tags(tags).counter();
+    return counter == null ? 0.0 : counter.count();
   }
 }

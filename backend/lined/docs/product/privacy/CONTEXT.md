@@ -51,7 +51,7 @@ the HTTP boundary when the caller lacks access.
 | Calendar persistence and transport | `EventEntity`, `EventRepository`, `EventController`, `CalendarIcsController`, `EventDto`, `EventConflictDto`, `EventConflictSideDto`, `UserConflictDto`, `CalendarIcsServiceImpl` | Applies visibility in storage queries, event/ICS flows, and sanitized conflict output. |
 | Task policy | `task.domain.TaskVisibility`, `task.service.TaskAccessPolicy`, `TaskService`, `TaskServiceImpl` | Defines task visibility, self-assignment, and caller authorization. |
 | Task persistence and transport | `TaskEntity`, `TaskRepository`, `TaskController`, `TaskDto`, `TaskCreateDto`, `TaskUpdateDto` | Applies visibility in persistence and task HTTP operations. |
-| Privacy observability | `PrivateItemMetrics`, `PrivateItemType` | Emits bounded created, denied-access, and visibility-change counters without content or identity labels. |
+| Privacy observability | `PrivateItemMetrics`, `PrivateItemType` | Emits bounded created, denied-access, and visibility-change counters without content or identity labels; write counters wait for commit, while confirmed denial observations preserve the `404` result. |
 | Collaborators | `LobbyAccessPolicy`, `NotificationService`, `PrivateItemNotificationException`, `PrivateTaskAssigneeException` | Supplies lobby membership, suppresses prohibited notifications, and reports privacy violations. |
 
 ## Interactions and persistence

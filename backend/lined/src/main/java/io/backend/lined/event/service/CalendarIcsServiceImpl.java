@@ -4,6 +4,8 @@ import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.GoneException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.event.api.CalendarFeedTokenDto;
 import io.backend.lined.event.api.CalendarImportResultDto;
 import io.backend.lined.event.domain.CalendarFeedTokenEntity;
@@ -79,6 +81,7 @@ public class CalendarIcsServiceImpl implements CalendarIcsService {
   private final UserRepository userRepository;
   private final LobbyAccessPolicy accessPolicy;
   private final LobbyWritePolicy writePolicy;
+  private final PrivateItemMetrics privateItemMetrics;
   private final SecureRandom secureRandom = new SecureRandom();
 
   /** {@inheritDoc} */
@@ -245,6 +248,7 @@ public class CalendarIcsServiceImpl implements CalendarIcsService {
     ImportedEvent imported = toImportedEvent(source);
     EventEntity target = eventRepository.findByOwner_IdAndLobby_IdAndIcsUid(
         owner.getId(), lobby.getId(), imported.uid()).orElseGet(EventEntity::new);
+    boolean newImportedEvent = target.getId() == null;
     target.setTitle(imported.title());
     target.setLocation(imported.location());
     target.setShared(false);
@@ -256,6 +260,9 @@ public class CalendarIcsServiceImpl implements CalendarIcsService {
     target.setOwner(owner);
     target.setLobby(lobby);
     eventRepository.save(target);
+    if (newImportedEvent) {
+      privateItemMetrics.recordPrivateItemCreated(PrivateItemType.EVENT);
+    }
   }
 
   /**

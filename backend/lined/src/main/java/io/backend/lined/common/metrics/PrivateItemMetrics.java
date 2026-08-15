@@ -3,6 +3,8 @@ package io.backend.lined.common.metrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Records privacy-safe operational counters for events and tasks.
@@ -30,7 +32,7 @@ public class PrivateItemMetrics {
    * @param itemType fixed type of the created item
    */
   public void recordPrivateItemCreated(PrivateItemType itemType) {
-    meterRegistry.counter(CREATED_METRIC, ITEM_TYPE_TAG, itemType.metricValue()).increment();
+    incrementAfterCommit(CREATED_METRIC, ITEM_TYPE_TAG, itemType.metricValue());
   }
 
   /**
@@ -39,7 +41,7 @@ public class PrivateItemMetrics {
    * @param itemType fixed type of the denied item
    */
   public void recordAccessDenied(PrivateItemType itemType) {
-    meterRegistry.counter(ACCESS_DENIED_METRIC, ITEM_TYPE_TAG, itemType.metricValue()).increment();
+    increment(ACCESS_DENIED_METRIC, ITEM_TYPE_TAG, itemType.metricValue());
   }
 
   /**
@@ -50,7 +52,25 @@ public class PrivateItemMetrics {
    * @param to new visibility enum
    */
   public void recordVisibilityChange(PrivateItemType itemType, Enum<?> from, Enum<?> to) {
-    meterRegistry.counter(VISIBILITY_CHANGE_METRIC,
-        ITEM_TYPE_TAG, itemType.metricValue(), FROM_TAG, from.name(), TO_TAG, to.name()).increment();
+    incrementAfterCommit(VISIBILITY_CHANGE_METRIC, ITEM_TYPE_TAG, itemType.metricValue(),
+        FROM_TAG, from.name(), TO_TAG, to.name());
+  }
+
+  private void incrementAfterCommit(String metric, String... tags) {
+    if (!TransactionSynchronizationManager.isActualTransactionActive()
+        || !TransactionSynchronizationManager.isSynchronizationActive()) {
+      increment(metric, tags);
+      return;
+    }
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        increment(metric, tags);
+      }
+    });
+  }
+
+  private void increment(String metric, String... tags) {
+    meterRegistry.counter(metric, tags).increment();
   }
 }

@@ -39,6 +39,12 @@ registry normalizes them into these externally visible counter series:
 | `lined_private_item_access_denied_total` | `item_type` | `event`, `task` |
 | `lined_visibility_change_total` | `item_type`, `from`, `to` | `event`/`task`, `PRIVATE`/`SHARED` |
 
+Creation and visibility increments are registered only after their enclosing
+transaction commits, so rolled-back writes do not inflate an operational counter.
+Confirmed access denials are recorded immediately: their `404` intentionally rolls
+back the read transaction, and the boolean persistence predicate has already
+established the private-item denial without loading its content.
+
 No user, lobby, item, token, path, title, description, location, provider, or
 ICS UID is a metric label. A denied private direct read still returns the same
 normal `404` as an unknown resource.
