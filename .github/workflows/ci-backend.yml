@@ -141,7 +141,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           METRICS_PERSIST: ${{ github.event_name != 'pull_request' }}
           METRICS_OUTPUT_JSON: ${{ github.event_name == 'pull_request' && 'metrics-document.json' || '' }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: npm run metrics
 
       - name: Upload pull-request metrics document
