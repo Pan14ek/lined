@@ -12,6 +12,7 @@ import io.backend.lined.event.domain.CalendarFeedTokenEntity;
 import io.backend.lined.event.domain.CalendarFeedTokenRepository;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
+import io.backend.lined.event.domain.EventVisibility;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -133,6 +134,7 @@ class CalendarIcsServiceImplTest {
     assertThat(result.imported()).isEqualTo(1);
     assertThat(result.skipped()).isZero();
     assertThat(captor.getValue().isShared()).isFalse();
+    assertThat(captor.getValue().getVisibility()).isEqualTo(EventVisibility.PRIVATE);
     assertThat(captor.getValue().getIcsUid()).isEqualTo("work-17@example.com");
     assertThat(captor.getValue().getTimezone()).isEqualTo("UTC");
   }

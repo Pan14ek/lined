@@ -10,6 +10,7 @@ import io.backend.lined.event.domain.CalendarFeedTokenEntity;
 import io.backend.lined.event.domain.CalendarFeedTokenRepository;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
+import io.backend.lined.event.domain.EventVisibility;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -247,6 +248,7 @@ public class CalendarIcsServiceImpl implements CalendarIcsService {
     target.setTitle(imported.title());
     target.setLocation(imported.location());
     target.setShared(false);
+    target.setVisibility(EventVisibility.PRIVATE);
     target.setStartAt(imported.startAt());
     target.setEndAt(imported.endAt());
     target.setTimezone(imported.timezone());

@@ -49,6 +49,24 @@ class EventRepositoryTest {
             privateOwner.getId(), sharedForMember.getId(), sharedForLegacyOwner.getId());
   }
 
+  @Test
+  void findFeedEvents_returnsOwnerPrivateAndVisibleSharedEventsOnly() {
+    var owner = persistUser("feed-owner");
+    var member = persistUser("feed-member");
+    var lobby = persistLobby(owner, Set.of(owner, member));
+    var start = OffsetDateTime.parse("2026-01-01T09:00:00Z");
+    var ownerPrivate = persistEvent("Owner private", false, owner, lobby, start, start.plusHours(1));
+    persistEvent("Member private", false, member, lobby, start, start.plusHours(1));
+    var memberShared = persistEvent("Member shared", true, member, lobby, start, start.plusHours(1));
+    entityManager.flush();
+    entityManager.clear();
+
+    List<EventEntity> result = eventRepository.findFeedEvents(owner.getId());
+
+    assertThat(result).extracting(EventEntity::getId)
+        .containsExactlyInAnyOrder(ownerPrivate.getId(), memberShared.getId());
+  }
+
   private UserEntity persistUser(String username) {
     var user = UserEntity.builder()
         .username(username)
