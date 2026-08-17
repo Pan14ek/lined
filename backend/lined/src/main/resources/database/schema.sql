@@ -350,3 +350,47 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions
 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscriptions_active
     ON billing_subscriptions (billing_account_id)
     WHERE status IN ('PENDING', 'ACTIVE', 'PAST_DUE');
+
+CREATE TABLE IF NOT EXISTS feature_flags
+(
+    id          BIGSERIAL PRIMARY KEY,
+    version     BIGINT       NOT NULL DEFAULT 0,
+    flag_key    VARCHAR(64)  NOT NULL,
+    environment VARCHAR(16)  NOT NULL CHECK (environment IN ('LOCAL', 'TEST', 'STAGING', 'PRODUCTION')),
+    enabled     BOOLEAN      NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_by  VARCHAR(255) NOT NULL DEFAULT 'system',
+    CONSTRAINT uq_feature_flags_key_environment UNIQUE (flag_key, environment)
+);
+
+INSERT INTO feature_flags (flag_key, environment, enabled, description, updated_at, updated_by)
+VALUES ('dashboard.feature.enabled', 'LOCAL', TRUE, 'Authenticated dashboard content', NOW(), 'system'),
+       ('lobbies.feature.enabled', 'LOCAL', TRUE, 'Lobby management and membership', NOW(), 'system'),
+       ('calendars.feature.enabled', 'LOCAL', TRUE, 'Calendar and availability flows', NOW(), 'system'),
+       ('tasks.feature.enabled', 'LOCAL', TRUE, 'Task management flows', NOW(), 'system'),
+       ('notifications.feature.enabled', 'LOCAL', TRUE, 'Notification inbox and preferences', NOW(), 'system'),
+       ('settings.feature.enabled', 'LOCAL', TRUE, 'User settings and account management', NOW(), 'system'),
+       ('subscriptions.feature.enabled', 'LOCAL', TRUE, 'Subscription and plan flows', NOW(), 'system'),
+       ('dashboard.feature.enabled', 'TEST', TRUE, 'Authenticated dashboard content', NOW(), 'system'),
+       ('lobbies.feature.enabled', 'TEST', TRUE, 'Lobby management and membership', NOW(), 'system'),
+       ('calendars.feature.enabled', 'TEST', TRUE, 'Calendar and availability flows', NOW(), 'system'),
+       ('tasks.feature.enabled', 'TEST', TRUE, 'Task management flows', NOW(), 'system'),
+       ('notifications.feature.enabled', 'TEST', TRUE, 'Notification inbox and preferences', NOW(), 'system'),
+       ('settings.feature.enabled', 'TEST', TRUE, 'User settings and account management', NOW(), 'system'),
+       ('subscriptions.feature.enabled', 'TEST', TRUE, 'Subscription and plan flows', NOW(), 'system'),
+       ('dashboard.feature.enabled', 'STAGING', TRUE, 'Authenticated dashboard content', NOW(), 'system'),
+       ('lobbies.feature.enabled', 'STAGING', TRUE, 'Lobby management and membership', NOW(), 'system'),
+       ('calendars.feature.enabled', 'STAGING', TRUE, 'Calendar and availability flows', NOW(), 'system'),
+       ('tasks.feature.enabled', 'STAGING', TRUE, 'Task management flows', NOW(), 'system'),
+       ('notifications.feature.enabled', 'STAGING', TRUE, 'Notification inbox and preferences', NOW(), 'system'),
+       ('settings.feature.enabled', 'STAGING', TRUE, 'User settings and account management', NOW(), 'system'),
+       ('subscriptions.feature.enabled', 'STAGING', TRUE, 'Subscription and plan flows', NOW(), 'system'),
+       ('dashboard.feature.enabled', 'PRODUCTION', TRUE, 'Authenticated dashboard content', NOW(), 'system'),
+       ('lobbies.feature.enabled', 'PRODUCTION', TRUE, 'Lobby management and membership', NOW(), 'system'),
+       ('calendars.feature.enabled', 'PRODUCTION', TRUE, 'Calendar and availability flows', NOW(), 'system'),
+       ('tasks.feature.enabled', 'PRODUCTION', TRUE, 'Task management flows', NOW(), 'system'),
+       ('notifications.feature.enabled', 'PRODUCTION', TRUE, 'Notification inbox and preferences', NOW(), 'system'),
+       ('settings.feature.enabled', 'PRODUCTION', TRUE, 'User settings and account management', NOW(), 'system'),
+       ('subscriptions.feature.enabled', 'PRODUCTION', TRUE, 'Subscription and plan flows', NOW(), 'system')
+ON CONFLICT (flag_key, environment) DO NOTHING;
