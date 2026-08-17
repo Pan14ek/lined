@@ -31,9 +31,9 @@ class PrivateItemMetricsTest {
     assertThat(counter(registry, PrivateItemMetrics.VISIBILITY_CHANGE_METRIC, "item.type", "event",
         "from", "SHARED", "to", "PRIVATE").count()).isEqualTo(1.0);
     assertThat(registry.getMeters()).isNotEmpty()
-        .allSatisfy(meter -> assertThat(meter.getId().getTags())
-        .allSatisfy(tag -> assertThat(List.of("event", "task", "PRIVATE", "SHARED"))
-            .contains(tag.getValue())));
+        .allSatisfy(meter -> assertThat(meter.getId().getTags()).isNotEmpty()
+            .allSatisfy(tag -> assertThat(List.of("event", "task", "PRIVATE", "SHARED"))
+                .contains(tag.getValue())));
   }
 
   @Test
