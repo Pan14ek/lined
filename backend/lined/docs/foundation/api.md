@@ -521,6 +521,33 @@ All three endpoints accept the same request shape:
 
 Response: `200 OK` with `Set<String>`.
 
+## Features
+
+### `GET /api/features`
+
+Return unauthenticated feature availability for the active deployment environment. The endpoint
+reads the backend's local immutable cache only; it does not query PostgreSQL and never returns
+administration metadata, environments, descriptions, versions, timestamps, or unapproved keys.
+Missing approved keys return `false`.
+
+```json
+{
+  "flags": {
+    "dashboard.feature.enabled": true,
+    "lobbies.feature.enabled": true,
+    "calendars.feature.enabled": true,
+    "tasks.feature.enabled": true,
+    "notifications.feature.enabled": true,
+    "settings.feature.enabled": true,
+    "subscriptions.feature.enabled": true
+  }
+}
+```
+
+Response: `200 OK` with `FeatureFlagsDto`.
+
+The endpoint remains available when later feature enforcement disables every product capability.
+
 ## Billing
 
 ### `GET /api/billing/me`
