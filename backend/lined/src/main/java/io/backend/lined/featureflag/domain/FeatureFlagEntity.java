@@ -46,9 +46,8 @@ public class FeatureFlagEntity {
   @Column(nullable = false)
   private long version;
 
-  @Enumerated(EnumType.STRING)
   @Column(name = "flag_key", nullable = false, length = 64)
-  private FeatureFlagKey key;
+  private String key;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 16)

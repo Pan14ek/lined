@@ -63,16 +63,21 @@ class FeatureFlagServiceImplTest {
         FeatureFlagKey.CALENDARS.value(), true,
         "internal.feature.enabled", true));
 
-    assertThat(service.publicFlags())
+    var publicFlags = service.publicFlags();
+
+    assertThat(publicFlags)
         .containsOnlyKeys(java.util.Arrays.stream(FeatureFlagKey.values())
             .map(FeatureFlagKey::value).toArray(String[]::new))
         .containsEntry(FeatureFlagKey.CALENDARS.value(), true)
         .containsEntry(FeatureFlagKey.TASKS.value(), false);
+    assertThat(publicFlags.keySet())
+        .containsExactly(java.util.Arrays.stream(FeatureFlagKey.values())
+            .map(FeatureFlagKey::value).toArray(String[]::new));
   }
 
   private FeatureFlagEntity flag(FeatureFlagKey key, boolean enabled) {
     return FeatureFlagEntity.builder()
-        .key(key)
+        .key(key.value())
         .environment(FeatureFlagEnvironment.LOCAL)
         .enabled(enabled)
         .description(key.value())

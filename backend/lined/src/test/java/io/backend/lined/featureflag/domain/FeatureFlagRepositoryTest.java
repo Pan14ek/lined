@@ -21,7 +21,7 @@ class FeatureFlagRepositoryTest {
 
     assertThat(repository.findAllByEnvironment(FeatureFlagEnvironment.LOCAL))
         .extracting(FeatureFlagEntity::getKey)
-        .containsExactly(FeatureFlagKey.CALENDARS);
+        .containsExactly(FeatureFlagKey.CALENDARS.value());
   }
 
   @Test
@@ -35,7 +35,7 @@ class FeatureFlagRepositoryTest {
 
   private FeatureFlagEntity flag(FeatureFlagKey key, FeatureFlagEnvironment environment) {
     return FeatureFlagEntity.builder()
-        .key(key)
+        .key(key.value())
         .environment(environment)
         .enabled(true)
         .description(key.value())

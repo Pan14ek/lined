@@ -3,6 +3,7 @@ package io.backend.lined.featureflag.api;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +38,7 @@ class FeatureFlagControllerTest {
 
     mockMvc.perform(get("/api/features"))
         .andExpect(status().isOk())
+        .andExpect(content().string(exactJson()))
         .andExpect(jsonPath("$.flags").isMap())
         .andExpect(jsonPath("$.flags.length()").value(7))
         .andExpect(jsonPath("$.flags['dashboard.feature.enabled']").value(true))
@@ -57,5 +59,16 @@ class FeatureFlagControllerTest {
       flags.put(key.value(), key.ordinal() % 2 == 0);
     }
     return flags;
+  }
+
+  private String exactJson() {
+    return "{\"flags\":{"
+        + "\"dashboard.feature.enabled\":true,"
+        + "\"lobbies.feature.enabled\":false,"
+        + "\"calendars.feature.enabled\":true,"
+        + "\"tasks.feature.enabled\":false,"
+        + "\"notifications.feature.enabled\":true,"
+        + "\"settings.feature.enabled\":false,"
+        + "\"subscriptions.feature.enabled\":true}}";
   }
 }

@@ -1,9 +1,9 @@
 package io.backend.lined.featureflag.service;
 
-import io.backend.lined.featureflag.domain.FeatureFlagEntity;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.featureflag.domain.FeatureFlagRepository;
 import jakarta.transaction.Transactional;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     for (FeatureFlagKey key : FeatureFlagKey.values()) {
       publicFlags.put(key.value(), snapshot.isEnabled(key.value()));
     }
-    return Map.copyOf(publicFlags);
+    return Collections.unmodifiableMap(new LinkedHashMap<>(publicFlags));
   }
 
   @Override
@@ -45,7 +45,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     try {
       snapshot.replaceAll(repository.findAllByEnvironment(properties.environment()).stream()
           .collect(java.util.stream.Collectors.toMap(
-              flag -> flag.getKey().value(), FeatureFlagEntity::isEnabled)));
+              flag -> flag.getKey(), flag -> flag.isEnabled())));
       return true;
     } catch (RuntimeException exception) {
       log.error("Feature-flag refresh failed for environment {}", properties.environment(), exception);

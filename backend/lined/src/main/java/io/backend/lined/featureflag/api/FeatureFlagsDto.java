@@ -1,6 +1,8 @@
 package io.backend.lined.featureflag.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -15,6 +17,6 @@ public record FeatureFlagsDto(
 ) {
 
   public FeatureFlagsDto {
-    flags = Map.copyOf(flags);
+    flags = Collections.unmodifiableMap(new LinkedHashMap<>(flags));
   }
 }
