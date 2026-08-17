@@ -32,7 +32,7 @@ to choose the domain, then open the document needed for the change.
 
 ## Research
 
-- [Experiment roadmap](research/experiment/experiment-tasks.md), [plan](research/experiment/experiment-plan.md), [results reporting](research/experiment/experiment-results-reporting.md), and [concurrency audits](research/experiment/audits/)
+- [Experiment roadmap](research/experiment/experiment-tasks.md), [plan](research/experiment/experiment-plan.md), [results reporting](research/experiment/experiment-results-reporting.md), [concurrency audits](research/experiment/audits/), and the [private-item cross-surface audit](research/experiment/audits/private-item-cross-surface-audit.md)
 - [Runtime platform](research/platform/): containerization, kind, workload, telemetry, scenarios, SLOs, and [DynamoDB metrics storage](research/platform/dynamodb-metrics-store.md)
 - [Fitness models](research/fitness/): runtime, adaptive, Pareto, and decision-usefulness scoring
 - [Advisory AI](research/ai/): LLM workflow, guardrails, validation, and agent evaluation

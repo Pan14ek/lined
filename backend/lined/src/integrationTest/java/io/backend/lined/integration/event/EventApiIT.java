@@ -41,6 +41,30 @@ class EventApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
+  void createsEventForAcceptedLobbyMemberWithoutIdempotencyKey() {
+    var owner = registerUser(uniqueLabel("event-owner"));
+    var member = registerUser(uniqueLabel("event-member"));
+    long ownerId = owner.path("id").asLong();
+    long memberId = member.path("id").asLong();
+    var lobby = createLobby(ownerId, "Member Event Lobby");
+    var invite = invite(ownerId, lobby.path("id").asLong(), memberId);
+    request(HttpMethod.POST, "/api/lobby-invites/" + invite.path("id").asLong() + "/accept",
+        null, memberId);
+
+    var response = request(HttpMethod.POST, "/api/calendar/events", Map.of(
+        "title", "Member event",
+        "shared", true,
+        "startAt", EVENT_START.toString(),
+        "endAt", EVENT_END.toString(),
+        "timezone", "Europe/Kyiv",
+        "lobbyId", lobby.path("id").asLong(),
+        "notifyMembers", false), memberId);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().path("ownerId").asLong()).isEqualTo(memberId);
+  }
+
+  @Test
   void rejectsEventCreationByNonMemberWithoutPersistingEvent() {
     var owner = registerUser(uniqueLabel("event-owner"));
     var outsider = registerUser(uniqueLabel("event-outsider"));

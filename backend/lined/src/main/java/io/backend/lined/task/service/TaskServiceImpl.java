@@ -4,6 +4,8 @@ import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.idempotency.IdempotencyOperation;
 import io.backend.lined.common.idempotency.IdempotencyClaim;
 import io.backend.lined.common.idempotency.IdempotencyService;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -51,6 +53,7 @@ public class TaskServiceImpl implements TaskService {
   private final NotificationService notificationService;
   private final TaskAccessPolicy taskAccessPolicy;
   private final IdempotencyService idempotencyService;
+  private final PrivateItemMetrics privateItemMetrics;
 
   /**
    * Creates a task after normalizing the private-task assignee invariant.
@@ -89,6 +92,9 @@ public class TaskServiceImpl implements TaskService {
         .build();
 
     var saved = repo.save(entity);
+    if (visibility == TaskVisibility.PRIVATE) {
+      privateItemMetrics.recordPrivateItemCreated(PrivateItemType.TASK);
+    }
     if (visibility == TaskVisibility.SHARED && dto.notifyAssignee()
         && saved.getAssignee() != null) {
       notificationService.notifyTaskAssigned(saved.getAssignee(), creator, saved);
@@ -114,11 +120,12 @@ public class TaskServiceImpl implements TaskService {
     writePolicy.assertWritable(task.getLobby(), LobbyWriteAction.TASK_MUTATION);
     verifyVersion(task.getVersion(), expectedVersion);
 
+    TaskVisibility currentVisibility = currentVisibility(task);
     if (dto.visibility() != null) {
       taskAccessPolicy.ensureCanChangeVisibility(task, currentUserId);
     }
     UserEntity assignee = resolveUpdateAssignee(dto, task);
-    TaskVisibility visibility = dto.visibility() == null ? task.getVisibility() : dto.visibility();
+    TaskVisibility visibility = dto.visibility() == null ? currentVisibility : dto.visibility();
     validatePrivateAssignee(visibility, task.getCreator(), assignee);
 
     if (dto.title() != null && !dto.title().isBlank()) {
@@ -146,6 +153,9 @@ public class TaskServiceImpl implements TaskService {
 
     if (expectedVersion >= 0) {
       repo.saveAndFlush(task);
+    }
+    if (visibility != currentVisibility) {
+      privateItemMetrics.recordVisibilityChange(PrivateItemType.TASK, currentVisibility, visibility);
     }
     return mapper.toDto(task);
   }
@@ -208,7 +218,14 @@ public class TaskServiceImpl implements TaskService {
    */
   private TaskEntity mustTask(Long id, Long requesterId) {
     return EntityFinder.findOrThrow(repo.findVisibleById(id, requesterId),
-        () -> new NotFoundException("Task %d not found".formatted(id)));
+        () -> notFoundAfterPrivacyMetric(id, requesterId));
+  }
+
+  private NotFoundException notFoundAfterPrivacyMetric(Long id, Long requesterId) {
+    if (repo.existsPrivateTaskCreatedByAnotherUser(id, requesterId)) {
+      privateItemMetrics.recordAccessDenied(PrivateItemType.TASK);
+    }
+    return new NotFoundException("Task %d not found".formatted(id));
   }
 
   /**
@@ -219,6 +236,10 @@ public class TaskServiceImpl implements TaskService {
    */
   private TaskVisibility resolveVisibility(TaskVisibility visibility) {
     return visibility == null ? TaskVisibility.SHARED : visibility;
+  }
+
+  private TaskVisibility currentVisibility(TaskEntity task) {
+    return resolveVisibility(task.getVisibility());
   }
 
   /**
@@ -241,7 +262,7 @@ public class TaskServiceImpl implements TaskService {
     if (dto.assigneeId() != null) {
       return mustUser(dto.assigneeId());
     }
-    if (dto.visibility() == TaskVisibility.PRIVATE && task.getVisibility() == TaskVisibility.SHARED
+    if (dto.visibility() == TaskVisibility.PRIVATE && currentVisibility(task) == TaskVisibility.SHARED
         && task.getAssignee() == null) {
       return task.getCreator();
     }

@@ -4,6 +4,8 @@ import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.idempotency.IdempotencyOperation;
 import io.backend.lined.common.idempotency.IdempotencyClaim;
 import io.backend.lined.common.idempotency.IdempotencyService;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
@@ -52,6 +54,7 @@ public class EventServiceImpl implements EventService {
   private final NotificationService notificationService;
   private final EventAccessPolicy eventAccessPolicy;
   private final IdempotencyService idempotencyService;
+  private final PrivateItemMetrics privateItemMetrics;
 
   /**
    * Creates an event with its optional reminder policy.
@@ -94,6 +97,9 @@ public class EventServiceImpl implements EventService {
         .build();
 
     var saved = repo.save(entity);
+    if (visibility == EventVisibility.PRIVATE) {
+      privateItemMetrics.recordPrivateItemCreated(PrivateItemType.EVENT);
+    }
     if (dto.notifyMembers() && visibility == EventVisibility.SHARED) {
       lobby.getMembers().stream()
           .filter(member -> !member.getId().equals(owner.getId()))
@@ -155,6 +161,10 @@ public class EventServiceImpl implements EventService {
 
     if (expectedVersion >= 0) {
       repo.saveAndFlush(event);
+    }
+    if (visibility != currentVisibility) {
+      privateItemMetrics.recordVisibilityChange(PrivateItemType.EVENT, currentVisibility,
+          visibility);
     }
     return mapper.toDto(event);
   }
@@ -248,7 +258,14 @@ public class EventServiceImpl implements EventService {
    */
   private EventEntity mustVisibleEvent(Long id, Long requesterId) {
     return EntityFinder.findOrThrow(repo.findVisibleById(id, requesterId),
-        () -> new NotFoundException("Event %d not found".formatted(id)));
+        () -> notFoundAfterPrivacyMetric(id, requesterId));
+  }
+
+  private NotFoundException notFoundAfterPrivacyMetric(Long id, Long requesterId) {
+    if (repo.existsPrivateEventOwnedByAnotherUser(id, requesterId)) {
+      privateItemMetrics.recordAccessDenied(PrivateItemType.EVENT);
+    }
+    return new NotFoundException("Event %d not found".formatted(id));
   }
 
   /**

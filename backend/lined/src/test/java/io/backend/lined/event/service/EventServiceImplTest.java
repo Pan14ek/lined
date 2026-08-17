@@ -12,6 +12,8 @@ import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.event.api.EventCreateDto;
 import io.backend.lined.event.api.EventDto;
 import io.backend.lined.event.api.EventMapper;
@@ -64,6 +66,8 @@ class EventServiceImplTest {
   private NotificationService notificationService;
   @Spy
   private EventAccessPolicy eventAccessPolicy;
+  @Mock
+  private PrivateItemMetrics privateItemMetrics;
 
   @InjectMocks
   private EventServiceImpl eventService;
@@ -157,6 +161,7 @@ class EventServiceImplTest {
     verify(repo).save(captor.capture());
     assertThat(captor.getValue().getVisibility()).isEqualTo(EventVisibility.PRIVATE);
     assertThat(captor.getValue().isShared()).isFalse();
+    verify(privateItemMetrics).recordPrivateItemCreated(PrivateItemType.EVENT);
   }
 
   @Test
@@ -444,6 +449,7 @@ class EventServiceImplTest {
   void update_throwsNotFound_whenAnotherMemberTargetsPrivateEvent() {
     eventEntity.setShared(false);
     when(repo.findVisibleById(9001L, 2L)).thenReturn(Optional.empty());
+    when(repo.existsPrivateEventOwnedByAnotherUser(9001L, 2L)).thenReturn(true);
 
     assertThatThrownBy(() -> eventService.update(9001L,
         new EventUpdateDto("Leaked", null, null, null, null, null), 2L))
@@ -451,6 +457,18 @@ class EventServiceImplTest {
         .hasMessageContaining("9001");
 
     verify(repo, never()).save(any());
+    verify(privateItemMetrics).recordAccessDenied(PrivateItemType.EVENT);
+  }
+
+  @Test
+  void update_recordsVisibilityChange() {
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
+
+    eventService.update(9001L,
+        new EventUpdateDto(null, null, false, null, null, null), 1L);
+
+    verify(privateItemMetrics).recordVisibilityChange(PrivateItemType.EVENT,
+        EventVisibility.SHARED, EventVisibility.PRIVATE);
   }
 
   @Test

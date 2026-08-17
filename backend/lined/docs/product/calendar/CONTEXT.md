@@ -14,7 +14,8 @@ calendar clients to exchange standard RFC 5545 data.
 - `/api/calendar/feed-token` creates/revokes a secret feed credential, and
   `/api/calendar/feed/{token}.ics` exports an authorized personal calendar.
 - `/api/calendar/import` accepts raw or multipart ICS content and upserts
-  caller-private events by UID in a selected lobby.
+  caller-private events by UID in a selected lobby, explicitly persisting
+  `EventVisibility.PRIVATE` with legacy `shared=false` compatibility.
 - Lobbies requests free slots; Privacy governs what callers can view or infer;
   Notifications uses event activity for permitted delivery and reminders.
 
@@ -59,8 +60,8 @@ calendar interpretation.
 - Privacy policy is enforced before event data enters list, detail, conflict,
   free-slot, or export responses.
 - Event updates use optimistic version checks. ICS import performs UID-based
-  upserts transactionally, while feed revocation makes older token URLs return
-  the documented terminal response.
+  upserts with private visibility transactionally, while feed revocation makes
+  older token URLs return the documented terminal response.
 - JPA entities and `schema.sql` own database mapping; no separate calendar
   migration document exists.
 
@@ -69,5 +70,6 @@ calendar interpretation.
 - [Calendar endpoints in the API reference](../../foundation/api.md#calendar)
 - [ICS proposal](proposals/calendar-ics-integration.md)
 - [Private events and tasks design](../privacy/private-events-and-tasks-system-design.md)
+- [Cross-surface privacy audit record](../../research/experiment/audits/private-item-cross-surface-audit.md)
 - [Calendar source package](../../../src/main/java/io/backend/lined/event/)
 - [Backend architecture](../../foundation/architecture.md)

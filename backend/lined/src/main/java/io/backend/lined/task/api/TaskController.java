@@ -59,9 +59,7 @@ public class TaskController {
                     { "title":"Buy groceries", "lobbyId":101, "assigneeId":77, "dueDate":"2025-11-20", "description":"Pick up milk and bread", "priority":"MEDIUM", "status":"TODO", "visibility":"SHARED", "notifyAssignee":true }
                   """)))
       @Valid @RequestBody TaskCreateDto dto) {
-    TaskDto created = idempotencyKey == null
-        ? service.create(dto, currentUserId)
-        : service.create(dto, currentUserId, idempotencyKey);
+    TaskDto created = service.create(dto, currentUserId, idempotencyKey);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 

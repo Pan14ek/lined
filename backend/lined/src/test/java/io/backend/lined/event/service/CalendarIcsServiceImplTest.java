@@ -8,10 +8,13 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.GoneException;
 import io.backend.lined.common.exception.NotFoundException;
+import io.backend.lined.common.metrics.PrivateItemMetrics;
+import io.backend.lined.common.metrics.PrivateItemType;
 import io.backend.lined.event.domain.CalendarFeedTokenEntity;
 import io.backend.lined.event.domain.CalendarFeedTokenRepository;
 import io.backend.lined.event.domain.EventEntity;
 import io.backend.lined.event.domain.EventRepository;
+import io.backend.lined.event.domain.EventVisibility;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.service.LobbyAccessPolicy;
@@ -44,6 +47,8 @@ class CalendarIcsServiceImplTest {
   private LobbyAccessPolicy accessPolicy;
   @Mock
   private LobbyWritePolicy writePolicy;
+  @Mock
+  private PrivateItemMetrics privateItemMetrics;
 
   private CalendarIcsService service;
   private UserEntity user;
@@ -52,7 +57,7 @@ class CalendarIcsServiceImplTest {
   @BeforeEach
   void setUp() {
     service = new CalendarIcsServiceImpl(tokenRepository, eventRepository, lobbyRepository,
-        userRepository, accessPolicy, writePolicy);
+        userRepository, accessPolicy, writePolicy, privateItemMetrics);
     user = new UserEntity();
     user.setId(42L);
     lobby = LobbyEntity.builder().id(101L).name("Family").owner(user).build();
@@ -130,9 +135,11 @@ class CalendarIcsServiceImplTest {
 
     ArgumentCaptor<EventEntity> captor = ArgumentCaptor.forClass(EventEntity.class);
     verify(eventRepository).save(captor.capture());
+    verify(privateItemMetrics).recordPrivateItemCreated(PrivateItemType.EVENT);
     assertThat(result.imported()).isEqualTo(1);
     assertThat(result.skipped()).isZero();
     assertThat(captor.getValue().isShared()).isFalse();
+    assertThat(captor.getValue().getVisibility()).isEqualTo(EventVisibility.PRIVATE);
     assertThat(captor.getValue().getIcsUid()).isEqualTo("work-17@example.com");
     assertThat(captor.getValue().getTimezone()).isEqualTo("UTC");
   }

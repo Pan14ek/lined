@@ -88,6 +88,16 @@ class EventControllerTest {
   }
 
   @Test
+  void create_delegatesMissingIdempotencyKeyToTransactionalServiceMethod() {
+    when(service.create(createDto, 42L, null)).thenReturn(sampleEvent);
+
+    EventDto result = controller.create(42L, null, createDto).getBody();
+
+    assertThat(result).isEqualTo(sampleEvent);
+    verify(service).create(createDto, 42L, null);
+  }
+
+  @Test
   void create_propagatesForbidden_whenNotMember() {
     when(service.create(createDto, 99L))
         .thenThrow(new ForbiddenException("Not a lobby member"));

@@ -14,7 +14,8 @@ shared lobby without leaking private items.
 - `GET /api/tasks` applies filters; `GET /api/tasks/mine` returns tasks visible
   to the caller across lobbies; `DELETE` removes an authorized task.
 - Lobby membership and write policy determine access. Notification creation is
-  suppressed where privacy rules prohibit disclosure.
+  suppressed where privacy rules prohibit disclosure; privacy operations emit
+  bounded operational metrics without task content or identifiers.
 
 ## Architecture and data flow
 
@@ -27,6 +28,7 @@ flowchart LR
   TS --> Repo[TaskRepository]
   Repo --> Entity[TaskEntity]
   TS --> Notify[NotificationService]
+  TS --> Metrics[PrivateItemMetrics]
 ```
 
 `TaskController` validates DTOs and delegates. `TaskServiceImpl` applies task
@@ -50,7 +52,8 @@ lobby relationships.
   activity; Calendar is independent but shares the lobby context.
 - Task writes run transactionally and use the entity version with `If-Match` to
   reject stale updates. Privacy is repository- and policy-enforced rather than
-  a client-side filtering convention.
+  a client-side filtering convention; private-item metrics use fixed type and
+  visibility labels only.
 - Database mappings are owned by `TaskEntity` and the repository schema/JPA
   configuration; no separate task migration document exists.
 
@@ -59,5 +62,6 @@ lobby relationships.
 - [Tasks endpoints in the API reference](../../foundation/api.md#tasks)
 - [Private events and tasks design](../privacy/private-events-and-tasks-system-design.md)
 - [Private-task implementation task](../privacy/tasks/PE-BE-03-private-tasks.md)
+- [Cross-surface privacy audit record](../../research/experiment/audits/private-item-cross-surface-audit.md)
 - [Tasks source package](../../../src/main/java/io/backend/lined/task/)
 - [Backend architecture](../../foundation/architecture.md)

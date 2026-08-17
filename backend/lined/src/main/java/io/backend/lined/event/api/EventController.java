@@ -58,9 +58,7 @@ public class EventController {
                     }
                   """)))
       @Valid @RequestBody EventCreateDto dto) {
-    EventDto created = idempotencyKey == null
-        ? service.create(dto, currentUserId)
-        : service.create(dto, currentUserId, idempotencyKey);
+    EventDto created = service.create(dto, currentUserId, idempotencyKey);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
