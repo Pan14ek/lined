@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -68,7 +69,7 @@ public class FeatureFlagEntity {
   @PrePersist
   void initializeAuditFields() {
     if (updatedAt == null) {
-      updatedAt = OffsetDateTime.now();
+      updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
     if (updatedBy == null || updatedBy.isBlank()) {
       updatedBy = "system";
@@ -77,6 +78,6 @@ public class FeatureFlagEntity {
 
   @PreUpdate
   void updateTimestamp() {
-    updatedAt = OffsetDateTime.now();
+    updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
   }
 }

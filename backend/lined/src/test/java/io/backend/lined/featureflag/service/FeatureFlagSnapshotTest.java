@@ -52,8 +52,9 @@ class FeatureFlagSnapshotTest {
   void snapshot_returnsAnImmutableMap() {
     var snapshot = new FeatureFlagSnapshot();
     snapshot.replaceAll(FIRST);
+    Map<String, Boolean> immutableSnapshot = snapshot.snapshot();
 
-    assertThatThrownBy(() -> snapshot.snapshot().put("calendar", false))
+    assertThatThrownBy(() -> immutableSnapshot.put("calendar", false))
         .isInstanceOf(UnsupportedOperationException.class);
   }
 

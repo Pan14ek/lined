@@ -27,9 +27,9 @@ class FeatureFlagRepositoryTest {
   @Test
   void save_rejectsDuplicateKeyAndEnvironment() {
     repository.saveAndFlush(flag(FeatureFlagKey.CALENDARS, FeatureFlagEnvironment.LOCAL));
+    var duplicate = flag(FeatureFlagKey.CALENDARS, FeatureFlagEnvironment.LOCAL);
 
-    assertThatThrownBy(() -> repository.saveAndFlush(
-        flag(FeatureFlagKey.CALENDARS, FeatureFlagEnvironment.LOCAL)))
+    assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 
