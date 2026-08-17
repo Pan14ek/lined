@@ -80,6 +80,14 @@ public class OpenApiConfig {
         .build();
   }
 
+  @Bean
+  public GroupedOpenApi featuresApi() {
+    return GroupedOpenApi.builder()
+        .group("features")
+        .pathsToMatch("/api/features")
+        .build();
+  }
+
   /**
    * Publishes the authenticated billing-state endpoint as one OpenAPI group.
    *
