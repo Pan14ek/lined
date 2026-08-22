@@ -1,6 +1,7 @@
 package io.backend.lined.config;
 
 import io.backend.lined.common.exception.BaseAppException;
+import io.backend.lined.common.exception.FeatureDisabledException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,6 +32,9 @@ public class GlobalExceptionHandler {
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));
     pd.setProperty("code", ex.getCode());
+    if (ex instanceof FeatureDisabledException featureDisabledException) {
+      pd.setProperty("feature", featureDisabledException.getFeature());
+    }
     return ResponseEntity.status(ex.getStatus()).body(pd);
   }
 
