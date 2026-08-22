@@ -7,11 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Declares the public capability required before a Spring MVC handler may execute.
+ * Declares an HTTP operation owned by the Lobbies capability.
  */
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface FeatureRequired {
-
-  FeatureFlagKey value();
+@FeatureRequired(FeatureFlagKey.LOBBIES)
+public @interface LobbiesFeatureRequired {
 }

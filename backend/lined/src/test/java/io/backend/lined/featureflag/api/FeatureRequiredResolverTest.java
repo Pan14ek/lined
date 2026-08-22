@@ -25,6 +25,13 @@ class FeatureRequiredResolverTest {
   }
 
   @Test
+  void resolve_returnsComposedRequirement_whenMethodUsesCapabilityAnnotation() throws Exception {
+    HandlerMethod handler = handlerMethod("lobbiesOperation");
+
+    assertThat(resolver.resolve(handler)).contains(FeatureFlagKey.LOBBIES);
+  }
+
+  @Test
   void resolve_returnsEmpty_whenHandlerHasNoFeatureRequirement() throws Exception {
     HandlerMethod handler = new HandlerMethod(new OpenController(),
         OpenController.class.getMethod("open"));
@@ -45,6 +52,11 @@ class FeatureRequiredResolverTest {
     }
 
     public void inherited() {
+      // Handler metadata fixture.
+    }
+
+    @LobbiesFeatureRequired
+    public void lobbiesOperation() {
       // Handler metadata fixture.
     }
   }

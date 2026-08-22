@@ -4,6 +4,7 @@ import io.backend.lined.event.api.FreeSlotDto;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.api.LobbiesFeatureRequired;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.lobby.service.LobbyService;
 import io.backend.lined.lobby.domain.LobbyLifecycleStatus;
@@ -44,7 +45,7 @@ public class LobbyController {
       description = "Creates a lobby; the requester becomes the owner and is added as a member."
   )
   @PostMapping
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public ResponseEntity<LobbyDto> create(
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
       @RequestHeader("X-User-Id") Long currentUserId,
@@ -114,7 +115,7 @@ public class LobbyController {
    */
   @Operation(summary = "Select Free lobby", description = "Selects the owner's writable Free-plan lobby.")
   @PostMapping("/{id}/select-as-free")
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public ResponseEntity<LobbyDto> selectAsFree(
       @PathVariable Long id, @RequestHeader("X-User-Id") Long currentUserId) {
     LobbyDto selected = lobbyService.selectAsFree(id, currentUserId);
@@ -133,7 +134,7 @@ public class LobbyController {
    */
   @Operation(summary = "Restore archived lobby", description = "Restores an archived lobby when capacity permits.")
   @PostMapping("/{id}/restore")
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public ResponseEntity<LobbyDto> restore(
       @PathVariable Long id, @RequestHeader("X-User-Id") Long currentUserId) {
     LobbyDto restored = lobbyService.restore(id, currentUserId);
@@ -162,7 +163,7 @@ public class LobbyController {
       description = "Partially update lobby name, type, or owner (owner only)."
   )
   @PatchMapping("/{id}")
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public ResponseEntity<LobbyDto> update(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
@@ -192,7 +193,7 @@ public class LobbyController {
 
   @Operation(summary = "Remove member", description = "Remove user from lobby (owner only). Owner cannot be removed.")
   @DeleteMapping("/{id}/members/{userId}")
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public ResponseEntity<LobbyDto> removeMember(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "User ID to remove", example = "77") @PathVariable Long userId,
@@ -211,7 +212,7 @@ public class LobbyController {
 
   @Operation(summary = "Delete lobby", description = "Delete lobby (owner only).")
   @DeleteMapping("/{id}")
-  @FeatureRequired(FeatureFlagKey.LOBBIES)
+  @LobbiesFeatureRequired
   public void delete(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "42")
