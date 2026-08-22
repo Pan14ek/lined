@@ -2,6 +2,8 @@ package io.backend.lined.task.api;
 
 import io.backend.lined.task.service.TaskService;
 import io.backend.lined.common.VersionPrecondition;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +35,7 @@ import org.springframework.http.ResponseEntity;
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
+@FeatureRequired(FeatureFlagKey.TASKS)
 public class TaskController {
 
   private final TaskService service;

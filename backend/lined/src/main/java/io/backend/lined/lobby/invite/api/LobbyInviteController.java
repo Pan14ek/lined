@@ -1,5 +1,7 @@
 package io.backend.lined.lobby.invite.api;
 
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.lobby.invite.service.LobbyInviteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Lobby invites", description = "Manage consent-based lobby membership invitations")
 @RestController
 @RequiredArgsConstructor
+@FeatureRequired(FeatureFlagKey.LOBBIES)
 public class LobbyInviteController {
 
   private final LobbyInviteService inviteService;

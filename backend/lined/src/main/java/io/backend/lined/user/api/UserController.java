@@ -2,6 +2,8 @@ package io.backend.lined.user.api;
 
 import io.backend.lined.app.AccountApplicationService;
 import io.backend.lined.common.VersionPrecondition;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +62,7 @@ public class UserController {
       description = "Partial update of an existing user by ID."
   )
   @PatchMapping("/{id}")
+  @FeatureRequired(FeatureFlagKey.SETTINGS)
   public ResponseEntity<UserDto> update(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id,
@@ -116,6 +119,7 @@ public class UserController {
       description = "Deletes the caller's account when they do not own a lobby."
   )
   @DeleteMapping("/{id}")
+  @FeatureRequired(FeatureFlagKey.SETTINGS)
   public ResponseEntity<Void> delete(
       @Parameter(description = "User ID", example = "1") @PathVariable Long id,
       @Parameter(description = "Current user id (temporary for MVP)", example = "1")
