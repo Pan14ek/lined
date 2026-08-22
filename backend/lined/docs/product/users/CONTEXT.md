@@ -16,6 +16,8 @@ the canonical identity record used by every caller-scoped product feature.
   mutations; deletion is self-service and rejects prohibited ownership states.
 - Authentication reads user credentials, Roles assigns built-in roles, and
   Billing provisions a personal billing account during registration.
+- The Settings feature flag blocks only profile `PATCH` and account `DELETE`.
+  Registration, current-user/ID reads, and search remain shared support paths.
 
 ## Architecture and data flow
 

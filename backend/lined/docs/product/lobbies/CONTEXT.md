@@ -15,6 +15,9 @@ lifecycle/archive behavior, owner transfer, and free-slot queries.
   calculation to Calendar after verifying membership.
 - Tasks, Calendar, Invitations, Notifications, and Billing all use a lobby as
   their shared context or enforce its lifecycle/write restrictions.
+- The Lobbies feature flag blocks lobby creation, lifecycle/membership changes,
+  metadata updates, deletion, and invitation flows. Shared lobby reads remain
+  available, while free-slot calculation belongs to the Calendar feature flag.
 
 ## Architecture and data flow
 

@@ -16,6 +16,8 @@ catalog, checkout, webhook, and subscription work.
 - Provider/customer, catalog, price, and subscription classes are persisted
   foundation types. The current REST surface intentionally does not expose
   checkout or provider-webhook operations.
+- The Subscriptions feature flag blocks the current caller-scoped billing state
+  route before `BillingController` resolves account, plan, or entitlement data.
 
 ## Architecture and data flow
 

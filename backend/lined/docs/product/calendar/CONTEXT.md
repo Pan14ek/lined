@@ -18,6 +18,9 @@ calendar clients to exchange standard RFC 5545 data.
   `EventVisibility.PRIVATE` with legacy `shared=false` compatibility.
 - Lobbies requests free slots; Privacy governs what callers can view or infer;
   Notifications uses event activity for permitted delivery and reminders.
+- The Calendar feature flag blocks all Calendar HTTP routes, including ICS feed
+  and import routes plus lobby free slots, before controller execution; direct
+  calendar-service calls remain available to other enabled capabilities.
 
 ## Architecture and data flow
 
