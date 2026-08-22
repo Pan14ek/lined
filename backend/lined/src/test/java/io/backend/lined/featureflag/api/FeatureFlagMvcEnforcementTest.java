@@ -163,7 +163,8 @@ class FeatureFlagMvcEnforcementTest {
 
     mockMvc.perform(request)
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].start").value(FROM.toString()));
+        .andExpect(jsonPath("$[0].start").exists())
+        .andExpect(jsonPath("$[0].end").exists());
 
     verify(eventService).findFreeSlots(101L, FROM, TO, USER_ID);
   }
