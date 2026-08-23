@@ -71,6 +71,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class FeatureFlagMvcEnforcementTest {
 
   private static final Long USER_ID = 42L;
+  private static final Long LOBBY_ID = 101L;
+  private static final String USER_ID_HEADER = "X-User-Id";
+  private static final String FEATURE_DISABLED_TYPE = "https://errors.lined.app/feature.disabled";
+  private static final String FEATURE_DISABLED_DETAIL = "This feature is currently unavailable";
   private static final OffsetDateTime FROM = OffsetDateTime.parse("2026-01-01T09:00:00Z");
   private static final OffsetDateTime TO = OffsetDateTime.parse("2026-01-01T10:00:00Z");
 
@@ -111,7 +115,7 @@ class FeatureFlagMvcEnforcementTest {
   void calendarEvents_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
     MockMvc mockMvc = mvc(new EventController(eventService));
-    when(eventService.list(101L, FROM, TO, USER_ID)).thenReturn(List.of(sampleEvent()));
+    when(eventService.list(LOBBY_ID, FROM, TO, USER_ID)).thenReturn(List.of(sampleEvent()));
 
     assertDisabled(mockMvc, calendarEventsRequest(), FeatureFlagKey.CALENDARS);
     verifyNoInteractions(eventService);
@@ -122,7 +126,7 @@ class FeatureFlagMvcEnforcementTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(9001));
 
-    verify(eventService).list(101L, FROM, TO, USER_ID);
+    verify(eventService).list(LOBBY_ID, FROM, TO, USER_ID);
   }
 
   @Test
@@ -133,7 +137,7 @@ class FeatureFlagMvcEnforcementTest {
         .thenReturn(new CalendarFeedTokenDto("/api/calendar/feed/token.ics"));
 
     MockHttpServletRequestBuilder request = post("/api/calendar/feed-token")
-        .header("X-User-Id", USER_ID);
+        .header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.CALENDARS);
     verifyNoInteractions(calendarIcsService);
 
@@ -149,11 +153,11 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void lobbyFreeSlots_belongToCalendarInsteadOfLobbies() throws Exception {
     MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService));
-    when(eventService.findFreeSlots(101L, FROM, TO, USER_ID))
+    when(eventService.findFreeSlots(LOBBY_ID, FROM, TO, USER_ID))
         .thenReturn(List.of(new FreeSlotDto(FROM, TO)));
 
     MockHttpServletRequestBuilder request = get("/api/lobbies/101/free-slots")
-        .header("X-User-Id", USER_ID)
+        .header(USER_ID_HEADER, USER_ID)
         .param("from", FROM.toString())
         .param("to", TO.toString());
     assertDisabled(mockMvc, request, FeatureFlagKey.CALENDARS);
@@ -166,7 +170,7 @@ class FeatureFlagMvcEnforcementTest {
         .andExpect(jsonPath("$[0].start").exists())
         .andExpect(jsonPath("$[0].end").exists());
 
-    verify(eventService).findFreeSlots(101L, FROM, TO, USER_ID);
+    verify(eventService).findFreeSlots(LOBBY_ID, FROM, TO, USER_ID);
   }
 
   @Test
@@ -175,7 +179,7 @@ class FeatureFlagMvcEnforcementTest {
     MockMvc mockMvc = mvc(new TaskController(taskService));
     when(taskService.list(null, null, null, USER_ID)).thenReturn(List.of(sampleTask()));
 
-    MockHttpServletRequestBuilder request = get("/api/tasks").header("X-User-Id", USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/tasks").header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.TASKS);
     verifyNoInteractions(taskService);
 
@@ -196,7 +200,7 @@ class FeatureFlagMvcEnforcementTest {
         .thenReturn(new NotificationPreferencesDto(1L, true, true, true, true, true));
 
     MockHttpServletRequestBuilder request = get("/api/notifications/preferences")
-        .header("X-User-Id", USER_ID);
+        .header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.NOTIFICATIONS);
     verifyNoInteractions(notificationService);
 
@@ -212,11 +216,11 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void lobbyNotificationPreferences_belongToNotificationsInsteadOfLobbies() throws Exception {
     MockMvc mockMvc = mvc(new LobbyNotificationPreferenceController(notificationService));
-    when(notificationService.getLobbyPreferences(101L, USER_ID))
-        .thenReturn(new LobbyNotificationPreferencesDto(101L, 2L, true, true, true));
+    when(notificationService.getLobbyPreferences(LOBBY_ID, USER_ID))
+        .thenReturn(new LobbyNotificationPreferencesDto(LOBBY_ID, 2L, true, true, true));
 
     MockHttpServletRequestBuilder request = get("/api/lobbies/101/notification-preferences")
-        .header("X-User-Id", USER_ID);
+        .header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.NOTIFICATIONS);
     verifyNoInteractions(notificationService);
 
@@ -226,7 +230,7 @@ class FeatureFlagMvcEnforcementTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.lobbyId").value(101));
 
-    verify(notificationService).getLobbyPreferences(101L, USER_ID);
+    verify(notificationService).getLobbyPreferences(LOBBY_ID, USER_ID);
   }
 
   @Test
@@ -235,7 +239,7 @@ class FeatureFlagMvcEnforcementTest {
     when(lobbyService.create(any(), eq(USER_ID))).thenReturn(sampleLobby());
 
     MockHttpServletRequestBuilder request = post("/api/lobbies")
-        .header("X-User-Id", USER_ID)
+        .header(USER_ID_HEADER, USER_ID)
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
             {"name":"Our Family","lobbyType":"FAMILY"}
@@ -259,7 +263,7 @@ class FeatureFlagMvcEnforcementTest {
     when(lobbyInviteService.pendingForInvitee(USER_ID)).thenReturn(List.of(sampleInvite()));
 
     MockHttpServletRequestBuilder request = get("/api/lobby-invites/mine")
-        .header("X-User-Id", USER_ID);
+        .header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.LOBBIES);
     verifyNoInteractions(lobbyInviteService);
 
@@ -307,7 +311,7 @@ class FeatureFlagMvcEnforcementTest {
     when(entitlementService.getEntitlements(PlanCode.FREE))
         .thenReturn(new PlanEntitlements(1, 4, false, true, true));
 
-    MockHttpServletRequestBuilder request = get("/api/billing/me").header("X-User-Id", USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/billing/me").header(USER_ID_HEADER, USER_ID);
     assertDisabled(mockMvc, request, FeatureFlagKey.SUBSCRIPTIONS);
     verifyNoInteractions(billingAccountService, effectivePlanResolver, entitlementService);
 
@@ -328,7 +332,7 @@ class FeatureFlagMvcEnforcementTest {
     when(lobbyService.archivedLobbies(USER_ID)).thenReturn(List.of(sampleLobby()));
 
     mockMvc.perform(get("/api/lobbies")
-            .header("X-User-Id", USER_ID)
+            .header(USER_ID_HEADER, USER_ID)
             .param("lifecycleStatus", "ARCHIVED"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(101));
@@ -359,7 +363,7 @@ class FeatureFlagMvcEnforcementTest {
 
   private MockHttpServletRequestBuilder calendarEventsRequest() {
     return get("/api/calendar/events")
-        .header("X-User-Id", USER_ID)
+        .header(USER_ID_HEADER, USER_ID)
         .param("lobbyId", "101")
         .param("from", FROM.toString())
         .param("to", TO.toString());
@@ -371,28 +375,29 @@ class FeatureFlagMvcEnforcementTest {
 
     mockMvc.perform(request)
         .andExpect(status().isServiceUnavailable())
-        .andExpect(jsonPath("$.type").value("https://errors.lined.app/feature.disabled"))
-        .andExpect(jsonPath("$.detail").value("This feature is currently unavailable"))
+        .andExpect(jsonPath("$.type").value(FEATURE_DISABLED_TYPE))
+        .andExpect(jsonPath("$.detail").value(FEATURE_DISABLED_DETAIL))
         .andExpect(jsonPath("$.feature").value(key.value()));
   }
 
   private EventDto sampleEvent() {
     return new EventDto(9001L, 0L, "Dinner together", "Whole Foods Market", true,
-        EventVisibility.SHARED, FROM, TO, "Europe/Kyiv", 30, 101L, USER_ID, FROM);
+        EventVisibility.SHARED, FROM, TO, "Europe/Kyiv", 30, LOBBY_ID, USER_ID, FROM);
   }
 
   private TaskDto sampleTask() {
     return new TaskDto(555L, 0L, "Buy groceries", "Pick up milk and bread", TaskPriority.MEDIUM,
-        TaskStatus.TODO, TaskVisibility.SHARED, 101L, USER_ID, USER_ID,
+        TaskStatus.TODO, TaskVisibility.SHARED, LOBBY_ID, USER_ID, USER_ID,
         LocalDate.parse("2026-01-02"), FROM);
   }
 
   private LobbyDto sampleLobby() {
-    return new LobbyDto(101L, "Our Family", LobbyTypes.FAMILY, USER_ID, Set.of(USER_ID));
+    return new LobbyDto(LOBBY_ID, "Our Family", LobbyTypes.FAMILY, USER_ID, Set.of(USER_ID));
   }
 
   private LobbyInviteDto sampleInvite() {
-    return new LobbyInviteDto(501L, 101L, USER_ID, 77L, LobbyInviteStatus.PENDING, FROM, FROM, FROM);
+    return new LobbyInviteDto(501L, LOBBY_ID, USER_ID, 77L, LobbyInviteStatus.PENDING, FROM, FROM,
+        FROM);
   }
 
   private UserDto sampleUser() {

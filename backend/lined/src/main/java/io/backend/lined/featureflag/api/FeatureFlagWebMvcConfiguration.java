@@ -14,6 +14,12 @@ public class FeatureFlagWebMvcConfiguration implements WebMvcConfigurer {
 
   private final FeatureFlagInterceptor featureFlagInterceptor;
 
+  /**
+   * Adds the feature interceptor to public API routes while preserving stable control-plane and
+   * operational endpoints that must remain available for recovery and discovery.
+   *
+   * @param registry Spring MVC interceptor registry
+   */
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(featureFlagInterceptor)

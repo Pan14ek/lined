@@ -26,6 +26,6 @@ public class FeatureRequiredResolver {
     }
     FeatureRequired classRequirement = AnnotatedElementUtils.findMergedAnnotation(
         handlerMethod.getBeanType(), FeatureRequired.class);
-    return classRequirement == null ? Optional.empty() : Optional.of(classRequirement.value());
+    return Optional.ofNullable(classRequirement).map(FeatureRequired::value);
   }
 }

@@ -23,6 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
     FeatureFlagBypassMvcTest.BypassController.class})
 class FeatureFlagBypassMvcTest {
 
+  private static final String AUTH_CHECK_PATH = "/api/auth/check";
+  private static final String FEATURES_PATH = "/api/features";
+  private static final String ADMIN_CHECK_PATH = "/api/admin/feature-flags/check";
+  private static final String ACTUATOR_CHECK_PATH = "/actuator/check";
+  private static final String OPEN_RESPONSE = "open";
+
   @Autowired
   private MockMvc mockMvc;
 
@@ -31,10 +37,10 @@ class FeatureFlagBypassMvcTest {
 
   @Test
   void controlPlaneAndActuatorRoutes_bypassFeatureEnforcement() throws Exception {
-    mockMvc.perform(get("/api/auth/check")).andExpect(status().isOk());
-    mockMvc.perform(get("/api/features")).andExpect(status().isOk());
-    mockMvc.perform(get("/api/admin/feature-flags/check")).andExpect(status().isOk());
-    mockMvc.perform(get("/actuator/check")).andExpect(status().isOk());
+    mockMvc.perform(get(AUTH_CHECK_PATH)).andExpect(status().isOk());
+    mockMvc.perform(get(FEATURES_PATH)).andExpect(status().isOk());
+    mockMvc.perform(get(ADMIN_CHECK_PATH)).andExpect(status().isOk());
+    mockMvc.perform(get(ACTUATOR_CHECK_PATH)).andExpect(status().isOk());
 
     verifyNoInteractions(featureFlagService);
   }
@@ -50,24 +56,24 @@ class FeatureFlagBypassMvcTest {
   @FeatureRequired(FeatureFlagKey.TASKS)
   static class BypassController {
 
-    @GetMapping("/api/auth/check")
+    @GetMapping(AUTH_CHECK_PATH)
     String auth() {
-      return "open";
+      return OPEN_RESPONSE;
     }
 
-    @GetMapping("/api/features")
+    @GetMapping(FEATURES_PATH)
     String features() {
-      return "open";
+      return OPEN_RESPONSE;
     }
 
-    @GetMapping("/api/admin/feature-flags/check")
+    @GetMapping(ADMIN_CHECK_PATH)
     String admin() {
-      return "open";
+      return OPEN_RESPONSE;
     }
 
-    @GetMapping("/actuator/check")
+    @GetMapping(ACTUATOR_CHECK_PATH)
     String actuator() {
-      return "open";
+      return OPEN_RESPONSE;
     }
 
     @GetMapping("/api/protected")

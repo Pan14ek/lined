@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
@@ -30,7 +31,8 @@ class FeatureFlagWebMvcConfigurationTest {
   private InterceptorRegistration onlyRegistration(InterceptorRegistry registry) {
     @SuppressWarnings("unchecked")
     List<InterceptorRegistration> registrations =
-        (List<InterceptorRegistration>) ReflectionTestUtils.getField(registry, "registrations");
+        (List<InterceptorRegistration>) Objects.requireNonNull(
+            ReflectionTestUtils.getField(registry, "registrations"));
     assertThat(registrations).hasSize(1);
     return registrations.get(0);
   }

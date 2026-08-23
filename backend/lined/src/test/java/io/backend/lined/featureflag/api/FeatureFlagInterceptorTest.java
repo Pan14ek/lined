@@ -35,21 +35,21 @@ class FeatureFlagInterceptorTest {
   }
 
   @Test
-  void preHandle_allowsNonHandlerMethod() throws Exception {
+  void preHandle_allowsNonHandlerMethod() {
     boolean allowed = interceptor.preHandle(request(), response(), new Object());
 
     assertThat(allowed).isTrue();
   }
 
   @Test
-  void preHandle_allowsUnannotatedHandler() throws Exception {
+  void preHandle_allowsUnannotatedHandler() {
     boolean allowed = interceptor.preHandle(request(), response(), handler(OpenController.class, "open"));
 
     assertThat(allowed).isTrue();
   }
 
   @Test
-  void preHandle_allowsEnabledClassRequirement() throws Exception {
+  void preHandle_allowsEnabledClassRequirement() {
     when(featureFlagService.isEnabled(FeatureFlagKey.TASKS.value())).thenReturn(true);
 
     boolean allowed = interceptor.preHandle(request(), response(),
@@ -60,11 +60,13 @@ class FeatureFlagInterceptorTest {
   }
 
   @Test
-  void preHandle_throwsFeatureDisabledException_whenClassRequirementIsDisabled() throws Exception {
+  void preHandle_throwsFeatureDisabledException_whenClassRequirementIsDisabled() {
     when(featureFlagService.isEnabled(FeatureFlagKey.TASKS.value())).thenReturn(false);
+    MockHttpServletRequest request = request();
+    MockHttpServletResponse response = response();
+    HandlerMethod handler = handler(ClassProtectedController.class, "protectedByClass");
 
-    assertThatThrownBy(() -> interceptor.preHandle(request(), response(),
-        handler(ClassProtectedController.class, "protectedByClass")))
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, handler))
         .isInstanceOf(FeatureDisabledException.class)
         .hasFieldOrPropertyWithValue("feature", FeatureFlagKey.TASKS.value());
 
@@ -72,11 +74,13 @@ class FeatureFlagInterceptorTest {
   }
 
   @Test
-  void preHandle_usesMethodRequirementBeforeClassRequirement() throws Exception {
+  void preHandle_usesMethodRequirementBeforeClassRequirement() {
     when(featureFlagService.isEnabled(FeatureFlagKey.CALENDARS.value())).thenReturn(false);
+    MockHttpServletRequest request = request();
+    MockHttpServletResponse response = response();
+    HandlerMethod handler = handler(ClassProtectedController.class, "overridden");
 
-    assertThatThrownBy(() -> interceptor.preHandle(request(), response(),
-        handler(ClassProtectedController.class, "overridden")))
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, handler))
         .isInstanceOf(FeatureDisabledException.class)
         .hasFieldOrPropertyWithValue("feature", FeatureFlagKey.CALENDARS.value());
 
@@ -92,9 +96,13 @@ class FeatureFlagInterceptorTest {
     return new MockHttpServletResponse();
   }
 
-  private HandlerMethod handler(Class<?> controllerType, String methodName) throws Exception {
-    return new HandlerMethod(controllerType.getDeclaredConstructor().newInstance(),
-        controllerType.getMethod(methodName));
+  private HandlerMethod handler(Class<?> controllerType, String methodName) {
+    try {
+      return new HandlerMethod(controllerType.getDeclaredConstructor().newInstance(),
+          controllerType.getMethod(methodName));
+    } catch (ReflectiveOperationException exception) {
+      throw new IllegalArgumentException("Invalid handler fixture", exception);
+    }
   }
 
   @FeatureRequired(FeatureFlagKey.TASKS)
