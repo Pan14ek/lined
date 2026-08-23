@@ -14,6 +14,8 @@ the recipient's consent.
 - `GET /api/lobby-invites/mine` lists the caller's pending invitations.
 - Accepting or declining changes the invitation terminal state; acceptance adds
   lobby membership exactly once under the same transactional workflow.
+- The Lobbies feature flag blocks every invitation HTTP operation before the
+  invitation service executes; notification delivery does not change ownership.
 
 ## Architecture and data flow
 

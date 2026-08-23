@@ -3,6 +3,8 @@ package io.backend.lined.event.api;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/calendar")
 @RequiredArgsConstructor
+@FeatureRequired(FeatureFlagKey.CALENDARS)
 public class EventController {
 
   private final EventService service;

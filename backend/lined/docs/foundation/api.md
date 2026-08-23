@@ -682,6 +682,26 @@ Typical status codes:
 - `404 Not Found` for missing domain entities.
 - `409 Conflict` for duplicate state or blocked transitions.
 
+### Feature capability unavailable
+
+Endpoints that own a user-facing capability may return `503 Service Unavailable` when its
+feature flag is disabled. The controller method is not invoked:
+
+```json
+{
+  "type": "https://errors.lined.app/feature.disabled",
+  "title": "Service Unavailable",
+  "status": 503,
+  "detail": "This feature is currently unavailable",
+  "feature": "calendars.feature.enabled"
+}
+```
+
+Calendar endpoints (including lobby free slots), Tasks, Notifications (including lobby
+notification preferences), Billing subscription state, Lobby writes/invites, and user `PATCH` and
+`DELETE` are capability-owned. Shared lobby reads, user create/read/search, Auth, public feature
+discovery, and feature-flag administration remain available.
+
 ## OpenAPI
 
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)

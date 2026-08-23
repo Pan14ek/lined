@@ -1,6 +1,8 @@
 package io.backend.lined.event.api;
 
 import io.backend.lined.event.service.CalendarIcsService;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/calendar")
 @RequiredArgsConstructor
+@FeatureRequired(FeatureFlagKey.CALENDARS)
 public class CalendarIcsController {
 
   private final CalendarIcsService service;

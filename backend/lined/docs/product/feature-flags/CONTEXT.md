@@ -18,14 +18,23 @@ exists.
 safe for clients to call during capability discovery because it returns only cached booleans and
 never administration metadata.
 
+`@FeatureRequired` declares a controller or method capability. The MVC interceptor evaluates that
+metadata before controller execution, with method metadata taking precedence over controller
+metadata. A disabled capability returns the standard RFC 7807 `503 feature.disabled` response;
+the interceptor does not wrap or block direct service-to-service calls.
+
 ## Responsibilities
 
 - `featureflag/domain` owns the stable key/environment catalog, JPA entity, and repository.
 - `featureflag/service` owns active-environment configuration, atomic cache replacement, public
   allowlisting, startup loading, and the recovery-refresh seam.
-- `featureflag/api` owns the public discovery response only.
-- FF-BE-02 owns MVC capability enforcement; FF-BE-03 owns administrator mutation/audit; FF-BE-04
-  owns PostgreSQL synchronization, scheduled recovery refresh, and related operational metrics.
+- `featureflag/api` owns public discovery plus MVC enforcement metadata, interception, bounded
+  blocked-request diagnostics, and generated OpenAPI `503` response documentation.
+- FF-BE-02 enforces Calendar, Tasks, Notifications, Subscriptions, selected Lobby management,
+  and Settings mutations at the HTTP boundary. Shared lobby reads, user create/read/search, Auth,
+  discovery, the future admin control plane, and direct internal service calls remain open.
+- FF-BE-03 owns administrator mutation/audit; FF-BE-04 owns PostgreSQL synchronization, scheduled
+  recovery refresh, and related operational metrics.
 
 ## Persistence and data flow
 

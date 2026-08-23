@@ -16,6 +16,8 @@ delivery choices survive across devices instead of remaining UI-only state.
 - Task, Calendar, Lobby, and Invitation workflows call the service for allowed
   notification intents. `ReminderScheduler` invokes `ReminderService` for
   time-based event/task reminders.
+- The Notifications feature flag blocks inbox and both global and per-lobby
+  preference HTTP operations; the per-lobby path remains Notifications-owned.
 
 ## Architecture and data flow
 

@@ -1,6 +1,8 @@
 package io.backend.lined.notification.api;
 
 import io.backend.lined.common.VersionPrecondition;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@FeatureRequired(FeatureFlagKey.NOTIFICATIONS)
 public class NotificationController {
 
   private final NotificationService service;

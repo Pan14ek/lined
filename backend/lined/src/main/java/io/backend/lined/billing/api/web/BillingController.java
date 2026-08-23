@@ -8,6 +8,8 @@ import io.backend.lined.billing.domain.account.BillingAccountEntity;
 import io.backend.lined.billing.domain.plan.PlanCode;
 import io.backend.lined.entitlement.application.EntitlementService;
 import io.backend.lined.entitlement.domain.PlanEntitlements;
+import io.backend.lined.featureflag.api.FeatureRequired;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,6 +50,7 @@ public class BillingController {
    * @return stable billing-state response for that principal only
    */
   @GetMapping("/me")
+  @FeatureRequired(FeatureFlagKey.SUBSCRIPTIONS)
   @Operation(summary = "Get my billing state",
       description = "Derives billing state from X-User-Id and never accepts a user ID parameter.",
       responses = {

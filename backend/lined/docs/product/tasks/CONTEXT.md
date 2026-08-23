@@ -16,6 +16,8 @@ shared lobby without leaking private items.
 - Lobby membership and write policy determine access. Notification creation is
   suppressed where privacy rules prohibit disclosure; privacy operations emit
   bounded operational metrics without task content or identifiers.
+- The Tasks feature flag blocks all task HTTP operations before
+  `TaskController` delegates, without adding a service-layer availability check.
 
 ## Architecture and data flow
 

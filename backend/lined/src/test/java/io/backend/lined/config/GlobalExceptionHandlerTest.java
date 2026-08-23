@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.FeatureDisabledException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.common.exception.UnauthorizedException;
+import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -102,6 +104,21 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Unauthorized");
+  }
+
+  @Test
+  void handleBase_featureDisabled_returnsDocumented503Problem() {
+    var ex = new FeatureDisabledException(FeatureFlagKey.CALENDARS);
+
+    ResponseEntity<ProblemDetail> response = handler.handleBase(ex);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Service Unavailable");
+    assertThat(response.getBody().getDetail()).isEqualTo("This feature is currently unavailable");
+    assertThat(response.getBody().getType().toString()).endsWith("feature.disabled");
+    assertThat(response.getBody().getProperties())
+        .containsEntry("feature", FeatureFlagKey.CALENDARS.value());
   }
 
   @Test
