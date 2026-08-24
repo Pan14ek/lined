@@ -1,5 +1,7 @@
 package io.backend.lined.config;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -78,6 +80,15 @@ class SecurityPolicyMvcTest {
     org.assertj.core.api.Assertions.assertThat(result.getRequest().getSession(false)).isNull();
   }
 
+  @Test
+  void nonApiStateChange_requiresCsrfToken() throws Exception {
+    mockMvc.perform(post("/browser-action").with(user("browser-user")))
+        .andExpect(status().isForbidden());
+
+    mockMvc.perform(post("/browser-action").with(user("browser-user")).with(csrf()))
+        .andExpect(status().isOk());
+  }
+
   private void assertPublic(MockHttpServletRequestBuilder request) throws Exception {
     mockMvc.perform(request).andExpect(status().isOk());
   }
@@ -98,6 +109,11 @@ class SecurityPolicyMvcTest {
     @GetMapping({"/api/features", "/actuator/health"})
     public String getPublicRoute() {
       return "public";
+    }
+
+    @PostMapping("/browser-action")
+    public String browserAction() {
+      return "secured";
     }
   }
 

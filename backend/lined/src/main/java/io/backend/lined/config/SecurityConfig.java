@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,6 +45,12 @@ public class SecurityConfig {
    * <p>Bearer-token decoding is deliberately added in AUTH-SEC-02. Until then, private routes
    * remain protected but no Bearer credential is accepted.</p>
    *
+   * <p>CSRF remains enabled for browser-facing routes. It is ignored for the stateless API and
+   * actuator endpoints, whose current and planned authentication transports are request headers
+   * rather than browser cookies. Before a cookie-authenticated endpoint is added below
+   * {@code /api/**}, its CSRF protection must be configured explicitly as part of that endpoint's
+   * implementation.</p>
+   *
    * @param http Spring Security HTTP configuration builder
    * @param authenticationEntryPoint writer for unauthenticated Problem Details responses
    * @param accessDeniedHandler writer for forbidden Problem Details responses
@@ -58,7 +63,7 @@ public class SecurityConfig {
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
       ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
     return http
-        .csrf(AbstractHttpConfigurer::disable)
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**"))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
