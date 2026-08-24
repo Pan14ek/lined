@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 /** Writes RFC 7807 responses for failures raised before Spring MVC handles a request. */
 @Component
 @RequiredArgsConstructor
-class SecurityProblemDetailsWriter {
+public class SecurityProblemDetailsWriter {
 
   private static final String PROBLEM_BASE_URI = "https://lined.app/problems/";
 
