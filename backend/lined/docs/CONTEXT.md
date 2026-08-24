@@ -8,7 +8,7 @@ documents for their domain.
 |---|---|---|
 | Foundation | Backend-wide architecture, API contract, and testing conventions. | `docs/foundation/` |
 | Governance | Contribution workflow and durable research-knowledge guidance. | `docs/governance/` |
-| Product authentication | Login and password-reset behavior, architecture, and persistence context. | `docs/product/authentication/` |
+| Product authentication | Login, password reset, JWT/session security design, and SDD implementation tasks. | `docs/product/authentication/` |
 | Product users | Account profile, registration, and identity-record behavior. | `docs/product/users/` |
 | Product lobbies | Shared-space membership, lifecycle, and access behavior. | `docs/product/lobbies/` |
 | Product lobby invitations | Consent-based lobby membership invitation behavior. | `docs/product/lobby-invitations/` |

@@ -4,9 +4,10 @@
 
 Authentication verifies a user's password for login and provides a signed-out
 password-reset flow. It exists so account access is not derived from an
-unverified user lookup. The feature currently returns an MVP authentication
-token; caller-scoped product endpoints still use `X-User-Id` and are not
-protected by a Spring Security request filter.
+unverified user lookup. The current implementation returns an MVP authentication
+token and caller-scoped product endpoints still use `X-User-Id`; the proposed
+JWT/refresh-session replacement is documented separately so it is not confused
+with current runtime behavior.
 
 ## Runtime behavior and use
 
@@ -62,8 +63,11 @@ already-used, expired, or unknown token does not expose its state.
 ## Authoritative documentation
 
 - [Authentication endpoints in the API reference](../../foundation/api.md#authentication)
+- [Authentication and session security system design](authentication-security-system-design.md)
+- [Authentication security SDD tasks](authentication-security-tasks.md)
 - [Password-reset proposal](../users/proposals/password-reset-flow.md)
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)
-- No separate authentication migration or operational document exists in this repository.
+- The security design is proposed only; this task index and the master task table
+  track implementation work.

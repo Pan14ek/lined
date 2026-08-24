@@ -17,7 +17,7 @@ to choose the domain, then open the document needed for the change.
 
 ## Product domains
 
-- [Authentication context](product/authentication/CONTEXT.md)
+- [Authentication context](product/authentication/CONTEXT.md), [security system design](product/authentication/authentication-security-system-design.md), and [SDD tasks](product/authentication/authentication-security-tasks.md)
 - [Users context](product/users/CONTEXT.md)
 - [Lobbies context](product/lobbies/CONTEXT.md) and [lobby invitations context](product/lobby-invitations/CONTEXT.md)
 - [Tasks context](product/tasks/CONTEXT.md)
