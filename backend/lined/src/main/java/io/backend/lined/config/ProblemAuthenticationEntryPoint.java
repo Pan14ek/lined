@@ -8,7 +8,23 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-/** Returns a stable Problem Details response when a private route has no authentication. */
+/**
+ * Produces Lined's safe {@code 401 Unauthorized} response for unauthenticated private requests.
+ *
+ * <p>Spring Security invokes an {@link AuthenticationEntryPoint} from its filter chain when a
+ * request requires authentication but has no accepted principal. The failure happens before MVC,
+ * so using this component ensures the response still follows the API-wide RFC 7807 contract
+ * instead of returning a container-generated HTML or empty response.</p>
+ *
+ * <p>Use this entry point for missing, malformed, expired, or otherwise unaccepted request
+ * credentials. It must expose only the stable {@code auth.required} contract and never include
+ * exception messages that could reveal token-validation or authentication internals. Authorization
+ * failures for an authenticated caller belong to {@link ProblemAccessDeniedHandler} instead.</p>
+ *
+ * <p>For example, an unauthenticated {@code GET /api/lobbies} is intercepted before
+ * {@code LobbyController}; this entry point returns {@code application/problem+json}, status
+ * {@code 401}, type {@code authentication-required}, and {@code WWW-Authenticate: Bearer}.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class ProblemAuthenticationEntryPoint implements AuthenticationEntryPoint {

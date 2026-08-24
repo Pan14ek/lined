@@ -11,7 +11,25 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Component;
 
-/** Writes RFC 7807 responses for failures raised before Spring MVC handles a request. */
+/**
+ * Serializes RFC 7807 Problem Details responses raised by Spring Security filters.
+ *
+ * <p>Security failures occur before a request reaches a controller, so
+ * {@link GlobalExceptionHandler} cannot convert them into Lined's normal API error shape. This
+ * component gives {@link ProblemAuthenticationEntryPoint} and {@link ProblemAccessDeniedHandler}
+ * one serialization path, keeping their HTTP status, media type, problem URI, request instance,
+ * and stable {@code code} extension consistent.</p>
+ *
+ * <p>Use this writer only from infrastructure components that handle a security failure before
+ * Spring MVC. Controller and service exceptions should continue through {@code GlobalExceptionHandler};
+ * they must not write directly to {@link HttpServletResponse}.</p>
+ *
+ * <p>For example, an authentication entry point can write the response for an unauthenticated
+ * {@code GET /api/lobbies} with status {@code 401}, type {@code authentication-required}, and
+ * code {@code auth.required}. The resulting response has content type
+ * {@code application/problem+json} and instance {@code /api/lobbies}, without serializing the
+ * underlying authentication exception.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class SecurityProblemDetailsWriter {

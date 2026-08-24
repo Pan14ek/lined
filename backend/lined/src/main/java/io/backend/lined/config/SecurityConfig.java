@@ -10,6 +10,28 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Configures Lined's application-wide HTTP security boundary.
+ *
+ * <p>This configuration centralizes the rules that determine which requests may reach Spring MVC
+ * without authentication. Keeping those rules in one {@link SecurityFilterChain} makes the
+ * default-deny policy reviewable and prevents a newly added controller route from becoming public
+ * accidentally.</p>
+ *
+ * <p>Use this configuration for transport-level concerns such as session policy, CSRF policy,
+ * public-route allowlisting, and security-filter error handling. Controller, service, and domain
+ * code must not duplicate these authentication checks. Endpoint-specific authorization remains a
+ * separate concern after a request has been authenticated.</p>
+ *
+ * <p>For example, an unauthenticated {@code POST /api/auth/login} matches an approved public
+ * route and reaches {@code AuthController}. An unauthenticated {@code GET /api/lobbies} matches
+ * no public rule, so this chain invokes {@link ProblemAuthenticationEntryPoint} and returns a
+ * {@code 401} Problem Details response without calling a controller.</p>
+ *
+ * <p>AUTH-SEC-01 intentionally does not configure a JWT decoder or a resource-server Bearer
+ * filter. AUTH-SEC-02 adds that credential-processing responsibility while this stateless
+ * default-deny boundary remains in place.</p>
+ */
 @Configuration
 public class SecurityConfig {
 
