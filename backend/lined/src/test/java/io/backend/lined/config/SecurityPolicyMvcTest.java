@@ -38,7 +38,7 @@ class SecurityPolicyMvcTest {
   private FeatureFlagService featureFlagService;
 
   @Test
-  void approvedPublicRoutes_areAccessibleWithoutAuthentication() throws Exception {
+  void approvedPublicRoutes_areAccessibleWithoutAuthenticationOrCsrfToken() throws Exception {
     assertPublic(post("/api/users"));
     assertPublic(post("/api/auth/login"));
     assertPublic(post("/api/auth/refresh"));

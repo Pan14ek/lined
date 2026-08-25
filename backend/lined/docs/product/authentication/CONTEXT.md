@@ -25,6 +25,9 @@ yet authenticate through the new boundary.
   `GET /actuator/health` are the only approved public method/path pairs.
 - Every other route returns a stable `401 auth.required` Problem Details response
   until AUTH-SEC-02 enables framework Bearer JWT authentication.
+- CSRF remains enabled for browser-facing routes. AUTH-SEC-01 deliberately excludes
+  the current cookie-free API and Actuator transport; AUTH-SEC-04/05 must replace
+  that temporary exclusion before adding cookie-backed refresh or logout endpoints.
 
 ## Architecture and data flow
 

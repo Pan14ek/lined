@@ -46,10 +46,9 @@ public class SecurityConfig {
    * remain protected but no Bearer credential is accepted.</p>
    *
    * <p>CSRF remains enabled for browser-facing routes. It is ignored for the stateless API and
-   * actuator endpoints, whose current and planned authentication transports are request headers
-   * rather than browser cookies. Before a cookie-authenticated endpoint is added below
-   * {@code /api/**}, its CSRF protection must be configured explicitly as part of that endpoint's
-   * implementation.</p>
+   * actuator endpoints because AUTH-SEC-01 has no cookie-authenticated endpoint. AUTH-SEC-04 and
+   * AUTH-SEC-05 must replace this temporary API exclusion with an explicit CSRF policy before
+   * adding cookie-backed refresh or logout endpoints below {@code /api/**}.</p>
    *
    * @param http Spring Security HTTP configuration builder
    * @param authenticationEntryPoint writer for unauthenticated Problem Details responses
@@ -63,7 +62,8 @@ public class SecurityConfig {
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
       ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
     return http
-        .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**"))
+        // AUTH-SEC-01 has no cookie-backed routes; see the method contract above.
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**")) // NOSONAR
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
