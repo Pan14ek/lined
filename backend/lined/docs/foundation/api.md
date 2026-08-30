@@ -36,9 +36,12 @@ Successful responses use this shape:
 ```
 
 Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header.
-`SecurityConfig` currently only provides password encoding; the backend does
-not yet install a request filter that enforces the login response as Bearer
-authentication automatically.
+AUTH-SEC-01 now applies a stateless, default-deny Spring Security boundary:
+only `POST /api/users`, the approved authentication/reset POST routes,
+`GET /api/features`, and `GET /actuator/health` are public. All other paths
+require authentication. Bearer/JWT decoding is intentionally deferred to
+AUTH-SEC-02, so no private request can yet authenticate through this boundary
+and `X-User-Id` cannot bypass it.
 
 ### `POST /api/auth/password-reset-requests`
 
@@ -681,6 +684,27 @@ Typical status codes:
 - `403 Forbidden` for owner/member/requester mismatches.
 - `404 Not Found` for missing domain entities.
 - `409 Conflict` for duplicate state or blocked transitions.
+
+### Security boundary failures
+
+An unauthenticated request to any non-public route returns `401 Unauthorized`
+with `Content-Type: application/problem+json` and `WWW-Authenticate: Bearer`:
+
+```json
+{
+  "type": "https://lined.app/problems/authentication-required",
+  "title": "Authentication required",
+  "status": 401,
+  "detail": "Authentication is required to access this resource.",
+  "instance": "/api/lobbies",
+  "code": "auth.required"
+}
+```
+
+Security authorization denials use the same Problem Details media type with
+`type` `https://lined.app/problems/access-denied` and code `access.denied`.
+These security-filter responses intentionally contain no credential or
+authorization implementation details.
 
 ### Feature capability unavailable
 

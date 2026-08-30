@@ -1,6 +1,7 @@
 package io.backend.lined.lobby.api;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,6 +24,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 class LobbyEntitlementLimitIT {
+
+  private static final String AUTHENTICATED_TEST_USER = "entitlement-test-user";
 
   @Container
   private static final PostgreSQLContainer<?> POSTGRES =
@@ -73,6 +76,7 @@ class LobbyEntitlementLimitIT {
     long inviteId = insertPendingInvite(lobbyId, ownerId, inviteeId);
 
     mockMvc.perform(post("/api/lobby-invites/{inviteId}/accept", inviteId)
+            .with(user(AUTHENTICATED_TEST_USER))
             .header("X-User-Id", inviteeId))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("LOBBY_MEMBER_LIMIT_EXCEEDED"));
@@ -80,6 +84,7 @@ class LobbyEntitlementLimitIT {
 
   private ResultActions createLobby(long ownerId) throws Exception {
     return mockMvc.perform(post("/api/lobbies")
+        .with(user(AUTHENTICATED_TEST_USER))
         .header("X-User-Id", ownerId)
         .contentType(MediaType.APPLICATION_JSON)
         .content("{\"name\":\"Our Family\",\"lobbyType\":\"FAMILY\"}"));

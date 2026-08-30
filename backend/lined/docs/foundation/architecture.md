@@ -64,11 +64,12 @@ Controller -> Service -> Repository -> Entity
 
 The backend is moving away from its MVP identity model. `POST /api/auth/login`
 now verifies a user's stored password and returns a short-lived Bearer-style
-token plus the authenticated user identity. Most existing endpoints still
-receive the caller through `X-User-Id: <Long>`; treat that header path as
-deprecated transitional auth until request filtering consumes the login token.
-Do not replace the remaining identity model inside experiment-infrastructure
-PRs unless the task is explicitly about authentication.
+token plus the authenticated user identity. A stateless Spring Security
+boundary protects every non-public HTTP route, while the approved registration,
+authentication/reset, feature-discovery, and health routes remain public.
+Bearer-token decoding is deferred to AUTH-SEC-02, so private routes cannot yet
+authenticate; existing `X-User-Id: <Long>` controller contracts remain a
+deprecated transitional identity model for the later trusted-identity migration.
 
 Swagger UI is available at `/swagger-ui.html` when the app is running.
 
@@ -104,8 +105,9 @@ Candidate architecture/deployment alternatives:
 ## Known Inconsistencies and Risks
 
 - Request authentication is transitional: login verifies passwords and returns a
-  token, while existing protected flows still read `X-User-Id` until request
-  filtering is implemented.
+  token, but JWT decoding and trusted identity propagation arrive in later
+  authentication-security slices. The current default-deny boundary therefore
+  rejects private requests until AUTH-SEC-02 supplies Bearer authentication.
 - Some service code still throws raw Java exceptions such as
   `NoSuchElementException`, `IllegalArgumentException`, or `SecurityException`.
   Prefer the application exception hierarchy for new work.

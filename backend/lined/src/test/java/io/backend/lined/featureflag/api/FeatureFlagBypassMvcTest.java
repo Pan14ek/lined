@@ -2,10 +2,15 @@ package io.backend.lined.featureflag.api;
 
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.config.GlobalExceptionHandler;
+import io.backend.lined.config.ProblemAccessDeniedHandler;
+import io.backend.lined.config.ProblemAuthenticationEntryPoint;
+import io.backend.lined.config.SecurityConfig;
+import io.backend.lined.config.SecurityProblemDetailsWriter;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.featureflag.service.FeatureFlagService;
 import org.junit.jupiter.api.Test;
@@ -20,6 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 @WebMvcTest(controllers = FeatureFlagBypassMvcTest.BypassController.class)
 @Import({FeatureFlagWebMvcConfiguration.class, FeatureFlagInterceptor.class,
     FeatureRequiredResolver.class, FeatureFlagBlockedRequestLogger.class, GlobalExceptionHandler.class,
+    SecurityConfig.class, SecurityProblemDetailsWriter.class, ProblemAuthenticationEntryPoint.class,
+    ProblemAccessDeniedHandler.class,
     FeatureFlagBypassMvcTest.BypassController.class})
 class FeatureFlagBypassMvcTest {
 
@@ -37,10 +44,10 @@ class FeatureFlagBypassMvcTest {
 
   @Test
   void controlPlaneAndActuatorRoutes_bypassFeatureEnforcement() throws Exception {
-    mockMvc.perform(get(AUTH_CHECK_PATH)).andExpect(status().isOk());
+    mockMvc.perform(get(AUTH_CHECK_PATH).with(user("operator"))).andExpect(status().isOk());
     mockMvc.perform(get(FEATURES_PATH)).andExpect(status().isOk());
-    mockMvc.perform(get(ADMIN_CHECK_PATH)).andExpect(status().isOk());
-    mockMvc.perform(get(ACTUATOR_CHECK_PATH)).andExpect(status().isOk());
+    mockMvc.perform(get(ADMIN_CHECK_PATH).with(user("operator"))).andExpect(status().isOk());
+    mockMvc.perform(get(ACTUATOR_CHECK_PATH).with(user("operator"))).andExpect(status().isOk());
 
     verifyNoInteractions(featureFlagService);
   }
@@ -49,7 +56,8 @@ class FeatureFlagBypassMvcTest {
   void protectedApiRoute_isBlockedWhenFeatureIsDisabled() throws Exception {
     when(featureFlagService.isEnabled(FeatureFlagKey.TASKS.value())).thenReturn(false);
 
-    mockMvc.perform(get("/api/protected")).andExpect(status().isServiceUnavailable());
+    mockMvc.perform(get("/api/protected").with(user("operator")))
+        .andExpect(status().isServiceUnavailable());
   }
 
   @RestController
