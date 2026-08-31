@@ -39,7 +39,7 @@ class AuthServiceImplTest {
   @Mock
   private PasswordEncoder passwordEncoder;
   @Mock
-  private AuthTokenService tokenService;
+  private JwtTokenService tokenService;
 
   private AuthServiceImpl authService;
   private UserEntity user;
@@ -62,13 +62,15 @@ class AuthServiceImplTest {
     when(userRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.of(user));
     when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
     when(userMapper.toDto(user)).thenReturn(userDto);
-    when(tokenService.issueFor(user)).thenReturn(TOKEN);
+    when(tokenService.issueFor(USER_ID)).thenReturn(TOKEN);
     when(tokenService.tokenType()).thenReturn("Bearer");
-    when(tokenService.ttlSeconds()).thenReturn(3600L);
+    when(tokenService.ttlSeconds()).thenReturn(900L);
 
     var response = authService.login(request);
 
     assertThat(response.accessToken()).isEqualTo(TOKEN);
+    assertThat(response.tokenType()).isEqualTo("Bearer");
+    assertThat(response.expiresIn()).isEqualTo(900L);
     assertThat(response.userId()).isEqualTo(USER_ID);
     assertThat(response.username()).isEqualTo(USERNAME);
     assertThat(response.email()).isEqualTo(EMAIL);
@@ -82,9 +84,9 @@ class AuthServiceImplTest {
     when(userRepository.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.of(user));
     when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
     when(userMapper.toDto(user)).thenReturn(userDto);
-    when(tokenService.issueFor(user)).thenReturn(TOKEN);
+    when(tokenService.issueFor(USER_ID)).thenReturn(TOKEN);
     when(tokenService.tokenType()).thenReturn("Bearer");
-    when(tokenService.ttlSeconds()).thenReturn(3600L);
+    when(tokenService.ttlSeconds()).thenReturn(900L);
 
     var response = authService.login(request);
 
@@ -116,7 +118,7 @@ class AuthServiceImplTest {
         .isInstanceOf(UnauthorizedException.class)
         .hasMessageContaining("Invalid email, username, or password");
 
-    verify(tokenService, never()).issueFor(user);
+    verify(tokenService, never()).issueFor(USER_ID);
   }
 
   @Test
