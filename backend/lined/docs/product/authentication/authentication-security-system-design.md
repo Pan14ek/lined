@@ -1607,7 +1607,14 @@ Minimum:
 
 Do not derive it from a human password or repository name.
 
+For the initial Spring configuration, `LINED_JWT_SECRET` is a Base64-encoded value that decodes
+to at least 32 random bytes. This makes the required key length unambiguous at deployment time.
+
 Example generation tooling for operators may use a cryptographically secure command such as `openssl rand`, but the generated value itself must never be committed.
+
+```bash
+openssl rand -base64 32
+```
 
 ### 14.3 Configuration
 

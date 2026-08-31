@@ -57,6 +57,10 @@ kubectl -n lined create secret generic lined-postgres \
   --from-literal=database=lineddb \
   --dry-run=client \
   -o yaml | kubectl apply -f -
+kubectl -n lined create secret generic lined-jwt \
+  --from-literal=secret="$(openssl rand -base64 32)" \
+  --dry-run=client \
+  -o yaml | kubectl apply -f -
 kubectl apply -k k8s/kind
 ```
 
@@ -152,6 +156,9 @@ server to retain samples during scenario runs.
 - Database credentials are created as the local-only Kubernetes Secret
   `lined-postgres`. The secret manifest is generated locally by `kubectl` and
   is not stored in git.
+- JWT signing material is created as the local-only Kubernetes Secret `lined-jwt`.
+  Its `secret` value must be Base64-encoded material that decodes to at least 32 random bytes;
+  the manifest and generated value are not stored in git.
 - The backend pod sets `OTEL_SDK_DISABLED=true` because telemetry collection is
   introduced by a later experiment task.
 
@@ -180,6 +187,7 @@ Delete the baseline resources:
 ```bash
 kubectl delete -k k8s/kind
 kubectl -n lined delete secret lined-postgres
+kubectl -n lined delete secret lined-jwt
 ```
 
 Delete the whole local cluster if it was created only for this experiment:

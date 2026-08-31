@@ -25,9 +25,9 @@ Successful responses use this shape:
 
 ```json
 {
-  "accessToken": "djE6NDI6MTc2MDAwMDAwMA.qfV...",
+  "accessToken": "<HS256 JWT access token>",
   "tokenType": "Bearer",
-  "expiresIn": 3600,
+  "expiresIn": 900,
   "userId": 42,
   "username": "alex",
   "email": "alex@example.com",
@@ -35,13 +35,11 @@ Successful responses use this shape:
 }
 ```
 
-Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header.
-AUTH-SEC-01 now applies a stateless, default-deny Spring Security boundary:
-only `POST /api/users`, the approved authentication/reset POST routes,
-`GET /api/features`, and `GET /actuator/health` are public. All other paths
-require authentication. Bearer/JWT decoding is intentionally deferred to
-AUTH-SEC-02, so no private request can yet authenticate through this boundary
-and `X-User-Id` cannot bypass it.
+The access token is an HS256 JWT with only `sub`, `iss`, `aud`, `iat`, `exp`, and
+`jti` claims. It is accepted through `Authorization: Bearer <accessToken>` on
+protected paths; missing or invalid tokens return `401 auth.required` Problem
+Details. Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header
+after filter authentication; AUTH-SEC-07 will replace that legacy identity contract.
 
 ### `POST /api/auth/password-reset-requests`
 
