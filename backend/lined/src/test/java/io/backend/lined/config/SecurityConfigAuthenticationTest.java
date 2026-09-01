@@ -57,8 +57,9 @@ class SecurityConfigAuthenticationTest {
     when(userDetailsService.loadUserByUsername(IDENTIFIER))
         .thenThrow(new UsernameNotFoundException("User not found"));
 
-    assertThatThrownBy(() -> authenticationManager.authenticate(
-        UsernamePasswordAuthenticationToken.unauthenticated(IDENTIFIER, PASSWORD)))
+    var request = UsernamePasswordAuthenticationToken.unauthenticated(IDENTIFIER, PASSWORD);
+
+    assertThatThrownBy(() -> authenticationManager.authenticate(request))
         .isInstanceOf(BadCredentialsException.class);
   }
 
@@ -68,8 +69,9 @@ class SecurityConfigAuthenticationTest {
         passwordEncoder.encode(PASSWORD));
     when(userDetailsService.loadUserByUsername(IDENTIFIER)).thenReturn(principal);
 
-    assertThatThrownBy(() -> authenticationManager.authenticate(
-        UsernamePasswordAuthenticationToken.unauthenticated(IDENTIFIER, "wrong-password")))
+    var request = UsernamePasswordAuthenticationToken.unauthenticated(IDENTIFIER, "wrong-password");
+
+    assertThatThrownBy(() -> authenticationManager.authenticate(request))
         .isInstanceOf(BadCredentialsException.class);
   }
 }
