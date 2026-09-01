@@ -47,7 +47,7 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
-  void loginReturnsTokenShapedResponseAndMvpIdentityReadsCurrentUser() {
+  void loginReturnsTokenOnlyResponseAndMvpIdentityReadsCurrentUser() {
     String label = uniqueLabel("login");
     var user = registerUser(label);
 
@@ -59,7 +59,11 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(login.getBody().path("accessToken").asText()).isNotBlank();
     assertThat(login.getBody().path("tokenType").asText()).isEqualTo("Bearer");
-    assertThat(login.getBody().path("userId").asLong()).isEqualTo(user.path("id").asLong());
+    assertThat(login.getBody().path("expiresIn").asLong()).isEqualTo(900L);
+    assertThat(login.getBody().has("userId")).isFalse();
+    assertThat(login.getBody().has("username")).isFalse();
+    assertThat(login.getBody().has("email")).isFalse();
+    assertThat(login.getBody().has("roles")).isFalse();
     assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(currentUser.getBody().path("id").asLong()).isEqualTo(user.path("id").asLong());
   }
