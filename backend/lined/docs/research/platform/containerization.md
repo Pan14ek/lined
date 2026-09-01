@@ -32,11 +32,14 @@ docker run --rm \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/lineddb?options=-c%20TimeZone=UTC \
   -e SPRING_DATASOURCE_USERNAME=postgres \
   -e SPRING_DATASOURCE_PASSWORD=postgres \
+  -e LINED_JWT_SECRET="$(openssl rand -base64 32)" \
   lined-backend:local
 ```
 
 Use environment variables for runtime configuration instead of baking local
-database values into the image.
+database values or signing material into the image. `LINED_JWT_SECRET` must be a Base64-encoded
+value that decodes to at least 32 random bytes; do not reuse the shown generated value or commit
+it to an environment file.
 
 ## Verify the Container
 

@@ -76,5 +76,10 @@ spec:
                 secretKeyRef:
                   name: lined-postgres
                   key: password
+            - name: LINED_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lined-jwt
+                  key: secret
             - name: OTEL_SDK_DISABLED
               value: "true"

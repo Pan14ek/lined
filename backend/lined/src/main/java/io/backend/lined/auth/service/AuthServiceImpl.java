@@ -24,7 +24,7 @@ public class AuthServiceImpl implements AuthService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
-  private final AuthTokenService tokenService;
+  private final JwtTokenService tokenService;
 
   @Override
   public AuthLoginResponseDto login(AuthLoginDto dto) {
@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
 
     UserDto userDto = userMapper.toDto(user);
     return new AuthLoginResponseDto(
-        tokenService.issueFor(user),
+        tokenService.issueFor(user.getId()),
         tokenService.tokenType(),
         tokenService.ttlSeconds(),
         userDto.id(),
