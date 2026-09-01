@@ -23,8 +23,9 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   writes the replacement password.
 - The web sign-in and forgot-password flows are the primary consumers; user
   registration remains owned by the Users feature.
-- `POST /api/users`, the authentication/reset routes, `GET /api/features`, and
-  `GET /actuator/health` are the only approved public method/path pairs.
+- `POST /api/users`, the authentication/reset routes, `GET /api/features`,
+  token-bearing `GET /api/calendar/feed/{token}.ics`, and `GET /actuator/health`
+  are the only approved public method/path pairs.
 - Every other route requires a valid `Authorization: Bearer <JWT>` credential.
   Missing, malformed, expired, or otherwise unapproved JWTs return a stable
   `401 auth.required` Problem Details response.

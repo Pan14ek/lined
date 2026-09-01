@@ -63,6 +63,7 @@ class SecurityPolicyMvcTest {
     assertPublic(post("/api/auth/password-reset-requests"));
     assertPublic(post("/api/auth/password-resets"));
     assertPublic(get("/api/features"));
+    assertPublic(get("/api/calendar/feed/feed-token.ics"));
     assertPublic(get("/actuator/health"));
   }
 
@@ -186,7 +187,7 @@ class SecurityPolicyMvcTest {
       return "public";
     }
 
-    @GetMapping({"/api/features", "/actuator/health"})
+    @GetMapping({"/api/features", "/api/calendar/feed/{token}.ics", "/actuator/health"})
     public String getPublicRoute() {
       return "public";
     }

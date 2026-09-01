@@ -147,6 +147,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset-requests").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-resets").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/features").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/calendar/feed/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions

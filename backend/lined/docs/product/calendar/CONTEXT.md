@@ -13,6 +13,8 @@ calendar clients to exchange standard RFC 5545 data.
   conflict endpoints provide event and caller conflict information.
 - `/api/calendar/feed-token` creates/revokes a secret feed credential, and
   `/api/calendar/feed/{token}.ics` exports an authorized personal calendar.
+- The feed route is reachable without a JWT because its opaque path token is the
+  bearer credential; Calendar feature-flag enforcement still applies.
 - `/api/calendar/import` accepts raw or multipart ICS content and upserts
   caller-private events by UID in a selected lobby, explicitly persisting
   `EventVisibility.PRIVATE` with legacy `shared=false` compatibility.
