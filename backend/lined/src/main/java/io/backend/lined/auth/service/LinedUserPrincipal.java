@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public final class LinedUserPrincipal implements UserDetails {
 
+  private static final long serialVersionUID = 1L;
+
   private final long userId;
   private final String username;
   private final String password;
