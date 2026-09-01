@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,8 @@ class FeatureFlagBypassMvcTest {
 
   @MockitoBean
   private FeatureFlagService featureFlagService;
+  @MockitoBean
+  private UserDetailsService userDetailsService;
 
   @Test
   void controlPlaneAndActuatorRoutes_bypassFeatureEnforcement() throws Exception {
