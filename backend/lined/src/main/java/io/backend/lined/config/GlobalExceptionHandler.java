@@ -2,6 +2,7 @@ package io.backend.lined.config;
 
 import io.backend.lined.common.exception.BaseAppException;
 import io.backend.lined.common.exception.FeatureDisabledException;
+import io.backend.lined.common.exception.InvalidCredentialsException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,7 +23,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BaseAppException.class)
   public ResponseEntity<ProblemDetail> handleBase(BaseAppException ex) {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
-    pd.setTitle(switch (ex.getStatus()) {
+    pd.setTitle(ex instanceof InvalidCredentialsException ? "Invalid credentials" : switch (ex.getStatus()) {
       case NOT_FOUND -> "Resource not found";
       case CONFLICT -> "Conflict";
       case BAD_REQUEST -> "Bad request";

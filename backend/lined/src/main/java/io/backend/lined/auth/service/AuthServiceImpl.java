@@ -3,14 +3,13 @@ package io.backend.lined.auth.service;
 import io.backend.lined.auth.api.AuthLoginDto;
 import io.backend.lined.auth.api.AuthLoginResponseDto;
 import io.backend.lined.common.exception.BadRequestException;
-import io.backend.lined.common.exception.UnauthorizedException;
-import io.backend.lined.user.api.UserDto;
-import io.backend.lined.user.api.UserMapper;
-import io.backend.lined.user.domain.UserEntity;
-import io.backend.lined.user.domain.UserRepository;
+import io.backend.lined.common.exception.InvalidCredentialsException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,12 +17,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
-  private static final String INVALID_CREDENTIALS_MESSAGE =
-      "Invalid email, username, or password";
-
-  private final UserRepository userRepository;
-  private final UserMapper userMapper;
-  private final PasswordEncoder passwordEncoder;
+  private final AuthenticationManager authenticationManager;
   private final JwtTokenService tokenService;
 
   @Override
@@ -33,25 +27,23 @@ public class AuthServiceImpl implements AuthService {
       throw new BadRequestException("Email, username, or identifier is required");
     }
 
-    UserEntity user = findUser(identifier);
-    if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
-      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
-    }
-
-    UserDto userDto = userMapper.toDto(user);
+    LinedUserPrincipal user = authenticatedUser(identifier, dto.password());
     return new AuthLoginResponseDto(
-        tokenService.issueFor(user.getId()),
+        tokenService.issueFor(user.getUserId()),
         tokenService.tokenType(),
-        tokenService.ttlSeconds(),
-        userDto.id(),
-        userDto.username(),
-        userDto.email(),
-        userDto.roles());
+        tokenService.ttlSeconds());
   }
 
-  private UserEntity findUser(String identifier) {
-    return userRepository.findByEmailIgnoreCase(identifier)
-        .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
-        .orElseThrow(() -> new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE));
+  private LinedUserPrincipal authenticatedUser(String identifier, String password) {
+    try {
+      Authentication authentication = authenticationManager.authenticate(
+          UsernamePasswordAuthenticationToken.unauthenticated(identifier, password));
+      if (authentication.getPrincipal() instanceof LinedUserPrincipal user) {
+        return user;
+      }
+      throw new InvalidCredentialsException();
+    } catch (AuthenticationException ex) {
+      throw new InvalidCredentialsException();
+    }
   }
 }
