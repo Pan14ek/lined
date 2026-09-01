@@ -1869,7 +1869,7 @@ Since Lined is not yet broadly public, prefer making the contract clean now rath
 Generic external error:
 
 ```text
-Invalid email, username, or password
+Invalid email, username, or password.
 ```
 
 No account-existence disclosure.

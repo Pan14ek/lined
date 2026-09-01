@@ -80,7 +80,7 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     assertThat(response.getBody().has("accessToken")).isFalse();
     assertThat(response.getBody().path("detail").asText())
-        .isEqualTo("Invalid email, username, or password");
+        .isEqualTo("Invalid email, username, or password.");
   }
 
   @Test
