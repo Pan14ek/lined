@@ -7,9 +7,10 @@ import io.backend.lined.common.exception.InvalidCredentialsException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,8 +42,8 @@ public class AuthServiceImpl implements AuthService {
       if (authentication.getPrincipal() instanceof LinedUserPrincipal user) {
         return user;
       }
-      throw new InvalidCredentialsException();
-    } catch (AuthenticationException ex) {
+      throw new AuthenticationServiceException("Authentication returned an unsupported principal");
+    } catch (BadCredentialsException ex) {
       throw new InvalidCredentialsException();
     }
   }

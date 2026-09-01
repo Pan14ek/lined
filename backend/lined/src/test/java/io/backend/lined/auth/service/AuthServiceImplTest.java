@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
@@ -69,14 +70,27 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void login_throwsGenericCredentialError_whenPrincipalIsNotLinedUser() {
+  void login_propagatesAuthenticationServiceFailure() {
+    var request = new AuthLoginDto(EMAIL, null, null, PASSWORD);
+    when(authenticationManager.authenticate(org.mockito.ArgumentMatchers.any()))
+        .thenThrow(new AuthenticationServiceException("User repository unavailable"));
+
+    assertThatThrownBy(() -> authService.login(request))
+        .isInstanceOf(AuthenticationServiceException.class)
+        .hasMessage("User repository unavailable");
+
+    verifyNoInteractions(tokenService);
+  }
+
+  @Test
+  void login_rejectsUnexpectedAuthenticatedPrincipalAsServiceFailure() {
     var request = new AuthLoginDto(EMAIL, null, null, PASSWORD);
     when(authenticationManager.authenticate(org.mockito.ArgumentMatchers.any()))
         .thenReturn(UsernamePasswordAuthenticationToken.authenticated("alice", null,
             java.util.List.of()));
 
     assertThatThrownBy(() -> authService.login(request))
-        .isInstanceOf(InvalidCredentialsException.class);
+        .isInstanceOf(AuthenticationServiceException.class);
 
     verifyNoInteractions(tokenService);
   }
