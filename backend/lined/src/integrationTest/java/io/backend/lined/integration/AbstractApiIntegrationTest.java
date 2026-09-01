@@ -2,6 +2,7 @@ package io.backend.lined.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.backend.lined.auth.service.JwtTokenService;
 import io.backend.lined.integration.support.DatabaseCleaner;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -26,6 +27,8 @@ public abstract class AbstractApiIntegrationTest {
   protected JdbcTemplate jdbcTemplate;
   @Autowired
   protected ObjectMapper objectMapper;
+  @Autowired
+  private JwtTokenService jwtTokenService;
   @Autowired
   private DatabaseCleaner databaseCleaner;
 
@@ -79,12 +82,17 @@ public abstract class AbstractApiIntegrationTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     if (userId != null) {
-      headers.set("X-User-Id", String.valueOf(userId));
+      authenticate(headers, userId);
     }
     if (ifMatch != null) {
       headers.setIfMatch(ifMatch);
     }
     return restTemplate.exchange(path, method, new HttpEntity<>(body, headers), JsonNode.class);
+  }
+
+  protected void authenticate(HttpHeaders headers, long userId) {
+    headers.setBearerAuth(jwtTokenService.issueFor(userId));
+    headers.set("X-User-Id", String.valueOf(userId));
   }
 
   protected ResponseEntity<JsonNode> listEvents(long userId, long lobbyId, OffsetDateTime from,

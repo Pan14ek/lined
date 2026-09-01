@@ -84,10 +84,9 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
-  void rejectsCallerScopedRequestWithoutMvpIdentityHeader() {
+  void rejectsCallerScopedRequestWithoutAccessToken() {
     var response = request(HttpMethod.GET, "/api/users/me", null, null);
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(response.getBody().path("detail").asText()).contains("X-User-Id");
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 }
