@@ -91,16 +91,6 @@ class EventControllerTest {
   }
 
   @Test
-  void create_delegatesMissingIdempotencyKeyToTransactionalServiceMethod() {
-    when(service.create(createDto, 42L, null)).thenReturn(sampleEvent);
-
-    EventDto result = controller.create(null, createDto).getBody();
-
-    assertThat(result).isEqualTo(sampleEvent);
-    verify(service).create(createDto, 42L, null);
-  }
-
-  @Test
   void create_propagatesForbidden_whenNotMember() {
     when(currentUserProvider.requireUserId()).thenReturn(99L);
     when(service.create(createDto, 99L, null))

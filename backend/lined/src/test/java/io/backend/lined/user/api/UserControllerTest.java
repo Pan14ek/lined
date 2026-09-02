@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -48,7 +49,7 @@ class UserControllerTest {
   @BeforeEach
   void setUp() {
     controller = new UserController(userService, accountService, currentUserProvider);
-    Mockito.lenient().when(currentUserProvider.requireUserId()).thenReturn(1L);
+    lenient().when(currentUserProvider.requireUserId()).thenReturn(1L);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
@@ -112,7 +113,7 @@ class UserControllerTest {
 
   @Test
   void me_rejectsMissingAuthentication() throws Exception {
-    Mockito.doThrow(new io.backend.lined.common.exception.UnauthorizedException(
+    doThrow(new io.backend.lined.common.exception.UnauthorizedException(
         "Authenticated user identity is missing or invalid"))
         .when(currentUserProvider).requireUserId();
 
@@ -156,7 +157,7 @@ class UserControllerTest {
 
   @Test
   void delete_rejectsMissingAuthentication() throws Exception {
-    Mockito.doThrow(new io.backend.lined.common.exception.UnauthorizedException(
+    doThrow(new io.backend.lined.common.exception.UnauthorizedException(
         "Authenticated user identity is missing or invalid"))
         .when(currentUserProvider).requireUserId();
 
@@ -168,7 +169,7 @@ class UserControllerTest {
 
   @Test
   void delete_mapsForbiddenServiceResult() throws Exception {
-    org.mockito.Mockito.doThrow(new ForbiddenException("Users can only delete their own account"))
+    doThrow(new ForbiddenException("Users can only delete their own account"))
         .when(userService).delete(1L, 2L, 0L);
 
     when(currentUserProvider.requireUserId()).thenReturn(2L);

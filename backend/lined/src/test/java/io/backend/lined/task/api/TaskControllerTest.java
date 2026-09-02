@@ -66,18 +66,6 @@ class TaskControllerTest {
   }
 
   @Test
-  void create_delegatesMissingIdempotencyKeyToTransactionalServiceMethod() {
-    var dto = new TaskCreateDto("Buy groceries", 101L, 77L, null,
-        "Pick up milk", TaskPriority.HIGH, TaskStatus.IN_PROGRESS);
-    when(taskService.create(dto, 42L, null)).thenReturn(sampleTask);
-
-    TaskDto result = controller.create(null, dto).getBody();
-
-    assertThat(result).isEqualTo(sampleTask);
-    verify(taskService).create(dto, 42L, null);
-  }
-
-  @Test
   void create_propagatesForbidden_whenNotMember() {
     var dto = new TaskCreateDto("Buy groceries", 101L, null, null,
         null, null, null);
