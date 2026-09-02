@@ -25,8 +25,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class LobbyEntitlementLimitIT {
 
-  private static final String AUTHENTICATED_TEST_USER = "entitlement-test-user";
-
   @Container
   private static final PostgreSQLContainer<?> POSTGRES =
       new PostgreSQLContainer<>("postgres:16-alpine");
@@ -76,16 +74,14 @@ class LobbyEntitlementLimitIT {
     long inviteId = insertPendingInvite(lobbyId, ownerId, inviteeId);
 
     mockMvc.perform(post("/api/lobby-invites/{inviteId}/accept", inviteId)
-            .with(user(AUTHENTICATED_TEST_USER))
-            .header("X-User-Id", inviteeId))
+            .with(user(String.valueOf(inviteeId))))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("LOBBY_MEMBER_LIMIT_EXCEEDED"));
   }
 
   private ResultActions createLobby(long ownerId) throws Exception {
     return mockMvc.perform(post("/api/lobbies")
-        .with(user(AUTHENTICATED_TEST_USER))
-        .header("X-User-Id", ownerId)
+        .with(user(String.valueOf(ownerId)))
         .contentType(MediaType.APPLICATION_JSON)
         .content("{\"name\":\"Our Family\",\"lobbyType\":\"FAMILY\"}"));
   }
