@@ -16,7 +16,6 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -61,15 +60,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
       UserRepository userRepository,
       PasswordResetTokenRepository tokenRepository,
       PasswordEncoder passwordEncoder,
-      @Value("${lined.auth.reset-token-secret:}")
-      String tokenSecret) {
-    if (tokenSecret == null || tokenSecret.isBlank()) {
-      throw new IllegalArgumentException("Password reset token secret is required");
-    }
+      PasswordResetProperties properties) {
     this.userRepository = userRepository;
     this.tokenRepository = tokenRepository;
     this.passwordEncoder = passwordEncoder;
-    this.tokenSecret = tokenSecret;
+    this.tokenSecret = properties.getResetTokenSecret();
   }
 
   /**

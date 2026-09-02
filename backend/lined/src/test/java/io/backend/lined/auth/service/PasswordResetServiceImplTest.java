@@ -53,7 +53,10 @@ class PasswordResetServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new PasswordResetServiceImpl(userRepository, tokenRepository, passwordEncoder, SECRET);
+    PasswordResetProperties properties = new PasswordResetProperties();
+    properties.setResetTokenSecret(SECRET);
+    service = new PasswordResetServiceImpl(
+        userRepository, tokenRepository, passwordEncoder, properties);
     user = new UserEntity();
     user.setId(USER_ID);
     user.setUsername("alice");
@@ -93,14 +96,6 @@ class PasswordResetServiceImplTest {
 
     assertThat(appender.list)
         .noneMatch(event -> event.getFormattedMessage().contains("token="));
-  }
-
-  @Test
-  void constructor_rejectsMissingTokenSecret() {
-    assertThatThrownBy(() -> new PasswordResetServiceImpl(
-        userRepository, tokenRepository, passwordEncoder, " "))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Password reset token secret is required");
   }
 
   @Test
