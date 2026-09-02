@@ -30,12 +30,14 @@ class AuthServiceImplTest {
   private AuthenticationManager authenticationManager;
   @Mock
   private JwtTokenService tokenService;
+  @Mock
+  private RefreshSessionService refreshSessionService;
 
   private AuthServiceImpl authService;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthServiceImpl(authenticationManager, tokenService);
+    authService = new AuthServiceImpl(authenticationManager, tokenService, refreshSessionService);
   }
 
   @Test
@@ -48,12 +50,17 @@ class AuthServiceImplTest {
     when(tokenService.issueFor(USER_ID)).thenReturn(TOKEN);
     when(tokenService.tokenType()).thenReturn("Bearer");
     when(tokenService.ttlSeconds()).thenReturn(900L);
+    when(refreshSessionService.createSession(USER_ID)).thenReturn(new IssuedRefreshSession(
+        java.util.UUID.randomUUID(), "refresh-token", java.time.OffsetDateTime.now()));
 
-    var response = authService.login(request);
+    AuthLoginResult result = authService.login(request);
+    var response = result.response();
 
     assertThat(response.accessToken()).isEqualTo(TOKEN);
     assertThat(response.tokenType()).isEqualTo("Bearer");
     assertThat(response.expiresIn()).isEqualTo(900L);
+    assertThat(result.refreshToken()).isEqualTo("refresh-token");
+    assertThat(result.toString()).doesNotContain(TOKEN, "refresh-token");
   }
 
   @Test
@@ -66,7 +73,7 @@ class AuthServiceImplTest {
         .isInstanceOf(InvalidCredentialsException.class)
         .hasMessage("Invalid email, username, or password.");
 
-    verifyNoInteractions(tokenService);
+    verifyNoInteractions(tokenService, refreshSessionService);
   }
 
   @Test
@@ -79,7 +86,7 @@ class AuthServiceImplTest {
         .isInstanceOf(AuthenticationServiceException.class)
         .hasMessage("User repository unavailable");
 
-    verifyNoInteractions(tokenService);
+    verifyNoInteractions(tokenService, refreshSessionService);
   }
 
   @Test
@@ -92,7 +99,7 @@ class AuthServiceImplTest {
     assertThatThrownBy(() -> authService.login(request))
         .isInstanceOf(AuthenticationServiceException.class);
 
-    verifyNoInteractions(tokenService);
+    verifyNoInteractions(tokenService, refreshSessionService);
   }
 
   @Test
@@ -103,6 +110,6 @@ class AuthServiceImplTest {
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("identifier is required");
 
-    verifyNoInteractions(authenticationManager, tokenService);
+    verifyNoInteractions(authenticationManager, tokenService, refreshSessionService);
   }
 }

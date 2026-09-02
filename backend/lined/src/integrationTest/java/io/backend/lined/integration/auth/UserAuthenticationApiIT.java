@@ -3,8 +3,11 @@ package io.backend.lined.integration.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.backend.lined.integration.AbstractApiIntegrationTest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
@@ -47,25 +50,56 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
-  void loginReturnsTokenOnlyResponseAndMvpIdentityReadsCurrentUser() {
+  void loginCreatesIndependentHashedRefreshSessionsAndMvpIdentityReadsCurrentUser() throws Exception {
     String label = uniqueLabel("login");
     var user = registerUser(label);
 
-    var login = request(HttpMethod.POST, "/api/auth/login", Map.of(
+    var firstLogin = request(HttpMethod.POST, "/api/auth/login", Map.of(
         "email", label + "@lined.test",
+        "password", "P@ssw0rd!"), null);
+    assertTokenOnlyResponse(firstLogin);
+    String rawRefreshToken = refreshToken(firstLogin.getHeaders());
+    String storedHash = jdbcTemplate.queryForObject("select token_hash from auth_refresh_tokens",
+        String.class);
+    assertThat(storedHash).isEqualTo(sha256(rawRefreshToken)).isNotEqualTo(rawRefreshToken);
+    var secondLogin = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label,
         "password", "P@ssw0rd!"), null);
     var currentUser = request(HttpMethod.GET, "/api/users/me", null, user.path("id").asLong());
 
+    assertTokenOnlyResponse(secondLogin);
+    assertThat(jdbcTemplate.queryForObject("select count(*) from auth_sessions where user_id = ?",
+        Integer.class, user.path("id").asLong())).isEqualTo(2);
+    assertThat(jdbcTemplate.queryForObject("select count(*) from auth_refresh_tokens", Integer.class))
+        .isEqualTo(2);
+    assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(currentUser.getBody().path("id").asLong()).isEqualTo(user.path("id").asLong());
+  }
+
+  private void assertTokenOnlyResponse(org.springframework.http.ResponseEntity<com.fasterxml.jackson.databind.JsonNode> login) {
     assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(login.getBody().path("accessToken").asText()).isNotBlank();
     assertThat(login.getBody().path("tokenType").asText()).isEqualTo("Bearer");
     assertThat(login.getBody().path("expiresIn").asLong()).isEqualTo(900L);
+    assertThat(login.getBody().has("refreshToken")).isFalse();
     assertThat(login.getBody().has("userId")).isFalse();
     assertThat(login.getBody().has("username")).isFalse();
     assertThat(login.getBody().has("email")).isFalse();
     assertThat(login.getBody().has("roles")).isFalse();
-    assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(currentUser.getBody().path("id").asLong()).isEqualTo(user.path("id").asLong());
+  }
+
+  private String refreshToken(HttpHeaders headers) {
+    String cookie = headers.getFirst(HttpHeaders.SET_COOKIE);
+    assertThat(cookie).contains("lined_refresh=", "Max-Age=604800", "Path=/api/auth", "Secure",
+        "HttpOnly", "SameSite=Lax");
+    assertThat(cookie).doesNotContain("Domain=");
+    return cookie.substring("lined_refresh=".length(), cookie.indexOf(';'));
+  }
+
+  private String sha256(String rawToken) throws Exception {
+    byte[] hash = MessageDigest.getInstance("SHA-256")
+        .digest(rawToken.getBytes(StandardCharsets.UTF_8));
+    return java.util.HexFormat.of().formatHex(hash);
   }
 
   @Test

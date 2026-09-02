@@ -1,6 +1,8 @@
 package io.backend.lined.auth.api;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -8,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.backend.lined.auth.service.AuthService;
+import io.backend.lined.auth.service.AuthLoginResult;
 import io.backend.lined.auth.service.PasswordResetService;
 import io.backend.lined.common.exception.InvalidCredentialsException;
 import io.backend.lined.config.GlobalExceptionHandler;
@@ -36,6 +39,8 @@ class AuthControllerMvcTest {
   @MockitoBean
   private PasswordResetService passwordResetService;
   @MockitoBean
+  private RefreshTokenCookieWriter refreshTokenCookieWriter;
+  @MockitoBean
   private FeatureFlagService featureFlagService;
   @MockitoBean
   private FeatureRequiredResolver featureRequiredResolver;
@@ -45,7 +50,8 @@ class AuthControllerMvcTest {
   @Test
   void login_returnsOnlyApprovedTokenFields() throws Exception {
     when(authService.login(any(AuthLoginDto.class)))
-        .thenReturn(new AuthLoginResponseDto("jwt", "Bearer", 900L));
+        .thenReturn(new AuthLoginResult(
+            new AuthLoginResponseDto("jwt", "Bearer", 900L), "refresh-token"));
 
     mockMvc.perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
@@ -58,6 +64,9 @@ class AuthControllerMvcTest {
         .andExpect(jsonPath("$.username").doesNotExist())
         .andExpect(jsonPath("$.email").doesNotExist())
         .andExpect(jsonPath("$.roles").doesNotExist());
+
+    verify(refreshTokenCookieWriter).write(any(jakarta.servlet.http.HttpServletResponse.class),
+        eq("refresh-token"));
   }
 
   @Test

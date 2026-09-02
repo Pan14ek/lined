@@ -1,7 +1,9 @@
 package io.backend.lined.auth.api;
 
 import io.backend.lined.auth.service.AuthService;
+import io.backend.lined.auth.service.AuthLoginResult;
 import io.backend.lined.auth.service.PasswordResetService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,10 +20,14 @@ public class AuthController {
 
   private final AuthService authService;
   private final PasswordResetService passwordResetService;
+  private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
   @PostMapping("/login")
-  public AuthLoginResponseDto login(@Valid @RequestBody AuthLoginDto dto) {
-    return authService.login(dto);
+  public AuthLoginResponseDto login(
+      @Valid @RequestBody AuthLoginDto dto, HttpServletResponse response) {
+    AuthLoginResult result = authService.login(dto);
+    refreshTokenCookieWriter.write(response, result.refreshToken());
+    return result.response();
   }
 
   @PostMapping("/password-reset-requests")
