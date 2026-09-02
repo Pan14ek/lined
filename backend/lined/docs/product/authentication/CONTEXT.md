@@ -24,6 +24,12 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   creates a time-limited reset request without revealing whether the account exists.
 - `POST /api/auth/password-resets` atomically consumes one valid reset token and
   writes the replacement password.
+- `GET /api/auth/csrf` initializes the non-secret CSRF cookie used by browser
+  requests that authenticate through cookies.
+- `POST /api/auth/refresh` atomically rotates the current refresh credential,
+  extends idle activity within the absolute deadline, and returns a new access JWT.
+  Unknown, expired, revoked, consumed, or replayed credentials receive the same
+  `401 auth.session.invalid` response; replay revokes the session family.
 - The web sign-in and forgot-password flows are the primary consumers; user
   registration remains owned by the Users feature.
 - `POST /api/users`, the authentication/reset routes, `GET /api/features`,
@@ -36,9 +42,10 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   `jti`; issuer, audience, 15-minute lifetime, clock skew, and Base64 signing key
   are external `lined.security.jwt.*` configuration. `LINED_JWT_SECRET` must decode
   to at least 32 random bytes and has no runtime fallback.
-- CSRF remains enabled for browser-facing routes. AUTH-SEC-01 deliberately excludes
-  the current cookie-free API and Actuator transport; AUTH-SEC-04/05 must replace
-  that temporary exclusion before adding cookie-backed refresh or logout endpoints.
+- CSRF remains enabled for browser-facing routes and cookie-authenticated refresh;
+  cookie-free `/api/**` requests and Actuator remain excluded because they use
+  Bearer or public transport authentication. Refresh uses the non-HttpOnly CSRF
+  cookie plus `X-XSRF-TOKEN` header and keeps the refresh credential HttpOnly.
 
 ## Architecture and data flow
 
@@ -51,6 +58,7 @@ flowchart LR
   Provider --> Details[LinedUserDetailsService]
   Details --> Users[UserRepository]
   Login --> Jwt[JwtTokenService]
+  Controller --> Refresh[RefreshSessionService]
   Controller --> Reset[PasswordResetService]
   Reset --> Tokens[PasswordResetTokenRepository]
   Reset --> Users
@@ -58,13 +66,14 @@ flowchart LR
   Users --> UserEntity[UserEntity]
 ```
 
-`AuthController` validates transport DTOs and delegates one operation. `AuthServiceImpl`
+`AuthController` validates transport requests and delegates one operation. `AuthServiceImpl`
 submits credentials to `AuthenticationManager`, receives an authenticated
 `LinedUserPrincipal`, creates a `RefreshSessionService` session and initial hashed refresh-token
-history record, and uses `JwtTokenService` to issue the access JWT. The API transport adapter is
-the only layer that writes the transient raw refresh value into `Set-Cookie`; the database stores
-only its SHA-256 hash. The provider hides unknown-user lookup failures, while the service maps all
-credential failures to the stable non-enumerating Problem Details contract.
+history record, and uses `JwtTokenService` to issue the access JWT. The same service rotates a
+presented refresh credential only after the persistence layer atomically consumes it. The API
+transport adapter is the only layer that reads or writes the transient raw refresh value; the
+database stores only its SHA-256 hash. The provider hides unknown-user lookup failures, while the
+service maps all credential and refresh failures to stable non-enumerating Problem Details.
 `PasswordResetServiceImpl` uses conditional persistence of `PasswordResetTokenEntity`
 through `PasswordResetTokenRepository`, then updates the owning `UserEntity`. The
 service transaction keeps token consumption and password replacement together; an
@@ -79,9 +88,9 @@ the MVC exception layer, without exposing authentication or authorization intern
 | Layer | Files and classes | Responsibility |
 |---|---|---|
 | API | `AuthController`, `AuthLoginDto`, `AuthLoginResponseDto`, `PasswordResetRequestDto`, `PasswordResetDto` | Defines login and reset HTTP contracts and validates request payloads. |
-| API | `RefreshTokenCookieWriter` | Emits the initial raw refresh credential only through the configured HttpOnly cookie transport. |
+| API | `RefreshTokenCookieWriter`, `RefreshTokenCookieReader` | Writes and reads the raw refresh credential only through the configured cookie transport; the writer also applies the server-calculated deadline. |
 | Application | `AuthService`, `AuthServiceImpl`, `LinedUserDetailsService`, `LinedUserPrincipal`, `JwtTokenService`, `JwtProperties` | Delegates password authentication to framework primitives, resolves Lined account credentials, issues approved JWT claims, and owns validated JWT configuration. |
-| Application | `RefreshSessionService`, `RefreshTokenGenerator`, `RefreshTokenHasher`, `RefreshSessionProperties`, `RefreshCookieProperties` | Creates independent fixed-deadline sessions, generates 256-bit Base64URL credentials, hashes them with SHA-256, and owns validated lifetime/cookie configuration. |
+| Application | `RefreshSessionService`, `RefreshTokenGenerator`, `RefreshTokenHasher`, `RefreshSessionProperties`, `RefreshCookieProperties` | Creates sessions, atomically rotates one-time 256-bit Base64URL credentials, hashes them with SHA-256, enforces idle/absolute deadlines, and owns validated lifetime/cookie configuration. |
 | Application | `PasswordResetService`, `PasswordResetServiceImpl` | Issues reset requests and atomically redeems a reset token. |
 | Infrastructure | `SecurityConfig`, `ProblemAuthenticationEntryPoint`, `ProblemAccessDeniedHandler` | Enforces stateless default-deny policy, framework Bearer JWT validation, and safe security failures. |
 | Persistence | `PasswordResetTokenEntity`, `PasswordResetTokenRepository`, `AuthSessionEntity`, `AuthRefreshTokenEntity`, and their repositories | Stores reset-token and refresh-token hashes, session deadlines, and future token-history lifecycle state without raw refresh values. |
@@ -95,9 +104,9 @@ the MVC exception layer, without exposing authentication or authorization intern
 - The reset-token table is managed by the repository schema and JPA update mode;
   its conditional claim prevents two concurrent redemptions from both succeeding.
 - `auth_sessions` owns one login/device lifecycle per successful authentication;
-  `auth_refresh_tokens` keeps its initial hashed credential and the fields needed
-  for later rotation/replay history. Refresh consumption, rotation, and logout
-  remain owned by AUTH-SEC-05 and AUTH-SEC-06.
+  `auth_refresh_tokens` keeps the complete hashed rotation history. Refresh
+  consumption, rotation, and replay-family revocation are owned by AUTH-SEC-05;
+  current-session logout remains owned by AUTH-SEC-06.
 - `GlobalExceptionHandler` converts MVC failures to RFC 7807; security-filter failures
   use the matching dedicated handlers because they occur before MVC.
 
@@ -110,5 +119,5 @@ the MVC exception layer, without exposing authentication or authorization intern
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)
-- AUTH-SEC-01 through AUTH-SEC-04 are implemented; later authentication-security tasks
+- AUTH-SEC-01 through AUTH-SEC-05 are implemented; later authentication-security tasks
   remain tracked by the task index and master task table.
