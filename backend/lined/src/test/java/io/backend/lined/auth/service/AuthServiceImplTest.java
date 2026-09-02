@@ -3,6 +3,7 @@ package io.backend.lined.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.auth.api.AuthLoginDto;
@@ -79,6 +80,13 @@ class AuthServiceImplTest {
     assertThat(result.response().accessToken()).isEqualTo(TOKEN);
     assertThat(result.refreshToken()).isEqualTo("successor-token");
     assertThat(result.refreshTokenExpiresAt()).isEqualTo(expiresAt);
+  }
+
+  @Test
+  void logout_delegatesRefreshCredentialRevocation() {
+    authService.logout("refresh-token");
+
+    verify(refreshSessionService).logout("refresh-token");
   }
 
   @Test

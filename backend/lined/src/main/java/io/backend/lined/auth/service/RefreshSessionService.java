@@ -18,4 +18,11 @@ public interface RefreshSessionService {
    * @return authenticated user ID and transient successor credential
    */
   RotatedRefreshSession refresh(String refreshToken);
+
+  /**
+   * Revokes the session identified by a refresh credential without revealing token state.
+   *
+   * @param refreshToken raw opaque credential from the transport adapter
+   */
+  void logout(String refreshToken);
 }

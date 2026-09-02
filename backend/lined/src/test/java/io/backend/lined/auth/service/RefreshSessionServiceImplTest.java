@@ -228,6 +228,48 @@ class RefreshSessionServiceImplTest {
         .isInstanceOf(InvalidRefreshSessionException.class);
   }
 
+  @Test
+  void logout_revokesOnlyTheOwningSessionAndItsActiveTokens() {
+    UUID sessionId = UUID.randomUUID();
+    AuthSessionEntity session = activeSession(sessionId);
+    AuthRefreshTokenEntity current = token(UUID.randomUUID(), session, "refresh-hash");
+    when(tokenHasher.hash("refresh-token")).thenReturn("refresh-hash");
+    when(tokenRepository.findByTokenHash("refresh-hash")).thenReturn(Optional.of(current));
+
+    service.logout("refresh-token");
+
+    verify(sessionRepository).revoke(sessionId, utcNow(), "logout");
+    verify(tokenRepository).revokeActiveTokens(sessionId, utcNow());
+  }
+
+  @Test
+  void logout_isIdempotentForBlankAndUnknownCredentials() {
+    service.logout(" ");
+
+    when(tokenHasher.hash("unknown-token")).thenReturn("unknown-hash");
+    when(tokenRepository.findByTokenHash("unknown-hash")).thenReturn(Optional.empty());
+    service.logout("unknown-token");
+
+    verifyNoInteractions(sessionRepository);
+    verify(tokenRepository, never()).revokeActiveTokens(org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void logout_revokesSessionWhenPresentedCredentialIsAlreadyConsumed() {
+    UUID sessionId = UUID.randomUUID();
+    AuthSessionEntity session = activeSession(sessionId);
+    AuthRefreshTokenEntity consumed = token(UUID.randomUUID(), session, "consumed-hash");
+    consumed.setConsumedAt(utcNow().minusMinutes(1));
+    when(tokenHasher.hash("old-token")).thenReturn("consumed-hash");
+    when(tokenRepository.findByTokenHash("consumed-hash")).thenReturn(Optional.of(consumed));
+
+    service.logout("old-token");
+
+    verify(sessionRepository).revoke(sessionId, utcNow(), "logout");
+    verify(tokenRepository).revokeActiveTokens(sessionId, utcNow());
+  }
+
   private AuthSessionEntity activeSession(UUID sessionId) {
     OffsetDateTime now = utcNow();
     UserEntity user = UserEntity.builder().id(USER_ID).build();
