@@ -161,6 +161,43 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
+  void logoutRevokesOnlyCurrentSessionAndIsIdempotent() throws Exception {
+    String label = uniqueLabel("logout");
+    var user = registerUser(label);
+    var firstLogin = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label,
+        "password", "P@ssw0rd!"), null);
+    String firstToken = refreshToken(firstLogin.getHeaders());
+    var secondLogin = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label,
+        "password", "P@ssw0rd!"), null);
+    String secondToken = refreshToken(secondLogin.getHeaders());
+    UUID firstSessionId = sessionIdFor(firstToken);
+    UUID secondSessionId = sessionIdFor(secondToken);
+    CsrfCredentials csrf = csrfCredentials();
+
+    var logout = logout(firstToken, csrf);
+
+    assertThat(logout.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(logout.getHeaders().getFirst(HttpHeaders.SET_COOKIE))
+        .contains("lined_refresh=", "Max-Age=0", "Path=/api/auth", "Secure", "HttpOnly",
+            "SameSite=Lax");
+    assertThat(jdbcTemplate.queryForObject(
+        "select revocation_reason from auth_sessions where id = ?", String.class,
+        firstSessionId)).isEqualTo("logout");
+    assertThat(jdbcTemplate.queryForObject(
+        "select revoked_at from auth_sessions where id = ?", Object.class, secondSessionId))
+        .isNull();
+    assertThat(refresh(firstToken, csrf).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(refresh(secondToken, csrf).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    assertThat(logout(firstToken, csrf).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(jdbcTemplate.queryForObject(
+        "select count(*) from auth_sessions where user_id = ? and revoked_at is not null",
+        Integer.class, user.path("id").asLong())).isEqualTo(1);
+  }
+
+  @Test
   void refreshRejectsServerExpiredIdleAndAbsoluteSessions() {
     String label = uniqueLabel("expiry");
     var user = registerUser(label);
@@ -252,6 +289,22 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     return restTemplate.exchange("/api/auth/refresh", HttpMethod.POST,
         new org.springframework.http.HttpEntity<>(null, headers),
         com.fasterxml.jackson.databind.JsonNode.class);
+  }
+
+  private org.springframework.http.ResponseEntity<com.fasterxml.jackson.databind.JsonNode> logout(
+      String refreshToken, CsrfCredentials csrf) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.COOKIE, "lined_refresh=" + refreshToken + "; " + csrf.cookie());
+    headers.set("X-XSRF-TOKEN", csrf.token());
+    return restTemplate.exchange("/api/auth/logout", HttpMethod.POST,
+        new org.springframework.http.HttpEntity<>(null, headers),
+        com.fasterxml.jackson.databind.JsonNode.class);
+  }
+
+  private UUID sessionIdFor(String refreshToken) throws Exception {
+    return jdbcTemplate.queryForObject(
+        "select session_id from auth_refresh_tokens where token_hash = ?", UUID.class,
+        sha256(refreshToken));
   }
 
   private String refreshTokenValue(HttpHeaders headers) {

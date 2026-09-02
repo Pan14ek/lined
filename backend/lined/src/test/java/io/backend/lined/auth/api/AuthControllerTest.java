@@ -71,6 +71,18 @@ class AuthControllerTest {
   }
 
   @Test
+  void logout_revokesCookieSessionAndExpiresCookie() {
+    var request = new org.springframework.mock.web.MockHttpServletRequest();
+    var servletResponse = new org.springframework.mock.web.MockHttpServletResponse();
+    when(refreshTokenCookieReader.read(request)).thenReturn(Optional.of("refresh-token"));
+
+    controller.logout(request, servletResponse);
+
+    verify(authService).logout("refresh-token");
+    verify(refreshTokenCookieWriter).clear(servletResponse);
+  }
+
+  @Test
   void requestPasswordReset_delegatesToPasswordResetService() {
     var request = new PasswordResetRequestDto("alice@example.com");
 

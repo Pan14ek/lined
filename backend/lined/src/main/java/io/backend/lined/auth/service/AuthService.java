@@ -13,4 +13,11 @@ public interface AuthService {
    * @return access-token response and transient successor credential
    */
   AuthLoginResult refresh(String refreshToken);
+
+  /**
+   * Revokes the refresh session identified by the presented credential.
+   *
+   * @param refreshToken raw credential supplied by the transport adapter
+   */
+  void logout(String refreshToken);
 }

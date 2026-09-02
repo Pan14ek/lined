@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class RefreshSessionServiceImpl implements RefreshSessionService {
 
   private static final String REUSE_REASON = "refresh_reuse_detected";
+  private static final String LOGOUT_REASON = "logout";
 
   private final Clock clock;
   private final RefreshSessionProperties properties;
@@ -98,6 +99,20 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     session.setLastUsedAt(now);
     session.setIdleExpiresAt(successorExpiry);
     return new RotatedRefreshSession(userId, successor, successorExpiry);
+  }
+
+  @Override
+  public void logout(String rawToken) {
+    if (rawToken == null || rawToken.isBlank()) {
+      return;
+    }
+    String tokenHash = tokenHasher.hash(rawToken);
+    tokenRepository.findByTokenHash(tokenHash).ifPresent(token -> {
+      UUID sessionId = token.getSession().getId();
+      OffsetDateTime now = currentTime();
+      sessionRepository.revoke(sessionId, now, LOGOUT_REASON);
+      tokenRepository.revokeActiveTokens(sessionId, now);
+    });
   }
 
   private OffsetDateTime currentTime() {

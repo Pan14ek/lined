@@ -49,6 +49,11 @@ public class AuthServiceImpl implements AuthService {
     return new AuthLoginResult(response, session.refreshToken(), session.expiresAt());
   }
 
+  @Override
+  public void logout(String refreshToken) {
+    refreshSessionService.logout(refreshToken);
+  }
+
   private LinedUserPrincipal authenticatedUser(String identifier, String password) {
     try {
       Authentication authentication = authenticationManager.authenticate(

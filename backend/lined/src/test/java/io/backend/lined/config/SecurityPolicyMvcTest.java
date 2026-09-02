@@ -60,6 +60,7 @@ class SecurityPolicyMvcTest {
     assertPublic(post("/api/users"));
     assertPublic(post("/api/auth/login"));
     assertPublic(post("/api/auth/refresh").with(csrf()));
+    assertPublic(post("/api/auth/logout").with(csrf()));
     assertPublic(post("/api/auth/password-reset-requests"));
     assertPublic(post("/api/auth/password-resets"));
     assertPublic(get("/api/features"));
@@ -113,8 +114,10 @@ class SecurityPolicyMvcTest {
   }
 
   @Test
-  void refresh_requiresCsrfTokenBecauseItUsesCookieAuthentication() throws Exception {
+  void cookieAuthenticatedAuthOperations_requireCsrfToken() throws Exception {
     mockMvc.perform(post("/api/auth/refresh"))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/auth/logout"))
         .andExpect(status().isForbidden());
   }
 
@@ -188,7 +191,7 @@ class SecurityPolicyMvcTest {
   @RestController
   public static class SecurityPolicyController {
 
-    @PostMapping({"/api/users", "/api/auth/login", "/api/auth/refresh",
+    @PostMapping({"/api/users", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
         "/api/auth/password-reset-requests", "/api/auth/password-resets"})
     public String postPublicRoute() {
       return "public";

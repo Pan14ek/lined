@@ -29,12 +29,25 @@ public class RefreshTokenCookieWriter {
   public void write(HttpServletResponse response, String refreshToken, OffsetDateTime expiresAt) {
     Duration remaining = Duration.between(
         OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC), expiresAt);
-    ResponseCookie cookie = ResponseCookie.from(cookieProperties.refreshName(), refreshToken)
+    addCookie(response, refreshToken, cookieMaxAge(remaining));
+  }
+
+  /**
+   * Expires the refresh cookie while preserving the configured transport attributes.
+   *
+   * @param response servlet response carrying the expired cookie
+   */
+  public void clear(HttpServletResponse response) {
+    addCookie(response, "", Duration.ZERO);
+  }
+
+  private void addCookie(HttpServletResponse response, String value, Duration maxAge) {
+    ResponseCookie cookie = ResponseCookie.from(cookieProperties.refreshName(), value)
         .httpOnly(true)
         .secure(cookieProperties.secure())
         .sameSite(cookieProperties.sameSite())
         .path(cookieProperties.path())
-        .maxAge(cookieMaxAge(remaining))
+        .maxAge(maxAge)
         .build();
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }
