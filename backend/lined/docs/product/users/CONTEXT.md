@@ -12,6 +12,9 @@ the canonical identity record used by every caller-scoped product feature.
   returns a version ETag.
 - `GET /api/users/me`, `GET /api/users/{id}`, search, and role search expose
   profiles for the relevant client flows.
+- `/api/users/me` resolves the caller from `CurrentUserProvider` and the
+  validated JWT subject; supplied identity headers and query parameters do not
+  change the selected profile.
 - `PATCH /api/users/{id}` and `DELETE /api/users/{id}` require version-aware
   mutations; deletion is self-service and rejects prohibited ownership states.
 - Authentication reads user credentials and owns refresh sessions linked to the

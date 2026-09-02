@@ -195,10 +195,13 @@ RuntimeException
 Do not add `@ResponseStatus` to exceptions — control HTTP codes through
 `BaseAppException` subclasses only.
 
-### Authentication (MVP)
+### Authentication
 
-All endpoints that need the caller's identity accept an `X-User-Id: <Long>`
-HTTP header. This is a temporary MVP mechanism — **not production auth**.
+Protected backend endpoints require a valid `Authorization: Bearer <JWT>`
+credential. Caller-scoped controllers resolve the positive numeric JWT subject
+through the backend `CurrentUserProvider`; `X-User-Id` is not an identity
+source. The web client's full in-memory token/bootstrap/cache migration is
+AUTH-SEC-08 and remains a separate task.
 
 ### Database Conventions
 
@@ -307,7 +310,9 @@ React Router v7 with `createBrowserRouter`. All routes assembled in
 
 The shared `ky` HTTP client lives in `src/lib/apiClient.ts`, configured with:
 - `prefixUrl` set to `VITE_API_BASE_URL` environment variable
-- `beforeRequest` hook attaching `X-User-Id` header from the auth store
+- `beforeRequest` hook is the client request boundary; AUTH-SEC-08 will attach
+  the access Bearer token, remove the persisted user ID, and eliminate legacy
+  identity-header generation
 
 Each feature owns its own API surface under `features/{feature}/api/`:
 `prod.ts` (real requests via the shared client), `dev.ts` (in-memory mocks,
@@ -588,9 +593,10 @@ files (gitignored).
 9. **Skipping the `api/domain/service/` structure in a new module.** The
    three-package layout is mandatory.
 
-10. **Assuming Spring Security HTTP filter is active.** `SecurityConfig` only
-    provides a `PasswordEncoder` bean. All endpoints are currently unsecured.
-    Auth is header-based (`X-User-Id`).
+10. **Bypassing the trusted identity adapter.** Protected routes are secured by
+    Spring Security and caller-scoped controllers must use
+    `CurrentUserProvider.requireUserId()`; never restore `X-User-Id` identity
+    handling. Full web client migration is tracked by AUTH-SEC-08.
 
 ### Web App
 

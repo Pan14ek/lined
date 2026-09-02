@@ -4,6 +4,7 @@ import io.backend.lined.app.AccountApplicationService;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.featureflag.api.FeatureRequired;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
+import io.backend.lined.security.CurrentUserProvider;
 import io.backend.lined.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +33,7 @@ public class UserController {
 
   private final UserService userService;
   private final AccountApplicationService accountApplicationService;
+  private final CurrentUserProvider currentUserProvider;
 
   @Operation(
       summary = "Create user",
@@ -85,20 +87,13 @@ public class UserController {
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
   }
 
-  @Deprecated
-  public UserDto update(Long id, UserUpdateDto dto) {
-    return userService.update(id, dto);
-  }
-
   @Operation(
       summary = "Get current user",
-      description = "Returns the profile of the caller identified by the temporary MVP header."
+      description = "Returns the profile of the authenticated caller."
   )
   @GetMapping("/me")
-  public ResponseEntity<UserDto> me(
-      @Parameter(description = "Current user id (temporary for MVP)", example = "1")
-      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId) {
-    UserDto user = userService.getById(currentUserId);
+  public ResponseEntity<UserDto> me() {
+    UserDto user = userService.getById(currentUserProvider.requireUserId());
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
   }
 
@@ -122,17 +117,9 @@ public class UserController {
   @FeatureRequired(FeatureFlagKey.SETTINGS)
   public ResponseEntity<Void> delete(
       @Parameter(description = "User ID", example = "1") @PathVariable Long id,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "1")
-      @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long currentUserId,
       @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false)
       String ifMatch) {
-    userService.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
-    return ResponseEntity.noContent().build();
-  }
-
-  @Deprecated
-  public ResponseEntity<Void> delete(Long id, Long currentUserId) {
-    userService.delete(id, currentUserId);
+    userService.delete(id, currentUserProvider.requireUserId(), VersionPrecondition.parse(ifMatch));
     return ResponseEntity.noContent().build();
   }
 

@@ -13,6 +13,8 @@ shared lobby without leaking private items.
   fields with an `If-Match` version precondition.
 - `GET /api/tasks` applies filters; `GET /api/tasks/mine` returns tasks visible
   to the caller across lobbies; `DELETE` removes an authorized task.
+- `TaskController` resolves the caller through `CurrentUserProvider`; the
+  client cannot select the authorization identity with a request header.
 - Lobby membership and write policy determine access. Notification creation is
   suppressed where privacy rules prohibit disclosure; privacy operations emit
   bounded operational metrics without task content or identifiers.

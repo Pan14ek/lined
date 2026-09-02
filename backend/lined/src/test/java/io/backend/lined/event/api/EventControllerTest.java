@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -20,6 +19,7 @@ import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.event.service.EventService;
+import io.backend.lined.security.CurrentUserProvider;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +37,8 @@ class EventControllerTest {
 
   @Mock
   private EventService service;
+  @Mock
+  private CurrentUserProvider currentUserProvider;
 
   private EventController controller;
   private MockMvc mockMvc;
@@ -49,7 +51,8 @@ class EventControllerTest {
 
   @BeforeEach
   void setUp() {
-    controller = new EventController(service);
+    controller = new EventController(service, currentUserProvider);
+    when(currentUserProvider.requireUserId()).thenReturn(42L);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
@@ -69,50 +72,41 @@ class EventControllerTest {
 
   @Test
   void create_delegatesToService() {
-    when(service.create(createDto, 42L)).thenReturn(sampleEvent);
-
-    EventDto result = controller.create(42L, createDto).getBody();
-
-    assertThat(result).isEqualTo(sampleEvent);
-    verify(service).create(createDto, 42L);
-  }
-
-  @Test
-  void create_delegatesOptionalIdempotencyKeyToService() {
-    when(service.create(createDto, 42L, "retry-1")).thenReturn(sampleEvent);
-
-    EventDto result = controller.create(42L, "retry-1", createDto).getBody();
-
-    assertThat(result).isEqualTo(sampleEvent);
-    verify(service).create(createDto, 42L, "retry-1");
-  }
-
-  @Test
-  void create_delegatesMissingIdempotencyKeyToTransactionalServiceMethod() {
     when(service.create(createDto, 42L, null)).thenReturn(sampleEvent);
 
-    EventDto result = controller.create(42L, null, createDto).getBody();
+    EventDto result = controller.create(null, createDto).getBody();
 
     assertThat(result).isEqualTo(sampleEvent);
     verify(service).create(createDto, 42L, null);
   }
 
   @Test
+  void create_delegatesOptionalIdempotencyKeyToService() {
+    when(service.create(createDto, 42L, "retry-1")).thenReturn(sampleEvent);
+
+    EventDto result = controller.create("retry-1", createDto).getBody();
+
+    assertThat(result).isEqualTo(sampleEvent);
+    verify(service).create(createDto, 42L, "retry-1");
+  }
+
+  @Test
   void create_propagatesForbidden_whenNotMember() {
-    when(service.create(createDto, 99L))
+    when(currentUserProvider.requireUserId()).thenReturn(99L);
+    when(service.create(createDto, 99L, null))
         .thenThrow(new ForbiddenException("Not a lobby member"));
 
-    assertThatThrownBy(() -> controller.create(99L, createDto))
+    assertThatThrownBy(() -> controller.create(null, createDto))
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("member");
   }
 
   @Test
   void create_propagatesNotFoundException_whenLobbyNotFound() {
-    when(service.create(createDto, 42L))
+    when(service.create(createDto, 42L, null))
         .thenThrow(new NotFoundException("Lobby 101 not found"));
 
-    assertThatThrownBy(() -> controller.create(42L, createDto))
+    assertThatThrownBy(() -> controller.create(null, createDto))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("101");
   }
@@ -123,20 +117,20 @@ class EventControllerTest {
 
   @Test
   void update_delegatesToService() {
-    when(service.update(9001L, updateDto, 42L)).thenReturn(sampleEvent);
+    when(service.update(9001L, updateDto, 42L, 0L)).thenReturn(sampleEvent);
 
-    EventDto result = controller.update(9001L, 42L, updateDto);
+    EventDto result = controller.update(9001L, "\"0\"", updateDto).getBody();
 
     assertThat(result).isEqualTo(sampleEvent);
-    verify(service).update(9001L, updateDto, 42L);
+    verify(service).update(9001L, updateDto, 42L, 0L);
   }
 
   @Test
   void update_propagatesNotFoundException_whenEventNotFound() {
-    when(service.update(999L, updateDto, 42L))
+    when(service.update(999L, updateDto, 42L, 0L))
         .thenThrow(new NotFoundException("Event 999 not found"));
 
-    assertThatThrownBy(() -> controller.update(999L, 42L, updateDto))
+    assertThatThrownBy(() -> controller.update(999L, "\"0\"", updateDto))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
@@ -144,10 +138,10 @@ class EventControllerTest {
   @Test
   void update_propagatesBadRequest_whenDatesInvalid() {
     var badUpdate = new EventUpdateDto(null, null, null, end, start, null);
-    when(service.update(9001L, badUpdate, 42L))
+    when(service.update(9001L, badUpdate, 42L, 0L))
         .thenThrow(new BadRequestException("Start must be before end"));
 
-    assertThatThrownBy(() -> controller.update(9001L, 42L, badUpdate))
+    assertThatThrownBy(() -> controller.update(9001L, "\"0\"", badUpdate))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Start");
   }
@@ -158,7 +152,6 @@ class EventControllerTest {
         .thenThrow(new ObjectOptimisticLockingFailureException("events", 9001L));
 
     mockMvc.perform(patch("/api/calendar/events/9001")
-            .header("X-User-Id", "42")
             .header("If-Match", "\"0\"")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"title\":\"Late dinner\"}"))
@@ -174,7 +167,6 @@ class EventControllerTest {
         .when(service).delete(9001L, 42L, 0L);
 
     mockMvc.perform(delete("/api/calendar/events/9001")
-            .header("X-User-Id", "42")
             .header("If-Match", "\"0\""))
         .andExpect(status().isConflict())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -190,7 +182,7 @@ class EventControllerTest {
   void get_delegatesToService() {
     when(service.get(9001L, 42L)).thenReturn(sampleEvent);
 
-    EventDto result = controller.get(9001L, 42L).getBody();
+    EventDto result = controller.get(9001L).getBody();
 
     assertThat(result).isEqualTo(sampleEvent);
     verify(service).get(9001L, 42L);
@@ -200,7 +192,8 @@ class EventControllerTest {
   void get_returnsNotFoundForPrivateEventOutsideOwnerScope() throws Exception {
     when(service.get(9001L, 77L)).thenThrow(new NotFoundException("Event 9001 not found"));
 
-    mockMvc.perform(get("/api/calendar/events/9001").header("X-User-Id", "77"))
+    when(currentUserProvider.requireUserId()).thenReturn(77L);
+    mockMvc.perform(get("/api/calendar/events/9001"))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
   }
@@ -209,7 +202,7 @@ class EventControllerTest {
   void list_delegatesToService() {
     when(service.list(101L, start, end, 42L)).thenReturn(List.of(sampleEvent));
 
-    List<EventDto> result = controller.list(101L, start, end, 42L);
+    List<EventDto> result = controller.list(101L, start, end);
 
     assertThat(result).containsExactly(sampleEvent);
     verify(service).list(101L, start, end, 42L);
@@ -220,7 +213,7 @@ class EventControllerTest {
     when(service.list(101L, end, start, 42L))
         .thenThrow(new BadRequestException("Start must be before end"));
 
-    assertThatThrownBy(() -> controller.list(101L, end, start, 42L))
+    assertThatThrownBy(() -> controller.list(101L, end, start))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Start");
   }
@@ -231,17 +224,17 @@ class EventControllerTest {
 
   @Test
   void delete_delegatesToService() {
-    controller.delete(9001L, 42L);
+    controller.delete(9001L, "\"0\"");
 
-    verify(service).delete(9001L, 42L);
+    verify(service).delete(9001L, 42L, 0L);
   }
 
   @Test
   void delete_propagatesNotFoundException_whenEventNotFound() {
     doThrow(new NotFoundException("Event 999 not found"))
-        .when(service).delete(999L, 42L);
+        .when(service).delete(999L, 42L, 0L);
 
-    assertThatThrownBy(() -> controller.delete(999L, 42L))
+    assertThatThrownBy(() -> controller.delete(999L, "\"0\""))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("999");
   }
@@ -251,41 +244,56 @@ class EventControllerTest {
   ======================= */
 
   @Test
-  void findConflicts_usesCurrentUserHeaderAsRequester() {
+  void findConflicts_usesAuthenticatedUserAsRequester() {
+    when(currentUserProvider.requireUserId()).thenReturn(1L);
     when(service.findConflicts(101L, start, end, 1L)).thenReturn(List.of());
 
-    var response = controller.findConflicts(101L, start, end, 1L, 1L);
+    var response = controller.findConflicts(101L, start, end);
 
     assertThat(response.getBody()).isEmpty();
     verify(service).findConflicts(101L, start, end, 1L);
   }
 
   @Test
-  void findConflicts_throwsForbidden_whenRequesterParamDoesNotMatchHeader() {
-    assertThatThrownBy(() -> controller.findConflicts(101L, start, end, 2L, 1L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("Requester id must match current user");
+  void findConflictsRouteDerivesRequesterAndIgnoresLegacyQueryIdentity() throws Exception {
+    when(service.findConflicts(101L, start, end, 42L)).thenReturn(List.of());
 
-    verify(service, never()).findConflicts(101L, start, end, 1L);
+    mockMvc.perform(get("/api/calendar/conflicts")
+            .param("lobbyId", "101")
+            .param("start", start.toString())
+            .param("end", end.toString())
+            .param("requesterId", "99"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray());
+
+    verify(service).findConflicts(101L, start, end, 42L);
   }
 
   @Test
-  void hasConflict_usesCurrentUserHeaderAsRequester() {
+  void hasConflict_usesAuthenticatedUserAsRequester() {
+    when(currentUserProvider.requireUserId()).thenReturn(1L);
     var result = new UserConflictDto(1L, false, null);
     when(service.hasConflict(1L, start, end, 1L)).thenReturn(result);
 
-    var response = controller.hasConflict(1L, start, end, 1L, 1L);
+    var response = controller.hasConflict(1L, start, end);
 
     assertThat(response.getBody()).isEqualTo(result);
     verify(service).hasConflict(1L, start, end, 1L);
   }
 
   @Test
-  void hasConflict_throwsForbidden_whenRequesterParamDoesNotMatchHeader() {
-    assertThatThrownBy(() -> controller.hasConflict(2L, start, end, 2L, 1L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("Requester id must match current user");
+  void userConflictRouteDerivesRequesterWithoutRequesterQueryParameter() throws Exception {
+    var result = new UserConflictDto(1L, false, null);
+    when(service.hasConflict(1L, start, end, 42L)).thenReturn(result);
 
-    verify(service, never()).hasConflict(2L, start, end, 1L);
+    mockMvc.perform(get("/api/calendar/user-conflict")
+            .param("userId", "1")
+            .param("start", start.toString())
+            .param("end", end.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.userId").value(1));
+
+    verify(service).hasConflict(1L, start, end, 42L);
   }
+
 }

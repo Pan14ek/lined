@@ -67,9 +67,10 @@ now verifies a user's stored password and returns a short-lived Bearer-style
 token plus the authenticated user identity. A stateless Spring Security
 boundary protects every non-public HTTP route, while the approved registration,
 authentication/reset, feature-discovery, and health routes remain public.
-Bearer-token decoding is deferred to AUTH-SEC-02, so private routes cannot yet
-authenticate; existing `X-User-Id: <Long>` controller contracts remain a
-deprecated transitional identity model for the later trusted-identity migration.
+Bearer-token decoding is provided by the Spring Security resource-server
+boundary. Caller-scoped controllers resolve the validated JWT subject through
+the `CurrentUserProvider` security adapter; domain services continue to receive
+trusted IDs as explicit framework-independent authorization inputs.
 
 Swagger UI is available at `/swagger-ui.html` when the app is running.
 

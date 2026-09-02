@@ -23,7 +23,7 @@ public interface CalendarIcsService {
    * makes the former URL return {@code 410 Gone}. The raw token is returned only in this response;
    * the database stores a SHA-256 digest instead.</p>
    *
-   * @param currentUserId authenticated MVP caller from {@code X-User-Id}
+   * @param currentUserId authenticated caller resolved by the HTTP security adapter
    * @return relative token-bearing URL for a calendar application's subscription setting
    * @throws NotFoundException if the caller no longer exists
    */
@@ -36,7 +36,7 @@ public interface CalendarIcsService {
    * previously issued URL remains retired. Historical hashes are retained solely to return
    * {@code 410 Gone} to stale subscribers.</p>
    *
-   * @param currentUserId authenticated MVP caller from {@code X-User-Id}
+   * @param currentUserId authenticated caller resolved by the HTTP security adapter
    * @throws NotFoundException if the caller no longer exists
    */
   void revokeFeedToken(Long currentUserId);
@@ -46,7 +46,7 @@ public interface CalendarIcsService {
    *
    * <p>For example, an owner receives their private event and shared lobby events, but not a
    * fellow member's private event. This method intentionally uses token lookup as identity and
-   * therefore has no {@code X-User-Id} parameter.</p>
+   * therefore has no caller identity parameter.</p>
    *
    * @param rawToken raw Base64URL credential extracted from the public feed URL
    * @return UTF-8 {@code text/calendar} document

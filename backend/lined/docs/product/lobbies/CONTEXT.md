@@ -10,6 +10,8 @@ lifecycle/archive behavior, owner transfer, and free-slot queries.
 
 - `/api/lobbies` creates, lists caller lobbies, reads a lobby, updates owner
   controlled fields, removes a member, and deletes a lobby.
+- Caller-scoped lobby operations receive the trusted ID resolved by
+  `CurrentUserProvider`; `X-User-Id` is not an authorization input.
 - Lifecycle endpoints select a free lobby, restore an archived lobby, and list
   archived lobbies. `GET /api/lobbies/{id}/free-slots` delegates scheduling
   calculation to Calendar after verifying membership.

@@ -9,8 +9,9 @@ catalog, checkout, webhook, and subscription work.
 
 ## Runtime behavior and use
 
-- `GET /api/billing/me` derives the current caller from `X-User-Id`, resolves
-  the effective plan at the current time, and returns entitlement limits.
+- `GET /api/billing/me` derives the current caller from the validated JWT
+  subject through `CurrentUserProvider`, resolves the effective plan at the
+  current time, and returns entitlement limits.
 - User registration ensures a personal billing account; Lobbies consults
   entitlement limits before creation and lifecycle changes.
 - Provider/customer, catalog, price, and subscription classes are persisted

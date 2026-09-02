@@ -8,8 +8,8 @@ exists so account access is not derived from an unverified user lookup. Login
 uses Spring Security's `AuthenticationManager`, `DaoAuthenticationProvider`,
 and identifier-resolving `LinedUserDetailsService` before returning a
 short-lived HS256 JWT access token and an HttpOnly refresh cookie,
-while caller-scoped product endpoints still use `X-User-Id` until AUTH-SEC-07
-migrates trusted identity. AUTH-SEC-01 and AUTH-SEC-02 provide a stateless,
+while caller-scoped product endpoints resolve identity through
+`CurrentUserProvider` from the validated JWT subject. AUTH-SEC-01 and AUTH-SEC-02 provide a stateless,
 default-deny HTTP boundary: only approved unauthenticated routes are reachable
 without credentials, and valid Bearer JWTs authenticate all other routes.
 
@@ -50,6 +50,11 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   cookie-free `/api/**` requests and Actuator remain excluded because they use
   Bearer or public transport authentication. Refresh uses the non-HttpOnly CSRF
   cookie plus `X-XSRF-TOKEN` header and keeps the refresh credential HttpOnly.
+- `CurrentUserProvider` is the HTTP security adapter for caller identity. It
+  rejects missing, anonymous, blank, malformed, zero, and negative subjects;
+  caller-scoped controllers never accept `X-User-Id` as an identity source.
+- AUTH-SEC-08 owns the web client's token storage, bootstrap, refresh retry,
+  logout cache isolation, and removal of persisted client-side user IDs.
 
 ## Architecture and data flow
 

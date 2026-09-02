@@ -4,6 +4,7 @@ import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.featureflag.api.FeatureRequired;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
 import io.backend.lined.notification.service.NotificationService;
+import io.backend.lined.security.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,14 +27,14 @@ import org.springframework.http.ResponseEntity;
 public class LobbyNotificationPreferenceController {
 
   private final NotificationService service;
+  private final CurrentUserProvider currentUserProvider;
 
   @Operation(summary = "Get my lobby notification preferences")
   @GetMapping
   public ResponseEntity<LobbyNotificationPreferencesDto> preferences(
-      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long lobbyId,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
-    LobbyNotificationPreferencesDto preferences = service.getLobbyPreferences(lobbyId, currentUserId);
+      @Parameter(description = "Lobby ID", example = "101") @PathVariable Long lobbyId) {
+    LobbyNotificationPreferencesDto preferences = service.getLobbyPreferences(
+        lobbyId, currentUserProvider.requireUserId());
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(preferences.version())).body(preferences);
   }
 
@@ -41,18 +42,11 @@ public class LobbyNotificationPreferenceController {
   @PatchMapping
   public ResponseEntity<LobbyNotificationPreferencesDto> updatePreferences(
       @Parameter(description = "Lobby ID", example = "101") @PathVariable Long lobbyId,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId,
       @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @Valid @RequestBody LobbyNotificationPreferencesUpdateDto dto) {
     LobbyNotificationPreferencesDto preferences = service.updateLobbyPreferences(
-        lobbyId, currentUserId, dto, VersionPrecondition.parse(ifMatch));
+        lobbyId, currentUserProvider.requireUserId(), dto, VersionPrecondition.parse(ifMatch));
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(preferences.version())).body(preferences);
   }
 
-  @Deprecated
-  public LobbyNotificationPreferencesDto updatePreferences(
-      Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto) {
-    return service.updateLobbyPreferences(lobbyId, currentUserId, dto);
-  }
 }

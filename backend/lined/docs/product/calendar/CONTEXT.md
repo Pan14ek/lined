@@ -11,6 +11,9 @@ calendar clients to exchange standard RFC 5545 data.
 
 - `/api/calendar/events` creates, updates, lists, reads, and deletes events;
   conflict endpoints provide event and caller conflict information.
+- Event, conflict, feed-token, import, and free-slot requesters come from the
+  validated JWT subject through `CurrentUserProvider`. Conflict routes no longer
+  accept the redundant `requesterId` query parameter.
 - `/api/calendar/feed-token` creates/revokes a secret feed credential, and
   `/api/calendar/feed/{token}.ics` exports an authorized personal calendar.
 - The feed route is reachable without a JWT because its opaque path token is the

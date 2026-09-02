@@ -13,6 +13,8 @@ delivery choices survive across devices instead of remaining UI-only state.
   the caller's preferences for one shared lobby.
 - `/api/notifications/mine` lists the caller's inbox; marking an item read
   updates only the notification visible to that caller.
+- Notification controllers derive the caller from `CurrentUserProvider`; no
+  client-supplied identity header participates in preference or inbox access.
 - Task, Calendar, Lobby, and Invitation workflows call the service for allowed
   notification intents. `ReminderScheduler` invokes `ReminderService` for
   time-based event/task reminders.

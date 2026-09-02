@@ -17,6 +17,7 @@ import io.backend.lined.billing.domain.plan.PlanCode;
 import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.entitlement.application.EntitlementService;
 import io.backend.lined.entitlement.domain.PlanEntitlements;
+import io.backend.lined.security.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,13 +38,16 @@ class BillingControllerMeTest {
   private EffectivePlanResolver effectivePlanResolver;
   @Mock
   private EntitlementService entitlementService;
+  @Mock
+  private CurrentUserProvider currentUserProvider;
 
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
+    when(currentUserProvider.requireUserId()).thenReturn(USER_ID);
     mockMvc = MockMvcBuilders.standaloneSetup(new BillingController(
-        billingAccountService, effectivePlanResolver, entitlementService))
+        billingAccountService, effectivePlanResolver, entitlementService, currentUserProvider))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
   }
@@ -52,7 +56,7 @@ class BillingControllerMeTest {
   void me_returnsImplicitFreePlanAndLimitsForAuthenticatedUser() throws Exception {
     stubFreeBillingState();
 
-    mockMvc.perform(get("/api/billing/me").header("X-User-Id", USER_ID))
+    mockMvc.perform(get("/api/billing/me"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.billingAccountId").value(BILLING_ACCOUNT_ID))
         .andExpect(jsonPath("$.effectivePlan").value("FREE"))
@@ -66,9 +70,13 @@ class BillingControllerMeTest {
   }
 
   @Test
-  void me_rejectsMissingUserHeaderWithBadRequest() throws Exception {
+  void me_rejectsMissingAuthenticationWithUnauthorized() throws Exception {
+    when(currentUserProvider.requireUserId())
+        .thenThrow(new io.backend.lined.common.exception.UnauthorizedException(
+            "Authentication is required"));
+
     mockMvc.perform(get("/api/billing/me"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isUnauthorized());
 
     verifyNoInteractions(billingAccountService, effectivePlanResolver, entitlementService);
   }
@@ -77,7 +85,7 @@ class BillingControllerMeTest {
   void me_ignoresSuppliedUserIdQueryParameter() throws Exception {
     stubFreeBillingState();
 
-    mockMvc.perform(get("/api/billing/me").param("userId", "99").header("X-User-Id", USER_ID))
+    mockMvc.perform(get("/api/billing/me").param("userId", "99"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.billingAccountId").value(BILLING_ACCOUNT_ID));
 

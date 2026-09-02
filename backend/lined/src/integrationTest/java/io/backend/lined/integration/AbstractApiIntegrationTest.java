@@ -92,7 +92,6 @@ public abstract class AbstractApiIntegrationTest {
 
   protected void authenticate(HttpHeaders headers, long userId) {
     headers.setBearerAuth(jwtTokenService.issueFor(userId));
-    headers.set("X-User-Id", String.valueOf(userId));
   }
 
   protected ResponseEntity<JsonNode> listEvents(long userId, long lobbyId, OffsetDateTime from,

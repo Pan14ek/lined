@@ -11,35 +11,33 @@ lookup with a controller-faithful `GET /api/users/me` contract.
 Return the profile of the **caller**, resolved from the request identity
 instead of a client-supplied id:
 
-- MVP path: resolves from the `X-User-Id` header.
-- Token path: once request filtering validates the `POST /api/auth/login`
-  Bearer token, resolve from the token subject — the endpoint contract does
-  not change.
+- Resolves from the validated Bearer JWT subject through the backend
+  `CurrentUserProvider`; the endpoint does not accept a caller-supplied ID.
 
 ```
 GET /api/users/me
 → 200 UserDto { id, username, email, createdAt, roles, activePlan, activeUntil }
 ```
 
-**Errors:** `400` when no identity is supplied; `404` when the identity does
+**Errors:** `401` when authentication is missing or invalid; `404` when the identity does
 not resolve to an account (e.g. deleted account with a stale token/header).
 
 ## Why it matters
 
-- Removes the last place the client must send its own user id explicitly,
-  which is a prerequisite for retiring the `X-User-Id` header.
+- Removes the last place the client must send its own user id explicitly;
+  conflicting identity headers are ignored.
 - Keeps `docs/foundation/api.md` controller-faithful with an implemented caller-scoped
   profile contract.
-- The web `useCurrentUser()` hook switches from `users/{id}` to `users/me`
-  with no other client change.
+- AUTH-SEC-08 will switch the web `useCurrentUser()` hook from `users/{id}` to
+  `users/me` while completing token storage and cache isolation.
 
 ## Implementation notes
 
 - `UserController#me()` delegates to the existing user lookup service;
   Controller → Service → Repository layering and `EntityFinder` remain intact.
-- The endpoint binds the existing MVP header directly. A shared identity resolver
-  and Bearer-token request filtering remain future work.
-- Controller tests cover the happy path, missing header, and unknown id.
+- The endpoint binds the authenticated security context through the shared
+  identity adapter. Controller and integration tests cover the happy path,
+  missing authentication, unknown subject, and spoofed-header behavior.
 
 ## Delivered
 

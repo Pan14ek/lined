@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -52,6 +53,7 @@ import io.backend.lined.task.service.TaskService;
 import io.backend.lined.user.api.UserController;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.service.UserService;
+import io.backend.lined.security.CurrentUserProvider;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -72,7 +74,6 @@ class FeatureFlagMvcEnforcementTest {
 
   private static final Long USER_ID = 42L;
   private static final Long LOBBY_ID = 101L;
-  private static final String USER_ID_HEADER = "X-User-Id";
   private static final String FEATURE_DISABLED_TYPE = "https://errors.lined.app/feature.disabled";
   private static final String FEATURE_DISABLED_DETAIL = "This feature is currently unavailable";
   private static final OffsetDateTime FROM = OffsetDateTime.parse("2026-01-01T09:00:00Z");
@@ -102,11 +103,14 @@ class FeatureFlagMvcEnforcementTest {
   private EffectivePlanResolver effectivePlanResolver;
   @Mock
   private EntitlementService entitlementService;
+  @Mock
+  private CurrentUserProvider currentUserProvider;
 
   private FeatureFlagInterceptor interceptor;
 
   @BeforeEach
   void setUp() {
+    lenient().when(currentUserProvider.requireUserId()).thenReturn(USER_ID);
     interceptor = new FeatureFlagInterceptor(featureFlagService, new FeatureRequiredResolver(),
         new FeatureFlagBlockedRequestLogger());
   }
@@ -114,7 +118,7 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void calendarEvents_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new EventController(eventService));
+    MockMvc mockMvc = mvc(new EventController(eventService, currentUserProvider));
     when(eventService.list(LOBBY_ID, FROM, TO, USER_ID)).thenReturn(List.of(sampleEvent()));
 
     assertDisabled(mockMvc, calendarEventsRequest(), FeatureFlagKey.CALENDARS);
@@ -132,12 +136,11 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void calendarIcsEndpoints_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new CalendarIcsController(calendarIcsService));
+    MockMvc mockMvc = mvc(new CalendarIcsController(calendarIcsService, currentUserProvider));
     when(calendarIcsService.createFeedToken(USER_ID))
         .thenReturn(new CalendarFeedTokenDto("/api/calendar/feed/token.ics"));
 
-    MockHttpServletRequestBuilder request = post("/api/calendar/feed-token")
-        .header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = post("/api/calendar/feed-token");
     assertDisabled(mockMvc, request, FeatureFlagKey.CALENDARS);
     verifyNoInteractions(calendarIcsService);
 
@@ -152,12 +155,11 @@ class FeatureFlagMvcEnforcementTest {
 
   @Test
   void lobbyFreeSlots_belongToCalendarInsteadOfLobbies() throws Exception {
-    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService));
+    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService, currentUserProvider));
     when(eventService.findFreeSlots(LOBBY_ID, FROM, TO, USER_ID))
         .thenReturn(List.of(new FreeSlotDto(FROM, TO)));
 
     MockHttpServletRequestBuilder request = get("/api/lobbies/101/free-slots")
-        .header(USER_ID_HEADER, USER_ID)
         .param("from", FROM.toString())
         .param("to", TO.toString());
     assertDisabled(mockMvc, request, FeatureFlagKey.CALENDARS);
@@ -176,10 +178,10 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void taskEndpoints_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new TaskController(taskService));
+    MockMvc mockMvc = mvc(new TaskController(taskService, currentUserProvider));
     when(taskService.list(null, null, null, USER_ID)).thenReturn(List.of(sampleTask()));
 
-    MockHttpServletRequestBuilder request = get("/api/tasks").header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/tasks");
     assertDisabled(mockMvc, request, FeatureFlagKey.TASKS);
     verifyNoInteractions(taskService);
 
@@ -195,12 +197,11 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void notificationEndpoints_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new NotificationController(notificationService));
+    MockMvc mockMvc = mvc(new NotificationController(notificationService, currentUserProvider));
     when(notificationService.getPreferences(USER_ID))
         .thenReturn(new NotificationPreferencesDto(1L, true, true, true, true, true));
 
-    MockHttpServletRequestBuilder request = get("/api/notifications/preferences")
-        .header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/notifications/preferences");
     assertDisabled(mockMvc, request, FeatureFlagKey.NOTIFICATIONS);
     verifyNoInteractions(notificationService);
 
@@ -215,12 +216,12 @@ class FeatureFlagMvcEnforcementTest {
 
   @Test
   void lobbyNotificationPreferences_belongToNotificationsInsteadOfLobbies() throws Exception {
-    MockMvc mockMvc = mvc(new LobbyNotificationPreferenceController(notificationService));
+    MockMvc mockMvc = mvc(new LobbyNotificationPreferenceController(
+        notificationService, currentUserProvider));
     when(notificationService.getLobbyPreferences(LOBBY_ID, USER_ID))
         .thenReturn(new LobbyNotificationPreferencesDto(LOBBY_ID, 2L, true, true, true));
 
-    MockHttpServletRequestBuilder request = get("/api/lobbies/101/notification-preferences")
-        .header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/lobbies/101/notification-preferences");
     assertDisabled(mockMvc, request, FeatureFlagKey.NOTIFICATIONS);
     verifyNoInteractions(notificationService);
 
@@ -235,11 +236,10 @@ class FeatureFlagMvcEnforcementTest {
 
   @Test
   void lobbyWrites_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled() throws Exception {
-    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService));
+    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService, currentUserProvider));
     when(lobbyService.create(any(), eq(USER_ID))).thenReturn(sampleLobby());
 
     MockHttpServletRequestBuilder request = post("/api/lobbies")
-        .header(USER_ID_HEADER, USER_ID)
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
             {"name":"Our Family","lobbyType":"FAMILY"}
@@ -259,11 +259,10 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void lobbyInvites_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new LobbyInviteController(lobbyInviteService));
+    MockMvc mockMvc = mvc(new LobbyInviteController(lobbyInviteService, currentUserProvider));
     when(lobbyInviteService.pendingForInvitee(USER_ID)).thenReturn(List.of(sampleInvite()));
 
-    MockHttpServletRequestBuilder request = get("/api/lobby-invites/mine")
-        .header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/lobby-invites/mine");
     assertDisabled(mockMvc, request, FeatureFlagKey.LOBBIES);
     verifyNoInteractions(lobbyInviteService);
 
@@ -279,7 +278,8 @@ class FeatureFlagMvcEnforcementTest {
   @Test
   void settingsMutations_stopBeforeControllerWhenDisabled_andReachServiceWhenEnabled()
       throws Exception {
-    MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService));
+    MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService,
+        currentUserProvider));
     when(userService.update(eq(1L), any(), eq(0L))).thenReturn(sampleUser());
 
     MockHttpServletRequestBuilder request = patch("/api/users/1")
@@ -304,14 +304,14 @@ class FeatureFlagMvcEnforcementTest {
   void subscriptionFlow_stopsBeforeBillingControllerWhenDisabled_andReachesServiceWhenEnabled()
       throws Exception {
     MockMvc mockMvc = mvc(new BillingController(billingAccountService, effectivePlanResolver,
-        entitlementService));
+        entitlementService, currentUserProvider));
     BillingAccountEntity account = BillingAccountEntity.builder().id(31L).build();
     when(billingAccountService.getByOwnerUserId(USER_ID)).thenReturn(account);
     when(effectivePlanResolver.resolve(eq(31L), any(Instant.class))).thenReturn(PlanCode.FREE);
     when(entitlementService.getEntitlements(PlanCode.FREE))
         .thenReturn(new PlanEntitlements(1, 4, false, true, true));
 
-    MockHttpServletRequestBuilder request = get("/api/billing/me").header(USER_ID_HEADER, USER_ID);
+    MockHttpServletRequestBuilder request = get("/api/billing/me");
     assertDisabled(mockMvc, request, FeatureFlagKey.SUBSCRIPTIONS);
     verifyNoInteractions(billingAccountService, effectivePlanResolver, entitlementService);
 
@@ -328,11 +328,10 @@ class FeatureFlagMvcEnforcementTest {
 
   @Test
   void sharedLobbyReadsRemainAvailableWhenLobbyManagementIsDisabled() throws Exception {
-    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService));
+    MockMvc mockMvc = mvc(new LobbyController(lobbyService, eventService, currentUserProvider));
     when(lobbyService.archivedLobbies(USER_ID)).thenReturn(List.of(sampleLobby()));
 
     mockMvc.perform(get("/api/lobbies")
-            .header(USER_ID_HEADER, USER_ID)
             .param("lifecycleStatus", "ARCHIVED"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(101));
@@ -343,7 +342,8 @@ class FeatureFlagMvcEnforcementTest {
 
   @Test
   void userReadsRemainAvailableWhenSettingsAreDisabled() throws Exception {
-    MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService));
+    MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService,
+        currentUserProvider));
     when(userService.getById(1L)).thenReturn(sampleUser());
 
     mockMvc.perform(get("/api/users/1"))
@@ -363,7 +363,6 @@ class FeatureFlagMvcEnforcementTest {
 
   private MockHttpServletRequestBuilder calendarEventsRequest() {
     return get("/api/calendar/events")
-        .header(USER_ID_HEADER, USER_ID)
         .param("lobbyId", "101")
         .param("from", FROM.toString())
         .param("to", TO.toString());

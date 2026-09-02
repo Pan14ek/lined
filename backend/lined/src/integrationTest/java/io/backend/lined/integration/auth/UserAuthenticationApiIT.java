@@ -57,7 +57,8 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
-  void loginCreatesIndependentHashedRefreshSessionsAndMvpIdentityReadsCurrentUser() throws Exception {
+  void loginCreatesIndependentHashedRefreshSessionsAndBearerIdentityReadsCurrentUser()
+      throws Exception {
     String label = uniqueLabel("login");
     var user = registerUser(label);
 
@@ -81,6 +82,25 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
         .isEqualTo(2);
     assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(currentUser.getBody().path("id").asLong()).isEqualTo(user.path("id").asLong());
+  }
+
+  @Test
+  void currentUserEndpointIgnoresSpoofedIdentityHeader() {
+    String aliceLabel = uniqueLabel("alice");
+    String bobLabel = uniqueLabel("bob");
+    var alice = registerUser(aliceLabel);
+    var bob = registerUser(bobLabel);
+    HttpHeaders headers = new HttpHeaders();
+    authenticate(headers, alice.path("id").asLong());
+    headers.set("X-User-Id", String.valueOf(bob.path("id").asLong()));
+
+    var response = restTemplate.exchange("/api/users/me", HttpMethod.GET,
+        new org.springframework.http.HttpEntity<>(null, headers),
+        com.fasterxml.jackson.databind.JsonNode.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().path("id").asLong()).isEqualTo(alice.path("id").asLong());
+    assertThat(response.getBody().path("username").asText()).isEqualTo(aliceLabel);
   }
 
   private void assertTokenOnlyResponse(org.springframework.http.ResponseEntity<com.fasterxml.jackson.databind.JsonNode> login) {
