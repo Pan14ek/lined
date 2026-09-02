@@ -10,4 +10,12 @@ public interface RefreshSessionService {
    * @return transient raw credential and persisted session metadata
    */
   IssuedRefreshSession createSession(long userId);
+
+  /**
+   * Atomically consumes a presented credential and creates its one successor.
+   *
+   * @param refreshToken raw opaque credential from the transport adapter
+   * @return authenticated user ID and transient successor credential
+   */
+  RotatedRefreshSession refresh(String refreshToken);
 }

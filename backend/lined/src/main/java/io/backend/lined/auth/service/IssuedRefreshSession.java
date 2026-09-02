@@ -9,4 +9,9 @@ public record IssuedRefreshSession(
     String refreshToken,
     OffsetDateTime expiresAt
 ) {
+
+  @Override
+  public String toString() {
+    return "IssuedRefreshSession[credentials redacted]";
+  }
 }

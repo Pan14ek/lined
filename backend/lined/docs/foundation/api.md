@@ -42,7 +42,13 @@ Successful login also sends an opaque `lined_refresh` credential only in the
 `Set-Cookie` header: `HttpOnly`, configurable `Secure` (enabled by default),
 `SameSite=Lax`, `Path=/api/auth`, no `Domain`, and a seven-day initial max age.
 The credential is never a JSON field and is persisted only as a SHA-256 hash.
-AUTH-SEC-05 will add cookie consumption and rotation; AUTH-SEC-06 will add logout.
+`POST /api/auth/refresh` consumes that cookie exactly once, returns a new access
+token, and replaces it with one successor cookie. A consumed-token replay returns
+generic `401 auth.session.invalid` and revokes the associated session family.
+
+`GET /api/auth/csrf` initializes the non-secret CSRF token cookie required by
+cookie-authenticated browser requests. The refresh endpoint requires the matching
+`X-XSRF-TOKEN` request header.
 
 An unknown identifier and an incorrect password both return the same `401`
 Problem Details response: title `Invalid credentials`, detail `Invalid email,
@@ -671,7 +677,6 @@ not duplicate an occurrence.
 
 The following endpoints are not implemented by the current controllers:
 
-- `POST /api/auth/refresh`
 - `POST /api/auth/register`
 - `POST /api/auth/logout`
 

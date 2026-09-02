@@ -3,8 +3,9 @@ package io.backend.lined.auth.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.backend.lined.auth.service.RefreshCookieProperties;
-import io.backend.lined.auth.service.RefreshSessionProperties;
-import java.time.Duration;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -15,10 +16,11 @@ class RefreshTokenCookieWriterTest {
   void write_setsApprovedHttpOnlyRefreshCookieAttributes() {
     RefreshTokenCookieWriter writer = new RefreshTokenCookieWriter(
         new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth"),
-        new RefreshSessionProperties(Duration.ofDays(7), Duration.ofDays(30)));
+        Clock.fixed(Instant.parse("2026-09-02T10:15:30Z"), ZoneOffset.UTC));
     MockHttpServletResponse response = new MockHttpServletResponse();
 
-    writer.write(response, "opaque-refresh-token");
+    writer.write(response, "opaque-refresh-token", Instant.parse("2026-09-09T10:15:30Z")
+        .atOffset(ZoneOffset.UTC));
 
     String cookie = response.getHeader(HttpHeaders.SET_COOKIE);
     assertThat(cookie)
