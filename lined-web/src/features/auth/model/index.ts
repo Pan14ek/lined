@@ -7,10 +7,10 @@ export interface LoginResponseDto {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
-  userId: number;
-  username: string;
-  email: string;
-  roles: string[];
+}
+
+export interface CsrfTokenDto {
+  token: string;
 }
 
 export interface PasswordResetRequestDto {

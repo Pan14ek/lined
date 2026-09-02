@@ -2,6 +2,7 @@ import { MockHttpError, mockDelay } from '@/lib/apiClient';
 import { MOCK_USERS } from './mockData';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto } from '@/features/users/model';
+import { getCurrentMockUserId } from '@/features/auth/api/mockIdentity';
 
 const users: UserDto[] = MOCK_USERS.map((u) => ({ ...u }));
 let nextId = Math.max(...users.map((u) => u.id)) + 1;
@@ -10,6 +11,14 @@ export const getUser = async (id: number): Promise<UserDto> => {
   await mockDelay();
   const user = users.find((u) => u.id === id);
   if (!user) throw new MockHttpError(404, 'User not found');
+  return user;
+}
+
+export const getCurrentUser = async (): Promise<UserDto> => {
+  await mockDelay();
+  const userId = getCurrentMockUserId();
+  const user = userId == null ? undefined : users.find((candidate) => candidate.id === userId);
+  if (!user) throw new MockHttpError(401, 'Authentication required');
   return user;
 }
 

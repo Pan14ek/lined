@@ -1,9 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
-import { login, requestPasswordReset, resetPassword } from '@/features/auth/api';
+import { login, logout, refresh, requestPasswordReset, resetPassword } from '@/features/auth/api';
 import { createUser } from '@/features/users/api';
 
 export const useSignIn = () => {
   return useMutation({ mutationFn: login });
+}
+
+export const useRefreshSession = () => {
+  return useMutation({ mutationFn: refresh });
+}
+
+export const useSignOut = () => {
+  return useMutation({ mutationFn: logout });
 }
 
 export const useSignUp = () => {
