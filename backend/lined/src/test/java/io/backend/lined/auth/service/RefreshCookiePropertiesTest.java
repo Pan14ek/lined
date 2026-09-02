@@ -28,4 +28,10 @@ class RefreshCookiePropertiesTest {
     assertThatIllegalArgumentException().isThrownBy(() -> new RefreshCookieProperties(
         "lined_refresh", true, "Lax", "api/auth"));
   }
+
+  @Test
+  void constructor_rejectsInsecureCookieWhenSecureTransportIsRequired() {
+    assertThatIllegalArgumentException().isThrownBy(() -> new RefreshCookieProperties(
+        "lined_refresh", false, "Lax", "/api/auth", true));
+  }
 }
