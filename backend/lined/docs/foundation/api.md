@@ -10,8 +10,9 @@ faithful.
 
 ## Authentication
 
-`POST /api/auth/login` verifies a password through Spring Security and returns a
-short-lived access-token response.
+`POST /api/auth/login` verifies a password through Spring Security, creates an
+independent server-side refresh session, and returns a short-lived access-token
+response.
 
 ```json
 {
@@ -36,6 +37,12 @@ The access token is an HS256 JWT with only `sub`, `iss`, `aud`, `iat`, `exp`, an
 protected paths; missing or invalid tokens return `401 auth.required` Problem
 Details. Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header
 after filter authentication; AUTH-SEC-07 will replace that legacy identity contract.
+
+Successful login also sends an opaque `lined_refresh` credential only in the
+`Set-Cookie` header: `HttpOnly`, configurable `Secure` (enabled by default),
+`SameSite=Lax`, `Path=/api/auth`, no `Domain`, and a seven-day initial max age.
+The credential is never a JSON field and is persisted only as a SHA-256 hash.
+AUTH-SEC-05 will add cookie consumption and rotation; AUTH-SEC-06 will add logout.
 
 An unknown identifier and an incorrect password both return the same `401`
 Problem Details response: title `Invalid credentials`, detail `Invalid email,

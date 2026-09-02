@@ -14,8 +14,10 @@ the canonical identity record used by every caller-scoped product feature.
   profiles for the relevant client flows.
 - `PATCH /api/users/{id}` and `DELETE /api/users/{id}` require version-aware
   mutations; deletion is self-service and rejects prohibited ownership states.
-- Authentication reads user credentials, Roles assigns built-in roles, and
-  Billing provisions a personal billing account during registration.
+- Authentication reads user credentials and owns refresh sessions linked to the
+  persisted user ID; account deletion deliberately cascades that account's
+  session/token records. Roles assigns built-in roles, and Billing provisions a
+  personal billing account during registration.
 - The Settings feature flag blocks only profile `PATCH` and account `DELETE`.
   Registration, current-user/ID reads, and search remain shared support paths.
 
@@ -55,8 +57,8 @@ lost updates and deletion races.
 - Registration is transactional across user persistence, role resolution, and
   billing-account initialization.
 - Lobbies use users as owners and members; deletion checks those relationships.
-- Tasks, events, notifications, authentication, and calendar feeds all identify
-  a user by this feature's persisted ID.
+- Tasks, events, notifications, authentication (including refresh sessions),
+  and calendar feeds all identify a user by this feature's persisted ID.
 - The schema is maintained in `src/main/resources/database/schema.sql` together
   with JPA; case-insensitive user uniqueness is enforced by database indexes.
 
