@@ -66,6 +66,8 @@ The approved [system design](authentication-security-system-design.md) is decomp
 
 **Branch:** feature/auth-trusted-identity-migration. **Dependencies:** AUTH-SEC-01, AUTH-SEC-02.
 
+**Status:** Implemented in the backend boundary; the web session-client migration remains AUTH-SEC-08.
+
 **Traceability:** ADR-AUTH-005, 019, 020, 021; AUTH-FR-006, 008; AUTH-SR-001, 002, 012; AUTH-AC-005, 006, 007.
 
 **Scope:** Inventory all X-User-Id uses. Add CurrentUserProvider validating JWT subject without token parsing in domain code. Convert all caller-scoped operations, including users/me; delete headers, local backdoors, and obsolete examples. This does not redesign domain authorization.

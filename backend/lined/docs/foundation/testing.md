@@ -91,8 +91,10 @@ Its reports are written to `build/test-results/integrationTest/` and
 `build/reports/tests/integrationTest/`. Before treating a run as PostgreSQL proof, inspect the
 XML reports and confirm zero failures, errors, and skips.
 
-Caller-scoped scenarios use the current MVP `X-User-Id` header. Login is verified as an API
-contract, but the application does not yet install a Bearer-token filter.
+Caller-scoped scenarios authenticate with `Authorization: Bearer <JWT>` and
+verify that identity comes from the validated JWT subject. The regression suite
+intentionally sends one conflicting `X-User-Id` header to prove it is ignored;
+it is not a supported authentication mechanism.
 
 ## Other Integration Tests
 

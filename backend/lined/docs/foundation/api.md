@@ -35,8 +35,10 @@ Successful responses use this shape:
 The access token is an HS256 JWT with only `sub`, `iss`, `aud`, `iat`, `exp`, and
 `jti` claims. It is accepted through `Authorization: Bearer <accessToken>` on
 protected paths; missing or invalid tokens return `401 auth.required` Problem
-Details. Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header
-after filter authentication; AUTH-SEC-07 will replace that legacy identity contract.
+Details. Every protected caller-scoped endpoint derives the caller ID from the
+validated JWT subject through the backend `CurrentUserProvider`; request headers
+and query parameters do not override it. Full web token bootstrap, refresh
+retry, and cache-isolation work remains AUTH-SEC-08.
 
 Successful login also sends an opaque `lined_refresh` credential only in the
 `Set-Cookie` header: `HttpOnly`, configurable `Secure` (enabled by default),
@@ -133,14 +135,14 @@ Response: `200 OK` with `UserDto`.
 
 ### `GET /api/users/me`
 
-Return the caller's profile. The current MVP identity contract requires the
-`X-User-Id` header; the caller does not provide a user ID in the path, query,
-or body. A missing header returns `400 Bad Request`, and an unknown caller
-returns `404 Not Found`.
+Return the caller's profile. The endpoint requires a valid Bearer JWT; the
+caller does not provide a user ID in the path, query, or body. A missing or
+invalid token returns `401 Unauthorized`, and an unknown JWT subject returns
+`404 Not Found`.
 
 ```http
 GET /api/users/me
-X-User-Id: 42
+Authorization: Bearer <accessToken>
 ```
 
 Response: `200 OK` with `UserDto` and an `ETag` for the response version.
@@ -153,7 +155,8 @@ Response: `200 OK` with `UserDto`.
 
 ### `DELETE /api/users/{id}`
 
-Delete the caller's own account. The `X-User-Id` header must match `{id}`.
+Delete the caller's own account. The authenticated JWT subject must match
+`{id}`; a client-supplied identity header is ignored.
 Deleting an account that still owns a lobby returns `409 Conflict`.
 
 Response: `204 No Content`.
@@ -201,8 +204,8 @@ Response: `200 OK` with `List<LobbyDto>`.
 
 ### `GET /api/lobbies/{id}`
 
-Return one lobby by id. The caller must be an owner or member and supplies the
-temporary MVP `X-User-Id` header.
+Return one lobby by id. The caller must be an owner or member; identity comes
+from the validated Bearer JWT subject.
 
 Response: `200 OK` with `LobbyDto`.
 
@@ -374,7 +377,7 @@ Response: `200 OK` with `TaskDto`.
 
 ### `GET /api/tasks?lobbyId={id}&assigneeId={id}&status={status}`
 
-List requester-visible tasks with optional filters. `X-User-Id` is required. The response contains
+List requester-visible tasks with optional filters. A valid Bearer JWT is required. The response contains
 shared tasks in the requester's member lobbies plus the requester's own private tasks, never another
 creator's private task.
 
@@ -445,7 +448,7 @@ Response: `200 OK` with `EventDto`.
 
 ### `GET /api/calendar/events/{id}`
 
-Return one event visible to the `X-User-Id` caller. A caller may read a shared event or their own
+Return one event visible to the authenticated caller. A caller may read a shared event or their own
 private event. Another member's private event returns the normal `404 Not Found` response, so the
 endpoint does not disclose that the requested identifier exists.
 
@@ -464,25 +467,25 @@ Delete an event.
 
 Response: `200 OK` with an empty body.
 
-### `GET /api/calendar/conflicts?lobbyId={id}&start={timestamp}&end={timestamp}&requesterId={id}`
+### `GET /api/calendar/conflicts?lobbyId={id}&start={timestamp}&end={timestamp}`
 
-Return event conflicts for the specified lobby and time window. `requesterId`
-must match the caller's `X-User-Id` header.
+Return event conflicts for the specified lobby and time window. The requester
+is derived exclusively from the validated Bearer JWT subject.
 
 Response: `200 OK` with `List<EventConflictDto>`. A private conflict owned by another member has
 `detailsAvailable=false` and no event ID or content; its owner ID and `shared=false` remain only as
 an opaque availability explanation.
 
-### `GET /api/calendar/user-conflict?userId={id}&start={timestamp}&end={timestamp}&requesterId={id}`
+### `GET /api/calendar/user-conflict?userId={id}&start={timestamp}&end={timestamp}`
 
-Return whether the specified user has a conflict in the requested window.
-`requesterId` must match the caller's `X-User-Id` header.
+Return whether the specified user has a conflict in the requested window. The
+requester is derived exclusively from the validated Bearer JWT subject.
 
 Response: `200 OK` with `UserConflictDto`.
 
 ### `POST /api/calendar/feed-token` and `DELETE /api/calendar/feed-token`
 
-Authenticated `X-User-Id` endpoints that create a secret personal ICS URL or
+Authenticated Bearer endpoints that create a secret personal ICS URL or
 idempotently revoke every active URL. Creation returns `201 Created` with
 `{ "feedUrl": "/api/calendar/feed/{token}.ics" }`; treat that path as a
 bearer credential. Revocation returns `204 No Content`.
@@ -496,7 +499,7 @@ return `404`; revoked URLs return `410 Gone`.
 
 ### `POST /api/calendar/import?lobbyId={id}`
 
-Requires `X-User-Id` and accepts either a raw `text/calendar` body or a
+Requires a valid Bearer JWT and accepts either a raw `text/calendar` body or a
 multipart `file` upload. Timed one-off VEVENTs with UID, DTSTART, and DTEND are
 upserted as private caller-owned events by `(owner, lobby, UID)`; all-day,
 floating, and recurring entries are skipped with errors. A wholly invalid ICS
@@ -573,13 +576,14 @@ The endpoint remains available when later feature enforcement disables every pro
 
 ### `GET /api/billing/me`
 
-Return the current caller's billing state. The endpoint requires `X-User-Id` and derives the
-personal billing account solely from that authenticated MVP principal. It accepts no `userId`
-path, query, or body field. A missing or invalid header returns `400 Bad Request`.
+Return the current caller's billing state. The endpoint requires a valid Bearer
+JWT and derives the personal billing account solely from its subject. It accepts
+no `userId` path, query, or body field. A missing or invalid token returns `401
+Unauthorized`.
 
 ```http
 GET /api/billing/me
-X-User-Id: 17
+Authorization: Bearer <accessToken>
 ```
 
 ```json

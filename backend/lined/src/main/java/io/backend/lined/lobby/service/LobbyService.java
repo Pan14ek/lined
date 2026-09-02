@@ -12,10 +12,10 @@ public interface LobbyService {
   LobbyDto getById(Long id);
 
   /**
-   * Reads a lobby only when the MVP caller is an owner or member.
+   * Reads a lobby only when the authenticated caller is an owner or member.
    *
    * @param id lobby identifier
-   * @param requesterId caller identity from {@code X-User-Id}
+   * @param requesterId trusted caller identity supplied by the controller adapter
    * @return the accessible lobby
    */
   LobbyDto getById(Long id, Long requesterId);

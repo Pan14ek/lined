@@ -9,7 +9,7 @@ import io.backend.lined.auth.api.PasswordResetRequestDto;
  * <p>For example, a client first calls {@link #requestReset(PasswordResetRequestDto)} with an
  * email address, then calls {@link #reset(PasswordResetDto)} with the delivered opaque token and
  * a replacement password. Neither operation requires the caller's existing password or
- * {@code X-User-Id} header.</p>
+ * caller authentication.</p>
  */
 public interface PasswordResetService {
 

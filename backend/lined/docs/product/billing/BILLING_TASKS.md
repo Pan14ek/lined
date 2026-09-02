@@ -22,8 +22,9 @@ expand scope beyond the task file.
 - Registration seeds FREE via `AccountApplicationServiceImpl.registerUser`
 - `BuiltInPlan { FREE, PRO, FAMILY }`; `BuiltInRole { USER, ADMIN }` — the
   ADMIN role is never gate-checked in code
-- Auth is `@RequestHeader("X-User-Id") Long currentUserId` on each
-  controller — no Spring Security filter chain
+- Authenticated user identity is resolved by `CurrentUserProvider` from the
+  validated Spring Security JWT subject; controllers do not accept
+  `X-User-Id` as an identity input.
 - Schema is a single `resources/database/schema.sql` applied by Spring
   `sql.init` — no Flyway/Liquibase
 - Lobbies have owner + members but **no** archived/read-only fields, and
@@ -78,9 +79,9 @@ io.backend.lined
   `src/main/resources/database/schema.sql` for now (matches project
   convention). If Flyway/Liquibase is adopted mid-flight, the outstanding
   billing tasks must be migrated to that tool in one PR — do not mix.
-- **Auth:** every user-facing endpoint reads `X-User-Id` and resolves the
-  BillingAccount from the authenticated principal — never accept a
-  `{userId}` path segment or body field. Admin endpoints additionally
+- **Auth:** every user-facing endpoint resolves the BillingAccount from the
+  authenticated principal — never accept a `{userId}` path segment or body
+  field. Admin endpoints additionally
   require role/permission checks introduced by BE-14.
 - **Idempotency & concurrency:** subscription writes use optimistic
   locking with a `version` column; webhook processing is deduplicated by
