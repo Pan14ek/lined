@@ -140,11 +140,15 @@ public class SecurityConfig {
       ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
     return http
         .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            // NOSONAR: this non-secret token must be readable by browser JavaScript for the
+            // double-submit header check; the refresh credential remains HttpOnly.
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // NOSONAR
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-            .ignoringRequestMatchers(
+            // NOSONAR: only cookie-free API and Actuator requests bypass CSRF; cookie-authenticated
+            // refresh and browser-facing state changes remain protected.
+            .ignoringRequestMatchers( // NOSONAR
                 SecurityConfig::isCookieFreeApi,
-                SecurityConfig::isActuator)) // NOSONAR
+                SecurityConfig::isActuator))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()

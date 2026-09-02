@@ -3,6 +3,7 @@ package io.backend.lined.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -193,9 +194,9 @@ class RefreshSessionServiceImplTest {
         .isInstanceOf(InvalidRefreshSessionException.class);
 
     verifyNoInteractions(tokenGenerator);
-    org.mockito.Mockito.verify(tokenRepository, org.mockito.Mockito.never())
+    verify(tokenRepository, never())
         .consume("old-hash", utcNow());
-    org.mockito.Mockito.verifyNoInteractions(sessionRepository);
+    verifyNoInteractions(sessionRepository);
   }
 
   @Test
@@ -212,7 +213,7 @@ class RefreshSessionServiceImplTest {
 
     verify(sessionRepository).revoke(sessionId, utcNow(), "refresh_reuse_detected");
     verify(tokenRepository).revokeActiveTokens(sessionId, utcNow());
-    org.mockito.Mockito.verify(tokenRepository, org.mockito.Mockito.never())
+    verify(tokenRepository, never())
         .consume("old-hash", utcNow());
   }
 
