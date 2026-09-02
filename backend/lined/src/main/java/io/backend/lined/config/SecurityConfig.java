@@ -154,6 +154,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset-requests").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-resets").permitAll()
@@ -201,7 +202,8 @@ public class SecurityConfig {
 
   private static boolean isCookieFreeApi(HttpServletRequest request) {
     return request.getRequestURI().startsWith("/api/")
-        && !request.getRequestURI().equals("/api/auth/refresh");
+        && !request.getRequestURI().equals("/api/auth/refresh")
+        && !request.getRequestURI().equals("/api/auth/logout");
   }
 
   private static boolean isActuator(HttpServletRequest request) {

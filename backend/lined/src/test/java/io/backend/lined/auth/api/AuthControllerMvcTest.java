@@ -106,6 +106,23 @@ class AuthControllerMvcTest {
   }
 
   @Test
+  void logout_returnsNoContentAndExpiredCookie() throws Exception {
+    when(refreshTokenCookieReader.read(any())).thenReturn(Optional.of("refresh-token"));
+
+    mockMvc.perform(post("/api/auth/logout").with(
+            org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+        .andExpect(status().isNoContent())
+        .andExpect(content().string(""))
+        .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+            containsString("lined_refresh="),
+            containsString("Max-Age=0"),
+            containsString("Path=/api/auth"),
+            containsString("Secure"),
+            containsString("HttpOnly"),
+            containsString("SameSite=Lax"))));
+  }
+
+  @Test
   void refresh_returnsGenericProblemWhenSessionIsInvalid() throws Exception {
     when(refreshTokenCookieReader.read(any())).thenReturn(Optional.of("refresh-token"));
     when(authService.refresh("refresh-token"))

@@ -28,4 +28,20 @@ class RefreshTokenCookieWriterTest {
             "Path=/api/auth", "Secure", "HttpOnly", "SameSite=Lax")
         .doesNotContain("Domain=");
   }
+
+  @Test
+  void clear_expiresRefreshCookieWithApprovedAttributes() {
+    RefreshTokenCookieWriter writer = new RefreshTokenCookieWriter(
+        new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth"),
+        Clock.fixed(Instant.parse("2026-09-02T10:15:30Z"), ZoneOffset.UTC));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    writer.clear(response);
+
+    String cookie = response.getHeader(HttpHeaders.SET_COOKIE);
+    assertThat(cookie)
+        .contains("lined_refresh=", "Max-Age=0", "Path=/api/auth", "Secure", "HttpOnly",
+            "SameSite=Lax")
+        .doesNotContain("Domain=");
+  }
 }
