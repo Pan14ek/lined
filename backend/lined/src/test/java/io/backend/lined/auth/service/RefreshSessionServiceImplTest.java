@@ -2,6 +2,7 @@ package io.backend.lined.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,8 +96,8 @@ class RefreshSessionServiceImplTest {
 
     assertThat(second.sessionId()).isNotEqualTo(first.sessionId());
     assertThat(second.refreshToken()).isNotEqualTo(first.refreshToken());
-    verify(sessionRepository, org.mockito.Mockito.times(2)).save(sessionCaptor.capture());
-    verify(tokenRepository, org.mockito.Mockito.times(2)).save(tokenCaptor.capture());
+    verify(sessionRepository, times(2)).save(sessionCaptor.capture());
+    verify(tokenRepository, times(2)).save(tokenCaptor.capture());
     assertThat(sessionCaptor.getAllValues()).extracting(AuthSessionEntity::getId)
         .containsExactly(first.sessionId(), second.sessionId());
     assertThat(tokenCaptor.getAllValues()).extracting(AuthRefreshTokenEntity::getTokenHash)

@@ -21,8 +21,9 @@ class RefreshTokenCookieWriterTest {
     writer.write(response, "opaque-refresh-token");
 
     String cookie = response.getHeader(HttpHeaders.SET_COOKIE);
-    assertThat(cookie).contains("lined_refresh=opaque-refresh-token", "Max-Age=604800",
-        "Path=/api/auth", "Secure", "HttpOnly", "SameSite=Lax");
-    assertThat(cookie).doesNotContain("Domain=");
+    assertThat(cookie)
+        .contains("lined_refresh=opaque-refresh-token", "Max-Age=604800",
+            "Path=/api/auth", "Secure", "HttpOnly", "SameSite=Lax")
+        .doesNotContain("Domain=");
   }
 }

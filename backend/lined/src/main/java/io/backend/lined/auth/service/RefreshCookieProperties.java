@@ -13,7 +13,7 @@ public record RefreshCookieProperties(
 ) {
 
   public RefreshCookieProperties {
-    if (refreshName == null || refreshName.isBlank() || refreshName.matches(".*[;\\s].*")) {
+    if (refreshName == null || refreshName.isBlank() || containsCookieNameSeparator(refreshName)) {
       throw new IllegalArgumentException("Refresh cookie name is invalid");
     }
     refreshName = refreshName.trim();
@@ -34,5 +34,9 @@ public record RefreshCookieProperties(
       return "Strict";
     }
     throw new IllegalArgumentException("Refresh cookie SameSite must be Lax or Strict");
+  }
+
+  private static boolean containsCookieNameSeparator(String value) {
+    return value.chars().anyMatch(character -> character == ';' || Character.isWhitespace(character));
   }
 }
