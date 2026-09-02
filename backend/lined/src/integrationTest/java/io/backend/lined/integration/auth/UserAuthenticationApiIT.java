@@ -47,7 +47,7 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   @Test
-  void loginReturnsTokenShapedResponseAndMvpIdentityReadsCurrentUser() {
+  void loginReturnsTokenOnlyResponseAndMvpIdentityReadsCurrentUser() {
     String label = uniqueLabel("login");
     var user = registerUser(label);
 
@@ -59,7 +59,11 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(login.getBody().path("accessToken").asText()).isNotBlank();
     assertThat(login.getBody().path("tokenType").asText()).isEqualTo("Bearer");
-    assertThat(login.getBody().path("userId").asLong()).isEqualTo(user.path("id").asLong());
+    assertThat(login.getBody().path("expiresIn").asLong()).isEqualTo(900L);
+    assertThat(login.getBody().has("userId")).isFalse();
+    assertThat(login.getBody().has("username")).isFalse();
+    assertThat(login.getBody().has("email")).isFalse();
+    assertThat(login.getBody().has("roles")).isFalse();
     assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(currentUser.getBody().path("id").asLong()).isEqualTo(user.path("id").asLong());
   }
@@ -76,14 +80,13 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     assertThat(response.getBody().has("accessToken")).isFalse();
     assertThat(response.getBody().path("detail").asText())
-        .isEqualTo("Invalid email, username, or password");
+        .isEqualTo("Invalid email, username, or password.");
   }
 
   @Test
-  void rejectsCallerScopedRequestWithoutMvpIdentityHeader() {
+  void rejectsCallerScopedRequestWithoutAccessToken() {
     var response = request(HttpMethod.GET, "/api/users/me", null, null);
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(response.getBody().path("detail").asText()).contains("X-User-Id");
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 }

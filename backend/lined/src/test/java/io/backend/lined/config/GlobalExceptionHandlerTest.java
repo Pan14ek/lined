@@ -8,6 +8,7 @@ import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.FeatureDisabledException;
+import io.backend.lined.common.exception.InvalidCredentialsException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.common.exception.UnauthorizedException;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
@@ -104,6 +105,19 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Unauthorized");
+  }
+
+  @Test
+  void handleBase_invalidCredentials_returnsDocumented401Problem() {
+    ResponseEntity<ProblemDetail> response = handler.handleBase(new InvalidCredentialsException());
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Invalid credentials");
+    assertThat(response.getBody().getDetail()).isEqualTo("Invalid email, username, or password.");
+    assertThat(response.getBody().getType().toString()).endsWith("auth.credentials.invalid");
+    assertThat(response.getBody().getProperties())
+        .containsEntry("code", "auth.credentials.invalid");
   }
 
   @Test

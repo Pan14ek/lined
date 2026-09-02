@@ -41,6 +41,8 @@ the interceptor does not wrap or block direct service-to-service calls.
 `database/schema.sql` creates `feature_flags`, uniquely keyed by `(flag_key, environment)`, and
 seeds all approved flags as enabled for `LOCAL`, `TEST`, `STAGING`, and `PRODUCTION`. The durable
 `updated_by` value is an administrator identity snapshot rather than a mutable user relationship.
+Seed rows explicitly use optimistic-lock `version = 0`, so they remain valid when Hibernate has
+already created the table without applying the SQL column default.
 
 On startup or an explicit future refresh, the repository reads all rows for the configured
 environment and the service atomically replaces the cache. `GET /api/features` then evaluates the

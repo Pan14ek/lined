@@ -14,8 +14,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -57,6 +61,33 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(12);
+  }
+
+  /**
+   * Configures framework password authentication for Lined's identifier-resolving user details.
+   *
+   * @param userDetailsService Lined account lookup used by the provider
+   * @param passwordEncoder BCrypt verifier for persisted password hashes
+   * @return password authentication provider with hidden user-not-found failures
+   */
+  @Bean
+  public DaoAuthenticationProvider daoAuthenticationProvider(
+      UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+    provider.setPasswordEncoder(passwordEncoder);
+    provider.setHideUserNotFoundExceptions(true);
+    return provider;
+  }
+
+  /**
+   * Exposes the credential authentication entry point used by the login orchestration service.
+   *
+   * @param provider configured Lined password-authentication provider
+   * @return manager delegating credential verification to the Lined provider
+   */
+  @Bean
+  public AuthenticationManager authenticationManager(DaoAuthenticationProvider provider) {
+    return new ProviderManager(provider);
   }
 
   /**
@@ -116,6 +147,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset-requests").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-resets").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/features").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/calendar/feed/*").permitAll()
             .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions

@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.auth.service.AuthService;
 import io.backend.lined.auth.service.PasswordResetService;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,8 +30,7 @@ class AuthControllerTest {
   @Test
   void login_delegatesToAuthService() {
     var request = new AuthLoginDto("alice@example.com", null, null, "password");
-    var response = new AuthLoginResponseDto(
-        "token", "Bearer", 900L, 1L, "alice", "alice@example.com", Set.of("ROLE_USER"));
+    var response = new AuthLoginResponseDto("token", "Bearer", 900L);
     when(authService.login(request)).thenReturn(response);
 
     AuthLoginResponseDto result = controller.login(request);

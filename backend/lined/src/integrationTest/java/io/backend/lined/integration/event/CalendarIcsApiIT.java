@@ -42,7 +42,7 @@ class CalendarIcsApiIT extends AbstractApiIntegrationTest {
         """;
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.parseMediaType("text/calendar"));
-    headers.set("X-User-Id", String.valueOf(ownerId));
+    authenticate(headers, ownerId);
     double createdBefore = counterCount("lined.private.item.created", "item.type", "event");
 
     var response = restTemplate.exchange("/api/calendar/import?lobbyId=" + lobby.path("id").asLong(),

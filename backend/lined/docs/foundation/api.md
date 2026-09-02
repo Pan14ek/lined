@@ -10,8 +10,8 @@ faithful.
 
 ## Authentication
 
-`POST /api/auth/login` verifies a password and returns a token-shaped response
-plus the authenticated user identity.
+`POST /api/auth/login` verifies a password through Spring Security and returns a
+short-lived access-token response.
 
 ```json
 {
@@ -27,11 +27,7 @@ Successful responses use this shape:
 {
   "accessToken": "<HS256 JWT access token>",
   "tokenType": "Bearer",
-  "expiresIn": 900,
-  "userId": 42,
-  "username": "alex",
-  "email": "alex@example.com",
-  "roles": ["ROLE_USER"]
+  "expiresIn": 900
 }
 ```
 
@@ -40,6 +36,11 @@ The access token is an HS256 JWT with only `sub`, `iss`, `aud`, `iat`, `exp`, an
 protected paths; missing or invalid tokens return `401 auth.required` Problem
 Details. Most caller-scoped endpoints still use the MVP `X-User-Id: <Long>` header
 after filter authentication; AUTH-SEC-07 will replace that legacy identity contract.
+
+An unknown identifier and an incorrect password both return the same `401`
+Problem Details response: title `Invalid credentials`, detail `Invalid email,
+username, or password.`, and code `auth.credentials.invalid`. The response
+does not disclose whether an account exists.
 
 ### `POST /api/auth/password-reset-requests`
 
