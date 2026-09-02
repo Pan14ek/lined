@@ -63,7 +63,7 @@ of a modal) keeps the task list visible behind it, matching the mockup.
 
 | Purpose | Endpoint |
 |---|---|
-| Create task | `POST /api/tasks` — `TaskCreateDto { title, lobbyId, assigneeId?, dueDate? }` (header `X-User-Id` = creator) → `TaskDto` |
+| Create task | `POST /api/tasks` — `TaskCreateDto { title, lobbyId, assigneeId?, dueDate? }` (Bearer session identifies creator) → `TaskDto` |
 | Set non-default status | `PATCH /api/tasks/{id}` — `TaskUpdateDto { status }` |
 | Lobby members | `GET /api/lobbies/{id}` + `GET /api/users/{id}` |
 

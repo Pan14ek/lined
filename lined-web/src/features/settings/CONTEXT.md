@@ -35,6 +35,9 @@ owns that data.
 - `features/notifications/hooks/useNotifications` — `NotificationsCard`
 - `components/ConfirmDialog` (shared) — DangerZoneCard's delete confirmation
 
+`UserSettingsPage` reads its profile from `GET /api/users/me`; account
+deletion clears the same session and user-scoped client state as sign-out.
+
 ## Depended on by
 
 - `features/lobby/pages/LobbySettingsPage.tsx` and

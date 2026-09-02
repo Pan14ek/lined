@@ -38,7 +38,7 @@ protected paths; missing or invalid tokens return `401 auth.required` Problem
 Details. Every protected caller-scoped endpoint derives the caller ID from the
 validated JWT subject through the backend `CurrentUserProvider`; request headers
 and query parameters do not override it. Full web token bootstrap, refresh
-retry, and cache-isolation work remains AUTH-SEC-08.
+retry, and cache-isolation work is delivered by AUTH-SEC-08 in `lined-web`.
 
 Successful login also sends an opaque `lined_refresh` credential only in the
 `Set-Cookie` header: `HttpOnly`, configurable `Secure` (enabled by default),

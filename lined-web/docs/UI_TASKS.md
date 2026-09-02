@@ -36,13 +36,13 @@ screen.
 
 **Already implemented:**
 - Project scaffold: Vite + React 19 + TypeScript (strict) + Tailwind v4 + shadcn + TanStack Query + Zustand + ky + MSW v2
-- Full API client layer (`src/api/`) covering users, lobbies, events, tasks, plans, subscriptions, with `X-User-Id` interceptor
+- Full feature-owned API client layer with a shared Bearer/session interceptor
 - TypeScript types mirroring all backend DTOs (`src/types/index.ts`)
 - `AppShell` + `Sidebar` layout (sidebar shows real lobbies + real current user
   from the API, with loading/empty states and sign-out)
 - **Global Calendar page (week + month view)** — `CalendarTopBar`, `WeekGrid` (with client-side free-slot bands, legend, now-line), `MonthGrid` (6-week grid, day-click drills into that week), `EventDetailPanel` (with location row), `CreateEventModal` (create + edit modes), delete event.
 - **"+ Create" dropdown & Create Lobby modal** — `CreateMenu`, `CreateLobbyModal`, `LobbyTypePicker`, `useCreateLobby`; New Task / Reserve Free Slot only flip store state until Tasks 8/11 land.
-- Zustand stores: `auth` (persisted userId), `calendar` (view state), `createMenu` (create-lobby + event/task/reserveSlot overlay state)
+- Zustand stores: `auth` (volatile access token and bootstrap status), `calendar` (view state), `createMenu` (create-lobby + event/task/reserveSlot overlay state)
 - Hooks: `useMyLobbies`, `useLobby`, `useCreateLobby`, `useUpdateLobbyOwner`, `useRemoveMember`, `useWeekEvents`, `useCreateEvent`, `useDeleteEvent`, `useUsers`, `useUserSearch`, `useLobbyTasks`, `useUpdateTask`, `useLobbyInvites`, `useCreateInvite`, `useResendInvite`, `useCancelInvite`
 - MSW handlers + smoke tests
 - **Lobby detail page** — `LobbyHeader`, `LobbyTabBar`, `LobbyTaskList`, `TaskRow`: type-accent header with resolved member avatars, `?tab=`-synced tab bar, and a live Tasks tab (filter pills with counts, due-date sort, checkbox status toggle).
@@ -230,7 +230,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 
 | Domain | Endpoints |
 |---|---|
-| Auth | `POST /api/auth/login` (identifier = email or username; returns token + user identity) |
+| Auth | `POST /api/auth/login` (identifier = email or username; returns an access token); `POST /api/auth/refresh`; `POST /api/auth/logout`; `GET /api/auth/csrf`; `GET /api/users/me` |
 | Users | `POST /api/users`, `PATCH /api/users/{id}`, `GET /api/users/{id}`, `DELETE /api/users/{id}` (self), `GET /api/users/search?q=`, `GET /api/users/by-role` |
 | Lobbies | `POST /api/lobbies`, `GET /api/lobbies/mine`, `GET /api/lobbies/{id}`, `PATCH /api/lobbies/{id}` (name/type/ownerId, owner-only), `DELETE /api/lobbies/{id}/members/{userId}`, `DELETE /api/lobbies/{id}`, `GET /api/lobbies/{id}/free-slots?from=&to=` |
 | Lobby invites | `POST /api/lobbies/{lobbyId}/invites?userId=` or `?userEmail=`, `GET /api/lobbies/{lobbyId}/invites`, `POST …/invites/{inviteId}/resend`, `DELETE …/invites/{inviteId}`, `GET /api/lobby-invites/mine`, `POST /api/lobby-invites/{inviteId}/accept`, `POST /api/lobby-invites/{inviteId}/decline` |
@@ -252,7 +252,7 @@ dark-mode toggle shipped in Task 12 has never been audited screen-by-screen.
 
 | # | Branch name | Task description | Reference | Status |
 |---|---|---|---|---|
-| 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (MVP auth via user search + `X-User-Id`) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | DONE |
+| 1 | `feature/ui-01-auth-pages` | Sign In / Sign Up pages with working forms (historical MVP flow, superseded by AUTH-SEC-08 session handling) | [tasks/UI-01-auth-pages.md](tasks/UI-01-auth-pages.md) | DONE |
 | 2 | `feature/ui-02-sidebar-live-data` | Sidebar: real lobbies + real current user from API, "+ New" lobby entry point | [tasks/UI-02-sidebar-live-data.md](tasks/UI-02-sidebar-live-data.md) | DONE |
 | 3 | `feature/ui-03-dashboard` | Dashboard page: lobby cards, upcoming events, my tasks, free-slot banner | [tasks/UI-03-dashboard.md](tasks/UI-03-dashboard.md) | DONE |
 | 4 | `feature/ui-04-create-menu-lobby-modal` | "+ Create" dropdown menu and Create Lobby modal (type picker) | [tasks/UI-04-create-menu-lobby-modal.md](tasks/UI-04-create-menu-lobby-modal.md) | DONE |

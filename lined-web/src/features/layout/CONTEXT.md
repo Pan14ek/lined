@@ -29,6 +29,9 @@ No `model/`, `api/`, or `hooks/` — this feature has no data of its own.
 - `src/store/createMenu.ts` — which overlay (if any) is open, and its seed
   data (`editingTask`, `reserveSlotInitial`, etc.)
 
+The sidebar signs out through the CSRF-aware session endpoint, then clears the
+complete Query cache and user-scoped stores before navigating to sign-in.
+
 ## Depended on by
 
 - `src/router.tsx` — `AppShell` is the element for every authenticated route

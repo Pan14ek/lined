@@ -66,7 +66,7 @@ The approved [system design](authentication-security-system-design.md) is decomp
 
 **Branch:** feature/auth-trusted-identity-migration. **Dependencies:** AUTH-SEC-01, AUTH-SEC-02.
 
-**Status:** Implemented in the backend boundary; the web session-client migration remains AUTH-SEC-08.
+**Status:** Implemented in the backend and web client boundaries.
 
 **Traceability:** ADR-AUTH-005, 019, 020, 021; AUTH-FR-006, 008; AUTH-SR-001, 002, 012; AUTH-AC-005, 006, 007.
 
@@ -79,6 +79,8 @@ The approved [system design](authentication-security-system-design.md) is decomp
 **Branch:** feature/web-auth-session-client. **Dependencies:** AUTH-SEC-05, AUTH-SEC-06, AUTH-SEC-07.
 
 **Traceability:** ADR-AUTH-015, 016, 028, 029, 030; AUTH-FR-016 through 019; AUTH-SR-010, 011, 015; AUTH-AC-017 through 020.
+
+**Status:** Implemented in `lined-web`.
 
 **Scope:** In lined-web replace persisted user ID with memory-only access-token/bootstrap state. Attach Bearer token, remove ID header, bootstrap refresh then users/me, single-flight refresh/retry once, exclude auth/reset recursion, and clear user query/cache/Zustand data before redirect.
 

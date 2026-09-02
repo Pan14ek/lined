@@ -9,10 +9,9 @@ matching the mockup: centred white card on the beige background with the
 green accent bar, Lined logo + tagline, form fields, primary green button,
 and the cross-link between the two pages.
 
-Current state: `src/pages/SignInPage.tsx` and `src/pages/SignUpPage.tsx`
-render the card shell with a "form coming soon" placeholder. The auth store
-(`src/store/auth.ts`, persisted `userId`) and the `X-User-Id` ky interceptor
-(`src/api/client.ts`) already exist.
+Historical baseline: this task introduced the auth page forms before the
+session client existed. Its persisted identity/header assumptions are
+superseded by AUTH-SEC-08.
 
 ## Idea of this task
 
@@ -21,15 +20,13 @@ render the card shell with a "form coming soon" placeholder. The auth store
 > obsolete. Requires Task 15 (API contract refresh) for the `auth.ts` API
 > module and token-aware auth store.
 
-- **Sign Up** = `POST /api/users` with username/email/password, then sign in
-  (or use the returned id directly), store identity in the auth store,
-  redirect to `/`.
+- **Sign Up** = `POST /api/users` with username/email/password, then redirect
+  to `/sign-in`; registration does not issue a session.
 - **Sign In** = `POST /api/auth/login` with `{ identifier, password }`
-  (identifier = email **or** username). On 200, store `userId` + token in
-  the auth store and redirect to `/`; on 401 show "Invalid credentials"
-  without revealing which part failed.
-- Requests keep sending `X-User-Id` (the backend's transitional identity
-  path); the token is stored for the coming filter switch.
+  (identifier = email **or** username). On 200, store only the memory-only
+  access token and redirect to `/`; on 401 show generic invalid credentials.
+- Authenticated requests use the shared Bearer/session client and resolve the
+  caller through `GET /api/users/me`.
 - Add a route guard: unauthenticated users visiting any `AppShell` route are
   redirected to `/sign-in`; authenticated users visiting auth pages go to `/`.
 
@@ -52,15 +49,15 @@ render the card shell with a "form coming soon" placeholder. The auth store
    account →" link.
 3. Build the Sign Up form: username, email, password, terms note, submit,
    "Already have an account? Sign in →" link.
-4. Add `src/hooks/useAuth.ts`: `useSignUp()` (mutation wrapping `createUser`)
-   and `useSignIn()` (query/mutation wrapping `searchUsers` + exact match).
-   On success: `useAuthStore.setUserId(id)` + `navigate('/')`.
+4. Add the auth mutations. On sign-up success navigate to sign-in; on sign-in
+   success store the access token and navigate to `/`.
 5. Handle errors: 409 (username/email taken) on sign-up, "user not found" on
    sign-in — inline error text under the relevant field.
 6. Add a `RequireAuth` wrapper (or loader) in `src/router.tsx` implementing
    the redirects described above.
-7. Tests (MSW): successful sign-up stores userId and redirects; sign-in with
-   unknown email shows an error; guarded route redirects to `/sign-in`.
+7. Tests (MSW): successful sign-up redirects without authenticating; sign-in
+   stores the token; unknown credentials show an error; guarded routes wait
+   for bootstrap and redirect when unauthenticated.
 8. Visual check against mockup screens `signin` / `signup`.
 
 ## Final / expected result
@@ -77,9 +74,8 @@ render the card shell with a "form coming soon" placeholder. The auth store
 |---|---|
 | Sign up | `POST /api/users` — body `UserCreateDto { username, email, password }` → `UserDto` |
 | Sign in | `POST /api/auth/login` — body `{ identifier, password }` → token + `userId`/`username`/`email`/`roles`; `401` on bad credentials |
-| Load profile after auth | `GET /api/users/{id}` → `UserDto` |
+| Load profile after auth | `GET /api/users/me` → `UserDto` |
 
-**Backend gap (resolved July 2026):** `POST /api/auth/login` now exists with
-password verification. Remaining: no `refresh`/`logout`/`register` endpoints
-yet and request filtering still trusts `X-User-Id` — keep auth logic
-concentrated in `useAuth.ts` / `src/api/client.ts` for the token switch.
+**Superseded note:** the July 2026 MVP assumptions are retained here as a
+historical record. AUTH-SEC-08 now supplies refresh, logout, CSRF-aware
+transport, memory-only token state, and current-user bootstrap.

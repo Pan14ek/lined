@@ -64,5 +64,5 @@ the menu itself, the shared UI store, and the Create Lobby modal end-to-end.
 
 | Purpose | Endpoint |
 |---|---|
-| Create lobby | `POST /api/lobbies` — body `LobbyCreateDto { name, lobbyType }` (header `X-User-Id` = owner) → `LobbyDto` |
+| Create lobby | `POST /api/lobbies` — body `LobbyCreateDto { name, lobbyType }` (Bearer session identifies owner) → `LobbyDto` |
 | Refresh sidebar | `GET /api/lobbies/mine` → `LobbyDto[]` |

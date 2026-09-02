@@ -42,7 +42,8 @@ calendar/
 - `features/auth/AuthAlert` — generic error banner in the create/reserve
   modals
 - `features/users/hooks/useUsers` — resolving attendee names in
-  `ConflictBanner`/`ReserveSlotModal`
+  `ConflictBanner`/`ReserveSlotModal`; current-user identity comes from
+  `GET /api/users/me`
 
 ## Depended on by
 

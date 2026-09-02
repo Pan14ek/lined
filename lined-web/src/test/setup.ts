@@ -2,12 +2,15 @@ import '@testing-library/jest-dom/vitest';
 import i18n from '@/i18n';
 import { useSettingsStore } from '@/store/settings';
 import { server } from './server';
+import { resetTestAuth } from './auth';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(async () => {
   server.resetHandlers();
   localStorage.clear();
+  sessionStorage.clear();
+  resetTestAuth();
   useSettingsStore.setState({ locale: 'en' });
   await i18n.changeLanguage('en');
 });

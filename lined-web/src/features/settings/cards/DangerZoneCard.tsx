@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDeleteAccount } from '@/features/users/hooks/useUserSettings';
-import { useAuthStore } from '@/store/auth';
+import { clearClientAuthentication } from '@/features/auth/sessionCleanup';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
@@ -22,14 +23,14 @@ const getDeleteErrorMessage = (error: unknown, t: TFunction<'settings'>): string
 export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
   const { t } = useTranslation('settings');
   const navigate = useNavigate();
-  const setUserId = useAuthStore((s) => s.setUserId);
+  const queryClient = useQueryClient();
   const deleteAccount = useDeleteAccount(userId ?? 0);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleConfirm = () => {
         deleteAccount.mutate(undefined, {
           onSuccess: () => {
-            setUserId(null);
+            clearClientAuthentication(queryClient);
             navigate('/sign-in');
           },
         });

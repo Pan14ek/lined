@@ -28,8 +28,8 @@ not resolve to an account (e.g. deleted account with a stale token/header).
   conflicting identity headers are ignored.
 - Keeps `docs/foundation/api.md` controller-faithful with an implemented caller-scoped
   profile contract.
-- AUTH-SEC-08 will switch the web `useCurrentUser()` hook from `users/{id}` to
-  `users/me` while completing token storage and cache isolation.
+- AUTH-SEC-08 switches the web `useCurrentUser()` hook from `users/{id}` to
+  `users/me` and completes memory-only token storage and cache isolation.
 
 ## Implementation notes
 

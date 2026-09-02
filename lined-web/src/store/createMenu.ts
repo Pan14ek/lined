@@ -29,6 +29,7 @@ interface CreateMenuState {
   openTaskDetail: (task: TaskDto) => void;
   openReserveSlot: (initial?: ReserveSlotInitial) => void;
   closeOverlay: () => void;
+  resetUserState: () => void;
 }
 
 export const useCreateMenuStore = create<CreateMenuState>()((set) => ({
@@ -46,4 +47,13 @@ export const useCreateMenuStore = create<CreateMenuState>()((set) => ({
   openReserveSlot: (initial) => set({ overlay: 'reserveSlot', reserveSlotInitial: initial ?? null }),
   closeOverlay: () =>
     set({ overlay: null, taskInitialStatus: null, editingTask: null, reserveSlotInitial: null }),
+  resetUserState: () =>
+    set({
+      isCreateLobbyOpen: false,
+      lobbyTypeInitial: null,
+      overlay: null,
+      taskInitialStatus: null,
+      editingTask: null,
+      reserveSlotInitial: null,
+    }),
 }));

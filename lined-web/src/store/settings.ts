@@ -15,6 +15,7 @@ interface SettingsState {
   /** Mirrors `UserDto.locale` once the backend field ships (mock-only until then). */
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  resetUserState: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -24,6 +25,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTheme: (theme) => set({ theme }),
       locale: detectLocale(),
       setLocale: (locale) => set({ locale }),
+      resetUserState: () => set({ locale: detectLocale() }),
     }),
     { name: 'lined-settings' },
   ),

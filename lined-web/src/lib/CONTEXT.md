@@ -12,9 +12,9 @@ feature's `lib/` folder instead — see `docs/ARCHITECTURE.md`.
 
 ```
 lib/
-  apiClient.ts    the shared `ky` instance (base URL + X-User-Id interceptor),
-                  USE_MOCKS flag, MockHttpError, getErrorStatus, mockDelay,
-                  toSearchParams, requestVoid
+  apiClient.ts    the shared `ky` instance (Bearer/session transport, CSRF,
+                  refresh coordinator), USE_MOCKS flag, MockHttpError,
+                  getErrorStatus, mockDelay, toSearchParams, requestVoid
   apiErrors.ts    getApiErrorMessage(error, statusMessages, fallback) —
                   maps an HTTP status to a user-facing string
   utils.ts        cn() — clsx + tailwind-merge, used by every component
@@ -25,7 +25,8 @@ lib/
 
 - **`api`** (in `apiClient.ts`) — the one `ky` instance in the app. Every
   feature's `prod.ts` imports `api`/`requestVoid`/`toSearchParams` from
-  here; nothing should call `ky` directly or create a second instance.
+  here; it includes cookies, injects the volatile Bearer token, and coordinates
+  CSRF-aware single-flight refreshes.
 - **`USE_MOCKS`** — `import.meta.env.VITE_USE_MOCKS === 'true'`. Read by
   every feature's `api/index.ts` to choose `dev.ts` vs `prod.ts`.
 - **`MockHttpError` / `getErrorStatus`** — `dev.ts` mocks throw
@@ -37,10 +38,13 @@ lib/
   break in mock mode.
 - **`getApiErrorMessage`** — used at call sites to turn a status code into
   copy, e.g. `getApiErrorMessage(error, { 409: 'Already exists' }, 'Try again')`.
+- **`initializeCsrf`**, **`refreshAccessToken`**, and **`logoutSession`** —
+  session operations used by bootstrap and sign-out; refresh is single-flight
+  and protected requests retry at most once.
 
 ## Depends on
 
-`ky` (npm package), `src/store/auth.ts` (for the `X-User-Id` header).
+`ky` (npm package), `src/store/auth.ts` (for the volatile access token).
 
 ## Depended on by
 

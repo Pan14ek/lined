@@ -29,6 +29,7 @@ interface CalendarState {
   openCreateModal: () => void;
   closeCreateModal: () => void;
   toggleLobbyVisibility: (lobbyId: number) => void;
+  resetUserState: () => void;
 }
 
 export const useCalendarStore = create<CalendarState>()((set) => ({
@@ -66,4 +67,5 @@ export const useCalendarStore = create<CalendarState>()((set) => ({
         ? s.hiddenLobbyIds.filter((id) => id !== lobbyId)
         : [...s.hiddenLobbyIds, lobbyId],
     })),
+  resetUserState: () => set({ selectedEventId: null, isCreateModalOpen: false, hiddenLobbyIds: [] }),
 }));

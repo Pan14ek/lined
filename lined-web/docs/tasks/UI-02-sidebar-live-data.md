@@ -57,5 +57,5 @@ and the real user identity in the footer, so that all later tasks
 
 | Purpose | Endpoint |
 |---|---|
-| Lobby list | `GET /api/lobbies/mine` (header `X-User-Id`) → `LobbyDto[]` |
-| Current user | `GET /api/users/{id}` → `UserDto` |
+| Lobby list | `GET /api/lobbies/mine` (Bearer session) → `LobbyDto[]` |
+| Current user | `GET /api/users/me` → `UserDto` |

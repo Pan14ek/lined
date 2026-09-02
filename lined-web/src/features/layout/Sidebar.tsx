@@ -7,7 +7,9 @@ import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { SkeletonAvatar } from '@/components/skeletons/SkeletonAvatar';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
-import { useAuthStore } from '@/store/auth';
+import { useQueryClient } from '@tanstack/react-query';
+import { logoutSession } from '@/lib/apiClient';
+import { clearClientAuthentication } from '@/features/auth/sessionCleanup';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { EmptyState } from '@/components/EmptyState';
@@ -25,12 +27,16 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
   const { data: lobbies, isLoading: lobbiesLoading } = useMyLobbies();
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const openCreateLobby = useCreateMenuStore((s) => s.openCreateLobby);
-  const setUserId = useAuthStore((s) => s.setUserId);
+  const queryClient = useQueryClient();
 
-  const handleSignOut = () => {
-        setUserId(null);
-        navigate('/sign-in');
-      }
+  const handleSignOut = async () => {
+    try {
+      await logoutSession();
+    } finally {
+      clearClientAuthentication(queryClient);
+      navigate('/sign-in');
+    }
+  };
 
   return (
     <aside className="flex h-full w-60 flex-shrink-0 flex-col bg-brand-sidebar text-white">

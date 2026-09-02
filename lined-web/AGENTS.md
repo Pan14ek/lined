@@ -8,7 +8,8 @@ on the Lined web application. Read this file before editing anything in
 
 Vite + React 19 + TypeScript (strict) web app for **Lined** — schedule sync &
 task coordination for couples, families, and friends. It talks to the Spring
-Boot backend in `backend/lined/` over REST (`X-User-Id` header MVP auth).
+Boot backend in `backend/lined/` over REST with Bearer access tokens and the
+cookie-backed refresh session.
 
 Full monorepo context and the complete web conventions live in the root
 [`../AGENTS.md`](../AGENTS.md) (section "Web — Vite + React"). This file is

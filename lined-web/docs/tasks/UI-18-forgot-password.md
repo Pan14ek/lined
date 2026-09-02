@@ -3,7 +3,8 @@
 **Branch:** `feature/ui-18-forgot-password`
 
 *Depends on Task 1 (auth pages) — reuses `AuthCard`/`AuthField`/`AuthAlert`.
-Blocked on a backend gap: no password-reset endpoint exists yet.*
+The password-reset endpoints are now available; the original blocked status
+is superseded.*
 
 ## Detailed description
 
@@ -14,18 +15,11 @@ set a new password.
 
 ## Idea of this task
 
-> **Blocked:** the backend has no self-service password-reset endpoint.
-> `POST /api/auth/login` only verifies an existing password and
-> `PATCH /api/users/{id}` requires the caller's own `X-User-Id` — there is
-> no way for a signed-out, locked-out user to prove identity and set a new
-> password. This gap is recorded as `feature/password-reset-flow` (Domain
-> "Backend API gap") in `backend/lined/docs/experiment-tasks.md`, with a
-> detailed proposal at
-> `backend/lined/docs/api-proposals/password-reset-flow.md`. **Do not
-> start this task until that endpoint (or an agreed MVP substitute) exists**
-> — implementing it against `PATCH /api/users/{id}` today would require the
-> old password or a signed-in session, which defeats the purpose of a
-> "forgot password" flow.
+> **Historical MVP note:** this task was originally blocked on a missing
+> self-service password-reset endpoint. The backend now provides
+> `POST /api/auth/password-reset-requests` and
+> `POST /api/auth/password-resets`; the old blocker and identity workaround
+> are superseded.
 
 - **Request step** — a new `/forgot-password` route: email or username
   input, submit calls the reset-request endpoint. Always show a neutral
@@ -88,22 +82,15 @@ there is no separate mockup screen to match pixel-for-pixel.
 
 | Purpose | Endpoint |
 |---|---|
-| Request reset | *Not yet implemented* — `POST /api/auth/password-reset-requests`, see `backend/lined/docs/api-proposals/password-reset-flow.md` |
-| Redeem token | *Not yet implemented* — `POST /api/auth/password-resets`, see `backend/lined/docs/api-proposals/password-reset-flow.md` |
+| Request reset | `POST /api/auth/password-reset-requests` |
+| Redeem token | `POST /api/auth/password-resets` |
 
-**Backend gap:** no password-reset endpoints exist. This task cannot start
-until they (or an agreed MVP substitute) ship — see the gap entry above for
-the proposed shape (reset-request → single-use expiring token → token
-redemption sets the new password).
+**Superseded backend-gap note:** the endpoints now exist. The remaining mock
+limitation is that dev/MSW uses a fixed test token rather than issuing a real
+out-of-band reset credential.
 
-## Progress note (mock-only MVP)
+## Progress note (historical mock-only MVP)
 
-Shipped against MSW only, per an explicit decision to unblock the frontend
-work ahead of the backend gap (`feature/password-reset-flow` in
-`backend/lined/docs/experiment-tasks.md`, still `No`/not started as of this
-PR). `src/api/auth.ts`'s `requestPasswordReset`/`resetPassword` call the
-exact contract from `backend/lined/docs/api-proposals/password-reset-flow.md`
-(`POST /api/auth/password-reset-requests` → 202, `POST
-/api/auth/password-resets` → 204/400), so the client is ready to point at
-the real endpoints once they ship — no frontend changes should be needed,
-only removing this note and re-verifying against the live backend.
+The original UI implementation shipped against MSW while the backend gap was
+open. It remains as a historical record; the current client calls the same
+backend endpoints through the shared Bearer/session transport.

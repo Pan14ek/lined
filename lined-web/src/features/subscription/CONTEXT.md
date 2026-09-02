@@ -40,6 +40,9 @@ recognizes both a real `ky` `HTTPError` and `dev.ts`'s `MockHttpError`.
   `features/settings/CONTEXT.md`)
 - `features/users/hooks/useCurrentUser` — `SubscriptionPage`
 
+The current user is resolved from the authenticated `GET /api/users/me` query,
+not from persisted identity state.
+
 ## Depended on by
 
 Nothing yet — no other feature reads subscription data.
