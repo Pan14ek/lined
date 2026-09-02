@@ -16,6 +16,7 @@ import io.backend.lined.app.AccountApplicationService;
 import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.config.GlobalExceptionHandler;
+import io.backend.lined.security.CurrentUserProvider;
 import io.backend.lined.user.service.UserService;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,6 +38,8 @@ class UserControllerTest {
   private UserService userService;
   @Mock
   private AccountApplicationService accountService;
+  @Mock
+  private CurrentUserProvider currentUserProvider;
 
   private UserController controller;
   private MockMvc mockMvc;
@@ -43,7 +47,8 @@ class UserControllerTest {
 
   @BeforeEach
   void setUp() {
-    controller = new UserController(userService, accountService);
+    controller = new UserController(userService, accountService, currentUserProvider);
+    Mockito.lenient().when(currentUserProvider.requireUserId()).thenReturn(1L);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
@@ -65,12 +70,12 @@ class UserControllerTest {
   @Test
   void update_delegatesToUserService() {
     var dto = new UserUpdateDto("alice2", null, null, null);
-    when(userService.update(1L, dto)).thenReturn(sampleUser);
+    when(userService.update(1L, dto, 0L)).thenReturn(sampleUser);
 
-    UserDto result = controller.update(1L, dto);
+    UserDto result = controller.update(1L, "\"0\"", dto).getBody();
 
     assertThat(result).isEqualTo(sampleUser);
-    verify(userService).update(1L, dto);
+    verify(userService).update(1L, dto, 0L);
   }
 
   @Test
@@ -93,10 +98,10 @@ class UserControllerTest {
   }
 
   @Test
-  void me_returnsCurrentUserFromHeader() throws Exception {
+  void me_returnsCurrentUserFromAuthenticatedContext() throws Exception {
     when(userService.getById(1L)).thenReturn(sampleUser);
 
-    mockMvc.perform(get("/api/users/me").header("X-User-Id", "1"))
+    mockMvc.perform(get("/api/users/me"))
         .andExpect(status().isOk())
         .andExpect(header().string("ETag", "\"0\""))
         .andExpect(jsonPath("$.id").value(1))
@@ -106,12 +111,15 @@ class UserControllerTest {
   }
 
   @Test
-  void me_rejectsMissingCurrentUserHeader() throws Exception {
+  void me_rejectsMissingAuthentication() throws Exception {
+    Mockito.doThrow(new io.backend.lined.common.exception.UnauthorizedException(
+        "Authenticated user identity is missing or invalid"))
+        .when(currentUserProvider).requireUserId();
+
     mockMvc.perform(get("/api/users/me"))
-        .andExpect(status().isBadRequest())
+        .andExpect(status().isUnauthorized())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.title").value("Bad request"))
-        .andExpect(jsonPath("$.status").value(400));
+        .andExpect(jsonPath("$.status").value(401));
 
     verifyNoInteractions(userService);
   }
@@ -120,7 +128,8 @@ class UserControllerTest {
   void me_mapsUnknownCurrentUserToNotFound() throws Exception {
     when(userService.getById(99L)).thenThrow(new NotFoundException("User 99 not found"));
 
-    mockMvc.perform(get("/api/users/me").header("X-User-Id", "99"))
+    when(currentUserProvider.requireUserId()).thenReturn(99L);
+    mockMvc.perform(get("/api/users/me"))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Resource not found"))
@@ -131,24 +140,28 @@ class UserControllerTest {
 
   @Test
   void delete_delegatesSelfServiceRequestAndReturnsNoContent() {
-    var response = controller.delete(1L, 1L);
+    var response = controller.delete(1L, "\"0\"");
 
     assertThat(response.getStatusCode().value()).isEqualTo(204);
-    verify(userService).delete(1L, 1L);
+    verify(userService).delete(1L, 1L, 0L);
   }
 
   @Test
-  void delete_acceptsCurrentUserHeader() throws Exception {
-    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "1").header("If-Match", "\"0\""))
+  void delete_usesAuthenticatedUser() throws Exception {
+    mockMvc.perform(delete("/api/users/1").header("If-Match", "\"0\""))
         .andExpect(status().isNoContent());
 
     verify(userService).delete(1L, 1L, 0L);
   }
 
   @Test
-  void delete_rejectsMissingCurrentUserHeader() throws Exception {
+  void delete_rejectsMissingAuthentication() throws Exception {
+    Mockito.doThrow(new io.backend.lined.common.exception.UnauthorizedException(
+        "Authenticated user identity is missing or invalid"))
+        .when(currentUserProvider).requireUserId();
+
     mockMvc.perform(delete("/api/users/1"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isUnauthorized());
 
     verifyNoInteractions(userService);
   }
@@ -158,7 +171,8 @@ class UserControllerTest {
     org.mockito.Mockito.doThrow(new ForbiddenException("Users can only delete their own account"))
         .when(userService).delete(1L, 2L, 0L);
 
-    mockMvc.perform(delete("/api/users/1").header("X-User-Id", "2").header("If-Match", "\"0\""))
+    when(currentUserProvider.requireUserId()).thenReturn(2L);
+    mockMvc.perform(delete("/api/users/1").header("If-Match", "\"0\""))
         .andExpect(status().isForbidden());
   }
 

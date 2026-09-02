@@ -1,10 +1,10 @@
 package io.backend.lined.event.api;
 
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.featureflag.api.FeatureRequired;
 import io.backend.lined.featureflag.domain.FeatureFlagKey;
+import io.backend.lined.security.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,12 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class EventController {
 
   private final EventService service;
+  private final CurrentUserProvider currentUserProvider;
 
   @Operation(summary = "Create event", description = "Create personal/shared event in a lobby.")
   @PostMapping("/events")
   public ResponseEntity<EventDto> create(
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId,
       @Parameter(description = "Optional retry key; same requester, key, and body replay one event")
       @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -61,13 +59,7 @@ public class EventController {
                     }
                   """)))
       @Valid @RequestBody EventCreateDto dto) {
-    EventDto created = service.create(dto, currentUserId, idempotencyKey);
-    return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
-  }
-
-  @Deprecated
-  public ResponseEntity<EventDto> create(Long currentUserId, EventCreateDto dto) {
-    EventDto created = service.create(dto, currentUserId);
+    EventDto created = service.create(dto, currentUserProvider.requireUserId(), idempotencyKey);
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(created.version())).body(created);
   }
 
@@ -78,8 +70,6 @@ public class EventController {
   @PatchMapping("/events/{id}")
   public ResponseEntity<EventDto> update(
       @Parameter(example = "9001") @PathVariable Long id,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId,
       @RequestHeader(value = "If-Match", required = false) String ifMatch,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true,
@@ -88,13 +78,9 @@ public class EventController {
                     { "location":"Central Park", "startAt":"2025-11-20T18:00:00Z" }
                   """)))
       @Valid @RequestBody EventUpdateDto dto) {
-    EventDto updated = service.update(id, dto, currentUserId, VersionPrecondition.parse(ifMatch));
+    EventDto updated = service.update(id, dto, currentUserProvider.requireUserId(),
+        VersionPrecondition.parse(ifMatch));
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
-  }
-
-  @Deprecated
-  public EventDto update(Long id, Long currentUserId, EventUpdateDto dto) {
-    return service.update(id, dto, currentUserId);
   }
 
   @Operation(summary = "List events", description = "List events overlapping a time window in lobby.")
@@ -102,10 +88,8 @@ public class EventController {
   public List<EventDto> list(
       @Parameter(example = "101") @RequestParam Long lobbyId,
       @Parameter(example = "2025-11-20T00:00:00Z") @RequestParam OffsetDateTime from,
-      @Parameter(example = "2025-11-21T00:00:00Z") @RequestParam OffsetDateTime to,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
-    return service.list(lobbyId, from, to, currentUserId);
+      @Parameter(example = "2025-11-21T00:00:00Z") @RequestParam OffsetDateTime to) {
+    return service.list(lobbyId, from, to, currentUserProvider.requireUserId());
   }
 
   /**
@@ -116,16 +100,13 @@ public class EventController {
    * ID, so the endpoint never confirms private-event existence.</p>
    *
    * @param id event identifier
-   * @param currentUserId temporary MVP caller identity
    * @return visible event with its optimistic-lock ETag
    */
   @Operation(summary = "Get event", description = "Get a shared or caller-owned private event.")
   @GetMapping("/events/{id}")
   public ResponseEntity<EventDto> get(
-      @Parameter(example = "9001") @PathVariable Long id,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
-    EventDto event = service.get(id, currentUserId);
+      @Parameter(example = "9001") @PathVariable Long id) {
+    EventDto event = service.get(id, currentUserProvider.requireUserId());
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(event.version())).body(event);
   }
 
@@ -133,26 +114,16 @@ public class EventController {
   @DeleteMapping("/events/{id}")
   public void delete(
       @Parameter(example = "9001") @PathVariable Long id,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId,
       @RequestHeader(value = "If-Match", required = false) String ifMatch) {
-    service.delete(id, currentUserId, VersionPrecondition.parse(ifMatch));
-  }
-
-  @Deprecated
-  public void delete(Long id, Long currentUserId) {
-    service.delete(id, currentUserId);
+    service.delete(id, currentUserProvider.requireUserId(), VersionPrecondition.parse(ifMatch));
   }
 
   @GetMapping("/conflicts")
   public ResponseEntity<List<EventConflictDto>> findConflicts(
       @RequestParam Long lobbyId,
       @RequestParam OffsetDateTime start,
-      @RequestParam OffsetDateTime end,
-      @RequestParam Long requesterId,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
-    ensureRequesterMatchesCurrentUser(requesterId, currentUserId);
+      @RequestParam OffsetDateTime end) {
+    Long currentUserId = currentUserProvider.requireUserId();
     return ResponseEntity.ok(
         service.findConflicts(lobbyId, start, end, currentUserId));
   }
@@ -161,19 +132,10 @@ public class EventController {
   public ResponseEntity<UserConflictDto> hasConflict(
       @RequestParam Long userId,
       @RequestParam OffsetDateTime start,
-      @RequestParam OffsetDateTime end,
-      @RequestParam Long requesterId,
-      @Parameter(description = "Current user id (temporary for MVP)", example = "42")
-      @RequestHeader("X-User-Id") Long currentUserId) {
-    ensureRequesterMatchesCurrentUser(requesterId, currentUserId);
+      @RequestParam OffsetDateTime end) {
+    Long currentUserId = currentUserProvider.requireUserId();
     return ResponseEntity.ok(
         service.hasConflict(userId, start, end, currentUserId));
-  }
-
-  private void ensureRequesterMatchesCurrentUser(Long requesterId, Long currentUserId) {
-    if (!Objects.equals(requesterId, currentUserId)) {
-      throw new ForbiddenException("Requester id must match current user");
-    }
   }
 
 }

@@ -11,6 +11,7 @@ import io.backend.lined.common.exception.ConflictException;
 import io.backend.lined.config.GlobalExceptionHandler;
 import io.backend.lined.event.service.EventService;
 import io.backend.lined.lobby.service.LobbyService;
+import io.backend.lined.security.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,12 +28,16 @@ class LobbyControllerLimitTest {
   private LobbyService lobbyService;
   @Mock
   private EventService eventService;
+  @Mock
+  private CurrentUserProvider currentUserProvider;
 
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(new LobbyController(lobbyService, eventService))
+    when(currentUserProvider.requireUserId()).thenReturn(1L);
+    mockMvc = MockMvcBuilders.standaloneSetup(
+        new LobbyController(lobbyService, eventService, currentUserProvider))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
   }
@@ -43,7 +48,6 @@ class LobbyControllerLimitTest {
         new ConflictException("LOBBY_LIMIT_EXCEEDED", "Lobby limit exceeded for current plan"));
 
     mockMvc.perform(post("/api/lobbies")
-            .header("X-User-Id", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"name\":\"Our Family\",\"lobbyType\":\"FAMILY\"}"))
         .andExpect(status().isConflict())
