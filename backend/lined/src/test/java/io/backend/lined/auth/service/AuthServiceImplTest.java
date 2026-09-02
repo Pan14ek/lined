@@ -6,6 +6,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.auth.api.AuthLoginDto;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +53,7 @@ class AuthServiceImplTest {
     when(tokenService.tokenType()).thenReturn("Bearer");
     when(tokenService.ttlSeconds()).thenReturn(900L);
     when(refreshSessionService.createSession(USER_ID)).thenReturn(new IssuedRefreshSession(
-        java.util.UUID.randomUUID(), "refresh-token", java.time.OffsetDateTime.now()));
+        UUID.randomUUID(), "refresh-token", OffsetDateTime.now()));
 
     AuthLoginResult result = authService.login(request);
     var response = result.response();
@@ -61,6 +63,22 @@ class AuthServiceImplTest {
     assertThat(response.expiresIn()).isEqualTo(900L);
     assertThat(result.refreshToken()).isEqualTo("refresh-token");
     assertThat(result.toString()).doesNotContain(TOKEN, "refresh-token");
+  }
+
+  @Test
+  void refresh_issuesAccessTokenForRotatedSessionUser() {
+    OffsetDateTime expiresAt = OffsetDateTime.parse("2026-09-09T10:15:30Z");
+    when(refreshSessionService.refresh("refresh-token")).thenReturn(
+        new RotatedRefreshSession(USER_ID, "successor-token", expiresAt));
+    when(tokenService.issueFor(USER_ID)).thenReturn(TOKEN);
+    when(tokenService.tokenType()).thenReturn("Bearer");
+    when(tokenService.ttlSeconds()).thenReturn(900L);
+
+    AuthLoginResult result = authService.refresh("refresh-token");
+
+    assertThat(result.response().accessToken()).isEqualTo(TOKEN);
+    assertThat(result.refreshToken()).isEqualTo("successor-token");
+    assertThat(result.refreshTokenExpiresAt()).isEqualTo(expiresAt);
   }
 
   @Test
