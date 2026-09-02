@@ -7,7 +7,7 @@ import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
 import { useFreeSlotCandidates, type FreeSlotCandidate } from '@/features/dashboard/hooks/useDashboard';
 import { useUsers } from '@/features/users/hooks/useUsers';
-import { useAuthStore } from '@/store/auth';
+import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import type { ReserveSlotInitial } from '@/store/createMenu';
 import { toDatetimeLocal, fromDatetimeLocal, formatFreeSlotRange } from '@/features/calendar/lib/calendarUtils';
 import { LOBBY_TYPE_ICONS } from '@/features/lobby/lib/constants';
@@ -115,7 +115,8 @@ const getReserveErrorMessage = (error: unknown, t: TFunction<'calendar'>): strin
 const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotFormProps) => {
   const { t } = useTranslation('calendar');
   const createEvent = useCreateEvent();
-  const currentUserId = useAuthStore((s) => s.userId);
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id ?? null;
   const sharableLobbies = lobbies.filter((l) => l.memberIds.length > 1);
   const showLobbyPicker = slot.lobbyId == null;
 

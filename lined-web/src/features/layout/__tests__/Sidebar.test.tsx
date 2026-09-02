@@ -23,7 +23,7 @@ const renderSidebar = () => {
 
 describe('Sidebar', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     useCreateMenuStore.setState({ isCreateLobbyOpen: false });
   });
 
@@ -103,6 +103,6 @@ describe('Sidebar', () => {
     await user.click(screen.getByRole('button', { name: /sign out/i }));
 
     expect(await screen.findByText('Sign In Page')).toBeInTheDocument();
-    expect(useAuthStore.getState().userId).toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 });

@@ -200,8 +200,8 @@ Do not add `@ResponseStatus` to exceptions — control HTTP codes through
 Protected backend endpoints require a valid `Authorization: Bearer <JWT>`
 credential. Caller-scoped controllers resolve the positive numeric JWT subject
 through the backend `CurrentUserProvider`; `X-User-Id` is not an identity
-source. The web client's full in-memory token/bootstrap/cache migration is
-AUTH-SEC-08 and remains a separate task.
+source. The web client uses the completed AUTH-SEC-08 in-memory
+token/bootstrap/cache-isolation flow.
 
 ### Database Conventions
 
@@ -310,9 +310,9 @@ React Router v7 with `createBrowserRouter`. All routes assembled in
 
 The shared `ky` HTTP client lives in `src/lib/apiClient.ts`, configured with:
 - `prefixUrl` set to `VITE_API_BASE_URL` environment variable
-- `beforeRequest` hook is the client request boundary; AUTH-SEC-08 will attach
-  the access Bearer token, remove the persisted user ID, and eliminate legacy
-  identity-header generation
+- `beforeRequest` hook is the client request boundary; AUTH-SEC-08 attaches
+  the memory-only access Bearer token and contains no legacy identity-header
+  generation
 
 Each feature owns its own API surface under `features/{feature}/api/`:
 `prod.ts` (real requests via the shared client), `dev.ts` (in-memory mocks,
@@ -596,7 +596,7 @@ files (gitignored).
 10. **Bypassing the trusted identity adapter.** Protected routes are secured by
     Spring Security and caller-scoped controllers must use
     `CurrentUserProvider.requireUserId()`; never restore `X-User-Id` identity
-    handling. Full web client migration is tracked by AUTH-SEC-08.
+    handling. The web client migration is delivered by AUTH-SEC-08.
 
 ### Web App
 

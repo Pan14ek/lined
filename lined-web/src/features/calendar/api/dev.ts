@@ -1,5 +1,5 @@
 import { MockHttpError, mockDelay } from '@/lib/apiClient';
-import { useAuthStore } from '@/store/auth';
+import { getCurrentMockUserId } from '@/features/auth/api/mockIdentity';
 import { MOCK_EVENTS } from './mockData';
 import type {
   EventDto,
@@ -30,7 +30,7 @@ export const listEvents = async (params: {
   to: string;
 }): Promise<EventDto[]> => {
   await mockDelay();
-  const requesterId = useAuthStore.getState().userId;
+  const requesterId = getCurrentMockUserId();
   return events.filter(
     (e) =>
       (e.visibility !== 'PRIVATE' || e.ownerId === requesterId) &&
@@ -53,7 +53,7 @@ export const createEvent = async (data: EventCreateDto): Promise<EventDto> => {
     endAt: data.endAt,
     timezone: data.timezone,
     lobbyId: data.lobbyId,
-    ownerId: useAuthStore.getState().userId ?? 1,
+    ownerId: getCurrentMockUserId() ?? 1,
     createdAt: new Date().toISOString(),
   };
   events.push(event);
@@ -64,7 +64,7 @@ export const updateEvent = async (id: number, data: EventUpdateDto): Promise<Eve
   await mockDelay();
   const event = events.find((e) => e.id === id);
   if (!event) throw new MockHttpError(404, 'Event not found');
-  const requesterId = useAuthStore.getState().userId;
+  const requesterId = getCurrentMockUserId();
   if (isUnauthorizedVisibilityChange(event, requesterId, data.visibility)) {
     throw new MockHttpError(event.visibility === 'PRIVATE' ? 404 : 403, 'Event not found');
   }
@@ -80,7 +80,7 @@ export const deleteEvent = async (id: number): Promise<void> => {
   await mockDelay();
   const index = events.findIndex((e) => e.id === id);
   if (index === -1) throw new MockHttpError(404, 'Event not found');
-  const requesterId = useAuthStore.getState().userId;
+  const requesterId = getCurrentMockUserId();
   if (isUnauthorizedVisibilityChange(events[index]!, requesterId)) {
     throw new MockHttpError(404, 'Event not found');
   }

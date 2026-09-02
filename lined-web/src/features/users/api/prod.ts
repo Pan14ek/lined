@@ -5,6 +5,10 @@ export const getUser = (id: number): Promise<UserDto> => {
   return api.get(`users/${id}`).json<UserDto>();
 }
 
+export const getCurrentUser = (): Promise<UserDto> => {
+  return api.get('users/me').json<UserDto>();
+}
+
 export const createUser = (data: UserCreateDto): Promise<UserDto> => {
   return api.post('users', { json: data }).json<UserDto>();
 }

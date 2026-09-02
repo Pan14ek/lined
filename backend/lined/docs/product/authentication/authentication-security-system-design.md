@@ -2,7 +2,8 @@
 
 **Document type:** System Design Specification (SDD-ready)  
 **Scope:** Authentication foundation, JWT access tokens, refresh sessions, Spring Security integration, frontend session handling, operational exposure  
-**Status:** Proposed / ready for task decomposition  
+**Status:** Proposed / ready for task decomposition; AUTH-SEC-01 through
+AUTH-SEC-08 implementation delivered on dedicated feature branches
 **Version:** 1.0  
 **Date:** 2026-08-24  
 **Repository:** `Pan14ek/lined`  
@@ -16,6 +17,11 @@
 This document defines the target production-oriented authentication and session-security architecture for Lined.
 
 The current backend can verify a user's password and issue a custom HMAC token, but caller-scoped product APIs still trust the client-supplied `X-User-Id` header. The current web client persists that user ID and attaches it to API requests. This design removes that trust boundary and replaces it with standard Spring Security Bearer JWT authentication.
+
+The preceding sentence describes the pre-migration baseline. The backend
+security slices and the web AUTH-SEC-08 session client are now implemented;
+the remaining sections retain the baseline for traceability and the target
+architecture for subsequent hardening work.
 
 This specification is intentionally written to support **Spec-Driven Development (SDD)**. It captures:
 

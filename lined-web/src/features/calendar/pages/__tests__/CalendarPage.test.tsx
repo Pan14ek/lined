@@ -38,7 +38,7 @@ const mockPhoneViewport = () => {
 
 describe('CalendarPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     useCalendarStore.setState({
       weekStart: useCalendarStore.getState().weekStart,
       monthAnchor: useCalendarStore.getState().monthAnchor,

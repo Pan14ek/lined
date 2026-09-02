@@ -20,7 +20,7 @@ const renderSettingsPage = (initialEntry: string) => {
 
 describe('LobbySettingsPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
   });
 
   it('shows a loading state before the lobby loads', () => {
@@ -59,7 +59,7 @@ describe('LobbySettingsPage', () => {
 
   it('hides the Delete lobby action for a non-owner viewer', async () => {
     expect.assertions(2);
-    useAuthStore.setState({ userId: 2 });
+    useAuthStore.setState({ accessToken: 'mock-token-2', status: 'authenticated' });
     renderSettingsPage('/lobbies/1/settings');
 
     expect(await screen.findByRole('button', { name: 'Leave' })).toBeInTheDocument();

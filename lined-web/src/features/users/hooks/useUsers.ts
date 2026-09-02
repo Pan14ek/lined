@@ -1,5 +1,5 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { getUser, searchUsers } from '@/features/users/api';
+import { getUser, getCurrentUser, searchUsers } from '@/features/users/api';
 import { QUERY_KEYS } from '@/features/users/lib/constants';
 
 export const useUser = (id: number | undefined) => {
@@ -9,6 +9,13 @@ export const useUser = (id: number | undefined) => {
     enabled: id != null,
   });
 }
+
+export const useCurrentUserQuery = () =>
+  useQuery({
+    queryKey: QUERY_KEYS.currentUser,
+    queryFn: getCurrentUser,
+    retry: false,
+  });
 
 export const useUsers = (ids: number[]) =>
   useQueries({

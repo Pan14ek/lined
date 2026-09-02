@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import type { EventDto, EventVisibility } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useUpdateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
-import { useAuthStore } from '@/store/auth';
+import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/features/calendar/lib/calendarUtils';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/features/auth/AuthAlert';
@@ -55,7 +55,8 @@ export const CreateEventModal = ({
   const isEditMode = event != null;
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
-  const currentUserId = useAuthStore((s) => s.userId);
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id ?? null;
   const lockedLobbyIdResolved = isEditMode ? event.lobbyId : lockedLobbyId;
   const lockedLobby =
     lockedLobbyIdResolved != null

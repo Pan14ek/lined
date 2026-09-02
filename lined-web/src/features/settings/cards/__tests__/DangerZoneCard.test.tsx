@@ -24,7 +24,7 @@ const renderCard = (userId: number | undefined) => {
 
 describe('DangerZoneCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: lobbyOwner.id });
+    useAuthStore.setState({ accessToken: `mock-token-${lobbyOwner.id}`, status: 'authenticated' });
   });
 
   it('renders the Delete account button disabled when there is no user yet', () => {
@@ -75,7 +75,7 @@ describe('DangerZoneCard', () => {
 
   it('signs out and navigates to sign-in on success', async () => {
     expect.assertions(2);
-    useAuthStore.setState({ userId: noLobbyUser.id });
+    useAuthStore.setState({ accessToken: `mock-token-${noLobbyUser.id}`, status: 'authenticated' });
     const user = userEvent.setup();
     renderCard(noLobbyUser.id);
 
@@ -83,7 +83,7 @@ describe('DangerZoneCard', () => {
     await user.click(screen.getAllByRole('button', { name: 'Delete account' })[1]!);
 
     await waitFor(() =>
-      expect(useAuthStore.getState().userId).toBeNull(),
+      expect(useAuthStore.getState().accessToken).toBeNull(),
     );
     expect(await screen.findByText('Sign In Page')).toBeInTheDocument();
   });

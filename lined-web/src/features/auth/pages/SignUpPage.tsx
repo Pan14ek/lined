@@ -7,7 +7,6 @@ import { FormField } from '@/components/FormField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useSignUp } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
-import { useAuthStore } from '@/store/auth';
 
 interface FormValues {
   username: string;
@@ -45,7 +44,6 @@ export const SignUpPage = () => {
   const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const signUp = useSignUp();
-  const setUserId = useAuthStore((s) => s.setUserId);
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { username: '', email: '', password: '', confirmPassword: '' },
@@ -60,9 +58,8 @@ export const SignUpPage = () => {
         signUp.mutate(
           { username: values.username, email: values.email, password: values.password },
           {
-            onSuccess: (user) => {
-              setUserId(user.id);
-              navigate('/');
+            onSuccess: () => {
+              navigate('/sign-in?registered=success');
             },
           },
         );

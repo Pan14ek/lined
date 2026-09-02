@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth';
 
 describe('RequireAuth', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null });
+    useAuthStore.setState({ accessToken: null, status: 'unauthenticated' });
   });
 
   it('redirects to /sign-in when signed out', () => {
@@ -26,7 +26,7 @@ describe('RequireAuth', () => {
 
   it('renders the protected route when signed in', () => {
     expect.assertions(1);
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     renderWithProviders(
       <Routes>
         <Route element={<RequireAuth />}>
@@ -43,12 +43,12 @@ describe('RequireAuth', () => {
 
 describe('RedirectIfAuthed', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null });
+    useAuthStore.setState({ accessToken: null, status: 'unauthenticated' });
   });
 
   it('redirects home when already signed in', () => {
     expect.assertions(1);
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     renderWithProviders(
       <Routes>
         <Route

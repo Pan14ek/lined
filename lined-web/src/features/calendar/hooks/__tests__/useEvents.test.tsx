@@ -19,7 +19,7 @@ const newQueryClient = () =>
 // respectively, both in lobby 1 (see mockData.ts).
 describe('useRangeEvents — private event privacy filter', () => {
   it("includes the requester's own private event but never another member's", async () => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     const { result } = renderHook(() => useRangeEvents(new Date('2026-01-01'), new Date('2027-01-01')), {
       wrapper: makeWrapper(newQueryClient()),
     });
@@ -31,7 +31,7 @@ describe('useRangeEvents — private event privacy filter', () => {
   });
 
   it("excludes both members' private events from a non-member/no-session view", async () => {
-    useAuthStore.setState({ userId: null });
+    useAuthStore.setState({ accessToken: null, status: 'unauthenticated' });
     const { result } = renderHook(() => useRangeEvents(new Date('2026-01-01'), new Date('2027-01-01')), {
       wrapper: makeWrapper(newQueryClient()),
     });
@@ -45,7 +45,7 @@ describe('useRangeEvents — private event privacy filter', () => {
 
 describe('useUpdateEvent — unauthorized private access', () => {
   it("404s a non-owner's attempt to update another member's private event, with no private-specific message", async () => {
-    useAuthStore.setState({ userId: 1 }); // event 15 is owned by user 2
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' }); // event 15 is owned by user 2
     const { result } = renderHook(() => useUpdateEvent(), { wrapper: makeWrapper(newQueryClient()) });
 
     result.current.mutate({ id: 15, data: { title: 'Snooping' } });

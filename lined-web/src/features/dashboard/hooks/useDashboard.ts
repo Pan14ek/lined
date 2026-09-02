@@ -3,8 +3,8 @@ import type { FreeSlotDto, LobbyDto } from '@/features/lobby/model';
 import { getFreeSlots } from '@/features/lobby/api';
 import { QUERY_KEYS } from '@/features/lobby/lib/constants';
 import { addDays } from '@/features/calendar/lib/calendarUtils';
-import { useAuthStore } from '@/store/auth';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
+import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { useUser } from '@/features/users/hooks/useUsers';
 
 const FREE_SLOTS_WINDOW_DAYS = 7;
@@ -28,7 +28,8 @@ export const useFreeSlotBanner = (): {
   isLoading: boolean;
   slot: FreeSlotBannerData | null;
 } => {
-  const currentUserId = useAuthStore((s) => s.userId);
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id ?? null;
   const { data: lobbies } = useMyLobbies();
   const targetLobby = lobbies?.find((l) => l.memberIds.length > 1) ?? null;
 

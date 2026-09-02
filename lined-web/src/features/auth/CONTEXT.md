@@ -12,6 +12,8 @@ itself.
 ```
 auth/
   AuthAlert.tsx, AuthCard.tsx    shared shell/error-banner used by all auth pages
+  AuthBootstrap.tsx              CSRF, refresh, and current-user startup gate
+  sessionCleanup.ts              logout/account-delete cache isolation
   RequireAuth.tsx                route guards: <RequireAuth/> (redirect if signed out),
                                   <RedirectIfAuthed/> (redirect if already signed in)
   model/index.ts                 LoginRequestDto, LoginResponseDto,
@@ -23,13 +25,15 @@ auth/
 
 ## API surface
 
-`prod.ts` calls: `POST auth/login`, `POST auth/password-reset-requests`,
-`POST auth/password-resets`. Auth MVP identifies the caller via an
-`X-User-Id` header set post-login by the auth store — there is no token
-refresh flow yet (see Known gaps).
+`prod.ts` calls `POST auth/login`, `POST auth/refresh`, `POST auth/logout`,
+`GET auth/csrf`, and the password-reset endpoints. The access token is held
+only in memory by the auth store; the refresh capability remains in the
+HttpOnly cookie. `GET users/me` is owned by `features/users/` and is the
+current-user source after bootstrap.
 
 `useSignUp` actually calls `createUser` from **`features/users/api`** (sign-up
-creates a `UserDto`), not this feature's own `api/`. That's the one
+creates a `UserDto`), not this feature's own `api/`. `AuthBootstrap` also
+loads `getCurrentUser` from that API after session refresh. That's the one
 intentional cross-feature call inside `hooks/useAuth.ts`.
 
 ## Depends on
@@ -50,10 +54,13 @@ Each file has a colocated `__tests__/`. `useAuth` tests exercise
 `useSignIn`/`useSignUp` against the MSW handlers in `api/handlers.ts`. See
 `docs/TESTING.md` at the repo root for conventions.
 
-## Known gaps
+## Session behavior
 
-- No refresh-token / session-expiry handling — `X-User-Id` is trusted as
-  long as the auth store holds it (see root `AGENTS.md`, "API Authentication
-  (MVP)").
+- `AuthBootstrap` starts in `bootstrapping`, attempts CSRF initialization and
+  refresh, then exposes the application only as authenticated or
+  unauthenticated.
+- The shared client performs one single-flight refresh for concurrent 401s and
+  retries each original request once. Login, refresh, logout, CSRF, and
+  password-reset routes are excluded from refresh recursion.
 - Password reset validates a hardcoded `'valid-token'` in `dev.ts`/MSW mocks
   — there's no real token issuance to mock against yet.

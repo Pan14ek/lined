@@ -53,8 +53,9 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
 - `CurrentUserProvider` is the HTTP security adapter for caller identity. It
   rejects missing, anonymous, blank, malformed, zero, and negative subjects;
   caller-scoped controllers never accept `X-User-Id` as an identity source.
-- AUTH-SEC-08 owns the web client's token storage, bootstrap, refresh retry,
-  logout cache isolation, and removal of persisted client-side user IDs.
+- AUTH-SEC-08 delivers the web client's memory-only token storage, bootstrap,
+  refresh retry, logout cache isolation, and removal of persisted client-side
+  user IDs.
 
 ## Architecture and data flow
 

@@ -41,6 +41,9 @@ their respective hooks). This feature is purely a consumer.
 - `features/lobby/lib/constants` — `LOBBY_TYPE_*` maps and `LOBBY_TYPES`
   (onboarding hero's lobby-type picker)
 
+`useCurrentUser` is backed by `GET /api/users/me`; dashboard decisions do not
+read persisted client identity.
+
 ## Depended on by
 
 - `features/calendar/hooks/useEvents.ts` and

@@ -4,4 +4,4 @@ import * as prodApi from './prod';
 
 const impl = USE_MOCKS ? devApi : prodApi;
 
-export const { login, requestPasswordReset, resetPassword } = impl;
+export const { login, refresh, logout, initializeCsrf, requestPasswordReset, resetPassword } = impl;

@@ -28,7 +28,7 @@ export const SignInPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const signIn = useSignIn();
-  const setUserId = useAuthStore((s) => s.setUserId);
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const resetSucceeded = searchParams.get('reset') === 'success';
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
@@ -43,7 +43,7 @@ export const SignInPage = () => {
 
         signIn.mutate(values, {
           onSuccess: (res) => {
-            setUserId(res.userId);
+            setAccessToken(res.accessToken);
             navigate('/');
           },
         });

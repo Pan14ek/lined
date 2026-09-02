@@ -8,7 +8,7 @@ const user = MOCK_USERS[0]!;
 
 describe('SubscriptionPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: user.id });
+    useAuthStore.setState({ accessToken: `mock-token-${user.id}`, status: 'authenticated' });
   });
 
   it('renders the current plan, available plans, and history sections', async () => {

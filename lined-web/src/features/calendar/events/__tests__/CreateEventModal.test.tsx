@@ -19,6 +19,10 @@ const mockConflict = (overrides: Partial<EventConflictDto> = {}): EventConflictD
 }
 
 describe('CreateEventModal', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
+  });
+
   it('shows an editable lobby select when not locked', () => {
     expect.assertions(2);
     renderWithProviders(
@@ -204,7 +208,7 @@ describe('CreateEventModal — edit mode', () => {
 
 describe('CreateEventModal — visibility', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
   });
 
   it('defaults to Shared and Notify members enabled in create mode', async () => {
@@ -248,7 +252,7 @@ describe('CreateEventModal — visibility', () => {
 
   it('does not render the visibility control when editing another member\'s event', () => {
     expect.assertions(1);
-    useAuthStore.setState({ userId: 2 }); // EVENT is owned by user 1
+    useAuthStore.setState({ accessToken: 'mock-token-2', status: 'authenticated' }); // EVENT is owned by user 1
     renderWithProviders(
       <CreateEventModal lobbies={MOCK_LOBBIES} event={EVENT} onClose={vi.fn()} onSaved={vi.fn()} />,
     );
@@ -256,13 +260,13 @@ describe('CreateEventModal — visibility', () => {
     expect(screen.queryByText('Visibility')).not.toBeInTheDocument();
   });
 
-  it('renders the visibility control for the event owner in edit mode', () => {
+  it('renders the visibility control for the event owner in edit mode', async () => {
     expect.assertions(1);
     renderWithProviders(
       <CreateEventModal lobbies={MOCK_LOBBIES} event={EVENT} onClose={vi.fn()} onSaved={vi.fn()} />,
     );
 
-    expect(screen.getByText('Visibility')).toBeInTheDocument();
+    expect(await screen.findByText('Visibility')).toBeInTheDocument();
   });
 
   it('shows the shared-to-private warning only on that transition', async () => {
@@ -274,7 +278,7 @@ describe('CreateEventModal — visibility', () => {
 
     expect(screen.queryByText(/removes it from other members' views/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Private' }));
+    await user.click(await screen.findByRole('button', { name: 'Private' }));
     expect(screen.getByText(/removes it from other members' views/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Shared with lobby' }));
@@ -296,7 +300,7 @@ describe('CreateEventModal — visibility', () => {
 
 describe('CreateEventModal — conflict warnings', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
   });
 
   it('shows a conflict banner naming the busy member and swaps the button to "Create Anyway"', async () => {

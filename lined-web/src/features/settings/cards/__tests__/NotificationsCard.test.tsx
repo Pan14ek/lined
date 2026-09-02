@@ -10,7 +10,7 @@ const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 describe('NotificationsCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
   });
 
   it('shows a loading skeleton before preferences load', () => {

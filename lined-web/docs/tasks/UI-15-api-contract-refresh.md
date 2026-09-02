@@ -32,12 +32,10 @@ Not applicable — no UI change. The contract reference is
    `myInvites()`, `acceptInvite(id)`, `declineInvite(id)` + a
    `LobbyInviteDto` type (`{ id, lobbyId, inviterId, inviteeId, status,
    sentAt, createdAt, updatedAt }`).
-2. **Auth:** add `src/api/auth.ts` → `login({ identifier, password })`
-   calling `POST /api/auth/login`; type the response (`accessToken`,
-   `tokenType`, `expiresIn`, `userId`, `username`, `email`, `roles`). Extend
-   the auth store to hold the token alongside `userId` (the backend still
-   accepts `X-User-Id`; keep sending it, store the token for the future
-   filter switch).
+2. **Auth:** add the auth API for `login({ identifier, password })`,
+   refresh, logout, and CSRF initialization. Keep the access token in memory;
+   load identity separately through `GET /api/users/me` and do not persist or
+   synthesize a caller id in the client.
 3. **Tasks:** extend `TaskDto`/`TaskCreateDto`/`TaskUpdateDto` with
    `description`, `priority` (`'HIGH' | 'MEDIUM' | 'LOW'`), `status` on
    create, `notifyAssignee`; add `listMyTasks()` → `GET /api/tasks/mine`.
@@ -72,6 +70,7 @@ Not applicable — no UI change. The contract reference is
 The full current surface — see the Backend API summary table in
 [`../UI_TASKS.md`](../UI_TASKS.md) and `backend/lined/docs/api.md`.
 
-**Remaining backend gaps** (do not block this task): `GET /api/users/me` not
-yet implemented (keep `users/{id}`), external email/push delivery, avatar
-upload, display-name field.
+**Historical note:** the original contract-refresh plan predated
+`GET /api/users/me` and AUTH-SEC-08. Current web authentication uses the
+Bearer/session contract; remaining gaps are external email/push delivery,
+avatar upload, and display-name field.

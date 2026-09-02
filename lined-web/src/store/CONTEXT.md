@@ -10,9 +10,9 @@ concern per store.
 
 ```
 store/
-  auth.ts        useAuthStore — { userId }, persisted to localStorage
-                 ('lined-auth'). Read by src/lib/apiClient.ts to set the
-                 X-User-Id header, and by features/users/hooks/useCurrentUser
+  auth.ts        useAuthStore — volatile { accessToken, status } with
+                 bootstrapping/authenticated/unauthenticated states. Read by
+                 src/lib/apiClient.ts for Bearer injection.
   calendar.ts     useCalendarStore — week/month view mode, selected date,
                  selected event id, hidden-lobby filter set for the global
                  Calendar page
@@ -36,7 +36,8 @@ feature depending back on the store.
 
 ## Depended on by
 
-- `auth.ts` — `src/lib/apiClient.ts`, `features/users`, every auth page
+- `auth.ts` — `src/lib/apiClient.ts`, `features/users`, every auth page, and
+  session cleanup
 - `calendar.ts` — `features/calendar`, `features/lobby/calendar`
 - `createMenu.ts` — `features/layout/AppShell`, `features/dashboard/CreateMenu`,
   and every feature whose overlay it opens (lobby, calendar, tasks)

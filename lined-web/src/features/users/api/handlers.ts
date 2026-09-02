@@ -2,10 +2,18 @@ import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_USERS } from './mockData';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
+import { getMockUserFromRequest } from '@/features/auth/api/mockIdentity';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export const userHandlers = [
+  http.get(`${BASE}/users/me`, async ({ request }) => {
+    await mockNetworkDelay();
+    const user = getMockUserFromRequest(request);
+    if (!user) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json(user);
+  }),
+
   // Must come before /users/:id — otherwise ":id" greedily matches the literal
   // "search" segment and this handler never runs.
   http.get(`${BASE}/users/search`, async ({ request }) => {

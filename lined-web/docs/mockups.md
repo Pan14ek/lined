@@ -18,7 +18,8 @@ Mockup file: `mockups/index.html` (serve with `npx serve -p 4321 mockups/`)
 
 **Notes:**
 - Auth screens use a centred card on a beige background (`--beige`).
-- MVP auth: `X-User-Id` header (no real session). Replace with JWT when auth is added.
+- Auth uses a memory-only Bearer access token with a cookie-backed refresh
+  session; the mockup has no session behavior to reproduce.
 - Both pages share `AuthCard` wrapper component.
 
 ---

@@ -12,7 +12,7 @@ const user = MOCK_USERS[0]!;
 
 describe('PasswordCard', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: user.id });
+    useAuthStore.setState({ accessToken: `mock-token-${user.id}`, status: 'authenticated' });
   });
 
   it('keeps Change password disabled until both fields are filled in', async () => {

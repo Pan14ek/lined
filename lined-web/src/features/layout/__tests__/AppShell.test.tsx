@@ -11,7 +11,7 @@ import { CREATE_MENU_TEXT } from '@/test/createMenuContent';
 
 describe('AppShell', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     useCreateMenuStore.setState({
       isCreateLobbyOpen: false,
       overlay: null,

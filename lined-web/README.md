@@ -153,14 +153,13 @@ Each feature's `api/index.ts` picks `prod.ts` (real requests) or `dev.ts`
 
 Do not put server data into Zustand. Do not put UI state into TanStack Query.
 
-### API Authentication (MVP)
+### API Authentication
 
-During the MVP phase the backend identifies callers via an `X-User-Id: <Long>`
-HTTP header. The shared `ky` client in `src/lib/apiClient.ts` attaches this
-header automatically from the auth store on every request.
-
-When real authentication is added (JWT / session cookies), this interceptor
-will be updated — all other code remains unchanged.
+The shared `ky` client keeps the access token in memory, attaches it as a
+Bearer credential, and includes cookies for the refresh session. On startup it
+initializes CSRF protection, attempts one refresh, and loads the caller through
+`GET /api/users/me`. Logout clears the token, current-user query, all Query
+cache entries, and user-scoped Zustand state before redirecting to sign-in.
 
 ### Component Library
 

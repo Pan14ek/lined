@@ -33,7 +33,7 @@ describe('useSignIn', () => {
     await waitUntilSettled(result);
 
     expect(result.current.isSuccess).toBe(true);
-    expect(result.current.data?.userId).toBe(1);
+    expect(result.current.data?.accessToken).toBe('mock-token-1');
   });
 
   it('sets an error for an unknown identifier', async () => {

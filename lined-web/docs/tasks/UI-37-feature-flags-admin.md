@@ -67,7 +67,7 @@ URL or backend request to administer flags.
 - Admin direct route loads; non-admin direct route redirects to `/`.
 - Missing/loading current-user roles do not flash admin content.
 - Page renders one active environment and all row metadata accessibly.
-- Toggle sends the correct key, boolean body, `X-User-Id`, and quoted
+- Toggle sends the correct key, boolean body, Bearer session, and quoted
   `If-Match` version.
 - Pending update keeps the last confirmed state and disables only that switch.
 - Successful update displays server-returned state/version/metadata and
