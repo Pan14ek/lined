@@ -20,19 +20,22 @@ public class AuthServiceImpl implements AuthService {
 
   private final AuthenticationManager authenticationManager;
   private final JwtTokenService tokenService;
+  private final RefreshSessionService refreshSessionService;
 
   @Override
-  public AuthLoginResponseDto login(AuthLoginDto dto) {
+  public AuthLoginResult login(AuthLoginDto dto) {
     String identifier = dto.resolvedIdentifier();
     if (identifier == null) {
       throw new BadRequestException("Email, username, or identifier is required");
     }
 
     LinedUserPrincipal user = authenticatedUser(identifier, dto.password());
-    return new AuthLoginResponseDto(
+    IssuedRefreshSession session = refreshSessionService.createSession(user.getUserId());
+    AuthLoginResponseDto response = new AuthLoginResponseDto(
         tokenService.issueFor(user.getUserId()),
         tokenService.tokenType(),
         tokenService.ttlSeconds());
+    return new AuthLoginResult(response, session.refreshToken());
   }
 
   private LinedUserPrincipal authenticatedUser(String identifier, String password) {
