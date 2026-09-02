@@ -1,7 +1,24 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { http, HttpResponse, delay } from 'msw';
 import { HTTPError } from 'ky';
-import { MockHttpError, getErrorStatus, mockDelay, mockNetworkDelay, toSearchParams } from '../apiClient';
+import {
+  MockHttpError,
+  getErrorStatus,
+  mockDelay,
+  mockNetworkDelay,
+  toSearchParams,
+} from '../apiClient';
 import { HTTP_STATUS } from '@/test/httpStatus';
+import { server } from '@/test/server';
+import { useAuthStore } from '@/store/auth';
+import {
+  api as linedApi,
+  invalidateAuthTransport,
+  logoutSession,
+  refreshAccessToken,
+} from '../apiClient';
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 describe('MockHttpError', () => {
   it('carries the given status and a default message', () => {
@@ -116,5 +133,107 @@ describe('toSearchParams', () => {
   it('returns an empty object when everything is undefined/null', () => {
     expect.assertions(1);
     expect(toSearchParams({ a: undefined, b: null })).toStrictEqual({});
+  });
+});
+
+describe('authenticated API transport', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
+    invalidateAuthTransport();
+  });
+
+  it('adds the Bearer token and never sends the legacy identity header', async () => {
+    expect.assertions(3);
+    server.use(
+      http.get(`${BASE}/transport-probe`, ({ request }) => {
+        expect(request.headers.get('authorization')).toBe('Bearer mock-token-1');
+        expect(request.headers.get('x-user-id')).toBeNull();
+        expect(request.credentials).toBe('include');
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    await linedApi.get('transport-probe').json<{ ok: boolean }>();
+  });
+
+  it('refreshes once for concurrent unauthorized requests and retries each request', async () => {
+    expect.assertions(6);
+    let refreshCount = 0;
+    let firstAttempts = 0;
+    let secondAttempts = 0;
+    server.use(
+      http.get(`${BASE}/protected-one`, ({ request }) => {
+        firstAttempts += 1;
+        if (firstAttempts === 1) return new HttpResponse(null, { status: 401 });
+        expect(request.headers.get('authorization')).toBe('Bearer mock-token-1-refreshed');
+        return HttpResponse.json({ resource: 'one' });
+      }),
+      http.get(`${BASE}/protected-two`, ({ request }) => {
+        secondAttempts += 1;
+        if (secondAttempts === 1) return new HttpResponse(null, { status: 401 });
+        expect(request.headers.get('authorization')).toBe('Bearer mock-token-1-refreshed');
+        return HttpResponse.json({ resource: 'two' });
+      }),
+      http.post(`${BASE}/auth/refresh`, async ({ request }) => {
+        refreshCount += 1;
+        expect(request.headers.get('x-xsrf-token')).toBe('test-csrf-token');
+        await delay(10);
+        return HttpResponse.json({
+          accessToken: 'mock-token-1-refreshed',
+          tokenType: 'Bearer',
+          expiresIn: 900,
+        });
+      }),
+    );
+
+    const [first, second] = await Promise.all([
+      linedApi.get('protected-one').json<{ resource: string }>(),
+      linedApi.get('protected-two').json<{ resource: string }>(),
+    ]);
+
+    expect(refreshCount).toBe(1);
+    expect(first.resource).toBe('one');
+    expect(second.resource).toBe('two');
+  });
+
+  it('does not retry a persistent unauthorized response', async () => {
+    expect.assertions(3);
+    let protectedCount = 0;
+    let refreshCount = 0;
+    server.use(
+      http.get(`${BASE}/always-protected`, () => {
+        protectedCount += 1;
+        return new HttpResponse(null, { status: 401 });
+      }),
+      http.post(`${BASE}/auth/refresh`, () => {
+        refreshCount += 1;
+        return new HttpResponse(null, { status: 401 });
+      }),
+    );
+
+    await expect(linedApi.get('always-protected')).rejects.toBeInstanceOf(HTTPError);
+    expect(protectedCount).toBe(1);
+    expect(refreshCount).toBe(1);
+  });
+
+  it.each([
+    ['auth/login', () => linedApi.post('auth/login')],
+    ['auth/refresh', () => refreshAccessToken()],
+    ['auth/password-reset-requests', () => linedApi.post('auth/password-reset-requests')],
+    ['auth/password-resets', () => linedApi.post('auth/password-resets')],
+    ['auth/logout', () => logoutSession()],
+  ])('does not recursively refresh a failed %s request', async (path, request) => {
+    expect.assertions(2);
+    let refreshCount = 0;
+    server.use(
+      http.post(`${BASE}/${path}`, () => new HttpResponse(null, { status: 401 })),
+      http.post(`${BASE}/auth/refresh`, () => {
+        refreshCount += 1;
+        return new HttpResponse(null, { status: 401 });
+      }),
+    );
+
+    await expect(request()).rejects.toBeDefined();
+    expect(refreshCount).toBe(0);
   });
 });
