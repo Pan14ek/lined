@@ -3,6 +3,7 @@ package io.backend.lined.config;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -13,6 +14,8 @@ public record CorsProperties(
     List<String> allowedOrigins,
     @DefaultValue("false") boolean requireHttps
 ) {
+
+  private static final Set<String> SUPPORTED_SCHEMES = Set.of("http", "https");
 
   public CorsProperties {
     allowedOrigins = normalizeOrigins(allowedOrigins);
@@ -42,7 +45,7 @@ public record CorsProperties(
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException("CORS origin is invalid", ex);
     }
-    if (!"http".equals(parsed.getScheme()) && !"https".equals(parsed.getScheme())
+    if (!SUPPORTED_SCHEMES.contains(parsed.getScheme())
         || parsed.getHost() == null
         || parsed.getRawPath() != null && !parsed.getRawPath().isEmpty()
         || parsed.getRawQuery() != null

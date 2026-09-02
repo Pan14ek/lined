@@ -29,6 +29,12 @@ class CorsPropertiesTest {
   }
 
   @Test
+  void constructor_rejectsUnsupportedOriginScheme() {
+    assertThatIllegalArgumentException().isThrownBy(
+        () -> new CorsProperties(true, List.of("ftp://app.lined.test"), false));
+  }
+
+  @Test
   void constructor_requiresHttpsWhenConfiguredForProduction() {
     assertThatIllegalArgumentException().isThrownBy(
         () -> new CorsProperties(true, List.of("http://localhost:5173"), true));
