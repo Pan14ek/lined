@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,6 +33,8 @@ import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 /**
  * Configures Lined's application-wide HTTP security boundary.
@@ -120,10 +123,9 @@ public class SecurityConfig {
   /**
    * Creates the stateless boundary for all HTTP APIs.
    *
-   * <p>CSRF remains enabled for browser-facing routes. It is ignored for the stateless API and
-   * actuator endpoints because AUTH-SEC-01 has no cookie-authenticated endpoint. AUTH-SEC-04 and
-   * AUTH-SEC-05 must replace this temporary API exclusion with an explicit CSRF policy before
-   * adding cookie-backed refresh or logout endpoints below {@code /api/**}.</p>
+   * <p>CSRF remains enabled for browser-facing routes and the cookie-authenticated refresh
+   * endpoint. Cookie-free API requests use Bearer authentication and are excluded from CSRF;
+   * this keeps the stateless API compatible with non-browser clients.</p>
    *
    * @param http Spring Security HTTP configuration builder
    * @param authenticationEntryPoint writer for unauthenticated Problem Details responses
@@ -137,13 +139,18 @@ public class SecurityConfig {
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
       ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
     return http
-        // AUTH-SEC-01 has no cookie-backed routes; see the method contract above.
-        .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**")) // NOSONAR
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            .ignoringRequestMatchers(
+                SecurityConfig::isCookieFreeApi,
+                SecurityConfig::isActuator)) // NOSONAR
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset-requests").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-resets").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/features").permitAll()
@@ -186,6 +193,15 @@ public class SecurityConfig {
 
   private static boolean isPresent(String value) {
     return value != null && !value.isBlank();
+  }
+
+  private static boolean isCookieFreeApi(HttpServletRequest request) {
+    return request.getRequestURI().startsWith("/api/")
+        && !request.getRequestURI().equals("/api/auth/refresh");
+  }
+
+  private static boolean isActuator(HttpServletRequest request) {
+    return request.getRequestURI().startsWith("/actuator/");
   }
 
 }

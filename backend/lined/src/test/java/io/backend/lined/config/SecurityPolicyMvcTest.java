@@ -59,10 +59,11 @@ class SecurityPolicyMvcTest {
   void approvedPublicRoutes_areAccessibleWithoutAuthenticationOrCsrfToken() throws Exception {
     assertPublic(post("/api/users"));
     assertPublic(post("/api/auth/login"));
-    assertPublic(post("/api/auth/refresh"));
+    assertPublic(post("/api/auth/refresh").with(csrf()));
     assertPublic(post("/api/auth/password-reset-requests"));
     assertPublic(post("/api/auth/password-resets"));
     assertPublic(get("/api/features"));
+    assertPublic(get("/api/auth/csrf"));
     assertPublic(get("/api/calendar/feed/feed-token.ics"));
     assertPublic(get("/actuator/health"));
   }
@@ -109,6 +110,12 @@ class SecurityPolicyMvcTest {
     assertUnauthorized(get("/api/auth/login"));
     assertUnauthorized(post("/api/features"));
     assertUnauthorized(post("/actuator/health"));
+  }
+
+  @Test
+  void refresh_requiresCsrfTokenBecauseItUsesCookieAuthentication() throws Exception {
+    mockMvc.perform(post("/api/auth/refresh"))
+        .andExpect(status().isForbidden());
   }
 
   @Test
@@ -187,7 +194,8 @@ class SecurityPolicyMvcTest {
       return "public";
     }
 
-    @GetMapping({"/api/features", "/api/calendar/feed/{token}.ics", "/actuator/health"})
+    @GetMapping({"/api/features", "/api/auth/csrf", "/api/calendar/feed/{token}.ics",
+        "/actuator/health"})
     public String getPublicRoute() {
       return "public";
     }
