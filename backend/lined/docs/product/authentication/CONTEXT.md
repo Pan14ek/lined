@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 Authentication verifies a user's password for login, starts independently
-revocable refresh sessions, and provides a signed-out password-reset flow. It
+revocable refresh sessions, current-session logout, and a signed-out password-reset flow. It
 exists so account access is not derived from an unverified user lookup. Login
 uses Spring Security's `AuthenticationManager`, `DaoAuthenticationProvider`,
 and identifier-resolving `LinedUserDetailsService` before returning a
@@ -30,6 +30,10 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   extends idle activity within the absolute deadline, and returns a new access JWT.
   Unknown, expired, revoked, consumed, or replayed credentials receive the same
   `401 auth.session.invalid` response; replay revokes the session family.
+- `POST /api/auth/logout` silently revokes the session identified by the current
+  refresh cookie, preserves other sessions for the same user, and returns `204`
+  with an expired refresh cookie. Missing or unknown cookies are treated as
+  already logged out.
 - The web sign-in and forgot-password flows are the primary consumers; user
   registration remains owned by the Users feature.
 - `POST /api/users`, the authentication/reset routes, `GET /api/features`,
@@ -87,10 +91,10 @@ the MVC exception layer, without exposing authentication or authorization intern
 
 | Layer | Files and classes | Responsibility |
 |---|---|---|
-| API | `AuthController`, `AuthLoginDto`, `AuthLoginResponseDto`, `PasswordResetRequestDto`, `PasswordResetDto` | Defines login and reset HTTP contracts and validates request payloads. |
+| API | `AuthController`, `AuthLoginDto`, `AuthLoginResponseDto`, `PasswordResetRequestDto`, `PasswordResetDto` | Defines login, logout, and reset HTTP contracts and validates request payloads. |
 | API | `RefreshTokenCookieWriter`, `RefreshTokenCookieReader` | Writes and reads the raw refresh credential only through the configured cookie transport; the writer also applies the server-calculated deadline. |
 | Application | `AuthService`, `AuthServiceImpl`, `LinedUserDetailsService`, `LinedUserPrincipal`, `JwtTokenService`, `JwtProperties` | Delegates password authentication to framework primitives, resolves Lined account credentials, issues approved JWT claims, and owns validated JWT configuration. |
-| Application | `RefreshSessionService`, `RefreshTokenGenerator`, `RefreshTokenHasher`, `RefreshSessionProperties`, `RefreshCookieProperties` | Creates sessions, atomically rotates one-time 256-bit Base64URL credentials, hashes them with SHA-256, enforces idle/absolute deadlines, and owns validated lifetime/cookie configuration. |
+| Application | `RefreshSessionService`, `RefreshTokenGenerator`, `RefreshTokenHasher`, `RefreshSessionProperties`, `RefreshCookieProperties` | Creates sessions, revokes the current session, atomically rotates one-time 256-bit Base64URL credentials, hashes them with SHA-256, enforces idle/absolute deadlines, and owns validated lifetime/cookie configuration. |
 | Application | `PasswordResetService`, `PasswordResetServiceImpl` | Issues reset requests and atomically redeems a reset token. |
 | Infrastructure | `SecurityConfig`, `ProblemAuthenticationEntryPoint`, `ProblemAccessDeniedHandler` | Enforces stateless default-deny policy, framework Bearer JWT validation, and safe security failures. |
 | Persistence | `PasswordResetTokenEntity`, `PasswordResetTokenRepository`, `AuthSessionEntity`, `AuthRefreshTokenEntity`, and their repositories | Stores reset-token and refresh-token hashes, session deadlines, and future token-history lifecycle state without raw refresh values. |
@@ -106,7 +110,7 @@ the MVC exception layer, without exposing authentication or authorization intern
 - `auth_sessions` owns one login/device lifecycle per successful authentication;
   `auth_refresh_tokens` keeps the complete hashed rotation history. Refresh
   consumption, rotation, and replay-family revocation are owned by AUTH-SEC-05;
-  current-session logout remains owned by AUTH-SEC-06.
+  current-session logout is owned by AUTH-SEC-06.
 - `GlobalExceptionHandler` converts MVC failures to RFC 7807; security-filter failures
   use the matching dedicated handlers because they occur before MVC.
 
@@ -119,5 +123,5 @@ the MVC exception layer, without exposing authentication or authorization intern
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)
-- AUTH-SEC-01 through AUTH-SEC-05 are implemented; later authentication-security tasks
+- AUTH-SEC-01 through AUTH-SEC-06 are implemented; later authentication-security tasks
   remain tracked by the task index and master task table.

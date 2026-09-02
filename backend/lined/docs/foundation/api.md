@@ -46,6 +46,12 @@ The credential is never a JSON field and is persisted only as a SHA-256 hash.
 token, and replaces it with one successor cookie. A consumed-token replay returns
 generic `401 auth.session.invalid` and revokes the associated session family.
 
+`POST /api/auth/logout` revokes only the server-side session identified by the
+current refresh cookie and returns `204 No Content`. It always expires the
+configured refresh cookie, including when the cookie is missing or unknown, so
+logout is idempotent and does not reveal session state. The endpoint requires the
+same `X-XSRF-TOKEN` header as refresh because it authenticates through a cookie.
+
 `GET /api/auth/csrf` initializes the non-secret CSRF token cookie required by
 cookie-authenticated browser requests. The refresh endpoint requires the matching
 `X-XSRF-TOKEN` request header.
@@ -678,7 +684,6 @@ not duplicate an occurrence.
 The following endpoints are not implemented by the current controllers:
 
 - `POST /api/auth/register`
-- `POST /api/auth/logout`
 
 `GET /api/health` is also not implemented by a dedicated controller in this
 backend codebase.
