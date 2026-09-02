@@ -15,7 +15,7 @@ class RefreshTokenCookieWriterTest {
   @Test
   void write_setsApprovedHttpOnlyRefreshCookieAttributes() {
     RefreshTokenCookieWriter writer = new RefreshTokenCookieWriter(
-        new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth"),
+        new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth", false),
         Clock.fixed(Instant.parse("2026-09-02T10:15:30Z"), ZoneOffset.UTC));
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -32,7 +32,7 @@ class RefreshTokenCookieWriterTest {
   @Test
   void clear_expiresRefreshCookieWithApprovedAttributes() {
     RefreshTokenCookieWriter writer = new RefreshTokenCookieWriter(
-        new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth"),
+        new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth", false),
         Clock.fixed(Instant.parse("2026-09-02T10:15:30Z"), ZoneOffset.UTC));
     MockHttpServletResponse response = new MockHttpServletResponse();
 

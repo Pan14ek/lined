@@ -13,10 +13,6 @@ public record RefreshCookieProperties(
     @DefaultValue("false") boolean enforceSecure
 ) {
 
-  public RefreshCookieProperties(String refreshName, boolean secure, String sameSite, String path) {
-    this(refreshName, secure, sameSite, path, false);
-  }
-
   public RefreshCookieProperties {
     if (refreshName == null || refreshName.isBlank() || containsCookieNameSeparator(refreshName)) {
       throw new IllegalArgumentException("Refresh cookie name is invalid");

@@ -172,7 +172,7 @@ class AuthControllerMvcTest {
 
     @Bean
     RefreshCookieProperties refreshCookieProperties() {
-      return new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth");
+      return new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth", false);
     }
 
     @Bean

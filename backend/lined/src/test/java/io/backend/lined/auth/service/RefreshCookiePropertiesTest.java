@@ -10,7 +10,7 @@ class RefreshCookiePropertiesTest {
   @Test
   void constructor_normalizesApprovedSameSiteValue() {
     RefreshCookieProperties properties = new RefreshCookieProperties(
-        "lined_refresh", true, "strict", "/api/auth");
+        "lined_refresh", true, "strict", "/api/auth", false);
 
     assertThat(properties.sameSite()).isEqualTo("Strict");
   }
@@ -18,15 +18,15 @@ class RefreshCookiePropertiesTest {
   @Test
   void constructor_rejectsCrossSiteCookieConfiguration() {
     assertThatIllegalArgumentException().isThrownBy(() -> new RefreshCookieProperties(
-        "lined_refresh", true, "None", "/api/auth"));
+        "lined_refresh", true, "None", "/api/auth", false));
   }
 
   @Test
   void constructor_rejectsInvalidCookieNameAndPath() {
     assertThatIllegalArgumentException().isThrownBy(() -> new RefreshCookieProperties(
-        "lined refresh", true, "Lax", "/api/auth"));
+        "lined refresh", true, "Lax", "/api/auth", false));
     assertThatIllegalArgumentException().isThrownBy(() -> new RefreshCookieProperties(
-        "lined_refresh", true, "Lax", "api/auth"));
+        "lined_refresh", true, "Lax", "api/auth", false));
   }
 
   @Test
