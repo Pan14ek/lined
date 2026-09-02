@@ -31,6 +31,8 @@ class UserDeletionPersistenceTest {
     assertThat(count("lobby_notification_preferences")).isZero();
     assertThat(count("notifications")).isZero();
     assertThat(count("notification_deliveries")).isZero();
+    assertThat(count("auth_sessions")).isZero();
+    assertThat(count("auth_refresh_tokens")).isZero();
     assertThat(count("lobbies")).isEqualTo(1);
     assertThat(jdbcTemplate.queryForObject(
         "select assignee_id from tasks where id = 101", Long.class)).isNull();
@@ -48,6 +50,11 @@ class UserDeletionPersistenceTest {
     jdbcTemplate.update("insert into lobby_notification_preferences (id, user_id) values (1, 1)");
     jdbcTemplate.update("insert into notifications (id, recipient_id) values (1, 1)");
     jdbcTemplate.update("insert into notification_deliveries (id, notification_id) values (1, 1)");
+    jdbcTemplate.update("insert into auth_sessions (id, user_id) values (?, 1)",
+        java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+    jdbcTemplate.update("insert into auth_refresh_tokens (id, session_id) values (?, ?)",
+        java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),
+        java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
   }
 
   private int count(String table) {

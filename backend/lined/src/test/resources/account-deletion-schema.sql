@@ -54,3 +54,13 @@ CREATE TABLE notification_deliveries (
     id BIGINT PRIMARY KEY,
     notification_id BIGINT NOT NULL REFERENCES notifications (id) ON DELETE CASCADE
 );
+
+CREATE TABLE auth_sessions (
+    id UUID PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE auth_refresh_tokens (
+    id UUID PRIMARY KEY,
+    session_id UUID NOT NULL REFERENCES auth_sessions (id) ON DELETE CASCADE
+);

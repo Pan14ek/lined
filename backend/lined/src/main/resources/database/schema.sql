@@ -242,6 +242,40 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens
 CREATE UNIQUE INDEX IF NOT EXISTS uq_password_reset_tokens_hash ON password_reset_tokens (token_hash);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens (user_id);
 
+CREATE TABLE IF NOT EXISTS auth_sessions
+(
+    id                  UUID PRIMARY KEY,
+    user_id             BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at          TIMESTAMPTZ  NOT NULL,
+    last_used_at        TIMESTAMPTZ  NOT NULL,
+    idle_expires_at     TIMESTAMPTZ  NOT NULL,
+    absolute_expires_at TIMESTAMPTZ  NOT NULL,
+    revoked_at          TIMESTAMPTZ,
+    revocation_reason   VARCHAR(64)
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_idle_expires ON auth_sessions (idle_expires_at);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_absolute_expires
+    ON auth_sessions (absolute_expires_at);
+
+CREATE TABLE IF NOT EXISTS auth_refresh_tokens
+(
+    id                   UUID PRIMARY KEY,
+    session_id           UUID        NOT NULL REFERENCES auth_sessions (id) ON DELETE CASCADE,
+    token_hash           VARCHAR(64) NOT NULL,
+    issued_at            TIMESTAMPTZ NOT NULL,
+    expires_at           TIMESTAMPTZ NOT NULL,
+    consumed_at          TIMESTAMPTZ,
+    revoked_at           TIMESTAMPTZ,
+    replaced_by_token_id UUID
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_auth_refresh_tokens_hash
+    ON auth_refresh_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_session ON auth_refresh_tokens (session_id);
+CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_expires ON auth_refresh_tokens (expires_at);
+
 CREATE TABLE IF NOT EXISTS billing_accounts
 (
     id            BIGSERIAL PRIMARY KEY,
