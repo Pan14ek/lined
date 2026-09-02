@@ -20,7 +20,7 @@ const mockConflict = (overrides: Partial<EventConflictDto> = {}): EventConflictD
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ userId: 1 });
+  useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
 });
 
 describe('ReserveSlotModal — mode A (full slot, lobby known)', () => {

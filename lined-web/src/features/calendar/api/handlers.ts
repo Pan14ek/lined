@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_EVENTS } from './mockData';
 import type { EventDto } from '@/features/calendar/model';
+import { getMockUserFromRequest } from '@/features/auth/api/mockIdentity';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -22,7 +23,7 @@ export const eventHandlers = [
   http.get(`${BASE}/calendar/events`, async ({ request }) => {
     await mockNetworkDelay();
     const url = new URL(request.url);
-    const requesterId = request.headers.get('X-User-Id');
+    const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
     let events = [...MOCK_EVENTS];
 
     // Requester-aware privacy filter, mirroring the backend: another
@@ -58,7 +59,7 @@ export const eventHandlers = [
         { status: 400 },
       );
     }
-    const requesterId = request.headers.get('X-User-Id');
+    const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
     return HttpResponse.json(
       {
         ...body,
@@ -73,7 +74,7 @@ export const eventHandlers = [
 
   http.patch(`${BASE}/calendar/events/:id`, async ({ params, request }) => {
     const event = MOCK_EVENTS.find((e) => e.id === Number(params['id']));
-    const requesterId = request.headers.get('X-User-Id');
+    const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
     if (!event) return new HttpResponse(null, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     if (isUnauthorizedVisibilityChange(event, requesterId, body['visibility'])) {
@@ -87,7 +88,7 @@ export const eventHandlers = [
 
   http.delete(`${BASE}/calendar/events/:id`, ({ params, request }) => {
     const event = MOCK_EVENTS.find((e) => e.id === Number(params['id']));
-    const requesterId = request.headers.get('X-User-Id');
+    const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
     if (!event || isUnauthorizedVisibilityChange(event, requesterId)) {
       return new HttpResponse(null, { status: 404 });
     }

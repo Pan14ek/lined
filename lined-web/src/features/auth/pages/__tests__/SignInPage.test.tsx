@@ -21,7 +21,7 @@ const renderSignIn = () => {
 
 describe('SignInPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null });
+    useAuthStore.setState({ accessToken: null, status: 'unauthenticated' });
   });
 
   it('signs in with a known identifier and redirects home', async () => {
@@ -34,7 +34,7 @@ describe('SignInPage', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText('Home Page')).toBeInTheDocument();
-    expect(useAuthStore.getState().userId).toBe(1);
+    expect(useAuthStore.getState().accessToken).toBe('mock-token-1');
   });
 
   it('shows an inline error for an unknown identifier', async () => {
@@ -47,7 +47,7 @@ describe('SignInPage', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid credentials');
-    expect(useAuthStore.getState().userId).toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
   it('shows a pending label while the request is in flight', async () => {

@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { MOCK_USERS } from '@/features/users/api/mockData';
+import { getMockUserFromRequest } from './mockIdentity';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -19,13 +20,23 @@ export const authHandlers = [
     return HttpResponse.json({
       accessToken: `mock-token-${user.id}`,
       tokenType: 'Bearer',
-      expiresIn: 3600,
-      userId: user.id,
-      username: user.username,
-      email: user.email,
-      roles: user.roles,
+      expiresIn: 900,
     });
   }),
+
+  http.get(`${BASE}/auth/csrf`, () => HttpResponse.json({ token: 'test-csrf-token' })),
+
+  http.post(`${BASE}/auth/refresh`, ({ request }) => {
+    const user = getMockUserFromRequest(request);
+    if (!user) return new HttpResponse(null, { status: 401 });
+    return HttpResponse.json({
+      accessToken: `mock-token-${user.id}-refreshed`,
+      tokenType: 'Bearer',
+      expiresIn: 900,
+    });
+  }),
+
+  http.post(`${BASE}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
 
   http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, { status: 202 })),
 

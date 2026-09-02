@@ -25,7 +25,7 @@ const renderModal = (onClose = vi.fn()) => {
 
 describe('CreateLobbyModal', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
   });
 
   it('renders the name field, type picker, and hint text', () => {

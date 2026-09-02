@@ -26,7 +26,7 @@ const renderBell = () => {
 
 describe('NotificationBell', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 1 });
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
     useCalendarStore.setState({ selectedEventId: null });
   });
 

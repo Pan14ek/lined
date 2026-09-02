@@ -8,6 +8,7 @@ const renderSignUp = () => {
   return renderWithProviders(
     <Routes>
       <Route path="/sign-up" element={<SignUpPage />} />
+      <Route path="/sign-in" element={<div>Sign In Page</div>} />
       <Route path="/" element={<div>Home Page</div>} />
     </Routes>,
     { initialEntries: ['/sign-up'] },
@@ -26,10 +27,10 @@ const fillValidForm = async (user: ReturnType<typeof userEvent.setup>, overrides
 
 describe('SignUpPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: null });
+    useAuthStore.setState({ accessToken: null, status: 'unauthenticated' });
   });
 
-  it('creates an account, stores the id, and redirects home', async () => {
+  it('creates an account and redirects to sign-in without authenticating', async () => {
     expect.assertions(2);
     const user = userEvent.setup();
     renderSignUp();
@@ -37,8 +38,8 @@ describe('SignUpPage', () => {
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: /create account/i }));
 
-    expect(await screen.findByText('Home Page')).toBeInTheDocument();
-    expect(useAuthStore.getState().userId).toBe(99);
+    expect(await screen.findByText('Sign In Page')).toBeInTheDocument();
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
   it('shows a banner error when the username/email is already taken', async () => {
@@ -52,7 +53,7 @@ describe('SignUpPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Username or email already taken',
     );
-    expect(useAuthStore.getState().userId).toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
   it('shows a required-field error after blurring an empty username', async () => {
@@ -78,6 +79,6 @@ describe('SignUpPage', () => {
     await user.click(screen.getByRole('button', { name: /create account/i }));
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
-    expect(useAuthStore.getState().userId).toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 });
