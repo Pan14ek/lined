@@ -76,5 +76,10 @@ spec:
                 secretKeyRef:
                   name: lined-postgres
                   key: password
+            - name: LINED_PASSWORD_RESET_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lined-auth
+                  key: reset-token-secret
             - name: OTEL_SDK_DISABLED
               value: "true"

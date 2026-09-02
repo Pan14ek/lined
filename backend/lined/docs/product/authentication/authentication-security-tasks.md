@@ -90,6 +90,8 @@ The approved [system design](authentication-security-system-design.md) is decomp
 
 **Branch:** feature/auth-production-exposure-hardening. **Dependencies:** AUTH-SEC-01, AUTH-SEC-02, AUTH-SEC-05.
 
+**Status:** Implemented.
+
 **Traceability:** ADR-AUTH-007, 016, 017, 024, 025; AUTH-SR-004, 005, 011, 014; AUTH-NFR-004, 005; AUTH-AC-010, 022, 023, 024.
 
 **Scope:** Define external secrets, HTTPS cookie/CORS policy with explicit credentialed origins, production Swagger disablement, minimal public health, internal sensitive Actuator endpoints, and credential-redaction checks.

@@ -33,13 +33,15 @@ docker run --rm \
   -e SPRING_DATASOURCE_USERNAME=postgres \
   -e SPRING_DATASOURCE_PASSWORD=postgres \
   -e LINED_JWT_SECRET="$(openssl rand -base64 32)" \
+  -e LINED_PASSWORD_RESET_TOKEN_SECRET="$(openssl rand -base64 32)" \
   lined-backend:local
 ```
 
 Use environment variables for runtime configuration instead of baking local
 database values or signing material into the image. `LINED_JWT_SECRET` must be a Base64-encoded
 value that decodes to at least 32 random bytes; do not reuse the shown generated value or commit
-it to an environment file.
+it to an environment file. `LINED_PASSWORD_RESET_TOKEN_SECRET` must also be provided and must
+never be committed or logged.
 
 ## Verify the Container
 
@@ -52,6 +54,23 @@ curl http://localhost:8080/swagger-ui.html
 
 The health endpoint should report the application status. Swagger UI should
 remain available at the same path as the local `bootRun` workflow.
+
+For a production-like run, activate the `prod` profile and provide an explicit
+HTTPS CORS origin allowlist when the frontend is hosted on another origin:
+
+```bash
+docker run --rm \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e LINED_JWT_SECRET="$(openssl rand -base64 32)" \
+  -e LINED_PASSWORD_RESET_TOKEN_SECRET="$(openssl rand -base64 32)" \
+  -e LINED_SECURITY_CORS_ALLOWED_ORIGINS=https://app.lined.test \
+  lined-backend:local
+```
+
+The `prod` profile disables Swagger/OpenAPI, exposes only status-only health,
+requires secure refresh cookies, requires HTTPS CORS origins, and lowers
+application logging verbosity.
 
 ## Scope Boundary
 

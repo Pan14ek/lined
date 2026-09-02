@@ -85,6 +85,7 @@ tasks.named('test') {
     useJUnitPlatform()
     systemProperty 'lined.reminders.scheduling.enabled', 'false'
     systemProperty 'lined.security.jwt.secret', 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
+    systemProperty 'lined.auth.reset-token-secret', 'test-password-reset-token-secret'
 }
 
 tasks.register('integrationTest', Test) {

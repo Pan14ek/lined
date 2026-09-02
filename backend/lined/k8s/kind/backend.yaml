@@ -81,5 +81,10 @@ spec:
                 secretKeyRef:
                   name: lined-jwt
                   key: secret
+            - name: LINED_PASSWORD_RESET_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lined-auth
+                  key: reset-token-secret
             - name: OTEL_SDK_DISABLED
               value: "true"

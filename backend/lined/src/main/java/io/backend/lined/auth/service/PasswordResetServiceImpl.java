@@ -16,7 +16,6 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,14 +23,13 @@ import org.springframework.stereotype.Service;
 /**
  * Implements signed-out recovery with opaque, HMAC-hashed, time-limited tokens.
  *
- * <p>For example, a request for {@code alex@example.com} creates a 32-byte Base64URL token,
- * persists only its HMAC-SHA256 hash, and logs the raw token as the temporary MVP delivery path.
- * A later redemption atomically claims that hash before changing the password: two simultaneous
- * submissions of one token yield one password change and one generic invalid-token response.
+ * <p>For example, a request for {@code alex@example.com} creates a 32-byte Base64URL token and
+ * persists only its HMAC-SHA256 hash. The raw token is never logged. A later redemption atomically
+ * claims that hash before changing the password: two simultaneous submissions of one token yield
+ * one password change and one generic invalid-token response.
  * Unknown, expired, and already-used tokens intentionally share that response so the API does
  * not disclose token state.</p>
  */
-@Slf4j
 @Service
 @Transactional
 public class PasswordResetServiceImpl implements PasswordResetService {
@@ -63,8 +61,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
       UserRepository userRepository,
       PasswordResetTokenRepository tokenRepository,
       PasswordEncoder passwordEncoder,
-      @Value("${lined.auth.reset-token-secret:local-development-only-change-me}")
+      @Value("${lined.auth.reset-token-secret:}")
       String tokenSecret) {
+    if (tokenSecret == null || tokenSecret.isBlank()) {
+      throw new IllegalArgumentException("Password reset token secret is required");
+    }
     this.userRepository = userRepository;
     this.tokenRepository = tokenRepository;
     this.passwordEncoder = passwordEncoder;
@@ -136,9 +137,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   /**
    * Creates and persists a fresh reset token for a known user.
    *
-   * <p>For example, the raw Base64URL token is delivered only through the temporary MVP log path,
-   * while this method stores its HMAC hash and an expiry 30 minutes in the future. The database
-   * never receives the raw token.</p>
+   * <p>For example, this method stores the HMAC hash and an expiry 30 minutes in the future. The
+   * database and application logs never receive the raw token; delivery remains an out-of-band
+   * integration concern.</p>
    *
    * @param user account that requested password recovery
    */
@@ -151,8 +152,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         .expiresAt(now.plusMinutes(TOKEN_TTL_MINUTES))
         .build();
     tokenRepository.save(token);
-    log.info("Password reset requested for user {}: token={} "
-        + "(dev/MVP delivery, no email/push channel yet)", user.getId(), rawToken);
   }
 
   /**

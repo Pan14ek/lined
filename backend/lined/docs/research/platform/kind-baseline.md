@@ -61,6 +61,10 @@ kubectl -n lined create secret generic lined-jwt \
   --from-literal=secret="$(openssl rand -base64 32)" \
   --dry-run=client \
   -o yaml | kubectl apply -f -
+kubectl -n lined create secret generic lined-auth \
+  --from-literal=reset-token-secret="$(openssl rand -base64 32)" \
+  --dry-run=client \
+  -o yaml | kubectl apply -f -
 kubectl apply -k k8s/kind
 ```
 
@@ -159,6 +163,8 @@ server to retain samples during scenario runs.
 - JWT signing material is created as the local-only Kubernetes Secret `lined-jwt`.
   Its `secret` value must be Base64-encoded material that decodes to at least 32 random bytes;
   the manifest and generated value are not stored in git.
+- Password-reset HMAC material is created as the local-only Kubernetes Secret `lined-auth`.
+  Its `reset-token-secret` value is injected into the backend and is not stored in git.
 - The backend pod sets `OTEL_SDK_DISABLED=true` because telemetry collection is
   introduced by a later experiment task.
 

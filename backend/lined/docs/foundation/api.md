@@ -43,6 +43,7 @@ retry, and cache-isolation work is delivered by AUTH-SEC-08 in `lined-web`.
 Successful login also sends an opaque `lined_refresh` credential only in the
 `Set-Cookie` header: `HttpOnly`, configurable `Secure` (enabled by default),
 `SameSite=Lax`, `Path=/api/auth`, no `Domain`, and a seven-day initial max age.
+The `prod` profile requires `Secure=true` and HTTPS deployment.
 The credential is never a JSON field and is persisted only as a SHA-256 hash.
 `POST /api/auth/refresh` consumes that cookie exactly once, returns a new access
 token, and replaces it with one successor cookie. A consumed-token replay returns
@@ -78,8 +79,8 @@ are registered.
 
 When the identifier matches an account, a single-use, random, high-entropy
 token is generated (30-minute expiry) and only its HMAC-SHA256 hash is
-persisted. Until real email/push delivery exists, the raw token is logged
-server-side (MVP shortcut) for manual/dev redemption.
+persisted. The raw token is never logged; delivery requires the future
+out-of-band email/push integration.
 
 ### `POST /api/auth/password-resets`
 
@@ -750,3 +751,9 @@ discovery, and feature-flag administration remain available.
 
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+These local endpoints are disabled when `SPRING_PROFILES_ACTIVE=prod`.
+Production browser clients use same-origin routing by default. If a separate
+frontend origin is required, configure `LINED_SECURITY_CORS_ALLOWED_ORIGINS`
+with an explicit comma-separated HTTPS allowlist; wildcard origins are invalid
+for credentialed requests.
