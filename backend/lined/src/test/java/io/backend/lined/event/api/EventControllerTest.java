@@ -265,6 +265,21 @@ class EventControllerTest {
   }
 
   @Test
+  void findConflictsRouteDerivesRequesterAndIgnoresLegacyQueryIdentity() throws Exception {
+    when(service.findConflicts(101L, start, end, 42L)).thenReturn(List.of());
+
+    mockMvc.perform(get("/api/calendar/conflicts")
+            .param("lobbyId", "101")
+            .param("start", start.toString())
+            .param("end", end.toString())
+            .param("requesterId", "99"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray());
+
+    verify(service).findConflicts(101L, start, end, 42L);
+  }
+
+  @Test
   void hasConflict_usesAuthenticatedUserAsRequester() {
     when(currentUserProvider.requireUserId()).thenReturn(1L);
     var result = new UserConflictDto(1L, false, null);
@@ -274,6 +289,21 @@ class EventControllerTest {
 
     assertThat(response.getBody()).isEqualTo(result);
     verify(service).hasConflict(1L, start, end, 1L);
+  }
+
+  @Test
+  void userConflictRouteDerivesRequesterWithoutRequesterQueryParameter() throws Exception {
+    var result = new UserConflictDto(1L, false, null);
+    when(service.hasConflict(1L, start, end, 42L)).thenReturn(result);
+
+    mockMvc.perform(get("/api/calendar/user-conflict")
+            .param("userId", "1")
+            .param("start", start.toString())
+            .param("end", end.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.userId").value(1));
+
+    verify(service).hasConflict(1L, start, end, 42L);
   }
 
 }
