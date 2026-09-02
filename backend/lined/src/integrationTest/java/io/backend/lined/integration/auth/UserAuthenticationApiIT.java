@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -95,7 +96,7 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   private String refreshToken(HttpHeaders headers) {
-    String cookie = headers.getFirst(HttpHeaders.SET_COOKIE);
+    String cookie = Objects.requireNonNull(headers.getFirst(HttpHeaders.SET_COOKIE));
     assertThat(cookie).contains("lined_refresh=", "Max-Age=604800", "Path=/api/auth", "Secure",
         "HttpOnly", "SameSite=Lax");
     assertThat(cookie).doesNotContain("Domain=");
@@ -234,8 +235,9 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   private CsrfCredentials csrfCredentials() {
     var response = request(HttpMethod.GET, "/api/auth/csrf", null, null);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    String token = response.getBody().path("token").asText();
-    String cookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+    var body = Objects.requireNonNull(response.getBody());
+    String token = body.path("token").asText();
+    String cookie = Objects.requireNonNull(response.getHeaders().getFirst(HttpHeaders.SET_COOKIE));
     assertThat(token).isNotBlank();
     assertThat(cookie).startsWith("XSRF-TOKEN=");
     return new CsrfCredentials(token, cookie.substring(0, cookie.indexOf(';')));
@@ -253,7 +255,7 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   private String refreshTokenValue(HttpHeaders headers) {
-    String cookie = headers.getFirst(HttpHeaders.SET_COOKIE);
+    String cookie = Objects.requireNonNull(headers.getFirst(HttpHeaders.SET_COOKIE));
     assertThat(cookie).startsWith("lined_refresh=");
     return cookie.substring("lined_refresh=".length(), cookie.indexOf(';'));
   }
