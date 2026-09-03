@@ -44,6 +44,13 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: lined-web/package-lock.json
+
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
@@ -64,8 +71,31 @@ jobs:
       - name: Run static checks (Checkstyle + SpotBugs + Tests)
         run: ./gradlew check
 
+      - name: Run PostgreSQL API integration tests
+        run: ./gradlew integrationTest
+
       - name: Generate code coverage report
         run: ./gradlew jacocoTestReport
+
+      - name: Install web dependencies
+        working-directory: lined-web
+        run: npm ci
+
+      - name: Lint web application
+        working-directory: lined-web
+        run: npm run lint
+
+      - name: Typecheck web application
+        working-directory: lined-web
+        run: npm run typecheck
+
+      - name: Test web application
+        working-directory: lined-web
+        run: npm run test:run
+
+      - name: Build web application
+        working-directory: lined-web
+        run: npm run build
 
       - name: Analyze with SonarCloud
         env:
