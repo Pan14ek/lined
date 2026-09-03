@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.backend.lined.integration.AbstractApiIntegrationTest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,11 +15,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 
 class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
+
+  @Autowired
+  private JwtEncoder jwtEncoder;
 
   @Test
   void registersUserAndStoresOnlyEncodedPassword() {
@@ -142,6 +152,47 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     assertThat(response.getBody().has("accessToken")).isFalse();
     assertThat(response.getBody().path("detail").asText())
         .isEqualTo("Invalid email, username, or password.");
+  }
+
+  @Test
+  void unknownIdentifierAndWrongPasswordHaveSamePublicFailure() {
+    String label = uniqueLabel("generic-credentials");
+    registerUser(label);
+
+    var wrongPassword = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label,
+        "password", "incorrect-password"), null);
+    var unknownIdentifier = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label + "-unknown",
+        "password", "incorrect-password"), null);
+
+    assertThat(wrongPassword.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(unknownIdentifier.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(unknownIdentifier.getBody().path("title").asText())
+        .isEqualTo(wrongPassword.getBody().path("title").asText());
+    assertThat(unknownIdentifier.getBody().path("detail").asText())
+        .isEqualTo(wrongPassword.getBody().path("detail").asText());
+    assertThat(unknownIdentifier.getBody().path("code").asText())
+        .isEqualTo(wrongPassword.getBody().path("code").asText());
+  }
+
+  @Test
+  void rejectsTamperedExpiredWrongIssuerAndWrongAudienceBearerTokens() {
+    String label = uniqueLabel("jwt-validation");
+    var user = registerUser(label);
+    var login = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label,
+        "password", "P@ssw0rd!"), null);
+    String validToken = login.getBody().path("accessToken").asText();
+    Instant now = Instant.now();
+
+    assertUnauthorizedBearer(tamper(validToken));
+    assertUnauthorizedBearer(signedToken("other-issuer", List.of("lined-api"),
+        String.valueOf(user.path("id").asLong()), now, now.plusSeconds(900)));
+    assertUnauthorizedBearer(signedToken("lined", List.of("other-audience"),
+        String.valueOf(user.path("id").asLong()), now, now.plusSeconds(900)));
+    assertUnauthorizedBearer(signedToken("lined", List.of("lined-api"),
+        String.valueOf(user.path("id").asLong()), now.minusSeconds(600), now.minusSeconds(300)));
   }
 
   @Test
@@ -331,6 +382,36 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
     String cookie = Objects.requireNonNull(headers.getFirst(HttpHeaders.SET_COOKIE));
     assertThat(cookie).startsWith("lined_refresh=");
     return cookie.substring("lined_refresh=".length(), cookie.indexOf(';'));
+  }
+
+  private void assertUnauthorizedBearer(String token) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth(token);
+    var response = restTemplate.exchange("/api/users/me", HttpMethod.GET,
+        new org.springframework.http.HttpEntity<>(null, headers),
+        com.fasterxml.jackson.databind.JsonNode.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getBody().path("code").asText()).isEqualTo("auth.required");
+  }
+
+  private String signedToken(String issuer, List<String> audience, String subject,
+                             Instant issuedAt, Instant expiresAt) {
+    JwtClaimsSet claims = JwtClaimsSet.builder()
+        .issuer(issuer)
+        .audience(audience)
+        .subject(subject)
+        .issuedAt(issuedAt)
+        .expiresAt(expiresAt)
+        .id(UUID.randomUUID().toString())
+        .build();
+    return jwtEncoder.encode(JwtEncoderParameters.from(
+        JwsHeader.with(MacAlgorithm.HS256).type("JWT").build(), claims)).getTokenValue();
+  }
+
+  private String tamper(String token) {
+    char last = token.charAt(token.length() - 1);
+    return token.substring(0, token.length() - 1) + (last == 'a' ? 'b' : 'a');
   }
 
   private record CsrfCredentials(String token, String cookie) {
