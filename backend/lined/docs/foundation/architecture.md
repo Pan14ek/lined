@@ -62,15 +62,16 @@ Controller -> Service -> Repository -> Entity
 
 ## API and Identity Model
 
-The backend is moving away from its MVP identity model. `POST /api/auth/login`
-now verifies a user's stored password and returns a short-lived Bearer-style
-token plus the authenticated user identity. A stateless Spring Security
-boundary protects every non-public HTTP route, while the approved registration,
+The authenticated identity model is implemented with `POST /api/auth/login`,
+which verifies a user's stored password and returns a short-lived Bearer JWT
+plus the authenticated user identity. A stateless Spring Security boundary
+protects every non-public HTTP route, while the approved registration,
 authentication/reset, feature-discovery, and health routes remain public.
 Bearer-token decoding is provided by the Spring Security resource-server
 boundary. Caller-scoped controllers resolve the validated JWT subject through
 the `CurrentUserProvider` security adapter; domain services continue to receive
-trusted IDs as explicit framework-independent authorization inputs.
+trusted IDs as explicit framework-independent authorization inputs. The
+client-controlled `X-User-Id` header is not an identity source.
 
 Swagger UI is available at `/swagger-ui.html` when the app is running.
 
@@ -105,10 +106,10 @@ Candidate architecture/deployment alternatives:
 
 ## Known Inconsistencies and Risks
 
-- Request authentication is transitional: login verifies passwords and returns a
-  token, but JWT decoding and trusted identity propagation arrive in later
-  authentication-security slices. The current default-deny boundary therefore
-  rejects private requests until AUTH-SEC-02 supplies Bearer authentication.
+- Authentication verification and trusted identity propagation are implemented
+  through the Spring Security Bearer boundary and `CurrentUserProvider`.
+  Historical references to `X-User-Id` in migration records and spoofing tests
+  describe the removed baseline and must not be copied into new product code.
 - Some service code still throws raw Java exceptions such as
   `NoSuchElementException`, `IllegalArgumentException`, or `SecurityException`.
   Prefer the application exception hierarchy for new work.

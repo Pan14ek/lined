@@ -102,11 +102,13 @@ The approved [system design](authentication-security-system-design.md) is decomp
 
 **Branch:** feature/auth-security-verification-documentation. **Dependencies:** AUTH-SEC-01 through AUTH-SEC-09.
 
+**Status:** Implemented and verified.
+
 **Traceability:** SDD sections 26 through 28; AUTH-AC-001 through AUTH-AC-026.
 
 **Scope:** Complete backend/web evidence for login, validation, migration, refresh/replay, expiry, logout, multi-session, bootstrap, and cache isolation. Remove superseded paths only after proof. Reconcile contexts, API docs, operations docs, CI, non-goals, and residual logout trade-off.
 
-**Verify and done:** Run Gradle test/check/coverage and integration tests when Docker is available; run web test/lint/build; inspect reports and diff check. Done when the SDD Definition of Done has repeatable evidence and runtime-faithful docs.
+**Verify and done:** Run Gradle test/check/coverage and integration tests with Docker; run web `npm ci`, test, lint, typecheck, and build; inspect reports, k6 syntax, and diff check. Done when the SDD Definition of Done has repeatable evidence and runtime-faithful docs, and CI executes the same backend/web gates.
 
 ## Non-goals
 

@@ -5,9 +5,9 @@
 **Motivation:** UI gap (flagged by
 [UI task 18](../../../../../../lined-web/docs/tasks/UI-18-forgot-password.md)). The Sign In screen's
 "Forgot password?" link ships as a non-functional placeholder because there
-is no self-service recovery path: `POST /api/auth/login` only verifies an
-existing password, and `PATCH /api/users/{id}` requires the caller's own
-`X-User-Id` — a locked-out user has no session to prove identity with.
+is no self-service recovery path. `POST /api/auth/login` only verifies an
+existing password, while account-scoped changes require a validated Bearer
+session; a locked-out user has no session to prove identity with.
 
 ## What the API should do
 

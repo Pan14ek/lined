@@ -98,8 +98,8 @@ avoids double refunds when a provider response times out.
 5. Add `RefundService.preview(transactionId)` and
    `RefundService.issue(transactionId, RefundCommand)`.
 6. Add `BillingHistoryController` under `billing/api/web/` for user
-   `GET /api/billing/transactions|refunds` (derives account from
-   `X-User-Id`).
+   `GET /api/billing/transactions|refunds` (derives account from the validated
+   Bearer subject through `CurrentUserProvider`).
 7. Tests.
 8. Run `./gradlew test checkstyleMain spotbugsMain`.
 

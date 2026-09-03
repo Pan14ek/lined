@@ -10,7 +10,8 @@ module). Blocks UI-38 (which reads `/api/billing/me`).*
 The prototype APIs let the client name any `userId` and activate any
 plan locally without a payment. Design §41.1 forbids this. This task
 removes the unsafe surface and replaces it with a single authenticated
-`GET /api/billing/me` derived from `X-User-Id`.
+`GET /api/billing/me` derived from the validated Bearer subject through
+`CurrentUserProvider`.
 
 Scope:
 
@@ -68,8 +69,8 @@ Every subsequent billing endpoint (checkout, cancel, resume, …) will
 follow the same "authenticated principal → BillingAccount → domain
 action" pattern. Landing `/api/billing/me` first — with the legacy
 holes closed in the same PR — means UI-38 has a real endpoint to render
-and no other task has to work around the legacy `userId`-in-path
-pattern.
+and no other task has to work around the legacy `userId`-in-path pattern or a
+client-controlled identity header.
 
 ## Development steps
 
@@ -111,7 +112,7 @@ pattern.
 
 | Purpose | Method + Path |
 |---|---|
-| Current billing state | `GET /api/billing/me` (new; derives everything from `X-User-Id`) |
+| Current billing state | `GET /api/billing/me` (new; derives everything from the validated Bearer subject) |
 | Removed | `POST /api/subscriptions`, `POST /api/subscriptions/{userId}/cancel-active`, `GET /api/subscriptions/{userId}/active`, `GET /api/subscriptions/{userId}/history` |
 | Removed | `POST /api/plans`, `PUT /api/plans/{id}`, `DELETE /api/plans/{id}` |
 
@@ -120,8 +121,7 @@ pattern.
 - **Controller — `BillingControllerMeTest`**:
   - 200 with `effectivePlan=FREE`, `subscription=null`, Free limits for
     a user with no paid subscription
-  - 401/403 (whichever the app returns) when `X-User-Id` header is
-    missing
+  - 401 when the Bearer credential is missing or invalid
   - Response never echoes an incoming query/body `userId` — attempt to
     pass one is ignored
 - **Controller — `LegacyBillingEndpointsRemovedTest`**: 404 for each

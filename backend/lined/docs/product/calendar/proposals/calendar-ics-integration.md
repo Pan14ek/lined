@@ -53,8 +53,8 @@ token.
 ## Implementation notes
 
 - Use a maintained iCal library (e.g. `ical4j`) — do not hand-roll RFC 5545.
-- Feed endpoint must be excluded from the `X-User-Id` requirement; the token
-  lookup is the identity.
+- Feed endpoint must be excluded from the JWT requirement; the opaque feed
+  token lookup is the identity for this token-bearing integration path.
 - Store `icsUid` (nullable, indexed) on the event entity.
 - Tests: feed round-trip (export → parse), import dedupe, timezone handling
   (`OffsetDateTime` UTC + original `timezone` field), token revocation.

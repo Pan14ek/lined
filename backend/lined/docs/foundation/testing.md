@@ -13,6 +13,20 @@ Run tests from `backend/lined/`:
 
 ```bash
 ./gradlew test
+./gradlew check
+./gradlew jacocoTestReport
+./gradlew integrationTest
+```
+
+The pull-request CI workflow runs the same backend gates and additionally runs
+the web verification suite from `lined-web/`:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm run test:run
+npm run build
 ```
 
 ## Default Test Style
@@ -82,7 +96,6 @@ not start Docker.
 
 ```bash
 docker info
-./gradlew integrationTest
 ./gradlew test integrationTest
 ```
 
