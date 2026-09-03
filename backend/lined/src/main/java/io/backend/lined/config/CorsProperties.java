@@ -32,10 +32,15 @@ public record CorsProperties(
         .filter(Objects::nonNull)
         .map(String::trim)
         .filter(origin -> !origin.isEmpty())
-        .peek(CorsProperties::rejectWildcard)
-        .peek(CorsProperties::validateOrigin)
+        .map(CorsProperties::validateAndReturn)
         .distinct()
         .toList();
+  }
+
+  private static String validateAndReturn(String origin) {
+    rejectWildcard(origin);
+    validateOrigin(origin);
+    return origin;
   }
 
   private static void validateOrigin(String origin) {
