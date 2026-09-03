@@ -174,9 +174,11 @@ Use that broader bind only for local experiment work on a trusted machine.
 
 ## Workload Behavior
 
-The script uses the backend's current MVP identity mechanism:
-`X-User-Id: <id>`. It does not use JWT because the active controllers do not
-require JWT authentication.
+The script authenticates every protected request with a Bearer access token.
+Setup registers synthetic users, logs each user in through
+`POST /api/auth/login`, and retains the returned access token only in k6 setup
+data. Resource identifiers remain useful for URL paths and request payloads,
+but caller identity is always derived by the backend from the validated JWT.
 
 Setup creates:
 
@@ -230,11 +232,16 @@ mistyped smoke run does not silently become a longer baseline run. The
 `negative-smoke` profile marks expected validation/conflict/not-found responses
 as expected k6 responses so they do not count as `http_req_failed`.
 
-All caller-scoped reads use `X-User-Id`. Task updates and task/event/lobby
-deletes derive quoted `If-Match` values from the response version. Baseline,
-mixed, and stress workloads assign one seeded task per mutating VU and retain
-the returned version after each successful update, avoiding artificial
-optimistic-lock conflicts between VUs.
+All caller-scoped reads and writes use the setup user's Bearer token. Task
+updates and task/event/lobby deletes derive quoted `If-Match` values from the
+response version. Baseline, mixed, and stress workloads assign one seeded task
+per mutating VU and retain the returned version after each successful update,
+avoiding artificial optimistic-lock conflicts between VUs.
+
+The script intentionally does not generate or send `X-User-Id`. This keeps the
+runtime workload aligned with the production authentication boundary and makes
+security regressions visible as authentication failures rather than as
+successful requests with spoofable caller identity.
 
 ## Expected k6 Signals
 

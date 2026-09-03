@@ -111,7 +111,8 @@ data are never returned by this endpoint.
 
 ## Admin API
 
-All admin endpoints require `X-User-Id` and verify `ROLE_ADMIN` in the backend:
+All admin endpoints require a valid Bearer JWT and verify `ROLE_ADMIN` from the
+authenticated subject in the backend:
 
 - `GET /api/admin/feature-flags`
 - `GET /api/admin/feature-flags/{key}`

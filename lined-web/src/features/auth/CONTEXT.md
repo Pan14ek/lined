@@ -62,5 +62,6 @@ Each file has a colocated `__tests__/`. `useAuth` tests exercise
 - The shared client performs one single-flight refresh for concurrent 401s and
   retries each original request once. Login, refresh, logout, CSRF, and
   password-reset routes are excluded from refresh recursion.
-- Password reset validates a hardcoded `'valid-token'` in `dev.ts`/MSW mocks
-  — there's no real token issuance to mock against yet.
+- Password-reset dev/MSW handlers use deterministic mock responses because
+  delivery of reset material is outside the web client; production requests
+  still use the backend's signed-out, single-use reset-token contract.

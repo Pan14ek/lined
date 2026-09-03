@@ -29,7 +29,8 @@ Scope:
      else accepted
    - looks up `PriceCode` via `PricingCatalogService`
      (`404 PRICE_NOT_AVAILABLE` if not active)
-   - resolves BillingAccount from `X-User-Id`
+   - resolves BillingAccount from the validated Bearer subject through
+     `CurrentUserProvider`
    - ensures a `ProviderCustomer` exists; if not, creates one via
      `BillingCheckoutProvider.createCustomer(...)`, then persists the
      mapping with `INSERT ... ON CONFLICT DO NOTHING` (safe under

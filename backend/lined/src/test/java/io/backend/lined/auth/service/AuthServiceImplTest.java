@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.InvalidCredentialsException;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,6 +65,12 @@ class AuthServiceImplTest {
     assertThat(response.expiresIn()).isEqualTo(900L);
     assertThat(result.refreshToken()).isEqualTo("refresh-token");
     assertThat(result.toString()).doesNotContain(TOKEN, "refresh-token");
+
+    ArgumentCaptor<UsernamePasswordAuthenticationToken> authenticationCaptor =
+        ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+    verify(authenticationManager).authenticate(authenticationCaptor.capture());
+    assertThat(authenticationCaptor.getValue().getName()).isEqualTo(EMAIL);
+    assertThat(authenticationCaptor.getValue().getCredentials()).isEqualTo(PASSWORD);
   }
 
   @Test

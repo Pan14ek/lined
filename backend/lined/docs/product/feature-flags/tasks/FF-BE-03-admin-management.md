@@ -8,9 +8,10 @@ implemented in parallel with FF-BE-02 after the core contract is merged.
 ## Detailed description
 
 Add a protected administration API for inspecting and changing the approved
-flags in the deployment's active environment. Until bearer-token enforcement
-exists, every admin request uses `X-User-Id` and verifies `ROLE_ADMIN` from the
-database; hiding the UI is not security.
+flags in the deployment's active environment. This task must not introduce a
+client-controlled identity shortcut. Every admin request uses the validated
+Spring Security subject through the `CurrentUserProvider` and verifies
+`ROLE_ADMIN` from the database; hiding the UI is not security.
 
 Updates use the backend's strict optimistic-concurrency convention and update
 the local cache only after successful transaction commit.
@@ -25,7 +26,7 @@ Response fields are `key`, `environment`, `enabled`, `description`, `version`,
 `updatedAt`, and `updatedBy`. PATCH requires `If-Match: "<version>"` and
 returns the new ETag.
 
-Expected failures: missing header `400` under the current MVP convention,
+Expected failures: missing or invalid Bearer credential `401`,
 non-admin `403`, unknown key `404`, missing `If-Match` `428`, malformed ETag
 or body `400`, and stale version `409`.
 

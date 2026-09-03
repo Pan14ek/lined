@@ -142,5 +142,6 @@ the MVC exception layer, without exposing authentication or authorization intern
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)
-- AUTH-SEC-01 through AUTH-SEC-06 are implemented; later authentication-security tasks
-  remain tracked by the task index and master task table.
+- AUTH-SEC-01 through AUTH-SEC-10 are implemented and verified. The task index
+  and master task table retain the dependency history and explicit future
+  non-goals.

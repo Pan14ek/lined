@@ -2,8 +2,8 @@
 
 **Document type:** System Design Specification (SDD-ready)  
 **Scope:** Authentication foundation, JWT access tokens, refresh sessions, Spring Security integration, frontend session handling, operational exposure  
-**Status:** Proposed / ready for task decomposition; AUTH-SEC-01 through
-AUTH-SEC-08 implementation delivered on dedicated feature branches
+**Status:** Implemented and verified; AUTH-SEC-01 through AUTH-SEC-10 delivered
+on dedicated feature branches
 **Version:** 1.0  
 **Date:** 2026-08-24  
 **Repository:** `Pan14ek/lined`  
@@ -16,12 +16,16 @@ AUTH-SEC-08 implementation delivered on dedicated feature branches
 
 This document defines the target production-oriented authentication and session-security architecture for Lined.
 
-The current backend can verify a user's password and issue a custom HMAC token, but caller-scoped product APIs still trust the client-supplied `X-User-Id` header. The current web client persists that user ID and attaches it to API requests. This design removes that trust boundary and replaces it with standard Spring Security Bearer JWT authentication.
+The pre-migration backend verified a user's password and issued a custom HMAC
+token, while caller-scoped product APIs trusted a client-supplied
+`X-User-Id` header. The web client also persisted that user ID. This design
+records the migration that removed that trust boundary and replaced it with
+standard Spring Security Bearer JWT authentication.
 
-The preceding sentence describes the pre-migration baseline. The backend
-security slices and the web AUTH-SEC-08 session client are now implemented;
-the remaining sections retain the baseline for traceability and the target
-architecture for subsequent hardening work.
+The preceding paragraph is historical baseline text retained for traceability.
+The backend security slices, web AUTH-SEC-08 session client, and AUTH-SEC-10
+verification/documentation evidence are now implemented. Remaining future work
+is explicitly listed as non-goals below.
 
 This specification is intentionally written to support **Spec-Driven Development (SDD)**. It captures:
 
@@ -149,9 +153,9 @@ GET /api/users/me
 
 Therefore user profile fields should no longer be required in the login response.
 
-### 3.3 Current user identity mechanism
+### 3.3 Historical pre-migration identity mechanism
 
-The current API still uses:
+The pre-migration API used:
 
 ```http
 X-User-Id: <id>
@@ -159,11 +163,13 @@ X-User-Id: <id>
 
 This is unsafe as an authentication mechanism because the caller controls the header value.
 
-`GET /api/users/me` already exists, but currently resolves the caller through the same MVP header. Its public contract can remain stable while the identity source changes to the authenticated token subject.
+`GET /api/users/me` already existed, but the pre-migration implementation
+resolved the caller through the same MVP header. Its public contract remained
+stable while the identity source changed to the authenticated token subject.
 
-### 3.4 Current frontend behavior
+### 3.4 Historical pre-migration frontend behavior
 
-The current web client:
+The pre-migration web client:
 
 - stores `userId` in a persisted Zustand store;
 - persists it under `lined-auth`;
@@ -2726,7 +2732,7 @@ GET /api/users/me
 
 No caller-supplied user ID is required.
 
-#### AUTH-IT-011 — `X-User-Id` spoofing regression
+#### AUTH-IT-011 — Intentional `X-User-Id` spoofing regression
 
 ```text
 Alice JWT
@@ -2934,7 +2940,10 @@ Production JWT signing material is externalized and absent from repository/defau
 
 ### AUTH-AC-025
 
-Backend integration tests cover login, JWT validation, refresh, replay, logout, multi-session behavior, and `X-User-Id` removal.
+Backend integration tests cover login, JWT validation, refresh, replay, logout,
+multi-session behavior, and removal of `X-User-Id` as an identity source. One
+test intentionally sends that header as a spoofing-regression assertion; it is
+historical compatibility evidence, not a supported authentication path.
 
 ### AUTH-AC-026
 
@@ -2947,35 +2956,61 @@ The authentication design remains compatible with future Google OAuth by keeping
 This authentication-foundation iteration is complete when all of the following are true:
 
 ```text
-[ ] Spring Security protects private APIs by default
-[ ] password login uses Spring authentication abstractions
-[ ] standard JWT access tokens replace custom HMAC token format
-[ ] access token lifetime is 15 minutes
-[ ] JWT signature/iss/aud/exp validation is enforced
-[ ] roles/permissions are not used as JWT source-of-truth
-[ ] refresh sessions are persisted
-[ ] refresh token is opaque, hashed at rest, and rotated
-[ ] refresh idle timeout is 7 days
-[ ] absolute auth-session lifetime is 30 days
-[ ] refresh replay revokes the session
-[ ] logout revokes current session
-[ ] multi-session backend model works
-[ ] X-User-Id is completely removed as identity
-[ ] /api/users/me uses authenticated identity
-[ ] frontend uses Bearer access JWT
-[ ] frontend access JWT is memory-only
-[ ] web refresh token is HttpOnly/Secure in production
-[ ] frontend performs single-flight refresh
-[ ] frontend clears private cache on logout
-[ ] 401/403 security responses use Problem Details contract
-[ ] signing secret is externalized
-[ ] Swagger/Actuator production exposure is hardened
-[ ] required backend integration tests pass
-[ ] frontend auth/session tests pass
-[ ] authentication/API docs match runtime behavior
+[x] Spring Security protects private APIs by default
+[x] password login uses Spring authentication abstractions
+[x] standard JWT access tokens replace custom HMAC token format
+[x] access token lifetime is 15 minutes
+[x] JWT signature/iss/aud/exp validation is enforced
+[x] roles/permissions are not used as JWT source-of-truth
+[x] refresh sessions are persisted
+[x] refresh token is opaque, hashed at rest, and rotated
+[x] refresh idle timeout is 7 days
+[x] absolute auth-session lifetime is 30 days
+[x] refresh replay revokes the session
+[x] logout revokes current session
+[x] multi-session backend model works
+[x] X-User-Id is completely removed as identity
+[x] /api/users/me uses authenticated identity
+[x] frontend uses Bearer access JWT
+[x] frontend access JWT is memory-only
+[x] web refresh token is HttpOnly/Secure in production
+[x] frontend performs single-flight refresh
+[x] frontend clears private cache on logout
+[x] 401/403 security responses use Problem Details contract
+[x] signing secret is externalized
+[x] Swagger/Actuator production exposure is hardened
+[x] required backend integration tests pass
+[x] frontend auth/session tests pass
+[x] authentication/API docs match runtime behavior
 ```
 
 Passing this Definition of Done does **not** mean total Lined security is complete.
+
+### 28.1 Repeatable verification evidence
+
+AUTH-SEC-10 is verified from the repository root with the following commands;
+the backend commands run from `backend/lined/` and the web commands from
+`lined-web/`:
+
+```bash
+./gradlew test
+./gradlew check
+./gradlew jacocoTestReport
+./gradlew integrationTest
+npm ci
+npm run lint
+npm run typecheck
+npm run test:run
+npm run build
+k6 inspect backend/lined/load-tests/k6/load-test-baseline.js
+git diff --check
+```
+
+`integrationTest` requires Docker and uses a disposable PostgreSQL
+Testcontainer. The k6 inspection command verifies the workload syntax; a
+smoke run against a local backend is the runtime-faithful load-test evidence.
+The full CI workflow repeats backend unit/static checks, PostgreSQL integration
+tests, and all web checks on every pull request.
 
 Before a broad public launch, at minimum separate specifications are still required for:
 

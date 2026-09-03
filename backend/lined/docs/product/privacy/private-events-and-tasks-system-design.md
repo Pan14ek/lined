@@ -692,7 +692,7 @@ another creator's private tasks.
 
 ```http
 POST /api/calendar/events
-X-User-Id: 42
+Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
 
@@ -739,7 +739,7 @@ creator is not a lobby member -> existing membership error
 
 ```http
 PATCH /api/calendar/events/9001
-X-User-Id: 42
+Authorization: Bearer <accessToken>
 If-Match: "0"
 ```
 
@@ -773,7 +773,7 @@ Another member's private event is absent. No placeholder event is returned.
 
 ```http
 POST /api/tasks
-X-User-Id: 42
+Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
 
@@ -806,7 +806,7 @@ Rejecting the invalid combination is preferred because it exposes client defects
 
 ```http
 PATCH /api/tasks/555
-X-User-Id: 42
+Authorization: Bearer <accessToken>
 If-Match: "0"
 ```
 

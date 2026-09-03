@@ -24,7 +24,8 @@ Scope:
    - `PermissionService.hasPermission(userId, permission)` reads from
      the join table
    - `@RequiresPermission("XXX")` annotation + `HandlerInterceptor`
-     that reads `X-User-Id`, looks up permissions, and 403s if missing
+     that obtains the authenticated subject through `CurrentUserProvider`,
+     looks up permissions, and 403s if missing
    - Bootstrap: no permissions granted automatically; admins are
      granted via a raw SQL update or (after BE-14) via a new admin
      endpoint on the user module. This task ships a
@@ -115,7 +116,7 @@ mechanism.
 
 ## Tests to add
 
-- **Unit — `PermissionInterceptorTest`**: missing `X-User-Id` → 401;
+- **Unit — `PermissionInterceptorTest`**: missing or invalid Bearer credential → 401;
   user without permission → 403; user with permission → pass-through.
 - **Unit — `AuditServiceTest`**: records action with sanitized
   before/after JSON.
@@ -132,9 +133,9 @@ mechanism.
 ## Risk & follow-ups
 
 - The permission interceptor introduces a middleware layer. Ensure the
-  webhook endpoint (BE-09) is excluded — it has no `X-User-Id`.
-- Migrating the whole app to Spring Security is out of scope here; if
-  that ever happens, the `Permission` enum + join table map cleanly to
-  `GrantedAuthority`.
+  webhook endpoint (BE-09) is excluded because it authenticates the provider
+  signature rather than a caller identity.
+- The existing Spring Security boundary remains the identity source; the
+  `Permission` enum + join table can map cleanly to `GrantedAuthority`.
 - Audit-log JSON size grows quickly; BE-15 or a follow-up should add a
   retention policy.

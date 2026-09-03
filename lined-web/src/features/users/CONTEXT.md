@@ -20,8 +20,8 @@ users/
   hooks/
     useUsers.ts        useUser(id), useUsers(ids[]) (batched via useQueries),
                        useUserSearch(query)
-    useCurrentUser.ts   useCurrentUser() — reads the auth store's userId,
-                       delegates to useUser
+    useCurrentUser.ts   useCurrentUser() — reads the authenticated current-user
+                       query, populated from `GET /api/users/me`
     useUserSettings.ts  useUpdateUser, useDeleteAccount
 ```
 

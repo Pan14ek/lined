@@ -32,7 +32,8 @@ Scope:
    - `PERIOD_ELAPSED` → for `ACTIVE + cancelAtPeriodEnd=true` → move
      to `CANCELED`; for `ACTIVE + scheduledPriceCode` → apply the
      price change and start a fresh period
-2. User-initiated endpoints (all derive account from `X-User-Id`):
+2. User-initiated endpoints (all derive account from the validated Bearer
+   subject through `CurrentUserProvider`):
    - `POST /api/billing/subscription/cancel` — calls
      `subscriptionProvider.scheduleCancellation(id, currentPeriodEnd)`,
      locally sets `cancel_at_period_end=true`, `scheduled_change_at =
@@ -143,8 +144,8 @@ publish event, save (with optimistic lock).
   grace; `EffectivePlanResolver` returns PRO during grace, FREE after.
 - **Integration — `PeriodElapsedJobIT`**: ACTIVE+`cancelAtPeriodEnd`
   with elapsed period → CANCELED after job runs.
-- **Controller — `BillingSubscriptionControllerTest`**: 401 without
-  `X-User-Id`; 409 on illegal cancel/resume/change; 200 on happy path.
+- **Controller — `BillingSubscriptionControllerTest`**: 401 without a valid
+  Bearer credential; 409 on illegal cancel/resume/change; 200 on happy path.
 - **Controller — `BillingMeSubscriptionShapeTest`**: field shape
   matches §37.1 example.
 
