@@ -11,6 +11,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -58,7 +61,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
  * stateless default-deny boundary.</p>
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, CorsProperties.class})
 public class SecurityConfig {
 
   @Bean
@@ -121,6 +124,32 @@ public class SecurityConfig {
   }
 
   /**
+   * Creates the explicit browser-origin policy used by Spring Security's CORS filter.
+   *
+   * <p>An empty origin list intentionally permits same-origin requests while rejecting
+   * cross-origin browser requests. Production origins are validated by {@link CorsProperties}
+   * before this source is created.</p>
+   *
+   * @param properties validated browser-origin configuration
+   * @return CORS source with no wildcard or implicit origin matching
+   */
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(properties.allowedOrigins());
+    configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of(
+        "Authorization", "Content-Type", "If-Match", "X-XSRF-TOKEN"));
+    configuration.setExposedHeaders(List.of("ETag"));
+    configuration.setAllowCredentials(properties.allowCredentials());
+    configuration.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
+
+  /**
    * Creates the stateless boundary for all HTTP APIs.
    *
    * <p>CSRF remains enabled for browser-facing routes and the cookie-authenticated refresh
@@ -139,6 +168,7 @@ public class SecurityConfig {
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
       ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
     return http
+        .cors(Customizer.withDefaults())
         .csrf(csrf -> csrf
             // NOSONAR: this non-secret token must be readable by browser JavaScript for the
             // double-submit header check; the refresh credential remains HttpOnly.
@@ -160,7 +190,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/password-resets").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/features").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/calendar/feed/*").permitAll()
-            .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+            .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions
             .authenticationEntryPoint(authenticationEntryPoint)

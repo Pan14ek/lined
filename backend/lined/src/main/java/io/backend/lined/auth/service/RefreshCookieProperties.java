@@ -9,7 +9,8 @@ public record RefreshCookieProperties(
     @DefaultValue("lined_refresh") String refreshName,
     @DefaultValue("true") boolean secure,
     @DefaultValue("Lax") String sameSite,
-    @DefaultValue("/api/auth") String path
+    @DefaultValue("/api/auth") String path,
+    @DefaultValue("false") boolean enforceSecure
 ) {
 
   public RefreshCookieProperties {
@@ -20,6 +21,9 @@ public record RefreshCookieProperties(
     sameSite = normalizeSameSite(sameSite);
     if (path == null || !path.startsWith("/") || path.contains(";")) {
       throw new IllegalArgumentException("Refresh cookie path is invalid");
+    }
+    if (enforceSecure && !secure) {
+      throw new IllegalArgumentException("Secure refresh cookies are required");
     }
   }
 

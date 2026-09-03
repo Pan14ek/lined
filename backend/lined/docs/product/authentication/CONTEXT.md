@@ -21,7 +21,8 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   HttpOnly cookie. Unknown identifiers and bad passwords receive one
   indistinguishable `401 auth.credentials.invalid` response.
 - `POST /api/auth/password-reset-requests` accepts an account identifier and
-  creates a time-limited reset request without revealing whether the account exists.
+  creates a time-limited reset request without revealing whether the account exists;
+  reset credentials are never written to application logs.
 - `POST /api/auth/password-resets` atomically consumes one valid reset token and
   writes the replacement password.
 - `GET /api/auth/csrf` initializes the non-secret CSRF cookie used by browser
@@ -37,25 +38,37 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
 - The web sign-in and forgot-password flows are the primary consumers; user
   registration remains owned by the Users feature.
 - `POST /api/users`, the authentication/reset routes, `GET /api/features`,
-  token-bearing `GET /api/calendar/feed/{token}.ics`, and `GET /actuator/health`
-  are the only approved public method/path pairs.
+  token-bearing `GET /api/calendar/feed/{token}.ics`, and the status-only
+  `GET /actuator/health` and health probe paths are the only approved public
+  method/path pairs.
 - Every other route requires a valid `Authorization: Bearer <JWT>` credential.
   Missing, malformed, expired, or otherwise unapproved JWTs return a stable
   `401 auth.required` Problem Details response.
 - Access JWTs use HS256 and contain only `sub`, `iss`, `aud`, `iat`, `exp`, and
   `jti`; issuer, audience, 15-minute lifetime, clock skew, and Base64 signing key
   are external `lined.security.jwt.*` configuration. `LINED_JWT_SECRET` must decode
-  to at least 32 random bytes and has no runtime fallback.
+  to at least 32 random bytes and has no runtime fallback. The password-reset
+  HMAC secret is supplied through `LINED_PASSWORD_RESET_TOKEN_SECRET` and also
+  has no runtime fallback.
 - CSRF remains enabled for browser-facing routes and cookie-authenticated refresh;
   cookie-free `/api/**` requests and Actuator remain excluded because they use
   Bearer or public transport authentication. Refresh uses the non-HttpOnly CSRF
   cookie plus `X-XSRF-TOKEN` header and keeps the refresh credential HttpOnly.
+- CORS uses an explicit origin allowlist with credentials enabled; production
+  origins must use HTTPS and wildcard origins are rejected. Same-origin
+  production needs no configured cross-origin origin.
+- The `prod` profile disables Swagger/OpenAPI, exposes only minimal health,
+  hides health component details, enforces secure refresh cookies, and lowers
+  application logging verbosity. Local and kind profiles retain development
+  Swagger and runtime metrics behavior.
 - `CurrentUserProvider` is the HTTP security adapter for caller identity. It
   rejects missing, anonymous, blank, malformed, zero, and negative subjects;
   caller-scoped controllers never accept `X-User-Id` as an identity source.
 - AUTH-SEC-08 delivers the web client's memory-only token storage, bootstrap,
   refresh retry, logout cache isolation, and removal of persisted client-side
   user IDs.
+- AUTH-SEC-09 delivers production secret, cookie, CORS, Swagger, Actuator, and
+  credential-redaction hardening.
 
 ## Architecture and data flow
 

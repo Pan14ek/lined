@@ -11,7 +11,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class RefreshTokenCookieReaderTest {
 
   private final RefreshTokenCookieReader reader = new RefreshTokenCookieReader(
-      new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth"));
+      new RefreshCookieProperties("lined_refresh", true, "Lax", "/api/auth", false));
 
   @Test
   void read_returnsConfiguredNonBlankCookieValue() {

@@ -19,12 +19,16 @@ import io.backend.lined.user.domain.UserRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,7 +53,10 @@ class PasswordResetServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new PasswordResetServiceImpl(userRepository, tokenRepository, passwordEncoder, SECRET);
+    PasswordResetProperties properties = new PasswordResetProperties();
+    properties.setResetTokenSecret(SECRET);
+    service = new PasswordResetServiceImpl(
+        userRepository, tokenRepository, passwordEncoder, properties);
     user = new UserEntity();
     user.setId(USER_ID);
     user.setUsername("alice");
@@ -71,6 +78,24 @@ class PasswordResetServiceImplTest {
     assertThat(saved.getTokenHash()).isNotBlank();
     assertThat(saved.getUsedAt()).isNull();
     assertThat(saved.getExpiresAt()).isAfter(OffsetDateTime.now());
+  }
+
+  @Test
+  void requestReset_doesNotLogResetCredentials() {
+    Logger logger = (Logger) LoggerFactory.getLogger(PasswordResetServiceImpl.class);
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      when(userRepository.findByEmailIgnoreCase(IDENTIFIER)).thenReturn(Optional.of(user));
+
+      service.requestReset(new PasswordResetRequestDto(IDENTIFIER));
+    } finally {
+      logger.detachAppender(appender);
+    }
+
+    assertThat(appender.list)
+        .noneMatch(event -> event.getFormattedMessage().contains("token="));
   }
 
   @Test

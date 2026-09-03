@@ -3,6 +3,7 @@ package io.backend.lined.config;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -18,8 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -29,6 +30,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -41,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
     ProblemAuthenticationEntryPoint.class, ProblemAccessDeniedHandler.class,
     FeatureRequiredResolver.class, FeatureFlagBlockedRequestLogger.class,
     SecurityPolicyMvcTest.SecurityPolicyController.class})
+@TestPropertySource(properties = "lined.security.cors.allowed-origins=https://app.lined.test")
 class SecurityPolicyMvcTest {
 
   private static final Instant NOW = Instant.now();
@@ -128,6 +131,25 @@ class SecurityPolicyMvcTest {
         .andReturn();
 
     org.assertj.core.api.Assertions.assertThat(result.getRequest().getSession(false)).isNull();
+  }
+
+  @Test
+  void allowedCorsOrigin_supportsCredentialedPreflight() throws Exception {
+    mockMvc.perform(options("/api/private")
+            .header("Origin", "https://app.lined.test")
+            .header("Access-Control-Request-Method", "GET")
+            .header("Access-Control-Request-Headers", "Authorization"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", "https://app.lined.test"))
+        .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+  }
+
+  @Test
+  void unlistedCorsOrigin_isRejected() throws Exception {
+    mockMvc.perform(options("/api/private")
+            .header("Origin", "https://attacker.example")
+            .header("Access-Control-Request-Method", "GET"))
+        .andExpect(status().isForbidden());
   }
 
   @Test
