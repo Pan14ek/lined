@@ -2956,31 +2956,31 @@ The authentication design remains compatible with future Google OAuth by keeping
 This authentication-foundation iteration is complete when all of the following are true:
 
 ```text
-[ ] Spring Security protects private APIs by default
-[ ] password login uses Spring authentication abstractions
-[ ] standard JWT access tokens replace custom HMAC token format
-[ ] access token lifetime is 15 minutes
-[ ] JWT signature/iss/aud/exp validation is enforced
-[ ] roles/permissions are not used as JWT source-of-truth
-[ ] refresh sessions are persisted
-[ ] refresh token is opaque, hashed at rest, and rotated
-[ ] refresh idle timeout is 7 days
-[ ] absolute auth-session lifetime is 30 days
-[ ] refresh replay revokes the session
-[ ] logout revokes current session
-[ ] multi-session backend model works
-[ ] X-User-Id is completely removed as identity
-[ ] /api/users/me uses authenticated identity
-[ ] frontend uses Bearer access JWT
-[ ] frontend access JWT is memory-only
-[ ] web refresh token is HttpOnly/Secure in production
-[ ] frontend performs single-flight refresh
-[ ] frontend clears private cache on logout
-[ ] 401/403 security responses use Problem Details contract
-[ ] signing secret is externalized
-[ ] Swagger/Actuator production exposure is hardened
-[ ] required backend integration tests pass
-[ ] frontend auth/session tests pass
+[x] Spring Security protects private APIs by default
+[x] password login uses Spring authentication abstractions
+[x] standard JWT access tokens replace custom HMAC token format
+[x] access token lifetime is 15 minutes
+[x] JWT signature/iss/aud/exp validation is enforced
+[x] roles/permissions are not used as JWT source-of-truth
+[x] refresh sessions are persisted
+[x] refresh token is opaque, hashed at rest, and rotated
+[x] refresh idle timeout is 7 days
+[x] absolute auth-session lifetime is 30 days
+[x] refresh replay revokes the session
+[x] logout revokes current session
+[x] multi-session backend model works
+[x] X-User-Id is completely removed as identity
+[x] /api/users/me uses authenticated identity
+[x] frontend uses Bearer access JWT
+[x] frontend access JWT is memory-only
+[x] web refresh token is HttpOnly/Secure in production
+[x] frontend performs single-flight refresh
+[x] frontend clears private cache on logout
+[x] 401/403 security responses use Problem Details contract
+[x] signing secret is externalized
+[x] Swagger/Actuator production exposure is hardened
+[x] required backend integration tests pass
+[x] frontend auth/session tests pass
 [x] authentication/API docs match runtime behavior
 ```
 
