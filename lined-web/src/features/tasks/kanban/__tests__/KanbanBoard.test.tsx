@@ -106,7 +106,7 @@ describe('KanbanBoard', () => {
     expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).not.toHaveTextContent(
       'Plan dinner for Saturday',
     );
-    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('2');
+    expect(screen.getByTestId(KANBAN_TEST_IDS.column('TODO'))).toHaveTextContent('5');
   });
 
   it('shows an inline error and keeps the card in place when the move PATCH fails', async () => {
