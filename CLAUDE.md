@@ -11,7 +11,7 @@ Slogan: *"Where life and quality time meet."*
 
 | Directory | What it is | Primary language |
 |---|---|---|
-| `backend/lined/` | Spring Boot REST API | Java 17 |
+| `backend/lined/` | Spring Boot REST API | Java 21 |
 | `lined-web/` | Vite + React 19 web app | TypeScript |
 | `mobile/Lined/` | Expo + React Native app | TypeScript |
 | `fitness-metrics-collector/` | CI quality metrics tool | TypeScript |

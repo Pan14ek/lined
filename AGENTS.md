@@ -66,7 +66,7 @@ Navigate into the relevant directory before running commands.
 ## Backend — Spring Boot
 
 **Location:** `backend/lined/`
-**Stack:** Java 17, Spring Boot 3.5.6, Gradle 8.14.3, PostgreSQL 15
+**Stack:** Java 21, Spring Boot 3.5.6, Gradle 8.14.3, PostgreSQL 15
 
 Backend-specific agent instructions live in `backend/lined/AGENTS.md`. Treat
 that file as the source of truth for backend architecture, tests, quality
@@ -79,7 +79,7 @@ REST API that serves Lined clients (web and mobile). Manages users, lobbies
 
 ### Prerequisites
 
-- JDK 17 (Zulu or OpenJDK)
+- JDK 21 (Temurin or OpenJDK)
 - PostgreSQL running on `localhost:5432`, database `lineddb`,
   credentials `postgres / postgres`
 - The Gradle wrapper (`./gradlew`) handles all other tooling
@@ -536,7 +536,7 @@ Workflow: `.github/workflows/ci-backend.yml`
 
 Stages (in order):
 1. Checkout (full history for SonarCloud blame data)
-2. JDK 17 (Zulu) setup
+2. JDK 21 (Temurin) setup
 3. Gradle cache restore
 4. `./gradlew check` — Checkstyle + SpotBugs + tests
 5. `./gradlew jacocoTestReport` — coverage
