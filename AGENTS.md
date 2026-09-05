@@ -34,6 +34,8 @@ research/tooling sub-projects handle CI quality metrics.
 This root file is the monorepo router. For backend implementation, backend
 documentation, or scientific experiment work, read `backend/lined/AGENTS.md`
 and the documentation index at `backend/lined/docs/README.md` before editing.
+Database schema or migration work must also read
+`backend/lined/docs/foundation/database-migration-system-design.md`.
 
 Scientific experiment work must be done iteratively. Use the task table in
 `backend/lined/docs/experiment-tasks.md`, create one pull request per task, and
@@ -70,7 +72,8 @@ Navigate into the relevant directory before running commands.
 
 Backend-specific agent instructions live in `backend/lined/AGENTS.md`. Treat
 that file as the source of truth for backend architecture, tests, quality
-gates, documentation routing, and experiment preparation.
+gates, documentation routing, database migration rules, and experiment
+preparation.
 
 ### Purpose
 
@@ -207,10 +210,20 @@ token/bootstrap/cache-isolation flow.
 
 - All timestamp columns are `TIMESTAMPTZ` (UTC). Use `OffsetDateTime` in
   entities, never `LocalDateTime` for persisted timestamps.
-- Schema managed via `src/main/resources/database/schema.sql` + JPA
-  `ddl-auto=update`. No Flyway/Liquibase.
-- Case-insensitive unique constraints use partial indexes
-  (e.g. `LOWER(username)`). Mirror this for new unique text columns.
+- Flyway is the only PostgreSQL schema-evolution owner. Versioned migrations
+  live under `backend/lined/src/main/resources/db/migration/`.
+- PostgreSQL runtime uses Hibernate `ddl-auto=validate`; never use
+  `ddl-auto=update` as a fallback for missing migrations.
+- Spring SQL initialization does not own the application schema. Do not restore
+  the retired runtime `database/schema.sql` bootstrap path.
+- Read `backend/lined/docs/foundation/database-migration-system-design.md`
+  before adding or changing a migration, schema rule, migration test, or
+  database rollout/baseline behavior.
+- H2 is non-authoritative for migrations; PostgreSQL Testcontainers prove
+  PostgreSQL-specific schema behavior.
+- Case-insensitive unique constraints use expression indexes
+  (e.g. `LOWER(username)`). Preserve PostgreSQL-specific expression/partial
+  indexes through Flyway migrations and schema-contract tests.
 - Enum columns use `EnumType.STRING` — never `ORDINAL`.
 - All associations use `FetchType.LAZY`.
 
@@ -598,56 +611,60 @@ files (gitignored).
     `CurrentUserProvider.requireUserId()`; never restore `X-User-Id` identity
     handling. The web client migration is delivered by AUTH-SEC-08.
 
+11. **Bypassing Flyway schema ownership.** Do not restore `schema.sql` runtime
+    bootstrap or Hibernate `ddl-auto=update`, and do not edit an applied
+    migration. Read the database migration SDD and add a new versioned migration.
+
 ### Web App
 
-11. **Calling `ky` directly in components.** All data fetching goes through
+12. **Calling `ky` directly in components.** All data fetching goes through
     TanStack Query hooks in each feature's `hooks/` (or shared `src/hooks/`
     for domain-agnostic hooks). Components only call hooks.
 
-12. **Putting server data in Zustand.** Zustand is for UI state only. Remote
+13. **Putting server data in Zustand.** Zustand is for UI state only. Remote
     data lives in TanStack Query cache.
 
-13. **Forgetting to invalidate query keys after mutations.** After any write
+14. **Forgetting to invalidate query keys after mutations.** After any write
     operation, call `queryClient.invalidateQueries({ queryKey: [...] })` to
     keep the UI in sync.
 
-14. **Hard-coding colours.** All colours come from Tailwind tokens in
+15. **Hard-coding colours.** All colours come from Tailwind tokens in
     `tailwind.config.ts`. Never use raw hex values in component files.
 
-15. **Modifying files in `src/components/ui/`.** These are owned by shadcn.
+16. **Modifying files in `src/components/ui/`.** These are owned by shadcn.
     Create wrapper components in `src/components/` instead.
 
-16. **Mocking `ky` directly in tests.** Use MSW v2 handlers in
+17. **Mocking `ky` directly in tests.** Use MSW v2 handlers in
     `src/test/handlers/`. This tests the full request/response cycle.
 
 ### Mobile
 
-17. **Using bare `<Text>` or `<View>`.** Always use `<ThemedText>` and
+18. **Using bare `<Text>` or `<View>`.** Always use `<ThemedText>` and
     `<ThemedView>` for dark mode support.
 
-18. **Hard-coding colours in mobile.** All colours from `constants/theme.ts`.
+19. **Hard-coding colours in mobile.** All colours from `constants/theme.ts`.
 
-19. **Using React Native core `Animated` API for new animations.** Use
+20. **Using React Native core `Animated` API for new animations.** Use
     `react-native-reanimated` v4.
 
-20. **Creating new tabs without registering them in the layout.** Add a
+21. **Creating new tabs without registering them in the layout.** Add a
     `<Tabs.Screen>` entry in `app/(tabs)/_layout.tsx`.
 
 ### Fitness Metrics Collector
 
-21. **Running `npm run metrics` without backend build artefacts.** Run
+22. **Running `npm run metrics` without backend build artefacts.** Run
     `./gradlew check && ./gradlew jacocoTestReport` in the backend first. The
     script reads from `../backend/lined/build/reports/`.
 
-22. **Changing the Cosmos DB document schema without updating the `Metrics`
+23. **Changing the Cosmos DB document schema without updating the `Metrics`
     type.** The Python analyzer reads the same document shape — a schema
     change breaks both.
 
 ### General
 
-23. **Editing generated directories** (`fitness-metrics-collector/dist/`,
+24. **Editing generated directories** (`fitness-metrics-collector/dist/`,
     `mobile/Lined/.expo/`, `lined-web/dist/`). Always edit source files.
 
-24. **Changing the fitness function weights without updating this file.**
+25. **Changing the fitness function weights without updating this file.**
     Weights are also documented in the research paper. Changes must be
     intentional and tracked here.
