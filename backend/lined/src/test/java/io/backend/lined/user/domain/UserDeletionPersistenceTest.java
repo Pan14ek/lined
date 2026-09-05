@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @JdbcTest(properties = {
+    "spring.flyway.enabled=false",
     "spring.sql.init.mode=always",
     "spring.sql.init.schema-locations=classpath:account-deletion-schema.sql"
 })
