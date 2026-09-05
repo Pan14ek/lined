@@ -1,8 +1,9 @@
 spring:
+  flyway:
+    enabled: true
   jpa:
-    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
@@ -10,7 +11,7 @@ spring:
           time_zone: UTC
   sql:
     init:
-      mode: always
+      mode: never
 
 lined:
   security:
