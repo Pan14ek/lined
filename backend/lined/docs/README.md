@@ -7,6 +7,7 @@ to choose the domain, then open the document needed for the change.
 ## Foundation
 
 - [Architecture](foundation/architecture.md)
+- [Database migration system design](foundation/database-migration-system-design.md)
 - [API reference](foundation/api.md)
 - [Testing guide](foundation/testing.md)
 
