@@ -7,7 +7,8 @@ Backend tests use:
 - JUnit 5
 - Mockito
 - AssertJ
-- H2 for Spring-backed tests
+- H2 for fast Spring/JPA tests
+- PostgreSQL Testcontainers for database-contract and HTTP integration tests
 
 Run tests from `backend/lined/`:
 
@@ -99,7 +100,12 @@ docker info
 ./gradlew test integrationTest
 ```
 
-The integration profile uses `ddl-auto=create-drop` only for its disposable container database.
+The integration profile starts with an empty PostgreSQL 16 database. Flyway
+applies the complete migration history before Hibernate starts, and Hibernate
+then validates the resulting schema with `ddl-auto=validate`. Spring SQL
+initialization is disabled. This makes the HTTP integration suite a fresh-database
+migration check as well as an API test suite.
+
 Its reports are written to `build/test-results/integrationTest/` and
 `build/reports/tests/integrationTest/`. Before treating a run as PostgreSQL proof, inspect the
 XML reports and confirm zero failures, errors, and skips.
@@ -109,18 +115,31 @@ verify that identity comes from the validated JWT subject. The regression suite
 intentionally sends one conflicting `X-User-Id` header to prove it is ignored;
 it is not a supported authentication mechanism.
 
+## H2-backed Persistence Tests
+
+H2 remains intentionally non-authoritative. Tests that use H2 disable Flyway
+because the production migrations contain PostgreSQL-specific constraints and
+indexes. Hibernate `create-drop` supplies only the schema needed by those fast
+mapping/repository tests.
+
+Do not use H2 results as proof that a migration works on PostgreSQL. Any new
+schema feature, PostgreSQL constraint, expression/partial index, or migration
+must be covered by a PostgreSQL/Testcontainers path.
+
 ## Other Integration Tests
 
 Use integration tests when validating:
 
 - Spring context loading
-- Repository behavior against H2
+- repository behavior against the intended database engine
 - HTTP endpoint behavior
 - serialization and validation behavior
 - application configuration
+- migration behavior and PostgreSQL-only schema invariants
 
-Tests use `src/test/resources/application-test.properties`, which configures
-H2 and avoids requiring local PostgreSQL.
+Tests that explicitly activate `test` use
+`src/test/resources/application-test.properties`, which configures H2,
+disables Flyway, and uses Hibernate `create-drop`.
 
 ## Quality Expectations
 

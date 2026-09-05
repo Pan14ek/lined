@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
-@DataJpaTest(properties = "spring.sql.init.mode=never")
+@DataJpaTest(properties = {
+    "spring.flyway.enabled=false",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.sql.init.mode=never"
+})
 class FeatureFlagRepositoryTest {
 
   @Autowired
