@@ -16,7 +16,7 @@ docker build -t lined-backend:local .
 ```
 
 The Dockerfile builds the executable jar, extracts Spring Boot layers, and
-copies those layers into a Java 17 runtime image. The final container runs as a
+copies those layers into a Java 21 runtime image. The final container runs as a
 non-root user and listens on port `8080`.
 
 ## Run with Local PostgreSQL
