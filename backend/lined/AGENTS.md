@@ -24,6 +24,7 @@ Use `docs/README.md` as the backend documentation index.
 | Documentation Context | Domain-folder map for all backend documentation.                         | `docs/CONTEXT.md`                   | Use after the index to locate a document's canonical domain.                 | Adding, moving, renaming, or browsing backend documentation.                            |
 | Authentication Security SDD | Proposed JWT/session system design and dependency-ordered implementation tasks. | `docs/product/authentication/` | Before planning authentication, session, JWT, or identity-migration work. | Requirement traceability, implementation ordering, and security acceptance criteria. |
 | Architecture Guide  | Backend modules, layers, domain boundaries, and known architecture notes. | `docs/foundation/architecture.md`              | Before changing backend structure or adding a module.                        | New feature design, refactoring, checking layering, documenting architecture decisions. |
+| Database Migration SDD | Canonical Flyway/PostgreSQL schema-ownership design and DB-MIG task contract. | `docs/foundation/database-migration-system-design.md` | Before changing schema, Flyway migrations, Hibernate DDL settings, SQL initialization, migration tests, or database rollout behavior. | Flyway adoption, new schema migrations, existing DB baselining, migration CI, rollout/rollback rules. |
 | Testing Guide       | Backend test conventions, tools, and expectations.                        | `docs/foundation/testing.md`                   | Before writing or changing backend tests.                                    | Unit tests, integration tests, service behavior coverage, Mockito patterns.             |
 | API Documentation   | Current backend API reference.                                            | `docs/foundation/api.md`                       | When changing endpoints, DTOs, or API behavior.                              | Request/response review, endpoint coverage, Swagger/API alignment.                      |
 | Notion KB Workflow  | Notion write-back, verification, fallback, and entry-template rules.       | `docs/governance/notion-knowledge-base-workflow.md` | When research or experiment analysis changes durable knowledge.              | Notion as knowledge base, artifact analysis, experiment findings, research handoff.     |
@@ -78,6 +79,31 @@ Use `./gradlew sonarqube` only when `SONAR_TOKEN` is configured.
   non-trivial fields.
 - Persisted timestamps use `OffsetDateTime` and UTC semantics.
 - JPA associations use `FetchType.LAZY`.
+
+## Database Migration Rules
+
+- Read `docs/foundation/database-migration-system-design.md` before changing
+  persistence schema, Flyway configuration, Hibernate DDL settings, SQL
+  initialization, migration tests, or database rollout behavior.
+- Flyway is the only PostgreSQL schema-evolution owner. New schema or database
+  data-evolution work must be represented by a new versioned migration under
+  `src/main/resources/db/migration/`.
+- PostgreSQL runtime uses Hibernate `ddl-auto=validate`; never restore
+  `ddl-auto=update` as a fallback for missing migrations.
+- Spring SQL initialization does not own the application schema. Do not restore
+  a runtime `database/schema.sql` bootstrap path.
+- Keep `spring.flyway.baseline-on-migrate=false`. Existing non-empty databases
+  require the explicit verification/baseline runbook in the migration SDD.
+- Applied Flyway migrations are immutable. Fix later problems with a new
+  migration; do not edit a migration that may already have run in a persistent
+  environment.
+- H2 is a fast non-authoritative test database. Disable Flyway for H2-backed
+  tests and use PostgreSQL Testcontainers for migration, constraint, index,
+  sequence, locking, and PostgreSQL-specific contract proof.
+- Follow expand-and-contract rules for rolling-compatible schema changes.
+- Implement DB-MIG tasks from the migration SDD in dependency order and do not
+  opportunistically implement later tasks unless the SDD explicitly permits an
+  atomic combined PR.
 
 ## Testing Rules
 

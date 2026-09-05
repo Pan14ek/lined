@@ -77,10 +77,21 @@ Swagger UI is available at `/swagger-ui.html` when the app is running.
 
 ## Persistence Model
 
-- PostgreSQL is the target runtime database.
-- H2 is used for tests.
-- Schema bootstrap lives in `src/main/resources/database/schema.sql`.
-- JPA uses `ddl-auto=update`.
+- PostgreSQL is the authoritative runtime database.
+- Flyway owns PostgreSQL schema evolution through versioned SQL migrations in
+  `src/main/resources/db/migration/`.
+- Hibernate uses `ddl-auto=validate` for PostgreSQL runtimes and must never
+  create or mutate the production schema.
+- Spring SQL initialization is disabled for the application schema.
+- H2 remains available for fast Spring/JPA tests; Flyway is disabled there and
+  Hibernate uses `create-drop`. PostgreSQL/Testcontainers tests are the
+  authoritative migration and database-contract checks.
+- Applied Flyway migrations are immutable. Add a new versioned migration for
+  every schema/data evolution; do not edit a migration that may have run in a
+  persistent environment.
+- `baseline-on-migrate` stays disabled. Existing non-empty databases require
+  explicit schema verification and an operator-controlled Flyway baseline
+  before the first Flyway-enabled deployment.
 - Timestamp columns use `TIMESTAMPTZ`; Java code should use `OffsetDateTime`.
 - Enum fields use `EnumType.STRING`.
 - Associations should stay lazy unless there is a measured reason to change
@@ -113,6 +124,10 @@ Candidate architecture/deployment alternatives:
 - Some service code still throws raw Java exceptions such as
   `NoSuchElementException`, `IllegalArgumentException`, or `SecurityException`.
   Prefer the application exception hierarchy for new work.
+- JPA metadata cannot express all PostgreSQL invariants used by Lined, including
+  expression indexes and partial unique indexes. `ddl-auto=validate` is a
+  mapping-compatibility check, not a replacement for PostgreSQL schema-contract
+  tests.
 - The current backend has observability dependencies and Actuator settings, but
   the full experiment telemetry stack is not yet defined.
 - Docker and Kubernetes artifacts are not part of this documentation foundation
