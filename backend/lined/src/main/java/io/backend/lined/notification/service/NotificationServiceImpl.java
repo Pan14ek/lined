@@ -81,7 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
   public LobbyNotificationPreferencesDto updateLobbyPreferences(
       Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto,
       long expectedVersion) {
-    var lobby = accessibleLobby(lobbyId, currentUserId);
+    accessibleLobby(lobbyId, currentUserId);
     var preferences = lobbyPreferenceRepo.findByUserIdAndLobbyId(currentUserId, lobbyId)
         .orElseThrow(() -> new ConflictException("Fetch lobby notification preferences before updating"));
     verifyVersion(preferences.getVersion(), expectedVersion);

@@ -35,6 +35,8 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class LobbyInviteServiceImpl implements LobbyInviteService {
 
+  private static final String INVITE_NOT_FOUND_MESSAGE = "Lobby invite %d not found";
+
   private final LobbyRepository lobbyRepo;
   private final UserRepository userRepo;
   private final LobbyInviteRepository inviteRepo;
@@ -141,7 +143,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
     writePolicy.assertWritable(lobby, LobbyWriteAction.INVITE_MUTATION);
     var invite = mustInvite(inviteId);
     if (!invite.getLobby().getId().equals(lobbyId)) {
-      throw new NotFoundException("Lobby invite %d not found".formatted(inviteId));
+      throw new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId));
     }
     return invite;
   }
@@ -149,7 +151,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private LobbyInviteEntity inviteForInvitee(Long inviteId, Long requesterId) {
     var invite = mustInvite(inviteId);
     if (!invite.getInvitee().getId().equals(requesterId)) {
-      throw new NotFoundException("Lobby invite %d not found".formatted(inviteId));
+      throw new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId));
     }
     return invite;
   }
@@ -224,6 +226,6 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
 
   private LobbyInviteEntity mustInvite(Long inviteId) {
     return EntityFinder.findOrThrow(inviteRepo.findById(inviteId),
-        () -> new NotFoundException("Lobby invite %d not found".formatted(inviteId)));
+        () -> new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId)));
   }
 }

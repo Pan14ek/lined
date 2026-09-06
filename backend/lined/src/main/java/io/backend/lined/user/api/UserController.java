@@ -103,15 +103,15 @@ public class UserController {
       description = "Returns a user by ID."
   )
   @GetMapping("/{id}")
-  public ResponseEntity<?> get(
+  public ResponseEntity<Object> get(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id) {
     Long requesterId = currentUserProvider.requireUserId();
     if (requesterId.equals(id)) {
       UserDto user = userService.getById(id);
-      return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
+      return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body((Object) user);
     }
-    return ResponseEntity.ok(userService.getPublicById(id));
+    return ResponseEntity.ok((Object) userService.getPublicById(id));
   }
 
   @Operation(

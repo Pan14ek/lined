@@ -46,16 +46,6 @@ public interface UserService {
    */
   UserDto update(Long id, UserUpdateDto dto, Long requesterId, long expectedVersion);
 
-  @Deprecated
-  default UserDto update(Long id, UserUpdateDto dto) {
-    return update(id, dto, id, -1L);
-  }
-
-  @Deprecated
-  default UserDto update(Long id, UserUpdateDto dto, long expectedVersion) {
-    return update(id, dto, id, expectedVersion);
-  }
-
   /**
    * Deletes the requesting user's account when they do not own a lobby.
    *
@@ -66,11 +56,6 @@ public interface UserService {
    * @throws NotFoundException if no user exists with the given ID
    */
   void delete(Long id, Long currentUserId, long expectedVersion);
-
-  @Deprecated
-  default void delete(Long id, Long currentUserId) {
-    delete(id, currentUserId, -1L);
-  }
 
   /**
    * Changes the password for a user.
@@ -124,7 +109,6 @@ public interface UserService {
    * @return a paginated list of users with the given role
    * @throws NotFoundException if the role does not exist
    */
-  /** Returns users by role only after a trusted admin check. */
   UserPageDto findUsersByRole(String roleName, int page, int size, Long requesterId);
 
 }
