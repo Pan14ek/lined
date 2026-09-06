@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { UserDto } from '@/features/users/model';
-import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
+import { useUpdateCurrentUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { Button } from '@/components/Button';
 import { LoadErrorState } from '@/components/LoadErrorState';
@@ -31,7 +31,7 @@ const getProfileErrorMessage = (error: unknown, t: TFunction<['settings', 'commo
 
 export const ProfileCard = ({ user, isLoading, isError, onRetry }: ProfileCardProps) => {
   const { t } = useTranslation(['settings', 'common']);
-  const updateUser = useUpdateUser(user?.id ?? 0);
+  const updateUser = useUpdateCurrentUser();
   const [loadedUserId, setLoadedUserId] = useState<number | undefined>(undefined);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getErrorStatus } from '@/lib/apiClient';
 import {
   createInvite,
   listLobbyInvites,
@@ -29,6 +30,16 @@ export const useCreateInvite = (lobbyId: number) => {
   });
 };
 
+/** A 404 means the invite is stale (wrong lobby/already resolved) — refetch the list to drop it. */
+const refetchInvitesOn404 = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  lobbyId: number,
+  error: unknown,
+) => {
+  if (getErrorStatus(error) !== 404) return;
+  void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
+}
+
 export const useResendInvite = (lobbyId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -36,6 +47,7 @@ export const useResendInvite = (lobbyId: number) => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
     },
+    onError: (error) => refetchInvitesOn404(queryClient, lobbyId, error),
   });
 };
 
@@ -46,6 +58,7 @@ export const useCancelInvite = (lobbyId: number) => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbyInvites(lobbyId) });
     },
+    onError: (error) => refetchInvitesOn404(queryClient, lobbyId, error),
   });
 };
 
@@ -55,6 +68,18 @@ export const useMyInvites = () =>
     queryFn: myInvites,
     refetchOnWindowFocus: true,
   });
+
+/** Removes a stale invite (cancelled/expired/no longer this caller's) after a `404`. */
+const removeStaleInviteOn404 = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  error: unknown,
+  inviteId: number,
+) => {
+  if (getErrorStatus(error) !== 404) return;
+  queryClient.setQueryData<LobbyInviteDto[]>(QUERY_KEYS.myInvites, (current) =>
+    current?.filter((invite) => invite.id !== inviteId),
+  );
+}
 
 export const useAcceptInvite = () => {
   const queryClient = useQueryClient();
@@ -66,6 +91,7 @@ export const useAcceptInvite = () => {
       );
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lobbies });
     },
+    onError: (error, inviteId) => removeStaleInviteOn404(queryClient, error, inviteId),
   });
 };
 
@@ -78,5 +104,6 @@ export const useDeclineInvite = () => {
         current?.filter((invite) => invite.id !== inviteId),
       );
     },
+    onError: (error, inviteId) => removeStaleInviteOn404(queryClient, error, inviteId),
   });
 };

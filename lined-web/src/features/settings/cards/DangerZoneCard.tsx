@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDeleteAccount } from '@/features/users/hooks/useUserSettings';
+import { useDeleteCurrentAccount } from '@/features/users/hooks/useUserSettings';
 import { clearClientAuthentication } from '@/features/auth/sessionCleanup';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -24,7 +24,7 @@ export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
   const { t } = useTranslation('settings');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const deleteAccount = useDeleteAccount(userId ?? 0);
+  const deleteAccount = useDeleteCurrentAccount();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleConfirm = () => {

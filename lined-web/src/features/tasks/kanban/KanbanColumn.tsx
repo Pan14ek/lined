@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
 import { EmptyState } from '@/components/EmptyState';
@@ -28,7 +28,7 @@ interface KanbanColumnProps {
   status: TaskStatus;
   tasks: TaskDto[];
   lobbiesById: Map<number, LobbyDto>;
-  assigneesById: Map<number, UserDto | undefined>;
+  assigneesById: Map<number, UserPublicDto | undefined>;
   moveState: KanbanMoveState;
   actions: KanbanActions;
 }
@@ -37,7 +37,7 @@ interface KanbanCardListProps {
   status: TaskStatus;
   tasks: TaskDto[];
   lobbiesById: Map<number, LobbyDto>;
-  assigneesById: Map<number, UserDto | undefined>;
+  assigneesById: Map<number, UserPublicDto | undefined>;
   moveState: KanbanMoveState;
   actions: Pick<KanbanActions, 'onMove' | 'onDelete' | 'onOpen'>;
 }

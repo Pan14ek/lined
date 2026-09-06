@@ -7,6 +7,7 @@ import type { LobbyDto } from '@/features/lobby/model';
 import { useCreateEvent, useUpdateEvent, useConflictCheck } from '@/features/calendar/hooks/useEvents';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { toDatetimeLocal, fromDatetimeLocal } from '@/features/calendar/lib/calendarUtils';
+import { getErrorStatus } from '@/lib/apiClient';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { ConflictBanner } from './ConflictBanner';
@@ -144,7 +145,14 @@ export const CreateEventModal = ({
                 ...(trimmedLocation !== initialLocation ? { location: trimmedLocation } : {}),
               },
             },
-            { onSuccess: (updated) => onSaved?.(updated) },
+            {
+              onSuccess: (updated) => onSaved?.(updated),
+              // A 404 means the event is gone/inaccessible — close rather
+              // than keep an edit form open for an event no longer here.
+              onError: (error) => {
+                if (getErrorStatus(error) === 404) onClose();
+              },
+            },
           );
           return;
         }

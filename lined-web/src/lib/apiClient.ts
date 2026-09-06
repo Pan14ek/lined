@@ -46,6 +46,17 @@ let refreshInFlight: Promise<string> | null = null;
 let csrfInFlight: Promise<string> | null = null;
 let csrfToken: string | null = null;
 let transportGeneration = 0;
+let sessionInvalidatedHandler: (() => void) | null = null;
+
+/**
+ * Registers the app-level callback that clears user-scoped client state
+ * (query cache + Zustand stores) when a runtime session recovery attempt
+ * fails. Kept as a plain function slot — not a QueryClient/React import —
+ * so this low-level transport module has no dependency on the app layer.
+ */
+export const registerSessionInvalidatedHandler = (handler: (() => void) | null): void => {
+  sessionInvalidatedHandler = handler;
+};
 
 const isExcludedFromRefresh = (url: string): boolean => {
   const path = new URL(url).pathname;
@@ -106,6 +117,7 @@ export const refreshAccessToken = (): Promise<string> => {
   })()
     .catch((error: unknown) => {
       useAuthStore.getState().clearAuthentication();
+      sessionInvalidatedHandler?.();
       throw error;
     })
     .finally(() => {

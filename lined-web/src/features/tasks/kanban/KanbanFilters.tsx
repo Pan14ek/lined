@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import type { TaskDateFilter } from '@/features/tasks/lib/taskUtils';
 
 const selectClassName =
   'h-9 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-text-secondary focus:border-brand-green focus:outline-none';
 
-const renderMemberOptions = (members: UserDto[]) =>
+const renderMemberOptions = (members: UserPublicDto[]) =>
   members.map((member) => (
     <option key={member.id} value={member.id}>
       {member.username}
@@ -15,7 +15,7 @@ const renderMemberOptions = (members: UserDto[]) =>
 
 interface KanbanFiltersProps {
   lobbies: LobbyDto[];
-  members: UserDto[];
+  members: UserPublicDto[];
   lobbyId: number | undefined;
   memberId: number | undefined;
   dateFilter: TaskDateFilter;

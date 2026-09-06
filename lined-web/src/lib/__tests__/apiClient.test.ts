@@ -16,6 +16,7 @@ import {
   invalidateAuthTransport,
   logoutSession,
   refreshAccessToken,
+  registerSessionInvalidatedHandler,
 } from '../apiClient';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -235,5 +236,27 @@ describe('authenticated API transport', () => {
 
     await expect(request()).rejects.toBeDefined();
     expect(refreshCount).toBe(0);
+  });
+
+  it('invokes the registered session-invalidated handler when a runtime refresh fails', async () => {
+    expect.assertions(2);
+    server.use(http.post(`${BASE}/auth/refresh`, () => new HttpResponse(null, { status: 401 })));
+    const handler = vi.fn();
+    registerSessionInvalidatedHandler(handler);
+
+    try {
+      await expect(refreshAccessToken()).rejects.toBeDefined();
+      expect(handler).toHaveBeenCalledTimes(1);
+    } finally {
+      registerSessionInvalidatedHandler(null);
+    }
+  });
+
+  it('does not throw when no session-invalidated handler is registered', async () => {
+    expect.assertions(1);
+    server.use(http.post(`${BASE}/auth/refresh`, () => new HttpResponse(null, { status: 401 })));
+    registerSessionInvalidatedHandler(null);
+
+    await expect(refreshAccessToken()).rejects.toBeDefined();
   });
 });

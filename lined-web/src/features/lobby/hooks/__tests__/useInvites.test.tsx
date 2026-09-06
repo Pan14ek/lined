@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { server } from '@/test/server';
 import { QUERY_KEYS } from '@/features/lobby/lib/constants';
 import type { LobbyInviteDto } from '@/features/lobby/model';
-import { useMyInvites, useAcceptInvite, useDeclineInvite } from '../useInvites';
+import { useMyInvites, useAcceptInvite, useDeclineInvite, useCancelInvite } from '../useInvites';
 import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -99,6 +99,22 @@ describe('useAcceptInvite', () => {
 
     expect(result.current.isError).toBe(true);
   });
+
+  it('removes the stale invite from the myInvites cache on a 404', async () => {
+    expect.assertions(2);
+    const queryClient = makeQueryClient();
+    queryClient.setQueryData(QUERY_KEYS.myInvites, [invite]);
+    server.use(
+      http.post(`${BASE}/lobby-invites/:inviteId/accept`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })),
+    );
+
+    const { result } = renderHook(() => useAcceptInvite(), { wrapper: makeWrapper(queryClient) });
+    result.current.mutate(invite.id);
+    await waitUntilSettled(result);
+
+    expect(result.current.isError).toBe(true);
+    expect(queryClient.getQueryData(QUERY_KEYS.myInvites)).toEqual([]);
+  });
 });
 
 describe('useDeclineInvite', () => {
@@ -128,5 +144,23 @@ describe('useDeclineInvite', () => {
     await waitUntilSettled(result);
 
     expect(result.current.isError).toBe(true);
+  });
+});
+
+describe('useCancelInvite', () => {
+  it('refetches the lobby invite list on a 404 so a stale cross-lobby invite id drops out', async () => {
+    expect.assertions(1);
+    const queryClient = makeQueryClient();
+    queryClient.setQueryData(QUERY_KEYS.lobbyInvites(3), [invite]);
+    server.use(
+      http.delete(`${BASE}/lobbies/:lobbyId/invites/:inviteId`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })),
+      http.get(`${BASE}/lobbies/:lobbyId/invites`, () => HttpResponse.json([])),
+    );
+
+    const { result } = renderHook(() => useCancelInvite(3), { wrapper: makeWrapper(queryClient) });
+    result.current.mutate(invite.id);
+    await waitUntilSettled(result);
+
+    expect(queryClient.getQueryState(QUERY_KEYS.lobbyInvites(3))?.isInvalidated).toBe(true);
   });
 });

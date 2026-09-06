@@ -13,16 +13,20 @@ feature instead of being duplicated or dumped in a shared bucket.
 
 ```
 users/
-  model/index.ts    UserDto, UserCreateDto, UserUpdateDto,
-                    UserSearchResultDto, UserPageDto, RoleDto
+  model/index.ts    UserDto (full self/current-account projection),
+                    UserPublicDto (id + username — everyone else),
+                    UserSearchResultDto (= UserPublicDto),
+                    UserCreateDto, UserUpdateDto, UserPageDto, RoleDto
   api/               prod.ts + dev.ts + index.ts + mockData.ts + handlers.ts
   lib/constants.ts   QUERY_KEYS only
   hooks/
     useUsers.ts        useUser(id), useUsers(ids[]) (batched via useQueries),
-                       useUserSearch(query)
+                       useUserSearch(query) — all return UserPublicDto
     useCurrentUser.ts   useCurrentUser() — reads the authenticated current-user
                        query, populated from `GET /api/users/me`
-    useUserSettings.ts  useUpdateUser, useDeleteAccount
+    useUserSettings.ts  useUpdateCurrentUser(), useDeleteCurrentAccount() —
+                       self-scoped: resolve the target id from the
+                       `currentUser` cache, never accept an arbitrary id
 ```
 
 No `pages/` or standalone UI components — every user-facing surface for
@@ -38,6 +42,25 @@ this data lives in the feature that displays it (`settings/cards/ProfileCard`,
 this feature's own UI. `deleteUser` in `dev.ts`/`api/handlers.ts` rejects
 (409) if the target owns a lobby, checked against `features/lobby`'s
 `MOCK_LOBBIES` — see `depends on`.
+
+## Data minimization (security invariant)
+
+The backend returns the full `UserDto` for `GET users/{id}` only when `{id}`
+is the caller's own id; every other id gets the minimal `UserPublicDto`
+(`{id, username}`). `getUser(id)`/`useUser`/`useUsers` are typed as
+`UserPublicDto` accordingly — do not widen their return type back to
+`UserDto`, and do not add a component that expects `.email`/`.roles`/
+`.createdAt` from a member/assignee/search lookup (a prior version of
+`MemberCard` did this for a "member since" date; that field isn't in the
+hardened public projection, so the line was removed rather than left
+silently rendering `Invalid Date`). `dev.ts`/`handlers.ts` mirror the same
+self-vs-other split so local/test behavior doesn't diverge from production.
+
+`useUpdateCurrentUser`'s `onSuccess` updates **both** `QUERY_KEYS.currentUser`
+(the full record) and `QUERY_KEYS.user(id)` (re-projected down to
+`UserPublicDto`) so a self-rename is reflected immediately in both the
+current-user-driven UI and any already-cached member/assignee list showing
+the same account.
 
 ## Depends on
 

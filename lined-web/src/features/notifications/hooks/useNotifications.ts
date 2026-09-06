@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getErrorStatus } from '@/lib/apiClient';
 import {
   getPreferences,
   updatePreferences,
@@ -54,6 +55,14 @@ export const useMarkNotificationRead = () => {
     onSuccess: (updated) => {
       queryClient.setQueryData<NotificationDto[]>(QUERY_KEYS.myNotifications, (current) =>
         current?.map((n) => (n.id === updated.id ? updated : n)),
+      );
+    },
+    onError: (error, id) => {
+      // A 404 means the notification is gone/no longer this caller's —
+      // drop the stale row instead of continuing to show its content.
+      if (getErrorStatus(error) !== 404) return;
+      queryClient.setQueryData<NotificationDto[]>(QUERY_KEYS.myNotifications, (current) =>
+        current?.filter((n) => n.id !== id),
       );
     },
   });

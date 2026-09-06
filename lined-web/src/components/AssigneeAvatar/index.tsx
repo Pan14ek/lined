@@ -1,9 +1,9 @@
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 interface AssigneeAvatarProps {
-  assignee: UserDto | undefined;
+  assignee: UserPublicDto | undefined;
   size?: 'default' | 'sm' | 'lg';
   fallbackTextClassName?: string;
 }

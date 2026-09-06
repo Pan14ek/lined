@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 interface AssigneePickerProps {
-  members: UserDto[];
+  members: UserPublicDto[];
   selectedId: number | undefined;
   onSelect: (id: number | undefined) => void;
   isLoading?: boolean;
