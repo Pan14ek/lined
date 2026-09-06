@@ -3,6 +3,7 @@ package io.backend.lined.user.service;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.api.UserPageDto;
+import io.backend.lined.user.api.UserPublicDto;
 import io.backend.lined.user.api.UserUpdateDto;
 
 /**
@@ -30,6 +31,9 @@ public interface UserService {
    */
   UserDto getById(Long id);
 
+  /** Returns the deliberately minimal representation allowed for a foreign user. */
+  UserPublicDto getPublicById(Long id);
+
   /**
    * Updates an existing user's details.
    * Only non-null fields in the DTO are applied.
@@ -40,12 +44,7 @@ public interface UserService {
    * @throws NotFoundException if no user exists with the given ID
    * @throws ConflictException if the new username or email is already taken
    */
-  UserDto update(Long id, UserUpdateDto dto, long expectedVersion);
-
-  @Deprecated
-  default UserDto update(Long id, UserUpdateDto dto) {
-    return update(id, dto, -1L);
-  }
+  UserDto update(Long id, UserUpdateDto dto, Long requesterId, long expectedVersion);
 
   /**
    * Deletes the requesting user's account when they do not own a lobby.
@@ -57,11 +56,6 @@ public interface UserService {
    * @throws NotFoundException if no user exists with the given ID
    */
   void delete(Long id, Long currentUserId, long expectedVersion);
-
-  @Deprecated
-  default void delete(Long id, Long currentUserId) {
-    delete(id, currentUserId, -1L);
-  }
 
   /**
    * Changes the password for a user.
@@ -115,6 +109,6 @@ public interface UserService {
    * @return a paginated list of users with the given role
    * @throws NotFoundException if the role does not exist
    */
-  UserPageDto findUsersByRole(String roleName, int page, int size);
+  UserPageDto findUsersByRole(String roleName, int page, int size, Long requesterId);
 
 }

@@ -6,10 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.common.metrics.PrivateItemMetrics;
 import io.backend.lined.common.metrics.PrivateItemType;
@@ -99,6 +99,7 @@ class TaskServiceImplTest {
 
     taskDto = new TaskDto(555L, 0L, "Buy groceries", "Pick up milk", TaskPriority.MEDIUM,
         TaskStatus.TODO, TaskVisibility.SHARED, 101L, 1L, null, null, null);
+    lenient().when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
   }
 
   /* =======================
@@ -126,6 +127,7 @@ class TaskServiceImplTest {
     UserEntity assignee = new UserEntity();
     assignee.setId(2L);
     assignee.setUsername("assignee");
+    lobby.getMembers().add(assignee);
     taskEntity.setAssignee(assignee);
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, 2L, null,
         null, null, null, TaskVisibility.SHARED, true);
@@ -206,7 +208,7 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void create_throwsForbidden_whenUserIsNotLobbyMember() {
+  void create_throwsNotFound_whenUserIsNotLobbyMember() {
     TaskCreateDto dto = new TaskCreateDto("Buy groceries", 101L, null, null,
         null, null, null);
 
@@ -214,8 +216,8 @@ class TaskServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> taskService.create(dto, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(repo, never()).save(any());
   }
@@ -239,7 +241,7 @@ class TaskServiceImplTest {
     assertThat(taskEntity.getTitle()).isEqualTo("Updated title");
     assertThat(taskEntity.getDescription()).isEqualTo("Updated description");
     assertThat(taskEntity.getPriority()).isEqualTo(TaskPriority.HIGH);
-    verify(accessPolicy).ensureMember(lobby, 1L);
+    verify(accessPolicy).ensureVisibleMember(lobby, 1L);
   }
 
   @Test
@@ -294,14 +296,14 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void update_throwsForbidden_whenUserIsNotLobbyMember() {
+  void update_throwsNotFound_whenUserIsNotLobbyMember() {
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, "Title", null, null);
 
     when(repo.findVisibleById(555L, 99L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.update(555L, dto, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   /* =======================
@@ -314,7 +316,7 @@ class TaskServiceImplTest {
 
     taskService.delete(555L, 1L);
 
-    verify(accessPolicy).ensureMember(lobby, 1L);
+    verify(accessPolicy).ensureVisibleMember(lobby, 1L);
     verify(repo).delete(taskEntity);
   }
 
@@ -330,12 +332,12 @@ class TaskServiceImplTest {
   }
 
   @Test
-  void delete_throwsForbidden_whenUserIsNotLobbyMember() {
+  void delete_throwsNotFound_whenUserIsNotLobbyMember() {
     when(repo.findVisibleById(555L, 99L)).thenReturn(Optional.of(taskEntity));
 
     assertThatThrownBy(() -> taskService.delete(555L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(repo, never()).delete(any(TaskEntity.class));
   }
@@ -414,6 +416,7 @@ class TaskServiceImplTest {
   void create_rejectsPrivateTaskAssignedToAnotherUserBeforeSaving() {
     UserEntity partner = new UserEntity();
     partner.setId(2L);
+    lobby.getMembers().add(partner);
     TaskCreateDto dto = new TaskCreateDto("Order flowers", 101L, 2L, null,
         null, null, null, TaskVisibility.PRIVATE, false);
     when(userRepo.findById(1L)).thenReturn(Optional.of(owner));
@@ -441,6 +444,7 @@ class TaskServiceImplTest {
   void update_rejectsSharedToPrivateWhenPartnerRemainsAssignee() {
     UserEntity partner = new UserEntity();
     partner.setId(2L);
+    lobby.getMembers().add(partner);
     taskEntity.setAssignee(partner);
     TaskUpdateDto dto = new TaskUpdateDto(null, null, null, null, null, null,
         TaskVisibility.PRIVATE);

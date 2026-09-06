@@ -14,6 +14,7 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.role.domain.BuiltInRole;
+import io.backend.lined.role.service.RoleAuthorizationPolicy;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -64,6 +66,10 @@ class UserServiceImplTest {
   private RoleResolver roleResolver;
   @Mock
   private LobbyRepository lobbyRepository;
+  @Spy
+  private UserAccessPolicy userAccessPolicy = new UserAccessPolicy();
+  @Mock
+  private RoleAuthorizationPolicy roleAuthorizationPolicy;
 
   @InjectMocks
   private UserServiceImpl userService;
@@ -203,7 +209,7 @@ class UserServiceImplTest {
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.update(USER_ID, dto);
+    UserDto result = userService.update(USER_ID, dto, USER_ID, -1L);
 
     assertThat(result).isNotNull();
     verify(userMapper).updateEntity(testUser, dto);
@@ -217,7 +223,7 @@ class UserServiceImplTest {
     when(userRepository.save(testUser)).thenReturn(testUser);
     when(userMapper.toDto(testUser)).thenReturn(expectedDto);
 
-    UserDto result = userService.update(USER_ID, dto);
+    UserDto result = userService.update(USER_ID, dto, USER_ID, -1L);
 
     assertThat(result).isEqualTo(expectedDto);
     assertThat(testUser.getRoles()).isNullOrEmpty();
@@ -231,7 +237,7 @@ class UserServiceImplTest {
 
     when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.update(MISSING_USER_ID, dto))
+    assertThatThrownBy(() -> userService.update(MISSING_USER_ID, dto, MISSING_USER_ID, -1L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
   }
@@ -243,7 +249,7 @@ class UserServiceImplTest {
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(userRepository.existsByUsernameIgnoreCase(TAKEN_USERNAME)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.update(USER_ID, dto))
+    assertThatThrownBy(() -> userService.update(USER_ID, dto, USER_ID, -1L))
         .isInstanceOf(ConflictException.class)
         .hasMessageContaining(USERNAME_EXISTS_MESSAGE);
   }
@@ -255,7 +261,7 @@ class UserServiceImplTest {
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(userRepository.existsByEmailIgnoreCase(TAKEN_EMAIL)).thenReturn(true);
 
-    assertThatThrownBy(() -> userService.update(USER_ID, dto))
+    assertThatThrownBy(() -> userService.update(USER_ID, dto, USER_ID, -1L))
         .isInstanceOf(ConflictException.class)
         .hasMessageContaining(EMAIL_EXISTS_MESSAGE);
   }
@@ -269,7 +275,7 @@ class UserServiceImplTest {
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(lobbyRepository.findAllByOwner_Id(USER_ID)).thenReturn(List.of());
 
-    userService.delete(USER_ID, USER_ID);
+    userService.delete(USER_ID, USER_ID, -1L);
 
     verify(userRepository).delete(testUser);
   }
@@ -278,7 +284,7 @@ class UserServiceImplTest {
   void delete_throwsNotFound_whenUserDoesNotExist() {
     when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.delete(MISSING_USER_ID, MISSING_USER_ID))
+    assertThatThrownBy(() -> userService.delete(MISSING_USER_ID, MISSING_USER_ID, -1L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
 
@@ -287,9 +293,7 @@ class UserServiceImplTest {
 
   @Test
   void delete_throwsForbidden_whenRequesterIsAnotherUser() {
-    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
-
-    assertThatThrownBy(() -> userService.delete(USER_ID, MISSING_USER_ID))
+    assertThatThrownBy(() -> userService.delete(USER_ID, MISSING_USER_ID, -1L))
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("own account");
 
@@ -298,11 +302,9 @@ class UserServiceImplTest {
 
   @Test
   void delete_throwsNotFound_whenAnotherRequesterTargetsMissingUser() {
-    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> userService.delete(MISSING_USER_ID, USER_ID))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
+    assertThatThrownBy(() -> userService.delete(MISSING_USER_ID, USER_ID, -1L))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("own account");
   }
 
   @Test
@@ -311,7 +313,7 @@ class UserServiceImplTest {
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
     when(lobbyRepository.findAllByOwner_Id(USER_ID)).thenReturn(List.of(ownedLobby));
 
-    assertThatThrownBy(() -> userService.delete(USER_ID, USER_ID))
+    assertThatThrownBy(() -> userService.delete(USER_ID, USER_ID, -1L))
         .isInstanceOf(ConflictException.class)
         .hasMessageContaining("Transfer ownership");
 

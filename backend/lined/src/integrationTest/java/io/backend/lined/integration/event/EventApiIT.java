@@ -79,7 +79,7 @@ class EventApiIT extends AbstractApiIntegrationTest {
         "lobbyId", lobby.path("id").asLong(),
         "notifyMembers", false), outsider.path("id").asLong());
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(jdbcTemplate.queryForObject("select count(*) from events", Integer.class)).isZero();
   }
 

@@ -56,6 +56,8 @@ and `LobbyWritePolicy` centralize authorization and lifecycle restrictions;
   create membership through their own feature.
 - Versioned lobby mutations require `If-Match`; lifecycle and membership changes
   are transactional so aggregate invariants remain durable.
+- A lobby ID is visible only to its owner or members; complete outsiders get
+  `404`, while visible members who lack an owner-only action get `403`.
 - The schema/JPA mapping is owned by `LobbyEntity`; no separate lobby design
   document exists beyond the API reference.
 

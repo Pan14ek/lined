@@ -58,6 +58,8 @@ the HTTP boundary when the caller lacks access.
 
 - Lobbies is the prerequisite membership feature; it does not override private
   ownership. Users supplies the creator identity used by both policies.
+- Private task and event identifiers are filtered at the repository boundary;
+  an accepted lobby member cannot confirm another member's private object.
 - Calendar feeds and ICS imports preserve private-event semantics; importing
   creates caller-private events explicitly. Task and event notification paths
   avoid leaking private content.

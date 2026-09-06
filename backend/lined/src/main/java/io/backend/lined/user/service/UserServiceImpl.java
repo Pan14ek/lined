@@ -5,7 +5,6 @@ import static java.lang.String.format;
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.VersionPrecondition;
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.role.service.RoleResolver;
@@ -13,10 +12,12 @@ import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
 import io.backend.lined.user.api.UserMapper;
 import io.backend.lined.user.api.UserPageDto;
+import io.backend.lined.user.api.UserPublicDto;
 import io.backend.lined.user.api.UserSearchResultDto;
 import io.backend.lined.user.api.UserUpdateDto;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import io.backend.lined.role.service.RoleAuthorizationPolicy;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +45,8 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final RoleResolver roleResolver;
   private final LobbyRepository lobbyRepository;
+  private final UserAccessPolicy userAccessPolicy;
+  private final RoleAuthorizationPolicy roleAuthorizationPolicy;
 
   @Override
   public UserDto create(UserCreateDto dto) {
@@ -71,7 +74,13 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto update(Long id, UserUpdateDto dto, long expectedVersion) {
+  public UserPublicDto getPublicById(Long id) {
+    return userMapper.toPublicDto(mustUser(id));
+  }
+
+  @Override
+  public UserDto update(Long id, UserUpdateDto dto, Long requesterId, long expectedVersion) {
+    userAccessPolicy.ensureSelf(requesterId, id);
     UserEntity entity = mustUser(id);
     verifyVersion(entity.getVersion(), expectedVersion);
 
@@ -105,10 +114,8 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void delete(Long id, Long currentUserId, long expectedVersion) {
+    userAccessPolicy.ensureSelf(currentUserId, id);
     var user = mustUser(id);
-    if (!id.equals(currentUserId)) {
-      throw new ForbiddenException("Users can only delete their own account");
-    }
     if (!lobbyRepository.findAllByOwner_Id(id).isEmpty()) {
       throw new ConflictException(OWNED_LOBBY_DELETE_ERROR_MESSAGE);
     }
@@ -157,7 +164,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserPageDto findUsers(String query, int page, int size) {
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
-    Page<UserEntity> result = userRepository.searchWithRoles(query, pageable);
+    Page<UserEntity> result = userRepository.searchLight(query, pageable);
     List<UserSearchResultDto> content = result.getContent()
         .stream()
         .map(userMapper::toSearchResultDto)
@@ -166,7 +173,12 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserPageDto findUsersByRole(String roleName, int page, int size) {
+  public UserPageDto findUsersByRole(String roleName, int page, int size, Long requesterId) {
+    roleAuthorizationPolicy.ensureAdmin(requesterId);
+    return findUsersByRoleInternal(roleName, page, size);
+  }
+
+  private UserPageDto findUsersByRoleInternal(String roleName, int page, int size) {
     roleResolver.resolve(Set.of(roleName));
     Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
     Page<UserEntity> result = userRepository.findAllByRoleName(roleName, pageable);

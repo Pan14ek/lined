@@ -73,6 +73,13 @@ the `CurrentUserProvider` security adapter; domain services continue to receive
 trusted IDs as explicit framework-independent authorization inputs. The
 client-controlled `X-User-Id` header is not an identity source.
 
+Object authorization remains feature-owned: `UserAccessPolicy` protects
+self-account mutations, `RoleAuthorizationPolicy` resolves persisted admin
+authority, and `LobbyAccessPolicy` distinguishes hidden outsiders (`404`) from
+visible members lacking an action (`403`). Task and event access policies keep
+privacy and membership checks beside their domain services; generic ACL or
+request-header authorization is not introduced.
+
 Swagger UI is available at `/swagger-ui.html` when the app is running.
 
 ## Persistence Model

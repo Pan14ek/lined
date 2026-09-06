@@ -81,7 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
   public LobbyNotificationPreferencesDto updateLobbyPreferences(
       Long lobbyId, Long currentUserId, LobbyNotificationPreferencesUpdateDto dto,
       long expectedVersion) {
-    var lobby = accessibleLobby(lobbyId, currentUserId);
+    accessibleLobby(lobbyId, currentUserId);
     var preferences = lobbyPreferenceRepo.findByUserIdAndLobbyId(currentUserId, lobbyId)
         .orElseThrow(() -> new ConflictException("Fetch lobby notification preferences before updating"));
     verifyVersion(preferences.getVersion(), expectedVersion);
@@ -253,7 +253,7 @@ public class NotificationServiceImpl implements NotificationService {
   private LobbyEntity accessibleLobby(Long lobbyId, Long currentUserId) {
     var lobby = EntityFinder.findOrThrow(lobbyRepo.findById(lobbyId),
         () -> new NotFoundException("Lobby %d not found".formatted(lobbyId)));
-    accessPolicy.ensureMember(lobby, currentUserId);
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.UPDATE_LOBBY);
     return lobby;
   }

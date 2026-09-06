@@ -115,6 +115,15 @@ verify that identity comes from the validated JWT subject. The regression suite
 intentionally sends one conflicting `X-User-Id` header to prove it is ignored;
 it is not a supported authentication mechanism.
 
+BOLA/IDOR regression coverage lives under
+`src/integrationTest/java/io/backend/lined/integration/security/`. It uses real
+PostgreSQL HTTP flows to verify foreign-account mutation ordering and redacted
+projections, admin-only role changes, parent/child invite binding, private
+task/event visibility, same-lobby task assignees, pre-claim idempotency, and
+recipient-scoped notification reads. Denied writes assert that the relevant
+database row, version, relationship, or idempotency/notification side effect
+remains unchanged.
+
 ## H2-backed Persistence Tests
 
 H2 remains intentionally non-authoritative. Tests that use H2 disable Flyway

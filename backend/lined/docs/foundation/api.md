@@ -151,9 +151,13 @@ Response: `200 OK` with `UserDto` and an `ETag` for the response version.
 
 ### `GET /api/users/{id}`
 
-Return one user by id.
+Return one user by id. The caller receives the full `UserDto` only for their
+own ID. A foreign ID receives the deliberately minimal public projection
+`{ "id": ..., "username": ... }`; email, roles, version, and account
+timestamps are not exposed.
 
-Response: `200 OK` with `UserDto`.
+Response: `200 OK` with `UserDto` for self or `UserPublicDto` for a foreign
+user ID.
 
 ### `DELETE /api/users/{id}`
 
@@ -167,11 +171,13 @@ Response: `204 No Content`.
 
 Search users by free-text query. Defaults: `page=0`, `size=20`.
 
-Response: `200 OK` with `UserPageDto`.
+Response: `200 OK` with `UserPageDto` containing only public user projections.
 
 ### `GET /api/users/by-role?role={role}&page={page}&size={size}`
 
-Search users by role name. Defaults: `page=0`, `size=20`.
+Search users by role name. This is an administrator-only directory operation;
+ordinary authenticated users receive `403 Forbidden`. Defaults: `page=0`,
+`size=20`.
 
 Response: `200 OK` with `UserPageDto`.
 
@@ -207,7 +213,9 @@ Response: `200 OK` with `List<LobbyDto>`.
 ### `GET /api/lobbies/{id}`
 
 Return one lobby by id. The caller must be an owner or member; identity comes
-from the validated Bearer JWT subject.
+from the validated Bearer JWT subject. A complete outsider receives `404 Not
+Found`, so the endpoint does not confirm a lobby's existence. A recognized
+member attempting an owner-only action receives `403 Forbidden`.
 
 Response: `200 OK` with `LobbyDto`.
 
@@ -356,6 +364,11 @@ header retains normal independent-create behavior.
 ```
 
 Response: `200 OK` with `TaskDto`.
+
+The caller must be visible in the target lobby. When `assigneeId` is supplied,
+that user must also be a member of the same lobby; otherwise the request fails
+with `400 Bad Request`. Authentication, lobby visibility, membership, and
+assignee relationship checks happen before an idempotency key is claimed.
 
 ### `PATCH /api/tasks/{id}`
 
@@ -525,7 +538,9 @@ Response: `200 OK` with `Set<RoleNameDto>`.
 
 ### `POST /api/roles/{roleName}`
 
-Ensure a role exists. Returns `201 Created`.
+Ensure a role exists. The caller must have the database-backed `ROLE_ADMIN`
+role; ordinary authenticated callers receive `403 Forbidden`. Returns
+`201 Created`.
 
 Response: `201 Created` with an empty body.
 
@@ -546,6 +561,9 @@ All three endpoints accept the same request shape:
 - `POST /remove` removes the supplied roles.
 
 Response: `200 OK` with `Set<String>`.
+
+All role mutations are administrator-only and resolve authority from persisted
+role state, not from a caller-supplied target ID or request header.
 
 ## Features
 

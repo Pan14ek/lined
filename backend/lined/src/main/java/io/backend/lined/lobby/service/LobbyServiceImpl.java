@@ -76,8 +76,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto getById(Long id, Long requesterId) {
-    var lobby = mustLobby(id);
-    accessPolicy.ensureMember(lobby, requesterId);
+    var lobby = accessibleLobby(id, requesterId);
     return mapper.toDto(lobby);
   }
 
@@ -116,7 +115,7 @@ public class LobbyServiceImpl implements LobbyService {
    */
   @Override
   public LobbyDto selectAsFree(Long lobbyId, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     assertFreePlan(requesterId);
     if (lobby.getMembers().size() > 4) {
@@ -142,7 +141,7 @@ public class LobbyServiceImpl implements LobbyService {
    */
   @Override
   public LobbyDto restore(Long lobbyId, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     if (lobby.getLifecycleStatus() != LobbyLifecycleStatus.ARCHIVED) {
       throw new ConflictException("Only archived lobbies can be restored");
@@ -157,7 +156,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public LobbyDto update(Long lobbyId, LobbyUpdateDto dto, Long requesterId, long expectedVersion) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.UPDATE_LOBBY);
     verifyVersion(lobby.getVersion(), expectedVersion);
@@ -180,7 +179,7 @@ public class LobbyServiceImpl implements LobbyService {
   @Override
   public LobbyDto removeMember(Long lobbyId, Long userIdToRemove, Long requesterId,
                                long expectedVersion) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
 
     accessPolicy.ensureOwner(lobby, requesterId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.REMOVE_MEMBER);
@@ -188,6 +187,10 @@ public class LobbyServiceImpl implements LobbyService {
 
     if (lobby.getOwner().getId().equals(userIdToRemove)) {
       throw new BadRequestException("Owner cannot be removed from lobby");
+    }
+
+    if (lobby.getMembers().stream().noneMatch(user -> user.getId().equals(userIdToRemove))) {
+      throw new NotFoundException("Lobby member not found");
     }
 
     lobby.getMembers().removeIf(u -> u.getId().equals(userIdToRemove));
@@ -199,7 +202,7 @@ public class LobbyServiceImpl implements LobbyService {
 
   @Override
   public void delete(Long lobbyId, Long requesterId, long expectedVersion) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.DELETE_LOBBY);
     verifyVersion(lobby.getVersion(), expectedVersion);
@@ -213,6 +216,12 @@ public class LobbyServiceImpl implements LobbyService {
     return EntityFinder.findOrThrow(
         lobbyRepo.findById(id),
         () -> new NotFoundException("Lobby %d not found".formatted(id)));
+  }
+
+  private LobbyEntity accessibleLobby(Long id, Long requesterId) {
+    var lobby = mustLobby(id);
+    accessPolicy.ensureVisibleMember(lobby, requesterId);
+    return lobby;
   }
 
   private void verifyVersion(long actualVersion, long expectedVersion) {

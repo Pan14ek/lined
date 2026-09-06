@@ -3,7 +3,6 @@ package io.backend.lined.lobby.invite.service;
 import io.backend.lined.common.EntityFinder;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
@@ -36,6 +35,8 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class LobbyInviteServiceImpl implements LobbyInviteService {
 
+  private static final String INVITE_NOT_FOUND_MESSAGE = "Lobby invite %d not found";
+
   private final LobbyRepository lobbyRepo;
   private final UserRepository userRepo;
   private final LobbyInviteRepository inviteRepo;
@@ -48,7 +49,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   @Override
   public LobbyInviteDto create(
       Long lobbyId, Long inviteeId, String inviteeEmail, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.INVITE_MUTATION);
     var invitee = resolveInvitee(inviteeId, inviteeEmail);
@@ -66,7 +67,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
 
   @Override
   public List<LobbyInviteDto> pendingForLobby(Long lobbyId, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     return inviteRepo.findAllByLobby_IdAndStatusOrderBySentAtDesc(lobbyId, LobbyInviteStatus.PENDING)
         .stream().map(mapper::toDto).toList();
@@ -137,12 +138,12 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   }
 
   private LobbyInviteEntity ownerInvite(Long lobbyId, Long inviteId, Long requesterId) {
-    var lobby = mustLobby(lobbyId);
+    var lobby = accessibleLobby(lobbyId, requesterId);
     accessPolicy.ensureOwner(lobby, requesterId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.INVITE_MUTATION);
     var invite = mustInvite(inviteId);
     if (!invite.getLobby().getId().equals(lobbyId)) {
-      throw new NotFoundException("Lobby invite %d not found".formatted(inviteId));
+      throw new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId));
     }
     return invite;
   }
@@ -150,7 +151,7 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
   private LobbyInviteEntity inviteForInvitee(Long inviteId, Long requesterId) {
     var invite = mustInvite(inviteId);
     if (!invite.getInvitee().getId().equals(requesterId)) {
-      throw new ForbiddenException("Only the invited user can respond to this invite");
+      throw new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId));
     }
     return invite;
   }
@@ -212,6 +213,12 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
         () -> new NotFoundException("Lobby %d not found".formatted(lobbyId)));
   }
 
+  private LobbyEntity accessibleLobby(Long lobbyId, Long requesterId) {
+    var lobby = mustLobby(lobbyId);
+    accessPolicy.ensureVisibleMember(lobby, requesterId);
+    return lobby;
+  }
+
   private UserEntity mustUser(Long userId) {
     return EntityFinder.findOrThrow(userRepo.findById(userId),
         () -> new NotFoundException("User %d not found".formatted(userId)));
@@ -219,6 +226,6 @@ public class LobbyInviteServiceImpl implements LobbyInviteService {
 
   private LobbyInviteEntity mustInvite(Long inviteId) {
     return EntityFinder.findOrThrow(inviteRepo.findById(inviteId),
-        () -> new NotFoundException("Lobby invite %d not found".formatted(inviteId)));
+        () -> new NotFoundException(INVITE_NOT_FOUND_MESSAGE.formatted(inviteId)));
   }
 }

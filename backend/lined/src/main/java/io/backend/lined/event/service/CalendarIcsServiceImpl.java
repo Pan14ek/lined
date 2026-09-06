@@ -126,7 +126,7 @@ public class CalendarIcsServiceImpl implements CalendarIcsService {
   public CalendarImportResultDto importCalendar(byte[] content, Long lobbyId, Long currentUserId) {
     UserEntity owner = mustUser(currentUserId);
     LobbyEntity lobby = mustLobby(lobbyId);
-    accessPolicy.ensureMember(lobby, currentUserId);
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.EVENT_MUTATION);
     Calendar calendar = parse(content);
     List<String> errors = new ArrayList<>();
