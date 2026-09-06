@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@/features/users/model';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { cn } from '@/lib/utils';
 
 interface AssigneePickerProps {

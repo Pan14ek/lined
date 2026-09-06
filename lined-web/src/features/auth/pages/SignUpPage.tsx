@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { AuthCard } from '@/features/auth/AuthCard';
-import { FormField } from '@/components/FormField';
+import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useSignUp } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
@@ -71,52 +71,52 @@ export const SignUpPage = () => {
     <AuthCard heading={t('signUp.heading')} subheading={t('signUp.subheading')}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signup-username"
             label={t('signUp.usernameLabel')}
             type="text"
             autoComplete="username"
             value={values.username}
-            onChange={(v) => set('username', v)}
+            onValueChange={(v) => set('username', v)}
             onBlur={() => markTouched('username')}
             placeholder={t('signUp.usernamePlaceholder')}
             error={touched.username ? errors.username : null}
           />
         </div>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signup-email"
             label={t('signUp.emailLabel')}
             type="email"
             autoComplete="email"
             value={values.email}
-            onChange={(v) => set('email', v)}
+            onValueChange={(v) => set('email', v)}
             onBlur={() => markTouched('email')}
             placeholder={t('signUp.emailPlaceholder')}
             error={touched.email ? errors.email : null}
           />
         </div>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signup-password"
             label={t('signUp.passwordLabel')}
             type="password"
             autoComplete="new-password"
             value={values.password}
-            onChange={(v) => set('password', v)}
+            onValueChange={(v) => set('password', v)}
             onBlur={() => markTouched('password')}
             placeholder={t('signUp.passwordPlaceholder')}
             error={touched.password ? errors.password : null}
           />
         </div>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signup-confirm-password"
             label={t('signUp.confirmPasswordLabel')}
             type="password"
             autoComplete="new-password"
             value={values.confirmPassword}
-            onChange={(v) => set('confirmPassword', v)}
+            onValueChange={(v) => set('confirmPassword', v)}
             onBlur={() => markTouched('confirmPassword')}
             placeholder={t('signUp.confirmPasswordPlaceholder')}
             error={touched.confirmPassword ? errors.confirmPassword : null}

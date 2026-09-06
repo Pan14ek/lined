@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from '@/features/lobby/hooks/useInvites';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { InviteCard } from './InviteCard';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { LoadErrorState } from '@/components/LoadErrorState';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
+import { ErrorState } from '@/components/patterns/ErrorState';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { useQueryStall } from '@/hooks/useQueryStall';
 
@@ -63,7 +63,7 @@ export const PendingInvitesBanner = () => {
   };
 
   if (isStalled || (!isLoading && isError)) {
-    return <LoadErrorState onRetry={() => void refetch()} message={t('pendingInvites.loadError')} />;
+    return <ErrorState onRetry={() => void refetch()} title={t('pendingInvites.loadError')} />;
   }
 
   if (isLoading) {
@@ -98,17 +98,18 @@ export const PendingInvitesBanner = () => {
         />
       ))}
 
-      {decliningInvite && (
-        <ConfirmDialog
-          title={t('declineDialog.title')}
-          message={t('declineDialog.message')}
-          confirmLabel={t('declineDialog.confirmLabel')}
-          danger
-          isPending={declineInvite.isPending}
-          onConfirm={handleDeclineConfirm}
-          onCancel={() => setDecliningInviteId(null)}
-        />
-      )}
+      <ConfirmDialog
+        open={decliningInvite != null}
+        onOpenChange={(open) => {
+          if (!open) setDecliningInviteId(null);
+        }}
+        title={t('declineDialog.title')}
+        description={t('declineDialog.message')}
+        confirmLabel={t('declineDialog.confirmLabel')}
+        tone="danger"
+        loading={declineInvite.isPending}
+        onConfirm={handleDeclineConfirm}
+      />
     </section>
   );
 };

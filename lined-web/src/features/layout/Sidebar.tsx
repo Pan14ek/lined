@@ -1,8 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Settings, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import { UserAvatar } from '@/features/users/UserAvatar';
+import { Separator } from '@/components/design-system/data-display/Separator';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { SkeletonAvatar } from '@/components/skeletons/SkeletonAvatar';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
@@ -12,7 +12,7 @@ import { logoutSession } from '@/lib/apiClient';
 import { clearClientAuthentication } from '@/features/auth/sessionCleanup';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
-import { EmptyState } from '@/components/EmptyState';
+import { EmptyState } from '@/components/patterns/EmptyState';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from './navItems';
 
@@ -96,9 +96,9 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
           <div className="px-3 py-2">
             <EmptyState
               variant="inline"
-              message={t('sidebar.noLobbiesYet')}
+              title={t('sidebar.noLobbiesYet')}
               action={{ label: t('sidebar.newLobby'), onClick: () => openCreateLobby() }}
-              className="text-text-muted"
+              className="text-muted-foreground"
             />
           </div>
         )}
@@ -159,11 +159,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps = {}) => {
 
       {!userLoading && user && (
         <div className="flex items-center gap-3 px-5 py-4">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-brand-green text-sm font-semibold text-white">
-              {user.username.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user} className="h-9 w-9" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-white">{user.username}</p>
             <p className="truncate text-xs text-text-muted">{user.email}</p>

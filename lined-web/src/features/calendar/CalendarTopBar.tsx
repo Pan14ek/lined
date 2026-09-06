@@ -10,7 +10,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuGroup,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/design-system/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
 
 interface CalendarTopBarProps {

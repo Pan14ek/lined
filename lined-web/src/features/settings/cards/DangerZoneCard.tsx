@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDeleteAccount } from '@/features/users/hooks/useUserSettings';
 import { clearClientAuthentication } from '@/features/auth/sessionCleanup';
 import { getApiErrorMessage } from '@/lib/apiErrors';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
 
 interface DangerZoneCardProps {
   userId: number | undefined;
@@ -61,18 +61,17 @@ export const DangerZoneCard = ({ userId }: DangerZoneCardProps) => {
         </button>
       </div>
 
-      {isConfirmOpen && (
-        <ConfirmDialog
-          title={t('dangerZone.deleteAccount')}
-          message={t('dangerZone.deleteAccountDescription')}
-          confirmLabel={t('dangerZone.deleteAccountButton')}
-          danger
-          isPending={deleteAccount.isPending}
-          error={deleteAccount.isError ? getDeleteErrorMessage(deleteAccount.error, t) : null}
-          onConfirm={handleConfirm}
-          onCancel={() => setIsConfirmOpen(false)}
-        />
-      )}
+      <ConfirmDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title={t('dangerZone.deleteAccount')}
+        description={t('dangerZone.deleteAccountDescription')}
+        confirmLabel={t('dangerZone.deleteAccountButton')}
+        tone="danger"
+        loading={deleteAccount.isPending}
+        error={deleteAccount.isError ? getDeleteErrorMessage(deleteAccount.error, t) : null}
+        onConfirm={handleConfirm}
+      />
     </section>
   );
 };

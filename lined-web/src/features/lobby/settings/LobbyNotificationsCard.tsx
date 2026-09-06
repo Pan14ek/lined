@@ -4,8 +4,8 @@ import {
   useLobbyNotificationPreferences,
   useUpdateLobbyNotificationPreferences,
 } from '@/features/notifications/hooks/useNotifications';
-import { ToggleRow } from '@/components/ToggleRow';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { SwitchField } from '@/components/patterns/SwitchField';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '@/features/settings/SettingsCard';
@@ -32,7 +32,7 @@ export const LobbyNotificationsCard = ({ lobbyId }: LobbyNotificationsCardProps)
   if (isStalled || (!isLoading && isError)) {
     return (
       <SettingsCard id="lobby-notifications" title={t('settings.notifications.title')}>
-        <LoadErrorState onRetry={() => void refetch()} message={t('settings.notifications.loadError')} />
+        <ErrorState onRetry={() => void refetch()} title={t('settings.notifications.loadError')} />
       </SettingsCard>
     );
   }
@@ -52,11 +52,11 @@ export const LobbyNotificationsCard = ({ lobbyId }: LobbyNotificationsCardProps)
   return (
     <SettingsCard id="lobby-notifications" title={t('settings.notifications.title')}>
       {TOGGLES.map((toggle) => (
-        <ToggleRow
+        <SwitchField
           key={toggle.key}
           label={t(toggle.labelKey)}
           checked={preferences[toggle.key]}
-          onChange={(checked) => updatePreferences.mutate({ [toggle.key]: checked })}
+          onCheckedChange={(checked) => updatePreferences.mutate({ [toggle.key]: checked })}
         />
       ))}
       {updatePreferences.isError && (

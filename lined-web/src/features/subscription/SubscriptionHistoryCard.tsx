@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { SubscriptionDto } from '@/features/subscription/model';
 import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/subscriptionUtils';
 import { SettingsCard } from '@/features/settings/SettingsCard';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export const SubscriptionHistoryCard = ({
   return (
     <SettingsCard id="subscription-history" title={t('history.title')}>
       {isStalled || (!isLoading && isError) ? (
-        <LoadErrorState onRetry={onRetry} message={t('history.loadError')} />
+        <ErrorState onRetry={onRetry} title={t('history.loadError')} />
       ) : isLoading ? (
         <SubscriptionHistorySkeleton />
       ) : history && history.length > 0 ? (

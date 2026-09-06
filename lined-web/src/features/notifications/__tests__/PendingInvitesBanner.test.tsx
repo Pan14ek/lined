@@ -99,7 +99,7 @@ describe('PendingInvitesBanner', () => {
     await user.click(screen.getAllByRole('button', { name: 'Decline' })[0]!);
     expect(screen.getByText('Decline invite')).toBeInTheDocument();
 
-    const dialog = screen.getByTestId('confirm-dialog-backdrop');
+    const dialog = screen.getByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Decline' }));
 
     expect(await screen.findByText('Pending Invites · 2')).toBeInTheDocument();

@@ -338,7 +338,7 @@ describe('TaskDrawer — edit mode', () => {
     await user.click(screen.getByRole('button', { name: 'Delete' }));
     expect(screen.getByText('Delete task')).toBeInTheDocument();
 
-    await user.click(screen.getAllByRole('button', { name: 'Delete' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
@@ -351,7 +351,7 @@ describe('TaskDrawer — edit mode', () => {
     renderWithProviders(<TaskDrawer lobbies={MOCK_LOBBIES} task={TASK} onClose={onClose} />);
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-    await user.click(screen.getAllByRole('button', { name: 'Delete' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(await screen.findByText("Couldn't delete this task — please try again")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -364,7 +364,7 @@ describe('TaskDrawer — edit mode', () => {
     renderWithProviders(<TaskDrawer lobbies={MOCK_LOBBIES} task={TASK} onClose={onClose} />);
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-    await user.click(screen.getAllByRole('button', { name: 'Cancel' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByText('Delete task')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();

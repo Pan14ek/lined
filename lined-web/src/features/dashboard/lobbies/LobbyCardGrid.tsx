@@ -3,8 +3,8 @@ import type { EventDto } from '@/features/calendar/model';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto } from '@/features/tasks/model';
 import { useCreateMenuStore } from '@/store/createMenu';
-import { EmptyState } from '@/components/EmptyState';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { LobbyCard } from './LobbyCard';
@@ -46,13 +46,13 @@ export const LobbyCardGrid = ({
       )}
 
       {(isStalled || (!isLoading && isError)) && (
-        <LoadErrorState onRetry={onRetry} message={t('lobbies.loadError')} />
+        <ErrorState onRetry={onRetry} title={t('lobbies.loadError')} />
       )}
 
       {!isLoading && !isError && lobbies?.length === 0 && (
         <EmptyState
           variant="inline"
-          message={t('lobbies.empty')}
+          title={t('lobbies.empty')}
           action={{ label: t('lobbies.createLobby'), onClick: () => openCreateLobby() }}
         />
       )}

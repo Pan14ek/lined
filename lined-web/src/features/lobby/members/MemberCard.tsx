@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@/features/users/model';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { UserAvatar } from '@/features/users/UserAvatar';
 import { formatMonthYear } from '@/features/calendar/lib/calendarUtils';
 import { cn } from '@/lib/utils';
 
@@ -25,11 +25,7 @@ export const MemberCard = ({
   const { t } = useTranslation('lobby');
   return (
     <div className="flex items-center gap-4 rounded-lg bg-surface p-4 shadow-[var(--shadow-sm)]">
-      <Avatar size="lg">
-        <AvatarFallback className="bg-brand-green text-sm font-semibold text-white">
-          {member.username.charAt(0).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+      <UserAvatar user={member} size="lg" />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

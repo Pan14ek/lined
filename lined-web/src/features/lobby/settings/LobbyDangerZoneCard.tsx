@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useRemoveMember, useDeleteLobby } from '@/features/lobby/hooks/useLobbies';
 import { getApiErrorMessage } from '@/lib/apiErrors';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
 
 interface LobbyDangerZoneCardProps {
   lobby: LobbyDto;
@@ -21,6 +21,7 @@ const getLeaveErrorMessage = (error: unknown, t: TFunction<'lobby'>): string => 
 
 export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCardProps) => {
   const { t } = useTranslation('lobby');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const removeMember = useRemoveMember(lobby.id);
   const deleteLobby = useDeleteLobby();
@@ -92,32 +93,34 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
         </div>
       )}
 
-      {pendingAction === 'leave' && (
-        <ConfirmDialog
-          title={t('settings.dangerZone.leaveTitle')}
-          message={t('settings.dangerZone.leaveConfirmMessage', { lobbyName: lobby.name })}
-          confirmLabel={t('settings.dangerZone.leave')}
-          danger
-          isPending={removeMember.isPending}
-          error={actionError}
-          onConfirm={handleLeave}
-          onCancel={closeDialog}
-        />
-      )}
+      <ConfirmDialog
+        open={pendingAction === 'leave'}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+        title={t('settings.dangerZone.leaveTitle')}
+        description={t('settings.dangerZone.leaveConfirmMessage', { lobbyName: lobby.name })}
+        confirmLabel={t('settings.dangerZone.leave')}
+        tone="danger"
+        loading={removeMember.isPending}
+        error={actionError}
+        onConfirm={handleLeave}
+      />
 
-      {pendingAction === 'delete' && (
-        <ConfirmDialog
-          title={t('settings.dangerZone.deleteTitle')}
-          message={t('settings.dangerZone.deleteConfirmMessage', { lobbyName: lobby.name })}
-          confirmLabel={t('settings.dangerZone.delete')}
-          danger
-          confirmText={lobby.name}
-          isPending={deleteLobby.isPending}
-          error={actionError}
-          onConfirm={handleDelete}
-          onCancel={closeDialog}
-        />
-      )}
+      <ConfirmDialog
+        open={pendingAction === 'delete'}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+        title={t('settings.dangerZone.deleteTitle')}
+        description={t('settings.dangerZone.deleteConfirmMessage', { lobbyName: lobby.name })}
+        confirmLabel={t('settings.dangerZone.delete')}
+        tone="danger"
+        confirmationText={{ expected: lobby.name, label: tCommon('confirmDialog.typeToConfirm', { text: lobby.name }) }}
+        loading={deleteLobby.isPending}
+        error={actionError}
+        onConfirm={handleDelete}
+      />
     </section>
   );
 };

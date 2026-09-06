@@ -10,7 +10,7 @@ import { toDatetimeLocal, fromDatetimeLocal } from '@/features/calendar/lib/cale
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { ConflictBanner } from './ConflictBanner';
-import { ToggleRow } from '@/components/ToggleRow';
+import { SwitchField } from '@/components/patterns/SwitchField';
 import { cn } from '@/lib/utils';
 
 interface CreateEventModalProps {
@@ -341,11 +341,11 @@ export const CreateEventModal = ({
 
             {/* Notify members — create-mode only; there's no notifyMembers field on edit */}
             {!isEditMode && (
-              <ToggleRow
+              <SwitchField
                 label={t('createEventModal.notifyToggle.label')}
                 description={t('createEventModal.notifyToggle.description')}
                 checked={form.notifyMembers}
-                onChange={(v) => set('notifyMembers', v)}
+                onCheckedChange={(v) => set('notifyMembers', v)}
                 disabled={form.visibility === 'PRIVATE'}
               />
             )}

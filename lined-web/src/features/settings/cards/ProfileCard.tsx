@@ -4,9 +4,9 @@ import type { TFunction } from 'i18next';
 import type { UserDto } from '@/features/users/model';
 import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
-import { Button } from '@/components/Button';
-import { LoadErrorState } from '@/components/LoadErrorState';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/design-system/actions/Button';
+import { ErrorState } from '@/components/patterns/ErrorState';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '../SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '../SettingsRow';
@@ -48,7 +48,7 @@ export const ProfileCard = ({ user, isLoading, isError, onRetry }: ProfileCardPr
   if (isStalled || (!isLoading && isError)) {
     return (
       <SettingsCard id="profile" title={t('profile.title')}>
-        <LoadErrorState onRetry={onRetry} message={t('profile.loadError')} />
+        <ErrorState onRetry={onRetry} title={t('profile.loadError')} />
       </SettingsCard>
     );
   }
@@ -81,13 +81,7 @@ export const ProfileCard = ({ user, isLoading, isError, onRetry }: ProfileCardPr
       id="profile"
       title={t('profile.title')}
       footer={
-        <Button
-          type="submit"
-          form="profile-form"
-          disabled={!isDirty}
-          pending={updateUser.isPending}
-          className="h-[38px] px-5"
-        >
+        <Button type="submit" form="profile-form" disabled={!isDirty} loading={updateUser.isPending}>
           {t('profile.saveChanges')}
         </Button>
       }

@@ -6,7 +6,7 @@ import type { TaskDto, TaskStatus } from '@/features/tasks/model';
 import type { UserDto } from '@/features/users/model';
 import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
-import { EmptyState } from '@/components/EmptyState';
+import { EmptyState } from '@/components/patterns/EmptyState';
 import { KanbanCard, TASK_DRAG_DATA_FORMAT } from './KanbanCard';
 import { KANBAN_TEST_IDS } from './kanbanConstants';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ const KanbanCardList = ({
     return (
       <EmptyState
         variant="inline"
-        message={t('kanban.emptyColumn', { status: t(`status.${status}`) })}
+        title={t('kanban.emptyColumn', { status: t(`status.${status}`) })}
       />
     );
   }

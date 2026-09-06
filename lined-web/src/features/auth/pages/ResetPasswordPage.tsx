@@ -2,7 +2,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { AuthCard } from '@/features/auth/AuthCard';
-import { FormField } from '@/components/FormField';
+import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useResetPassword } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
@@ -75,26 +75,26 @@ export const ResetPasswordPage = () => {
     <AuthCard heading={t('resetPassword.heading')} subheading={t('resetPassword.subheading')}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="reset-password-new"
             label={t('resetPassword.newPasswordLabel')}
             type="password"
             autoComplete="new-password"
             value={values.newPassword}
-            onChange={(v) => set('newPassword', v)}
+            onValueChange={(v) => set('newPassword', v)}
             onBlur={() => markTouched('newPassword')}
             placeholder={t('resetPassword.newPasswordPlaceholder')}
             error={touched.newPassword ? errors.newPassword : null}
           />
         </div>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="reset-password-confirm"
             label={t('resetPassword.confirmPasswordLabel')}
             type="password"
             autoComplete="new-password"
             value={values.confirmPassword}
-            onChange={(v) => set('confirmPassword', v)}
+            onValueChange={(v) => set('confirmPassword', v)}
             onBlur={() => markTouched('confirmPassword')}
             placeholder={t('resetPassword.confirmPasswordPlaceholder')}
             error={touched.confirmPassword ? errors.confirmPassword : null}

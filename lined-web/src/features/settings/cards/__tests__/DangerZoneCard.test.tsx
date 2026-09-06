@@ -41,7 +41,7 @@ describe('DangerZoneCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete account' }));
 
-    expect(screen.getByTestId('confirm-dialog-backdrop')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('shows the lobby-ownership conflict message on 409', async () => {
@@ -50,7 +50,7 @@ describe('DangerZoneCard', () => {
     renderCard(lobbyOwner.id);
 
     await user.click(screen.getByRole('button', { name: 'Delete account' }));
-    await user.click(screen.getAllByRole('button', { name: 'Delete account' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete account' }));
 
     expect(
       await screen.findByText(
@@ -66,7 +66,7 @@ describe('DangerZoneCard', () => {
     renderCard(lobbyOwner.id);
 
     await user.click(screen.getByRole('button', { name: 'Delete account' }));
-    await user.click(screen.getAllByRole('button', { name: 'Delete account' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete account' }));
 
     expect(
       await screen.findByText('Could not delete your account — please try again'),
@@ -80,7 +80,7 @@ describe('DangerZoneCard', () => {
     renderCard(noLobbyUser.id);
 
     await user.click(screen.getByRole('button', { name: 'Delete account' }));
-    await user.click(screen.getAllByRole('button', { name: 'Delete account' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete account' }));
 
     await waitFor(() =>
       expect(useAuthStore.getState().accessToken).toBeNull(),

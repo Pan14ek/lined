@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { LobbyDto, LobbyInviteDto } from '@/features/lobby/model';
 import type { NotificationDto, NotificationType } from '@/features/notifications/model';
 import { formatRelativeTimeAgo } from '@/features/calendar/lib/calendarUtils';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
@@ -92,7 +92,7 @@ export const NotificationInbox = ({
 
         {(isStalled || (!isLoading && isError)) && (
           <div className="p-3">
-            <LoadErrorState onRetry={onRetry} message={t('inbox.loadError')} />
+            <ErrorState onRetry={onRetry} title={t('inbox.loadError')} />
           </div>
         )}
 

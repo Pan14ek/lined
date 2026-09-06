@@ -77,7 +77,7 @@ describe('CurrentPlanCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancel subscription' }));
 
-    expect(screen.getByTestId('confirm-dialog-backdrop')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('shows an inline error message when cancelling fails', async () => {
@@ -98,7 +98,7 @@ describe('CurrentPlanCard', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Cancel subscription' }));
-    await user.click(screen.getAllByRole('button', { name: 'Cancel subscription' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Cancel subscription' }));
 
     expect(
       await screen.findByText('You have no active subscription to cancel'),

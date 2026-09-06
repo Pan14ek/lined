@@ -239,7 +239,7 @@ describe('CreateEventModal — visibility', () => {
 
     await user.type(screen.getByPlaceholderText(/movie night/i), 'Board game night');
     await user.click(screen.getByRole('button', { name: 'Private' }));
-    expect(screen.getByRole('switch')).toBeDisabled();
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-disabled', 'true');
 
     await user.click(screen.getByRole('button', { name: 'Create Event' }));
 

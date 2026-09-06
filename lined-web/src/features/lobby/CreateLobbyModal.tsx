@@ -6,8 +6,8 @@ import type { TFunction } from 'i18next';
 import type { LobbyType } from '@/features/lobby/model';
 import { useCreateLobby } from '@/features/lobby/hooks/useLobbies';
 import { LobbyTypePicker } from '@/features/lobby/settings/LobbyTypePicker';
-import { Button } from '@/components/Button';
-import { FormField } from '@/components/FormField';
+import { Button } from '@/components/design-system/actions/Button';
+import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { useCreateMenuStore } from '@/store/createMenu';
@@ -66,13 +66,13 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-5">
             {/* Name */}
-            <FormField
+            <TextField
               id="create-lobby-name"
               label={t('createModal.nameLabel')}
               type="text"
               required
               value={name}
-              onChange={setName}
+              onValueChange={setName}
               placeholder={t('createModal.namePlaceholder')}
             />
 
@@ -96,19 +96,10 @@ export const CreateLobbyModal = ({ onClose }: CreateLobbyModalProps) => {
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-2.5 px-6 pb-5">
-            <Button
-              variant="secondary"
-              onClick={onClose}
-              className="px-4"
-            >
+            <Button variant="secondary" onClick={onClose}>
               {t('createModal.cancel')}
             </Button>
-            <Button
-              type="submit"
-              disabled={!name.trim()}
-              pending={createLobby.isPending}
-              className="px-6"
-            >
+            <Button type="submit" disabled={!name.trim()} loading={createLobby.isPending}>
               {t('createModal.submit')}
             </Button>
           </div>

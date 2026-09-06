@@ -4,8 +4,8 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/features/notifications/hooks/useNotifications';
-import { ToggleRow } from '@/components/ToggleRow';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { SwitchField } from '@/components/patterns/SwitchField';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '../SettingsCard';
@@ -61,7 +61,7 @@ export const NotificationsCard = () => {
   if (isStalled || (!isLoading && isError)) {
     return (
       <SettingsCard id="notifications" title={t('notifications.title')}>
-        <LoadErrorState onRetry={() => void refetch()} message={t('notifications.loadError')} />
+        <ErrorState onRetry={() => void refetch()} title={t('notifications.loadError')} />
       </SettingsCard>
     );
   }
@@ -81,12 +81,12 @@ export const NotificationsCard = () => {
   return (
     <SettingsCard id="notifications" title={t('notifications.title')}>
       {TOGGLE_KEYS.map((toggle) => (
-        <ToggleRow
+        <SwitchField
           key={toggle.key}
           label={t(toggle.labelKey)}
           description={t(toggle.descriptionKey)}
           checked={preferences[toggle.key]}
-          onChange={(checked) => updatePreferences.mutate({ [toggle.key]: checked })}
+          onCheckedChange={(checked) => updatePreferences.mutate({ [toggle.key]: checked })}
         />
       ))}
       {updatePreferences.isError && (

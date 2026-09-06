@@ -42,7 +42,7 @@ describe('LobbyDangerZoneCard', () => {
     renderCard(2);
 
     await user.click(screen.getByRole('button', { name: 'Leave' }));
-    await user.click(screen.getAllByRole('button', { name: 'Leave' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Leave' }));
 
     expect(await screen.findByText('Dashboard Page')).toBeInTheDocument();
   });
@@ -53,7 +53,7 @@ describe('LobbyDangerZoneCard', () => {
     renderCard(1);
 
     await user.click(screen.getByRole('button', { name: 'Leave' }));
-    await user.click(screen.getAllByRole('button', { name: 'Leave' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Leave' }));
 
     expect(
       await screen.findByText(
@@ -74,7 +74,7 @@ describe('LobbyDangerZoneCard', () => {
     renderCard(2);
 
     await user.click(screen.getByRole('button', { name: 'Leave' }));
-    await user.click(screen.getAllByRole('button', { name: 'Leave' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Leave' }));
 
     expect(
       await screen.findByText('Could not leave this lobby — please try again'),
@@ -87,12 +87,11 @@ describe('LobbyDangerZoneCard', () => {
     renderCard(1);
 
     await user.click(screen.getByRole('button', { name: 'Delete lobby' }));
-    const confirmButtons = screen.getAllByRole('button', { name: 'Delete lobby' });
-    expect(confirmButtons[1]).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete lobby' })).toBeDisabled();
 
     await user.type(screen.getByLabelText(`Type "${lobby.name}" to confirm`), lobby.name);
 
-    expect(confirmButtons[1]).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Delete lobby' })).toBeEnabled();
   });
 
   it('deletes the lobby and navigates home on success', async () => {
@@ -102,7 +101,7 @@ describe('LobbyDangerZoneCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete lobby' }));
     await user.type(screen.getByLabelText(`Type "${lobby.name}" to confirm`), lobby.name);
-    await user.click(screen.getAllByRole('button', { name: 'Delete lobby' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete lobby' }));
 
     expect(await screen.findByText('Dashboard Page')).toBeInTheDocument();
   });
@@ -115,7 +114,7 @@ describe('LobbyDangerZoneCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete lobby' }));
     await user.type(screen.getByLabelText(`Type "${lobby.name}" to confirm`), lobby.name);
-    await user.click(screen.getAllByRole('button', { name: 'Delete lobby' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'Delete lobby' }));
 
     expect(
       await screen.findByText('Could not delete this lobby — please try again'),
