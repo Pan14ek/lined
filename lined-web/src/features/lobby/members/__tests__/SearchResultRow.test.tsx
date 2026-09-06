@@ -6,9 +6,6 @@ import { SearchResultRow } from '../SearchResultRow';
 const user: UserSearchResultDto = {
   id: 3,
   username: 'nastia_bondar',
-  email: 'nastia.bondar@lined.app',
-  createdAt: '2025-06-10T09:00:00Z',
-  roles: ['ROLE_USER'],
 };
 
 describe('SearchResultRow', () => {

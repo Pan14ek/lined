@@ -1,17 +1,20 @@
 import { MockHttpError, mockDelay } from '@/lib/apiClient';
 import { MOCK_USERS } from './mockData';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
-import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto } from '@/features/users/model';
+import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto, UserPublicDto } from '@/features/users/model';
 import { getCurrentMockUserId } from '@/features/auth/api/mockIdentity';
 
 const users: UserDto[] = MOCK_USERS.map((u) => ({ ...u }));
 let nextId = Math.max(...users.map((u) => u.id)) + 1;
 
-export const getUser = async (id: number): Promise<UserDto> => {
+const toPublicDto = (user: UserDto): UserPublicDto => ({ id: user.id, username: user.username });
+
+/** Returns the full profile only for the caller's own id — mirrors the hardened backend contract. */
+export const getUser = async (id: number): Promise<UserPublicDto> => {
   await mockDelay();
   const user = users.find((u) => u.id === id);
   if (!user) throw new MockHttpError(404, 'User not found');
-  return user;
+  return id === getCurrentMockUserId() ? user : toPublicDto(user);
 }
 
 export const getCurrentUser = async (): Promise<UserDto> => {
@@ -31,7 +34,7 @@ export const createUser = async (data: UserCreateDto): Promise<UserDto> => {
     username: data.username,
     email: data.email,
     createdAt: new Date().toISOString(),
-    roles: data.roles ?? ['ROLE_USER'],
+    roles: ['ROLE_USER'],
     activePlan: null,
     activeUntil: null,
   };
@@ -61,7 +64,7 @@ export const searchUsers = async (q: string, page = 0, size = 20): Promise<UserP
     (u) => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query),
   );
   return {
-    content: matches,
+    content: matches.map(toPublicDto),
     page,
     size,
     totalElements: matches.length,

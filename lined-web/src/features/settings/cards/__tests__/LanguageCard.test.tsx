@@ -1,15 +1,23 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
+import { createTestQueryClient, renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { useSettingsStore } from '@/store/settings';
+import { QUERY_KEYS } from '@/features/users/lib/constants';
 import i18n from '@/i18n';
 import { LanguageCard } from '../LanguageCard';
 import { api, locales, roles, testIds, texts } from './LanguageCard.test.helper';
 import { HTTP_STATUS } from '@/test/httpStatus';
 
 const testUser = MOCK_USERS[0]!;
+
+/** `useUpdateCurrentUser` resolves its target id from the `/users/me` cache. */
+const renderWithCurrentUser = (ui: Parameters<typeof renderWithProviders>[0]) => {
+  const queryClient = createTestQueryClient();
+  queryClient.setQueryData(QUERY_KEYS.currentUser, testUser);
+  return renderWithProviders(ui, { queryClient });
+}
 
 describe('LanguageCard', () => {
   beforeEach(() => {
@@ -34,7 +42,7 @@ describe('LanguageCard', () => {
   it('switches the store locale and re-renders the preview strip in Ukrainian', async () => {
     expect.assertions(2);
     const user = userEvent.setup();
-    renderWithProviders(<LanguageCard userId={testUser.id} />);
+    renderWithCurrentUser(<LanguageCard userId={testUser.id} />);
 
     await user.click(screen.getByRole(roles.radio, { name: texts.ukrainian }));
 
@@ -52,7 +60,7 @@ describe('LanguageCard', () => {
       }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<LanguageCard userId={testUser.id} />);
+    renderWithCurrentUser(<LanguageCard userId={testUser.id} />);
 
     await user.click(screen.getByRole(roles.radio, { name: texts.ukrainian }));
 
@@ -63,7 +71,7 @@ describe('LanguageCard', () => {
     expect.assertions(2);
     server.use(http.patch(`${api.baseUrl}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const user = userEvent.setup();
-    renderWithProviders(<LanguageCard userId={testUser.id} />);
+    renderWithCurrentUser(<LanguageCard userId={testUser.id} />);
 
     await user.click(screen.getByRole(roles.radio, { name: texts.ukrainian }));
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { LobbyDto } from '@/features/lobby/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { useUpdateLobbyOwner, useRemoveMember } from '@/features/lobby/hooks/useLobbies';
@@ -12,7 +12,7 @@ import { MemberListContent } from './MemberListContent';
 import { PendingInvitesSection } from './PendingInvitesSection';
 
 type PendingActionKind = 'makeOwner' | 'remove';
-type PendingAction = { kind: PendingActionKind; member: UserDto } | null;
+type PendingAction = { kind: PendingActionKind; member: UserPublicDto } | null;
 
 const getMemberActionConfig = (t: TFunction<'lobby'>): Record<
   PendingActionKind,
@@ -20,7 +20,7 @@ const getMemberActionConfig = (t: TFunction<'lobby'>): Record<
     title: string;
     confirmLabel: string;
     danger: boolean;
-    getMessage: (member: UserDto, lobbyName: string) => string;
+    getMessage: (member: UserPublicDto, lobbyName: string) => string;
   }
 > => ({
   makeOwner: {

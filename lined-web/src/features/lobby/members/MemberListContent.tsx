@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import type { useUsers } from '@/features/users/hooks/useUsers';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { MemberCard } from './MemberCard';
@@ -10,8 +10,8 @@ interface MemberListContentProps {
   lobby: LobbyDto;
   currentUserId: number | undefined;
   isOwnerViewer: boolean;
-  onMakeOwner: (member: UserDto) => void;
-  onRemove: (member: UserDto) => void;
+  onMakeOwner: (member: UserPublicDto) => void;
+  onRemove: (member: UserPublicDto) => void;
 }
 
 export const MemberListContent = ({

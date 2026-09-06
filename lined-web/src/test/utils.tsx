@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement, ReactNode } from 'react';
 
-const createTestQueryClient = () => {
+export const createTestQueryClient = () => {
   return new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -12,9 +12,8 @@ const createTestQueryClient = () => {
   });
 }
 
-const createProviders = (initialEntries: string[]) => {
+const createProviders = (initialEntries: string[], queryClient: QueryClient) => {
   return function AllProviders({ children }: { children: ReactNode }) {
-    const queryClient = createTestQueryClient();
     return (
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
@@ -23,9 +22,12 @@ const createProviders = (initialEntries: string[]) => {
   };
 }
 
-export const renderWithProviders = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] }) => {
-  const { initialEntries = ['/'], ...renderOptions } = options ?? {};
-  return render(ui, { wrapper: createProviders(initialEntries), ...renderOptions });
+export const renderWithProviders = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[]; queryClient?: QueryClient },
+) => {
+  const { initialEntries = ['/'], queryClient = createTestQueryClient(), ...renderOptions } = options ?? {};
+  return render(ui, { wrapper: createProviders(initialEntries, queryClient), ...renderOptions });
 }
 
 export { screen, waitFor } from '@testing-library/react';

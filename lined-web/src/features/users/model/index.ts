@@ -14,24 +14,22 @@ export interface UserCreateDto {
   username: string;
   email: string;
   password: string;
-  roles?: string[];
 }
 
 export interface UserUpdateDto {
   username?: string;
   email?: string;
   password?: string;
-  roles?: string[];
   locale?: 'en' | 'uk';
 }
 
-export interface UserSearchResultDto {
+/** Minimal directory projection for a user other than the current account. */
+export interface UserPublicDto {
   id: number;
   username: string;
-  email: string;
-  createdAt: string;
-  roles: string[];
 }
+
+export type UserSearchResultDto = UserPublicDto;
 
 export interface UserPageDto {
   content: UserSearchResultDto[];

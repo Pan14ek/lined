@@ -8,6 +8,7 @@ import type { TaskDto, TaskPriority, TaskStatus, TaskUpdateDto } from '@/feature
 import { useCreateTask, useUpdateTask, useDeleteTask } from '@/features/tasks/hooks/useTasks';
 import { useUser, useUsers } from '@/features/users/hooks/useUsers';
 import { TASK_PRIORITY_OPTIONS } from '@/features/tasks/lib/constants';
+import { getErrorStatus } from '@/lib/apiClient';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/features/calendar/lib/calendarUtils';
@@ -123,7 +124,17 @@ export const TaskDrawer = ({
 
         if (isEditMode) {
           const patch = buildTaskPatch(task, { title, description, assigneeId, dueDate, priority, status });
-          updateTask.mutate({ id: task.id, data: patch }, { onSuccess: () => onClose() });
+          updateTask.mutate(
+            { id: task.id, data: patch },
+            {
+              onSuccess: () => onClose(),
+              // A 404 means the task is gone/inaccessible — close rather than
+              // keep an edit form open for a task that no longer exists here.
+              onError: (error) => {
+                if (getErrorStatus(error) === 404) onClose();
+              },
+            },
+          );
           return;
         }
 
