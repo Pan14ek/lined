@@ -96,6 +96,46 @@ What's *not* fine is duplicating a feature's model or logic into another
 feature to avoid an import. If two features need the same DTO shape, one of
 them owns it and the other imports it.
 
+## The UI layer: internal primitives → public Design System → patterns
+
+Below the feature-first split above, `src/components/` has its own internal
+layering:
+
+```
+semantic tokens (src/index.css)
+        ↓
+components/ui/            INTERNAL shadcn + Base UI primitives
+        ↓
+components/design-system/ PUBLIC Design System (Button, TextField, Dialog, ...)
+        ↓
+components/patterns/      PUBLIC reusable compositions (FieldRow, ConfirmDialog, ...)
+        ↓
+domain wrappers (feature-owned, e.g. TaskStatusBadge, UserAvatar)
+        ↓
+feature components → pages
+```
+
+`components/ui/` is shadcn/Base UI-owned and never edited directly (unchanged
+from before) — but it is now also off-limits to feature code: nothing under
+`src/features/` may import it directly anymore. Feature code consumes
+`@/components/design-system/*` and `@/components/patterns/*` instead, which
+is enforced by ESLint's `no-restricted-imports` and `npm run ui:check`, not
+just convention.
+
+The public layer (`design-system/` + `patterns/`) follows the same
+ownership rule as the rest of the app, one level stricter: it must have **no**
+feature/domain dependency at all (no `LobbyDto`, no feature hooks). A
+component that needs domain data is a feature-owned **domain wrapper** —
+`TaskStatusBadge` maps `TaskStatus` → `Badge`'s `tone`/label, `UserAvatar`
+(in `features/users/`) maps a `UserDto` → `Avatar`'s `fallback`/`tone`. The
+wrapper owns the domain mapping; the public component owns the geometry.
+
+Storybook (`npm run storybook`) is the executable catalog, documentation, and
+accessibility surface for `design-system/` and `patterns/`, and the interface
+coding agents use for UI discovery via its MCP addon — see
+`src/components/design-system/CONTEXT.md`, `src/components/patterns/CONTEXT.md`,
+and `lined-web/AGENTS.md`'s "UI Design System workflow" for the full contract.
+
 ## The API layer: `prod.ts` / `dev.ts` / `index.ts`
 
 Every feature that talks to the backend has this shape in `api/`:

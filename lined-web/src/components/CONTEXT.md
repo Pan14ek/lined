@@ -2,51 +2,84 @@
 
 ## Purpose
 
-Domain-agnostic, presentational components — code that could be dropped
-into a different app with no `LobbyDto`/`TaskDto`/etc. knowledge and still
-make sense. This is a **deliberately small** folder; most components belong
-to a feature (see `docs/ARCHITECTURE.md`, "The ownership rule"). Before
-adding here, ask: *does this component know what a lobby, task, or event
-is?* If yes, it belongs under `src/features/{feature}/`, not here.
+The UI layer that sits below `src/features/`: internal primitives, the public
+Design System, and reusable domain-agnostic compositions. Layered as:
+
+```
+semantic tokens (src/index.css)
+        ↓
+ui/              INTERNAL shadcn + Base UI primitives
+        ↓
+design-system/   PUBLIC Design System — Button, TextField, Dialog, Badge, ...
+        ↓
+patterns/        PUBLIC reusable compositions — FieldRow, SectionCard, ConfirmDialog, ...
+        ↓
+domain wrappers (feature-owned, e.g. TaskStatusBadge, UserAvatar)
+        ↓
+feature components → pages
+```
 
 ## Structure
 
 ```
 components/
-  ui/                    shadcn/ui primitives — NEVER edit directly, wrap instead
-  AssigneeAvatar/        index.tsx + __tests__/index.test.tsx
-  ConfirmDialog/         index.tsx + __tests__/index.test.tsx
-  EmptyState/            index.tsx + __tests__/index.test.tsx
-  FormField/             index.tsx + __tests__/index.test.tsx
-  ToggleRow/              index.tsx + __tests__/index.test.tsx
+  ui/                    INTERNAL shadcn/Base UI primitives — never import from features/
+  design-system/         PUBLIC Design System — see design-system/CONTEXT.md
+    actions/    Button, IconButton
+    forms/      TextField, Textarea, Select, Switch
+    data-display/  Avatar, Badge, Card, Separator
+    feedback/   Alert, Skeleton
+    overlays/   Dialog, Sheet, DropdownMenu
+    navigation/ Tabs
+  patterns/              PUBLIC reusable compositions — see patterns/CONTEXT.md
+    FieldRow, SectionCard, SectionHeader, EmptyState, ErrorState,
+    SwitchField, ConfirmDialog
+  skeletons/             Feature-agnostic skeleton shapes (SkeletonRow, SkeletonCard, SkeletonAvatar)
 ```
 
-Each component is its own folder — `ComponentName/index.tsx` +
-`ComponentName/__tests__/index.test.tsx`. Import as
-`@/components/ComponentName`; directory-index module resolution finds
-`index.tsx` automatically, exactly like importing a single file.
+## The public/internal boundary
 
-## What's here and why
+`ui/` is **never** imported from `src/features/**`, and never re-exported
+verbatim by a feature. Feature code (and `patterns/`) consumes
+`@/components/design-system/*` and `@/components/patterns/*` instead. This is
+enforced by:
 
-- `AssigneeAvatar` — technically takes a `UserDto | undefined`, but it only
-  reads `.username` for an initial; it's a generic "avatar with a fallback"
-  shape, reused by `lobby`, `tasks`, and `calendar`.
-- `ConfirmDialog` — a generic "are you sure?" modal (title, message, confirm/
-  cancel), used by settings, lobby, tasks, and subscription for unrelated
-  destructive actions.
-- `EmptyState` — icon + message + optional action, used everywhere a list
-  can be empty.
-- `FormField` — labeled input wrapper with validation-error display, used
-  by every auth/settings form.
-- `ToggleRow` — labeled switch row, used by every notification-preferences
-  toggle across `settings` and `lobby`.
+- `eslint.config.js`'s `no-restricted-imports` rule scoped to `src/features/**`
+  (blocks `@/components/ui/*` and `@base-ui/react/*`, with a documented
+  `eslint-disable-next-line` as the only escape hatch);
+- `npm run ui:check` (`scripts/ui-check.mjs`), which also verifies every
+  public component has a story + tests, that the public layer never imports
+  `@/features/**`, and flags hard-coded colors in `design-system/`/`patterns/`.
+
+`design-system/` and `patterns/` must have **no feature/domain dependencies**
+(no `LobbyDto`, `TaskDto`, feature hooks, or API clients). A component that
+needs domain data belongs in the owning feature as a **domain wrapper**
+(`TaskStatusBadge`, `LobbyTypeBadge`, `UserAvatar` in `src/features/users/`) —
+a thin adapter that maps an enum/DTO to the public component's semantic props,
+without duplicating its geometry.
+
+## What's here and why (non design-system/patterns)
+
+- `skeletons/` — generic loading-placeholder shapes reused across features
+  (`SkeletonRow`, `SkeletonCard`, `SkeletonAvatar`); kept separate from the
+  Design System's own `Skeleton` primitive since these compose it into
+  specific row/card/avatar shapes.
 
 ## Testing
 
-Every component has positive (renders expected output) and negative
-(missing/empty prop, error state) coverage in its `__tests__/index.test.tsx`.
-See root `docs/TESTING.md`.
+Every public component in `design-system/`/`patterns/` has positive/negative
+coverage in its `__tests__/index.test.tsx` and a `*.stories.tsx` covering its
+meaningful states (Storybook is the executable catalog and a11y surface —
+it supplements these tests, it does not replace them). See root
+`docs/TESTING.md`.
 
 ## Known gaps
 
-None — this folder is intentionally minimal and stable.
+- `LobbyHeader`'s per-member avatar stack still imports `@/components/ui/avatar`
+  directly (documented `eslint-disable-next-line` exception) — the public
+  `Avatar`/`UserAvatar` API doesn't yet support a per-item loading fallback
+  state. Revisit once that's added to the Design System.
+- `test:storybook` (Storybook's Vitest/browser-mode addon) is not wired up:
+  `@storybook/addon-vitest@10.6.0` requires `@vitest/browser-playwright@^4.0.0`,
+  but this project pins `vitest@3.2.4`. Upgrading the project's Vitest major
+  is a separate, riskier migration outside this change's scope.

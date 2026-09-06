@@ -181,6 +181,41 @@ expect(screen.getByRole(roles.radio, { name: texts.ukrainian })).toBeChecked();
 expect(screen.getByTestId(testIds.preview)).toHaveTextContent(texts.preview);
 ```
 
+## Testing overlays built on Base UI (`Dialog`, `Sheet`, `ConfirmDialog`, ...)
+
+Base UI's `Dialog` makes the rest of the page `aria-hidden`/inert while open
+— correct accessibility behavior, but it changes what's queryable by role. A
+trigger button that shares its accessible name with the dialog's own confirm
+button (e.g. both labeled "Delete") stops matching `getByRole` once the
+dialog opens, because the trigger is now inert. Don't reach for
+`getAllByRole(...)[1]` to disambiguate; once the dialog is open there is
+normally only **one** accessible match — query it directly:
+
+```ts
+await user.click(screen.getByRole('button', { name: 'Delete' })); // opens the dialog
+await user.click(screen.getByRole('button', { name: 'Delete' })); // the dialog's own confirm button
+```
+
+Callback props on these components (`onOpenChange`, `onCheckedChange`, ...)
+receive Base UI event-details as a second argument — match with
+`expect(fn).toHaveBeenCalledWith(value, expect.anything())`, not an exact
+single-argument match.
+
+`Switch`/`SwitchField` render a `<span role="switch">`, not a native
+`<button>` — `jest-dom`'s `toBeDisabled()` only applies to real form
+elements, so assert `toHaveAttribute('aria-disabled', 'true')` instead.
+
+## Storybook
+
+Storybook (`npm run storybook`) is the executable catalog, documentation, and
+accessibility surface for `src/components/design-system/` and
+`src/components/patterns/` — it supplements the Vitest/RTL suite described
+above, it does not replace it. Every public component still needs
+positive/negative `__tests__/` coverage; stories additionally document its
+states for humans and for Storybook MCP-based agent discovery. See
+`src/components/design-system/CONTEXT.md` for what a new component's stories
+must cover.
+
 ## Definition of done
 
 Before opening a PR, from `lined-web/`:
@@ -191,6 +226,9 @@ npm run typecheck
 npm run test:run
 npm run build
 ```
+
+Plus, for UI work touching `design-system/`, `patterns/`, or
+`components/ui/`: `npm run ui:check` and `npm run build-storybook`.
 
 All four must pass. New/changed hooks and components need tests per the
 rules above.
