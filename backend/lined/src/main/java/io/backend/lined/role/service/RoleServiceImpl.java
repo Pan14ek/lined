@@ -31,6 +31,7 @@ public class RoleServiceImpl implements RoleService {
   private final RoleRepository roleRepository;
   private final RoleMapper roleMapper;
   private final RoleResolver roleResolver;
+  private final RoleAuthorizationPolicy authorizationPolicy;
 
   @Override
   public List<RoleDto> listAll() {
@@ -53,6 +54,12 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
+  public void ensureExistsAsAdmin(String roleName, Long requesterId) {
+    authorizationPolicy.ensureAdmin(requesterId);
+    ensureExists(roleName);
+  }
+
+  @Override
   public Set<String> setUserRoles(Long userId, Set<String> roles) {
     UserEntity user = userRepository.findWithRolesById(userId)
         .orElseThrow(() -> new NotFoundException(format(USER_NOT_FOUND_ERROR_MESSAGE, userId)));
@@ -63,6 +70,12 @@ public class RoleServiceImpl implements RoleService {
     userRepository.save(user);
 
     return toNames(user.getRoles());
+  }
+
+  @Override
+  public Set<String> setUserRolesAsAdmin(Long requesterId, Long userId, Set<String> roles) {
+    authorizationPolicy.ensureAdmin(requesterId);
+    return setUserRoles(userId, roles);
   }
 
   @Override
@@ -82,6 +95,12 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
+  public Set<String> addUserRolesAsAdmin(Long requesterId, Long userId, Set<String> roles) {
+    authorizationPolicy.ensureAdmin(requesterId);
+    return addUserRoles(userId, roles);
+  }
+
+  @Override
   public Set<String> removeUserRoles(Long userId, Set<String> roles) {
     if (roles == null || roles.isEmpty()) {
       return getUserRoleNames(userId);
@@ -96,6 +115,12 @@ public class RoleServiceImpl implements RoleService {
     userRepository.save(user);
 
     return toNames(user.getRoles());
+  }
+
+  @Override
+  public Set<String> removeUserRolesAsAdmin(Long requesterId, Long userId, Set<String> roles) {
+    authorizationPolicy.ensureAdmin(requesterId);
+    return removeUserRoles(userId, roles);
   }
 
   private Set<String> getUserRoleNames(Long userId) {

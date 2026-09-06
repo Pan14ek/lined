@@ -34,6 +34,13 @@ public interface UserMapper {
         entity.getCreatedAt(), mapRoleNames(entity.getRoles()), null, null);
   }
 
+  default UserPublicDto toPublicDto(UserEntity entity) {
+    if (entity == null) {
+      return null;
+    }
+    return new UserPublicDto(entity.getId(), entity.getUsername());
+  }
+
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "version", ignore = true)
   @Mapping(target = "createdAt", expression = "java(java.time.OffsetDateTime.now())")

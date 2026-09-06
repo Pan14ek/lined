@@ -63,20 +63,21 @@ public class TaskServiceImpl implements TaskService {
    */
   @Override
   public TaskDto create(TaskCreateDto dto, Long currentUserId, String idempotencyKey) {
+    var creator = mustUser(currentUserId);
+    var lobby = mustLobby(dto.lobbyId());
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
+    writePolicy.assertWritable(lobby, LobbyWriteAction.TASK_MUTATION);
+    TaskVisibility visibility = resolveVisibility(dto.visibility());
+    if (visibility == TaskVisibility.PRIVATE && dto.notifyAssignee()) {
+      throw new PrivateItemNotificationException();
+    }
+    UserEntity assignee = resolveCreateAssignee(dto, creator, lobby);
     var claim = idempotencyKey == null
         ? IdempotencyClaim.withoutKey()
         : idempotencyService.claim(IdempotencyOperation.TASK_CREATE, currentUserId,
             idempotencyKey, dto);
     if (claim.replay()) {
       return mapper.toDto(mustTask(claim.resourceId(), currentUserId));
-    }
-    var creator = mustUser(currentUserId);
-    var lobby = mustLobby(dto.lobbyId());
-    accessPolicy.ensureMember(lobby, currentUserId);
-    writePolicy.assertWritable(lobby, LobbyWriteAction.TASK_MUTATION);
-    TaskVisibility visibility = resolveVisibility(dto.visibility());
-    if (visibility == TaskVisibility.PRIVATE && dto.notifyAssignee()) {
-      throw new PrivateItemNotificationException();
     }
 
     var entity = TaskEntity.builder()
@@ -87,7 +88,7 @@ public class TaskServiceImpl implements TaskService {
         .lobby(lobby)
         .creator(creator)
         .visibility(visibility)
-        .assignee(resolveCreateAssignee(dto, creator))
+        .assignee(assignee)
         .dueDate(dto.dueDate())
         .build();
 
@@ -115,18 +116,19 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public TaskDto update(Long id, TaskUpdateDto dto, Long currentUserId, long expectedVersion) {
     var task = mustTask(id, currentUserId);
-    accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    accessPolicy.ensureVisibleMember(task.getLobby(), currentUserId);
     taskAccessPolicy.ensureCanMutate(task, currentUserId);
     writePolicy.assertWritable(task.getLobby(), LobbyWriteAction.TASK_MUTATION);
-    verifyVersion(task.getVersion(), expectedVersion);
 
     TaskVisibility currentVisibility = currentVisibility(task);
     if (dto.visibility() != null) {
       taskAccessPolicy.ensureCanChangeVisibility(task, currentUserId);
     }
     UserEntity assignee = resolveUpdateAssignee(dto, task);
+    ensureAssigneeMember(task.getLobby(), assignee);
     TaskVisibility visibility = dto.visibility() == null ? currentVisibility : dto.visibility();
     validatePrivateAssignee(visibility, task.getCreator(), assignee);
+    verifyVersion(task.getVersion(), expectedVersion);
 
     if (dto.title() != null && !dto.title().isBlank()) {
       task.setTitle(dto.title());
@@ -169,7 +171,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public void delete(Long id, Long currentUserId, long expectedVersion) {
     var task = mustTask(id, currentUserId);
-    accessPolicy.ensureMember(task.getLobby(), currentUserId);
+    accessPolicy.ensureVisibleMember(task.getLobby(), currentUserId);
     taskAccessPolicy.ensureCanMutate(task, currentUserId);
     writePolicy.assertWritable(task.getLobby(), LobbyWriteAction.TASK_MUTATION);
     verifyVersion(task.getVersion(), expectedVersion);
@@ -187,6 +189,9 @@ public class TaskServiceImpl implements TaskService {
    */
   @Override
   public List<TaskDto> list(Long lobbyId, Long assigneeId, String status, Long currentUserId) {
+    if (lobbyId != null) {
+      accessPolicy.ensureVisibleMember(mustLobby(lobbyId), currentUserId);
+    }
     return repo.findVisible(currentUserId, lobbyId, assigneeId, parseStatus(status)).stream()
         .map(mapper::toDto)
         .toList();
@@ -245,12 +250,14 @@ public class TaskServiceImpl implements TaskService {
   /**
    * Normalizes a private creation request to its creator and rejects cross-user assignment.
    */
-  private UserEntity resolveCreateAssignee(TaskCreateDto dto, UserEntity creator) {
+  private UserEntity resolveCreateAssignee(TaskCreateDto dto, UserEntity creator,
+                                           LobbyEntity lobby) {
     TaskVisibility visibility = resolveVisibility(dto.visibility());
     UserEntity assignee = dto.assigneeId() == null ? null : mustUser(dto.assigneeId());
     if (visibility == TaskVisibility.PRIVATE && assignee == null) {
       return creator;
     }
+    ensureAssigneeMember(lobby, assignee);
     validatePrivateAssignee(visibility, creator, assignee);
     return assignee;
   }
@@ -267,6 +274,17 @@ public class TaskServiceImpl implements TaskService {
       return task.getCreator();
     }
     return task.getAssignee();
+  }
+
+  private void ensureAssigneeMember(LobbyEntity lobby, UserEntity assignee) {
+    if (assignee == null) {
+      return;
+    }
+    boolean member = lobby.getOwner().getId().equals(assignee.getId())
+        || lobby.getMembers().stream().anyMatch(user -> user.getId().equals(assignee.getId()));
+    if (!member) {
+      throw new BadRequestException("Assignee must be a member of the target lobby");
+    }
   }
 
   /**

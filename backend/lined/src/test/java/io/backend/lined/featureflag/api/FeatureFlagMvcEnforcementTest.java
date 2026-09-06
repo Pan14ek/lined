@@ -52,6 +52,7 @@ import io.backend.lined.task.domain.TaskVisibility;
 import io.backend.lined.task.service.TaskService;
 import io.backend.lined.user.api.UserController;
 import io.backend.lined.user.api.UserDto;
+import io.backend.lined.user.api.UserPublicDto;
 import io.backend.lined.user.service.UserService;
 import io.backend.lined.security.CurrentUserProvider;
 import java.time.Instant;
@@ -280,9 +281,9 @@ class FeatureFlagMvcEnforcementTest {
       throws Exception {
     MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService,
         currentUserProvider));
-    when(userService.update(eq(1L), any(), eq(0L))).thenReturn(sampleUser());
+    when(userService.update(eq(USER_ID), any(), eq(USER_ID), eq(0L))).thenReturn(sampleUser());
 
-    MockHttpServletRequestBuilder request = patch("/api/users/1")
+    MockHttpServletRequestBuilder request = patch("/api/users/" + USER_ID)
         .header("If-Match", "\"0\"")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
@@ -297,7 +298,7 @@ class FeatureFlagMvcEnforcementTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
 
-    verify(userService).update(eq(1L), any(), eq(0L));
+    verify(userService).update(eq(USER_ID), any(), eq(USER_ID), eq(0L));
   }
 
   @Test
@@ -344,14 +345,14 @@ class FeatureFlagMvcEnforcementTest {
   void userReadsRemainAvailableWhenSettingsAreDisabled() throws Exception {
     MockMvc mockMvc = mvc(new UserController(userService, accountApplicationService,
         currentUserProvider));
-    when(userService.getById(1L)).thenReturn(sampleUser());
+    when(userService.getPublicById(1L)).thenReturn(new UserPublicDto(1L, "alice"));
 
     mockMvc.perform(get("/api/users/1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
 
     verifyNoInteractions(featureFlagService, accountApplicationService);
-    verify(userService).getById(1L);
+    verify(userService).getPublicById(1L);
   }
 
   private MockMvc mvc(Object controller) {

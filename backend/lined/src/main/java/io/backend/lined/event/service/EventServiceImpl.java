@@ -64,16 +64,9 @@ public class EventServiceImpl implements EventService {
    */
   @Override
   public EventDto create(EventCreateDto dto, Long currentUserId, String idempotencyKey) {
-    var claim = idempotencyKey == null
-        ? IdempotencyClaim.withoutKey()
-        : idempotencyService.claim(IdempotencyOperation.EVENT_CREATE, currentUserId,
-            idempotencyKey, dto);
-    if (claim.replay()) {
-      return mapper.toDto(mustVisibleEvent(claim.resourceId(), currentUserId));
-    }
     var owner = mustUser(currentUserId);
     var lobby = mustLobby(dto.lobbyId());
-    accessPolicy.ensureMember(lobby, currentUserId);
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     writePolicy.assertWritable(lobby, LobbyWriteAction.EVENT_MUTATION);
     var window = eventWindow(dto.startAt(), dto.endAt());
     EventVisibility visibility = resolveVisibility(dto.shared(), dto.visibility(), EventVisibility.SHARED);
@@ -81,6 +74,13 @@ public class EventServiceImpl implements EventService {
         && dto.notifyMembers();
     if (privateEventNotifyingMembers) {
       throw new PrivateItemNotificationException();
+    }
+    var claim = idempotencyKey == null
+        ? IdempotencyClaim.withoutKey()
+        : idempotencyService.claim(IdempotencyOperation.EVENT_CREATE, currentUserId,
+            idempotencyKey, dto);
+    if (claim.replay()) {
+      return mapper.toDto(mustVisibleEvent(claim.resourceId(), currentUserId));
     }
 
     var entity = EventEntity.builder()
@@ -122,7 +122,7 @@ public class EventServiceImpl implements EventService {
   @Override
   public EventDto update(Long id, EventUpdateDto dto, Long currentUserId, long expectedVersion) {
     var event = mustVisibleEvent(id, currentUserId);
-    accessPolicy.ensureMember(event.getLobby(), currentUserId);
+    accessPolicy.ensureVisibleMember(event.getLobby(), currentUserId);
     writePolicy.assertWritable(event.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(event.getVersion(), expectedVersion);
     EventVisibility currentVisibility = currentVisibility(event);
@@ -173,14 +173,14 @@ public class EventServiceImpl implements EventService {
   @Override
   public EventDto get(Long id, Long currentUserId) {
     var event = mustVisibleEvent(id, currentUserId);
-    accessPolicy.ensureMember(event.getLobby(), currentUserId);
+    accessPolicy.ensureVisibleMember(event.getLobby(), currentUserId);
     return mapper.toDto(event);
   }
 
   @Override
   public void delete(Long id, Long currentUserId, long expectedVersion) {
     var e = mustVisibleEvent(id, currentUserId);
-    accessPolicy.ensureMember(e.getLobby(), currentUserId);
+    accessPolicy.ensureVisibleMember(e.getLobby(), currentUserId);
     writePolicy.assertWritable(e.getLobby(), LobbyWriteAction.EVENT_MUTATION);
     verifyVersion(e.getVersion(), expectedVersion);
     repo.delete(e);
@@ -193,7 +193,7 @@ public class EventServiceImpl implements EventService {
   public List<EventDto> list(Long lobbyId, OffsetDateTime from, OffsetDateTime to,
                              Long currentUserId) {
     var lobby = mustLobby(lobbyId);
-    accessPolicy.ensureMember(lobby, currentUserId);
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     var window = queryWindow(from, to);
 
     return repo.findVisibleOverlapping(lobbyId, currentUserId, window.start(), window.end()).stream()
@@ -206,7 +206,7 @@ public class EventServiceImpl implements EventService {
                                               OffsetDateTime start, OffsetDateTime end,
                                               Long requesterId) {
     var lobby = mustLobby(lobbyId);
-    accessPolicy.ensureMember(lobby, requesterId);
+    accessPolicy.ensureVisibleMember(lobby, requesterId);
     var window = conflictWindow(start, end);
     var events = repo.findOverlapping(lobbyId, window.start(), window.end());
     return conflictAnalyzer.findConflicts(events, requesterId);
@@ -228,7 +228,7 @@ public class EventServiceImpl implements EventService {
   public List<FreeSlotDto> findFreeSlots(Long lobbyId, OffsetDateTime from,
                                          OffsetDateTime to, Long currentUserId) {
     var lobby = mustLobby(lobbyId);
-    accessPolicy.ensureMember(lobby, currentUserId);
+    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     var window = queryWindow(from, to);
     var busyEvents = repo.findBusyForMemberIds(memberIds(lobby), window.start(), window.end());
     return freeSlotCalculator.findFreeSlots(window, busyEvents);

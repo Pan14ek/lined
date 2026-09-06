@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.common.metrics.PrivateItemMetrics;
 import io.backend.lined.common.metrics.PrivateItemType;
@@ -295,7 +294,7 @@ class EventServiceImplTest {
   }
 
   @Test
-  void create_throwsForbidden_whenUserIsNotLobbyMember() {
+  void create_throwsNotFound_whenUserIsNotLobbyMember() {
     UserEntity outsider = new UserEntity();
     outsider.setId(99L);
 
@@ -306,8 +305,8 @@ class EventServiceImplTest {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.create(dto, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   @Test
@@ -435,14 +434,14 @@ class EventServiceImplTest {
   }
 
   @Test
-  void update_throwsForbidden_whenUserIsNotLobbyMember() {
+  void update_throwsNotFound_whenUserIsNotLobbyMember() {
     EventUpdateDto dto = new EventUpdateDto("Title", null, null, null, null, null);
 
     when(repo.findVisibleById(9001L, 99L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.update(9001L, dto, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   @Test
@@ -526,12 +525,12 @@ class EventServiceImplTest {
   }
 
   @Test
-  void delete_throwsForbidden_whenUserIsNotLobbyMember() {
+  void delete_throwsNotFound_whenUserIsNotLobbyMember() {
     when(repo.findVisibleById(9001L, 99L)).thenReturn(Optional.of(eventEntity));
 
     assertThatThrownBy(() -> eventService.delete(9001L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(repo, never()).delete(any(EventEntity.class));
   }
@@ -609,12 +608,12 @@ class EventServiceImplTest {
   }
 
   @Test
-  void list_throwsForbidden_whenUserIsNotLobbyMember() {
+  void list_throwsNotFound_whenUserIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.list(101L, startAt, endAt, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   @Test

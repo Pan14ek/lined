@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.role.domain.RoleEntity;
+import io.backend.lined.role.service.RoleAuthorizationPolicy;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserMapper;
 import io.backend.lined.user.api.UserPageDto;
@@ -38,6 +39,8 @@ class UserServiceImplSearchTest {
 
   @Mock
   private RoleResolver roleResolver;
+  @Mock
+  private RoleAuthorizationPolicy roleAuthorizationPolicy;
 
   @Mock
   private UserMapper userMapper;
@@ -60,9 +63,7 @@ class UserServiceImplSearchTest {
     userEntity.setPassword("encoded_password");
     userEntity.setCreatedAt(OffsetDateTime.now());
 
-    searchResultDto = new UserSearchResultDto(
-        1L, "testuser", "test@example.com", userEntity.getCreatedAt(), Set.of()
-    );
+    searchResultDto = new UserSearchResultDto(1L, "testuser");
   }
 
   /* ======================= SEARCH ======================= */
@@ -70,7 +71,7 @@ class UserServiceImplSearchTest {
   @Test
   void findUsers_returnsPagedResults_whenQueryMatches() {
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity));
-    when(userRepository.searchWithRoles(eq("test"), any(Pageable.class))).thenReturn(page);
+    when(userRepository.searchLight(eq("test"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
     UserPageDto result = userService.findUsers("test", 0, 20);
@@ -82,13 +83,13 @@ class UserServiceImplSearchTest {
     assertThat(result.size()).isEqualTo(20);
     assertThat(result.totalElements()).isEqualTo(1);
     assertThat(result.totalPages()).isEqualTo(1);
-    verify(userRepository).searchWithRoles(eq("test"), any(Pageable.class));
+    verify(userRepository).searchLight(eq("test"), any(Pageable.class));
   }
 
   @Test
   void findUsers_returnsEmpty_whenNoMatch() {
     Page<UserEntity> emptyPage = new PageImpl<>(List.of());
-    when(userRepository.searchWithRoles(eq("unknown"), any(Pageable.class))).thenReturn(emptyPage);
+    when(userRepository.searchLight(eq("unknown"), any(Pageable.class))).thenReturn(emptyPage);
 
     UserPageDto result = userService.findUsers("unknown", 0, 20);
 
@@ -105,12 +106,10 @@ class UserServiceImplSearchTest {
     user2.setUsername("testuser2");
     user2.setEmail("test2@example.com");
 
-    UserSearchResultDto searchResult2 = new UserSearchResultDto(
-        2L, "testuser2", "test2@example.com", OffsetDateTime.now(), Set.of()
-    );
+    UserSearchResultDto searchResult2 = new UserSearchResultDto(2L, "testuser2");
 
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity, user2));
-    when(userRepository.searchWithRoles(eq("test"), any(Pageable.class))).thenReturn(page);
+    when(userRepository.searchLight(eq("test"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
     when(userMapper.toSearchResultDto(user2)).thenReturn(searchResult2);
 
@@ -124,7 +123,7 @@ class UserServiceImplSearchTest {
   @Test
   void findUsers_returnsCorrectTotalPages_whenMultiplePagesExist() {
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity), Pageable.ofSize(1), 3);
-    when(userRepository.searchWithRoles(eq("test"), any(Pageable.class))).thenReturn(page);
+    when(userRepository.searchLight(eq("test"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
     UserPageDto result = userService.findUsers("test", 0, 1);
@@ -140,12 +139,10 @@ class UserServiceImplSearchTest {
     user2.setUsername("another");
     user2.setEmail("another@example.com");
 
-    UserSearchResultDto anotherDto = new UserSearchResultDto(
-        2L, "another", "another@example.com", OffsetDateTime.now(), Set.of()
-    );
+    UserSearchResultDto anotherDto = new UserSearchResultDto(2L, "another");
 
     Page<UserEntity> page = new PageImpl<>(List.of(userEntity, user2));
-    when(userRepository.searchWithRoles(eq("a"), any(Pageable.class))).thenReturn(page);
+    when(userRepository.searchLight(eq("a"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
     when(userMapper.toSearchResultDto(user2)).thenReturn(anotherDto);
 
@@ -168,7 +165,7 @@ class UserServiceImplSearchTest {
     when(userRepository.findAllByRoleName(eq("ADMIN"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
-    UserPageDto result = userService.findUsersByRole("ADMIN", 0, 20);
+    UserPageDto result = userService.findUsersByRole("ADMIN", 0, 20, 1L);
 
     assertThat(result).isNotNull();
     assertThat(result.content()).hasSize(1);
@@ -182,7 +179,7 @@ class UserServiceImplSearchTest {
     when(roleResolver.resolve(Set.of("UNKNOWN")))
         .thenThrow(new NotFoundException("Role not found: UNKNOWN"));
 
-    assertThatThrownBy(() -> userService.findUsersByRole("UNKNOWN", 0, 20))
+    assertThatThrownBy(() -> userService.findUsersByRole("UNKNOWN", 0, 20, 1L))
         .isInstanceOf(NotFoundException.class)
         .hasMessageContaining("Role not found");
 
@@ -199,7 +196,7 @@ class UserServiceImplSearchTest {
     when(userRepository.findAllByRoleName(eq("SUPERADMIN"), any(Pageable.class)))
         .thenReturn(emptyPage);
 
-    UserPageDto result = userService.findUsersByRole("SUPERADMIN", 0, 20);
+    UserPageDto result = userService.findUsersByRole("SUPERADMIN", 0, 20, 1L);
 
     assertThat(result.content()).isEmpty();
     assertThat(result.totalElements()).isZero();
@@ -216,7 +213,7 @@ class UserServiceImplSearchTest {
     when(userRepository.findAllByRoleName(eq("admin"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
-    UserPageDto result = userService.findUsersByRole("admin", 0, 20);
+    UserPageDto result = userService.findUsersByRole("admin", 0, 20, 1L);
 
     assertThat(result.content()).hasSize(1);
     verify(roleResolver).resolve(Set.of("admin"));
@@ -232,7 +229,7 @@ class UserServiceImplSearchTest {
     when(userRepository.findAllByRoleName(eq("USER"), any(Pageable.class))).thenReturn(page);
     when(userMapper.toSearchResultDto(userEntity)).thenReturn(searchResultDto);
 
-    UserPageDto result = userService.findUsersByRole("USER", 0, 1);
+    UserPageDto result = userService.findUsersByRole("USER", 0, 1, 1L);
 
     assertThat(result.size()).isEqualTo(1);
     assertThat(result.totalElements()).isEqualTo(5);

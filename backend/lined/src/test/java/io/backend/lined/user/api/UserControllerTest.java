@@ -71,19 +71,19 @@ class UserControllerTest {
   @Test
   void update_delegatesToUserService() {
     var dto = new UserUpdateDto("alice2", null, null, null);
-    when(userService.update(1L, dto, 0L)).thenReturn(sampleUser);
+    when(userService.update(1L, dto, 1L, 0L)).thenReturn(sampleUser);
 
     UserDto result = controller.update(1L, "\"0\"", dto).getBody();
 
     assertThat(result).isEqualTo(sampleUser);
-    verify(userService).update(1L, dto, 0L);
+    verify(userService).update(1L, dto, 1L, 0L);
   }
 
   @Test
   void get_delegatesToUserService() {
     when(userService.getById(1L)).thenReturn(sampleUser);
 
-    UserDto result = controller.get(1L).getBody();
+    UserDto result = (UserDto) controller.get(1L).getBody();
 
     assertThat(result).isEqualTo(sampleUser);
     verify(userService).getById(1L);
@@ -91,7 +91,8 @@ class UserControllerTest {
 
   @Test
   void get_propagatesNotFoundException_whenUserNotFound() {
-    when(userService.getById(99L)).thenThrow(new NotFoundException("User 99 not found"));
+    when(userService.getPublicById(99L))
+        .thenThrow(new NotFoundException("User 99 not found"));
 
     assertThatThrownBy(() -> controller.get(99L))
         .isInstanceOf(NotFoundException.class)
@@ -179,8 +180,7 @@ class UserControllerTest {
 
   @Test
   void findUsers_delegatesToUserService() {
-    var searchResult = new UserSearchResultDto(1L, "alice", "alice@example.com",
-        OffsetDateTime.now(), Set.of());
+    var searchResult = new UserSearchResultDto(1L, "alice");
     var pageDto = new UserPageDto(List.of(searchResult), 0, 20, 1L, 1);
     when(userService.findUsers("alice", 0, 20)).thenReturn(pageDto);
 
@@ -203,20 +203,19 @@ class UserControllerTest {
 
   @Test
   void findUsersByRole_delegatesToUserService() {
-    var searchResult = new UserSearchResultDto(1L, "alice", "alice@example.com",
-        OffsetDateTime.now(), Set.of("ADMIN"));
+    var searchResult = new UserSearchResultDto(1L, "alice");
     var pageDto = new UserPageDto(List.of(searchResult), 0, 20, 1L, 1);
-    when(userService.findUsersByRole("ADMIN", 0, 20)).thenReturn(pageDto);
+    when(userService.findUsersByRole("ADMIN", 0, 20, 1L)).thenReturn(pageDto);
 
     var response = controller.findUsersByRole("ADMIN", 0, 20);
 
     assertThat(response.getBody()).isEqualTo(pageDto);
-    verify(userService).findUsersByRole("ADMIN", 0, 20);
+    verify(userService).findUsersByRole("ADMIN", 0, 20, 1L);
   }
 
   @Test
   void findUsersByRole_propagatesNotFoundException_whenRoleUnknown() {
-    when(userService.findUsersByRole("GHOST", 0, 20))
+    when(userService.findUsersByRole("GHOST", 0, 20, 1L))
         .thenThrow(new NotFoundException("Role GHOST not found"));
 
     assertThatThrownBy(() -> controller.findUsersByRole("GHOST", 0, 20))

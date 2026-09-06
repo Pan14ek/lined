@@ -1,6 +1,7 @@
 package io.backend.lined.role.api;
 
 import io.backend.lined.role.service.RoleService;
+import io.backend.lined.security.CurrentUserProvider;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoleController {
 
   private final RoleService roleService;
+  private final CurrentUserProvider currentUserProvider;
 
   @GetMapping
   public List<RoleDto> listAll() {
@@ -38,25 +40,28 @@ public class RoleController {
   @PostMapping("/{roleName}")
   @ResponseStatus(HttpStatus.CREATED)
   public void ensureExists(@PathVariable String roleName) {
-    roleService.ensureExists(roleName);
+    roleService.ensureExistsAsAdmin(roleName, currentUserProvider.requireUserId());
   }
 
   @PutMapping("/user/{userId}")
   public Set<String> setUserRoles(@PathVariable Long userId,
                                   @Valid @RequestBody AssignRolesRequestDto req) {
-    return roleService.setUserRoles(userId, req.roles());
+    return roleService.setUserRolesAsAdmin(currentUserProvider.requireUserId(), userId,
+        req.roles());
   }
 
   @PostMapping("/user/{userId}/add")
   public Set<String> addUserRoles(@PathVariable Long userId,
                                   @Valid @RequestBody AssignRolesRequestDto req) {
-    return roleService.addUserRoles(userId, req.roles());
+    return roleService.addUserRolesAsAdmin(currentUserProvider.requireUserId(), userId,
+        req.roles());
   }
 
   @PostMapping("/user/{userId}/remove")
   public Set<String> removeUserRoles(@PathVariable Long userId,
                                      @Valid @RequestBody AssignRolesRequestDto req) {
-    return roleService.removeUserRoles(userId, req.roles());
+    return roleService.removeUserRolesAsAdmin(currentUserProvider.requireUserId(), userId,
+        req.roles());
   }
 
 }

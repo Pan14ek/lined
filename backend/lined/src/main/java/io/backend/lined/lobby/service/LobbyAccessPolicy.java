@@ -1,6 +1,7 @@
 package io.backend.lined.lobby.service;
 
 import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import java.util.Objects;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,20 @@ public class LobbyAccessPolicy {
   }
 
   /**
+   * Requires membership while hiding a lobby from a complete outsider.
+   *
+   * @param lobby lobby being resolved
+   * @param userId trusted authenticated subject
+   */
+  public void ensureVisibleMember(LobbyEntity lobby, Long userId) {
+    Objects.requireNonNull(lobby, "lobby must not be null");
+    Objects.requireNonNull(userId, "userId must not be null");
+    if (!isMember(lobby, userId)) {
+      throw new NotFoundException("Lobby %d not found".formatted(lobby.getId()));
+    }
+  }
+
+  /**
    * Throws if the user is not the lobby owner.
    * Callers must ensure {@code lobby.getOwner()} is initialized.
    */
@@ -36,6 +51,11 @@ public class LobbyAccessPolicy {
     if (!lobby.getOwner().getId().equals(requesterId)) {
       throw new ForbiddenException("Only lobby owner can perform this action");
     }
+  }
+
+  private boolean isMember(LobbyEntity lobby, Long userId) {
+    return lobby.getOwner().getId().equals(userId)
+        || lobby.getMembers().stream().anyMatch(u -> u.getId().equals(userId));
   }
 
 }

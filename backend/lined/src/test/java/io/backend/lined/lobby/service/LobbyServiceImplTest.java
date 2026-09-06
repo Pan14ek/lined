@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
 import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.entitlement.application.LimitEvaluator;
 import io.backend.lined.entitlement.application.EntitlementService;
@@ -188,12 +187,12 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void getById_throwsForbidden_whenRequesterIsNotMember() {
+  void getById_throwsNotFound_whenRequesterIsNotMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.getById(101L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   /* =======================
@@ -355,12 +354,12 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void update_throwsForbidden_whenRequesterIsNotOwner() {
+  void update_throwsNotFound_whenRequesterIsNotOwnerAndOutsider() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.update(101L, new LobbyUpdateDto(null, null, null), 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("owner");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   @Test
@@ -408,12 +407,12 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void removeMember_throwsForbidden_whenRequesterIsNotOwner() {
+  void removeMember_throwsNotFound_whenRequesterIsNotOwnerAndOutsider() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.removeMember(101L, 2L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("owner");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   /* =======================
@@ -441,12 +440,12 @@ class LobbyServiceImplTest {
   }
 
   @Test
-  void delete_throwsForbidden_whenRequesterIsNotOwner() {
+  void delete_throwsNotFound_whenRequesterIsNotOwnerAndOutsider() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobbyEntity));
 
     assertThatThrownBy(() -> lobbyService.delete(101L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("owner");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(lobbyRepo, never()).delete(any());
   }

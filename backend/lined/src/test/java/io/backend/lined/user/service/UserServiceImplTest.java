@@ -14,6 +14,7 @@ import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.role.domain.BuiltInRole;
+import io.backend.lined.role.service.RoleAuthorizationPolicy;
 import io.backend.lined.role.service.RoleResolver;
 import io.backend.lined.user.api.UserCreateDto;
 import io.backend.lined.user.api.UserDto;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -64,6 +66,10 @@ class UserServiceImplTest {
   private RoleResolver roleResolver;
   @Mock
   private LobbyRepository lobbyRepository;
+  @Spy
+  private UserAccessPolicy userAccessPolicy = new UserAccessPolicy();
+  @Mock
+  private RoleAuthorizationPolicy roleAuthorizationPolicy;
 
   @InjectMocks
   private UserServiceImpl userService;
@@ -287,8 +293,6 @@ class UserServiceImplTest {
 
   @Test
   void delete_throwsForbidden_whenRequesterIsAnotherUser() {
-    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
-
     assertThatThrownBy(() -> userService.delete(USER_ID, MISSING_USER_ID))
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("own account");
@@ -298,11 +302,9 @@ class UserServiceImplTest {
 
   @Test
   void delete_throwsNotFound_whenAnotherRequesterTargetsMissingUser() {
-    when(userRepository.findById(MISSING_USER_ID)).thenReturn(Optional.empty());
-
     assertThatThrownBy(() -> userService.delete(MISSING_USER_ID, USER_ID))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessageContaining(USER_NOT_FOUND_MESSAGE);
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("own account");
   }
 
   @Test

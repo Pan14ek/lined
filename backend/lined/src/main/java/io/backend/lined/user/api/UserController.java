@@ -83,7 +83,8 @@ public class UserController {
           )
       )
       @Valid @RequestBody UserUpdateDto dto) {
-    UserDto updated = userService.update(id, dto, VersionPrecondition.parse(ifMatch));
+    UserDto updated = userService.update(id, dto, currentUserProvider.requireUserId(),
+        VersionPrecondition.parse(ifMatch));
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
   }
 
@@ -102,11 +103,15 @@ public class UserController {
       description = "Returns a user by ID."
   )
   @GetMapping("/{id}")
-  public ResponseEntity<UserDto> get(
+  public ResponseEntity<?> get(
       @Parameter(description = "User ID", example = "1")
       @PathVariable Long id) {
-    UserDto user = userService.getById(id);
-    return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
+    Long requesterId = currentUserProvider.requireUserId();
+    if (requesterId.equals(id)) {
+      UserDto user = userService.getById(id);
+      return ResponseEntity.ok().eTag(VersionPrecondition.etag(user.version())).body(user);
+    }
+    return ResponseEntity.ok(userService.getPublicById(id));
   }
 
   @Operation(
@@ -136,7 +141,8 @@ public class UserController {
       @RequestParam String role,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(userService.findUsersByRole(role, page, size));
+    return ResponseEntity.ok(userService.findUsersByRole(role, page, size,
+        currentUserProvider.requireUserId()));
   }
 
 }

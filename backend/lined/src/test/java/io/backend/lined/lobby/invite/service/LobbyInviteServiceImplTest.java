@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.backend.lined.common.exception.ConflictException;
-import io.backend.lined.common.exception.ForbiddenException;
+import io.backend.lined.common.exception.NotFoundException;
 import io.backend.lined.lobby.domain.LobbyEntity;
 import io.backend.lined.lobby.domain.LobbyRepository;
 import io.backend.lined.lobby.domain.LobbyTypes;
@@ -167,11 +167,11 @@ class LobbyInviteServiceImplTest {
   }
 
   @Test
-  void pendingForLobby_throwsForbidden_whenRequesterIsNotOwner() {
+  void pendingForLobby_throwsNotFound_whenRequesterIsOutsider() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> inviteService.pendingForLobby(101L, 99L))
-        .isInstanceOf(ForbiddenException.class);
+        .isInstanceOf(NotFoundException.class);
   }
 
   @Test
@@ -298,12 +298,12 @@ class LobbyInviteServiceImplTest {
   }
 
   @Test
-  void accept_throwsForbidden_whenRequesterIsNotInvitee() {
+  void accept_throwsNotFound_whenRequesterIsNotInvitee() {
     when(inviteRepo.findById(501L)).thenReturn(Optional.of(invite));
 
     assertThatThrownBy(() -> inviteService.accept(501L, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("invited user");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
   }
 
   @Test

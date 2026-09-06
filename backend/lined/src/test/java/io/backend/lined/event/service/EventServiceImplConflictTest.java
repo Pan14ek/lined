@@ -275,13 +275,13 @@ class EventServiceImplConflictTest {
   }
 
   @Test
-  void findConflicts_throwsForbidden_whenUserIsNotLobbyMember() {
+  void findConflicts_throwsNotFound_whenUserIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() ->
         eventService.findConflicts(101L, windowStart, windowEnd, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(repo, never()).findOverlapping(any(), any(), any());
   }
@@ -409,12 +409,12 @@ class EventServiceImplConflictTest {
   }
 
   @Test
-  void findFreeSlots_throwsForbidden_whenRequesterIsNotLobbyMember() {
+  void findFreeSlots_throwsNotFound_whenRequesterIsNotLobbyMember() {
     when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
 
     assertThatThrownBy(() -> eventService.findFreeSlots(101L, windowStart, windowEnd, 99L))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("not a member");
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("not found");
 
     verify(repo, never()).findBusyForMemberIds(any(), any(), any());
   }

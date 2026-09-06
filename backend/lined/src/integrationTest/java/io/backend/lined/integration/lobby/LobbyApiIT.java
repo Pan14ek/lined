@@ -57,9 +57,9 @@ class LobbyApiIT extends AbstractApiIntegrationTest {
     var response = request(HttpMethod.GET, "/api/lobbies/" + lobby.path("id").asLong(), null,
         outsider.path("id").asLong());
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(response.getBody().has("name")).isFalse();
-    assertThat(response.getBody().path("code").asText()).isEqualTo("common.forbidden");
+    assertThat(response.getBody().path("code").asText()).isEqualTo("common.not_found");
   }
 
   @Test
