@@ -67,6 +67,9 @@ calendar interpretation.
   ownership; Tasks is independent but shares lobby context.
 - Privacy policy is enforced before event data enters list, detail, conflict,
   free-slot, or export responses.
+- Complete outsiders receive `404` for lobby-scoped calendar operations;
+  accepted members can see shared events but not another member's private
+  event. Event idempotency is claimed only after lobby authorization.
 - Event updates use optimistic version checks. ICS import performs UID-based
   upserts with private visibility transactionally, while feed revocation makes
   older token URLs return the documented terminal response.

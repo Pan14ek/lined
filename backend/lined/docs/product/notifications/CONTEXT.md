@@ -53,6 +53,9 @@ state; preference updates use entity versions and `If-Match`.
 
 - User identity scopes global preferences and inboxes; Lobbies scopes per-lobby
   preferences; Tasks, Calendar, and Invitations are notification producers.
+- Notification reads and mark-as-read mutations are recipient-scoped; a
+  foreign notification ID returns hidden-object `404` without changing
+  `readAt`.
 - Privacy-sensitive Task and Calendar paths suppress content that must not be
   disclosed through a notification.
 - Preference writes and notification state changes are transactional and version

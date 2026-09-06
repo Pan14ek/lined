@@ -47,6 +47,8 @@ acceptance from creating duplicate membership outcomes.
 
 - Lobbies supplies membership and owner/member authorization; Users supplies
   sender and recipient identities.
+- Parent lobby and child invite identifiers must match; wrong invitees receive
+  the same `404` hidden-object response and cannot change invite state.
 - Notifications can surface invitation activity; it is not the persistence
   authority for invitation state.
 - Accept/decline/cancel transitions are transactional. Acceptance couples a

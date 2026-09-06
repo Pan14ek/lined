@@ -12,6 +12,8 @@ feature.
 - `/api/roles` lists role records and names, ensures a role exists, and sets,
   adds, or removes roles for a user.
 - Account provisioning resolves the default role at registration.
+- Role creation, assignment, and role-filtered user search require the
+  persisted `ROLE_ADMIN` role resolved from the authenticated subject.
 - Other features may inspect role membership for policy decisions; this module
   does not itself expose a separate authentication filter.
 
@@ -37,7 +39,7 @@ the user relation is updated as part of the application transaction.
 | Layer | Files and classes | Responsibility |
 |---|---|---|
 | API | `RoleController`, `RoleDto`, `RoleNameDto`, `AssignRolesRequestDto`, `RoleMapper` | Defines catalog and assignment HTTP payloads. |
-| Application | `RoleService`, `RoleServiceImpl`, `RoleResolver`, `RoleResolverImpl` | Implements role existence, built-in resolution, and user-role mutations. |
+| Application | `RoleService`, `RoleServiceImpl`, `RoleAuthorizationPolicy`, `RoleResolver`, `RoleResolverImpl` | Implements admin authorization, role existence, built-in resolution, and user-role mutations. |
 | Persistence | `RoleEntity`, `RoleRepository`, `BuiltInRole` | Stores role data and defines the built-in role vocabulary. |
 
 ## Interactions and persistence

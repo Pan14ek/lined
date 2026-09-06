@@ -17,6 +17,9 @@ the canonical identity record used by every caller-scoped product feature.
   change the selected profile.
 - `PATCH /api/users/{id}` and `DELETE /api/users/{id}` require version-aware
   mutations; deletion is self-service and rejects prohibited ownership states.
+- Foreign account mutations are rejected by `UserAccessPolicy` before target
+  lookup or version validation. Foreign reads and search results use the
+  minimal `UserPublicDto`; role-filtered search is administrator-only.
 - Authentication reads user credentials and owns refresh sessions linked to the
   persisted user ID; account deletion deliberately cascades that account's
   session/token records. Roles assigns built-in roles, and Billing provisions a
@@ -49,8 +52,8 @@ lost updates and deletion races.
 
 | Layer | Files and classes | Responsibility |
 |---|---|---|
-| API | `UserController`, `UserCreateDto`, `UserUpdateDto`, `UserDto`, `UserPageDto`, `UserSearchResultDto`, `UserMapper` | Defines profile HTTP contracts, paging/search payloads, and entity mapping. |
-| Application | `UserService`, `UserServiceImpl` | Implements lookup, search, versioned updates, and deletion policy. |
+| API | `UserController`, `UserCreateDto`, `UserUpdateDto`, `UserDto`, `UserPublicDto`, `UserPageDto`, `UserSearchResultDto`, `UserMapper` | Defines profile HTTP contracts, public projections, paging/search payloads, and entity mapping. |
+| Application | `UserService`, `UserServiceImpl`, `UserAccessPolicy` | Implements caller-scoped lookup, search, versioned updates, and deletion policy. |
 | Registration | `AccountApplicationService`, `AccountApplicationServiceImpl`, `AccountProvisioningPolicy`, `AccountProvisioningProperties`, `AccountProvisioningSpec` | Creates the user and applies default-role and billing-account policy. |
 | Persistence | `UserEntity`, `UserRepository` | Stores profile, password data, roles, and optimistic-lock version. |
 | Shared collaborator | `VersionPrecondition` | Parses `If-Match` and renders response ETags. |
