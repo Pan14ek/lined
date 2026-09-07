@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router-dom';
 import { EmptyState } from '.';
 
 const meta = {
   title: 'Patterns/EmptyState',
   component: EmptyState,
   tags: ['autodocs'],
-  decorators: [(Story) => <MemoryRouter><Story /></MemoryRouter>],
+  // No MemoryRouter decorator here — .storybook/preview.tsx already wraps
+  // every story in one; nesting two <Router>s throws at render time.
   parameters: {
     docs: {
       description: {
