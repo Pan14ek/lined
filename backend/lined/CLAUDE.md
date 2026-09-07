@@ -72,3 +72,11 @@ _Add a brief overview of your project architecture_
 ## Conventions & Patterns
 
 _Add your project-specific conventions here_
+
+## Engineering quality
+
+Before adding an abstraction or duplicating logic, read `docs/engineering/`
+and the affected feature context, search `registry/LINED_PATTERN_REGISTRY.md`,
+and classify the decision as `REUSE`, `EXTEND`, `EXTRACT`, or justified
+`CREATE`. Run the read-only Refactoring Guardian and the documented PMD/CPD
+gates; keep canonical theory in `docs/engineering/`.

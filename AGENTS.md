@@ -558,6 +558,16 @@ The analyzer categorises experiments by branch prefix:
 
 ## Cross-Cutting Concerns
 
+## Engineering quality workflow
+
+For backend or web changes that add abstractions, reuse logic, or refactor
+behavior, route through `backend/lined/docs/engineering/README.md` and the
+relevant feature/domain context. Search before create and classify decisions as
+`REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`; use the read-only
+Refactoring Guardian and applicable mechanical gates. Canonical theory stays
+under `backend/lined/docs/engineering/` rather than being copied into agent
+instructions.
+
 ### CI/CD Pipeline
 
 Workflow: `.github/workflows/ci-backend.yml`
