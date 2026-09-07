@@ -3,7 +3,7 @@ import { getErrorStatus } from '@/lib/apiClient';
 /** Terminal auth/authorization responses should not be blindly retried. */
 import { HTTP_STATUS } from '@/lib/httpStatus';
 
-const AUTH_TERMINAL_STATUSES = new Set([
+const AUTH_TERMINAL_STATUSES = new Set<number>([
   HTTP_STATUS.UNAUTHORIZED,
   HTTP_STATUS.FORBIDDEN,
   HTTP_STATUS.NOT_FOUND,
