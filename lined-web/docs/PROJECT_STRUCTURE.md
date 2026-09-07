@@ -86,27 +86,46 @@ A single file with no siblings in its concern (e.g. `lobby/CreateLobbyModal.tsx`
 `tasks/TaskDrawer.tsx`) stays flat at the feature root rather than being
 forced into a one-file subfolder.
 
-## `src/components/` (shared components)
-
-Each component is its own folder:
+## `src/components/` (internal primitives, Design System, patterns)
 
 ```
 components/
-  ComponentName/
-    index.tsx
-    __tests__/
-      index.test.tsx
-  ui/                shadcn-owned — NEVER edit directly, wrap instead
+  ui/                    INTERNAL shadcn/Base UI primitives — NEVER import from features/
+  design-system/         PUBLIC Design System, by category:
+    actions/{Button,IconButton}/
+    forms/{TextField,Textarea,Select,Switch}/
+    data-display/{Avatar,Badge,Card,Separator}/
+    feedback/{Alert,Skeleton}/
+    overlays/{Dialog,Sheet,DropdownMenu}/
+    navigation/{Tabs}/
+  patterns/              PUBLIC reusable compositions:
+    {FieldRow,SwitchField,SectionCard,SectionHeader,EmptyState,ErrorState,ConfirmDialog}/
+  skeletons/             Feature-agnostic skeleton shapes (SkeletonRow, SkeletonCard, SkeletonAvatar)
 ```
 
-Import as `@/components/ComponentName` — module resolution finds
-`index.tsx` automatically, so this works the same as importing a single
-file. Current shared components: `AssigneeAvatar`, `ConfirmDialog`,
-`EmptyState`, `FormField`, `ToggleRow`.
+Each `design-system/`/`patterns/` component is its own folder:
 
-A component only belongs here if it has **no opinion about any feature's
-DTO shape**. If it renders/uses `LobbyDto`, `TaskDto`, etc., it belongs in
-the feature that owns that model, even if it feels "generic" in spirit.
+```
+ComponentName/
+  index.tsx
+  __tests__/
+    index.test.tsx
+  ComponentName.stories.tsx
+```
+
+Import as `@/components/design-system/{category}/ComponentName` or
+`@/components/patterns/ComponentName` — module resolution finds `index.tsx`
+automatically. Feature code must consume these, not `@/components/ui/*` or
+`@base-ui/react/*` directly (ESLint-enforced; see
+`src/components/CONTEXT.md`). Full catalog, rules, and how to add a new
+component: `src/components/design-system/CONTEXT.md` and
+`src/components/patterns/CONTEXT.md`.
+
+A `design-system/`/`patterns/` component only belongs there if it has **no
+opinion about any feature's DTO shape**. If it renders/uses `LobbyDto`,
+`TaskDto`, etc., it belongs in the feature that owns that model — typically
+as a thin **domain wrapper** over a public component (e.g. `TaskStatusBadge`,
+`UserAvatar`), even if the wrapper itself feels "generic" in spirit.
 
 ## Tests
 

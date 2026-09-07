@@ -9,7 +9,7 @@ describe('TaskStatusBadge', () => {
 
     const badge = screen.getByText('In Progress');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-task-inprog/10', 'uppercase');
+    expect(badge).toHaveClass('bg-info/10', 'uppercase');
   });
 
   it('renders provided count content with the compact count variant', () => {
@@ -17,7 +17,7 @@ describe('TaskStatusBadge', () => {
     renderWithProviders(<TaskStatusBadge status="DONE" size="count">3</TaskStatusBadge>);
 
     const badge = screen.getByText('3');
-    expect(badge).toHaveClass('text-[11px]', 'bg-task-done/10');
+    expect(badge).toHaveClass('text-[11px]', 'bg-success/10');
     expect(badge).not.toHaveClass('uppercase');
   });
 });

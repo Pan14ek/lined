@@ -1,4 +1,4 @@
-import { EmptyState } from '@/components/EmptyState';
+import { EmptyState } from '@/components/patterns/EmptyState';
 
 interface WeekEmptyBannerAction {
   label: string;
@@ -14,7 +14,7 @@ interface WeekEmptyBannerProps {
 export const WeekEmptyBanner = ({ message, action }: WeekEmptyBannerProps) => {
   return (
     <div className="px-6 pt-4">
-      <EmptyState icon="📅" message={message} action={action} />
+      <EmptyState icon="📅" title={message} action={action} />
     </div>
   );
 }

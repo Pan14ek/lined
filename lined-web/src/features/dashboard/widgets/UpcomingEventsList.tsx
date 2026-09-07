@@ -5,8 +5,8 @@ import type { LobbyDto } from '@/features/lobby/model';
 import { LOBBY_TYPE_COLORS } from '@/features/lobby/lib/constants';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { formatRelativeEventTime } from '@/features/calendar/lib/calendarUtils';
-import { EmptyState } from '@/components/EmptyState';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
@@ -48,11 +48,11 @@ export const UpcomingEventsList = ({
       )}
 
       {(isStalled || (!isLoading && isError)) && (
-        <LoadErrorState onRetry={onRetry} message={t('events.loadError')} />
+        <ErrorState onRetry={onRetry} title={t('events.loadError')} />
       )}
 
       {!isLoading && !isError && events?.length === 0 && (
-        <EmptyState icon="📅" message={t('events.empty')} />
+        <EmptyState icon="📅" title={t('events.empty')} />
       )}
 
       {!isLoading && !isError && events != null && events.length > 0 && (

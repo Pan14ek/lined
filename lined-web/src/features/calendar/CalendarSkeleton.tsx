@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 
 interface CalendarSkeletonProps {
   dayCount?: number;

@@ -4,8 +4,8 @@ import type { TaskDto } from '@/features/tasks/model';
 import { TASK_STATUS_COLORS } from '@/features/tasks/lib/constants';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
-import { EmptyState } from '@/components/EmptyState';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
@@ -47,11 +47,11 @@ export const MyTasksList = ({ tasks, isLoading, isError, onRetry }: MyTasksListP
       )}
 
       {(isStalled || (!isLoading && isError)) && (
-        <LoadErrorState onRetry={onRetry} message={t('tasks.loadError')} />
+        <ErrorState onRetry={onRetry} title={t('tasks.loadError')} />
       )}
 
       {!isLoading && !isError && tasks?.length === 0 && (
-        <EmptyState icon="✅" message={t('tasks.empty')} />
+        <EmptyState icon="✅" title={t('tasks.empty')} />
       )}
 
       {!isLoading && !isError && tasks != null && tasks.length > 0 && (

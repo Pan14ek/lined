@@ -54,6 +54,59 @@ Rules for working the plan:
 6. **Verify against the mockup.** Serve `npx serve -p 4321 ../mockups/` and
    compare your result to the screen id named in the task file at 1280×800.
 
+## UI Design System workflow
+
+The app's UI is layered: **semantic tokens → `src/components/ui/` (internal
+shadcn/Base UI primitives) → `src/components/design-system/` (public) →
+`src/components/patterns/` (public compositions) → domain wrappers → feature
+components → pages.** `src/components/ui/` is an implementation detail;
+feature code must never import from it or from `@base-ui/react/*` directly —
+wrap the primitive under `design-system/` instead (ESLint's
+`no-restricted-imports` and `npm run ui:check` enforce this).
+
+Storybook is the executable catalog, documentation, and test/a11y surface for
+the public Design System and patterns — and the interface future coding
+agents use for UI discovery (via its MCP addon) before writing new JSX.
+
+For every UI task:
+
+1. Read the task SDD and relevant feature `CONTEXT.md`.
+2. Query the Storybook component catalog (`npm run storybook`, or its MCP
+   endpoint at `/mcp` when the dev server is running) before writing JSX.
+3. Identify reusable public components (`design-system/`) and patterns
+   (`patterns/`) that already cover the need.
+4. Read each selected component's documentation/props (its story file +
+   JSDoc) before using it — never invent a prop.
+5. Prefer composing existing public components over new low-level JSX/Tailwind.
+6. If a required abstraction is an obvious domain-agnostic UI concept and no
+   equivalent exists:
+   a. check whether `src/components/ui/` (shadcn/Base UI) already has a
+      suitable low-level primitive — add it via the shadcn CLI if not;
+   b. add a minimal, semantic public wrapper under `design-system/` (props
+      like `variant`/`tone`/`size`/`value`+`onValueChange`, not raw styling
+      booleans);
+   c. add unit/component tests (`__tests__/`) and a `*.stories.tsx` covering
+      its meaningful states;
+   d. verify accessibility (rely on Base UI's behavior for focus
+      traps/keyboard nav/ARIA — don't hand-roll it);
+   e. then consume it in the feature. This can happen in the same PR — "public
+      first" is dependency order, not a requirement for a separate PR.
+7. If the required component contains domain concepts (knows about a
+   `LobbyDto`/`TaskDto`/enum) or reuse is uncertain: keep it feature-local,
+   composing existing public components. A feature-owned **domain wrapper**
+   (e.g. `TaskStatusBadge` mapping `TaskStatus` → `Badge` tone/label,
+   `UserAvatar` mapping a `UserDto` → `Avatar` fallback) is the normal way to
+   bridge domain data into the public UI — it must not duplicate geometry the
+   public component already owns. Promote a feature-local abstraction to
+   `patterns/` only once a second, unrelated feature needs the same shape.
+8. Run the component's tests, `npm run ui:check`, and the full definition of
+   done below before considering the task complete.
+
+See root [`../AGENTS.md`](../AGENTS.md#component-library--design-system) for
+the short version and `src/components/CONTEXT.md`,
+`src/components/design-system/CONTEXT.md`, and
+`src/components/patterns/CONTEXT.md` for the full catalog and API rules.
+
 ## Definition of done (every task)
 
 All of the following must pass from `lined-web/` (Node 22 LTS — run
@@ -64,6 +117,13 @@ npm run lint
 npm run typecheck
 npm run test:run
 npm run build
+```
+
+Plus, for UI work touching `design-system/`, `patterns/`, or `components/ui/`:
+
+```bash
+npm run ui:check
+npm run build-storybook
 ```
 
 Plus: new hooks/components have tests per [`docs/TESTING.md`](docs/TESTING.md)
@@ -83,7 +143,7 @@ Full detail and rationale: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and
 | State split | Server data → TanStack Query; UI state → Zustand (`src/store/`); never mix |
 | Types | DTOs/enums live in `features/{feature}/model/index.ts`, one feature per DTO; strict mode; no `any` |
 | Styling | Tailwind v4 tokens only — no hard-coded hex values |
-| Components | Never modify `src/components/ui/` (shadcn-owned); wrap it. Each shared component is its own `ComponentName/index.tsx` + `__tests__/` folder |
+| Components | `src/components/ui/` (shadcn/Base UI) is internal — never import it from `features/`. Consume `@/components/design-system/*` and `@/components/patterns/*` instead; see "UI Design System workflow" above. Each public/shared component is its own `ComponentName/index.tsx` + `__tests__/` + `*.stories.tsx` |
 | Routing | React Router v7, all routes assembled in `src/router.tsx`; pages are `features/{feature}/pages/{Domain}Page.tsx` |
 | Imports | Path alias `@/` → `src/`; cross-feature imports always via `@/features/{feature}/...` |
 | Testing | Vitest + Testing Library; mock the network with MSW v2 — never mock `ky`. Every component/util needs positive + negative coverage — see `docs/TESTING.md` |
@@ -96,6 +156,7 @@ Full detail and rationale: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and
 | Architecture & feature-folder conventions | `docs/ARCHITECTURE.md` |
 | Directory layout & naming | `docs/PROJECT_STRUCTURE.md` |
 | Testing conventions | `docs/TESTING.md` |
+| Design System / patterns catalog | `src/components/design-system/CONTEXT.md`, `src/components/patterns/CONTEXT.md`; executable catalog via `npm run storybook` |
 | Task plan (work queue) | `docs/UI_TASKS.md` + `docs/tasks/UI-NN-*.md` |
 | Mockups (design source of truth) | `../mockups/index.html` (15 screens; see `../mockups/AGENTS.md`) |
 | Mockup → route/component map | `docs/mockups.md` |

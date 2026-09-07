@@ -7,7 +7,7 @@ import { useUsers } from '@/features/users/hooks/useUsers';
 import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 import { useUpdateLobbyOwner, useRemoveMember } from '@/features/lobby/hooks/useLobbies';
 import { useLobbyInvites } from '@/features/lobby/hooks/useInvites';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
 import { MemberListContent } from './MemberListContent';
 import { PendingInvitesSection } from './PendingInvitesSection';
 
@@ -104,21 +104,23 @@ export const LobbyMemberList = ({ lobby }: LobbyMemberListProps) => {
         />
       )}
 
-      {pendingAction && (
-        <ConfirmDialog
-          title={memberActionConfig[pendingAction.kind].title}
-          message={memberActionConfig[pendingAction.kind].getMessage(
-            pendingAction.member,
-            lobby.name,
-          )}
-          confirmLabel={memberActionConfig[pendingAction.kind].confirmLabel}
-          danger={memberActionConfig[pendingAction.kind].danger}
-          isPending={updateOwner.isPending || removeMember.isPending}
-          error={actionError}
-          onConfirm={handleConfirm}
-          onCancel={closeDialog}
-        />
-      )}
+      <ConfirmDialog
+        open={pendingAction != null}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+        title={pendingAction ? memberActionConfig[pendingAction.kind].title : ''}
+        description={
+          pendingAction
+            ? memberActionConfig[pendingAction.kind].getMessage(pendingAction.member, lobby.name)
+            : ''
+        }
+        confirmLabel={pendingAction ? memberActionConfig[pendingAction.kind].confirmLabel : ''}
+        tone={pendingAction && memberActionConfig[pendingAction.kind].danger ? 'danger' : 'default'}
+        loading={updateOwner.isPending || removeMember.isPending}
+        error={actionError}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 };

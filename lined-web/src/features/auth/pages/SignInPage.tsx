@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { AuthCard } from '@/features/auth/AuthCard';
-import { FormField } from '@/components/FormField';
+import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useSignIn } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
@@ -58,26 +58,26 @@ export const SignInPage = () => {
       )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signin-email"
             label={t('signIn.emailLabel')}
             type="email"
             autoComplete="username"
             value={values.identifier}
-            onChange={(v) => set('identifier', v)}
+            onValueChange={(v) => set('identifier', v)}
             onBlur={() => markTouched('identifier')}
             placeholder={t('signIn.emailPlaceholder')}
             error={touched.identifier ? errors.identifier : null}
           />
         </div>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="signin-password"
             label={t('signIn.passwordLabel')}
             type="password"
             autoComplete="current-password"
             value={values.password}
-            onChange={(v) => set('password', v)}
+            onValueChange={(v) => set('password', v)}
             onBlur={() => markTouched('password')}
             placeholder={t('signIn.passwordPlaceholder')}
             error={touched.password ? errors.password : null}

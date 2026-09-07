@@ -282,6 +282,9 @@ npm run test:ui      # Vitest UI (browser-based test runner)
 npm run test:coverage # Coverage report
 npm run lint         # ESLint check
 npm run lint:fix     # ESLint auto-fix
+npm run storybook       # Component catalog/docs/test surface, http://localhost:6006
+npm run build-storybook # Static Storybook build (CI)
+npm run ui:check        # Design System / patterns architecture validation
 ```
 
 ### Node Version
@@ -306,7 +309,10 @@ description of a flat `api/`/`hooks/`/`types/`/`components/` layout.
 ```
 lined-web/src/
   features/{feature}/   # model/, api/ (prod.ts+dev.ts+index.ts), hooks/, lib/, pages/, UI
-  components/           # SHARED, domain-agnostic components only (+ shadcn's components/ui/)
+  components/
+    ui/                 # INTERNAL shadcn/Base UI primitives — never import from features/
+    design-system/      # PUBLIC Design System — Button, TextField, Dialog, Badge, ...
+    patterns/            # PUBLIC reusable compositions — FieldRow, SectionCard, ConfirmDialog, ...
   hooks/                # SHARED, domain-agnostic hooks only
   lib/                  # SHARED infra: ky client, error helpers, cn()
   store/                # Zustand stores for UI state
@@ -348,22 +354,31 @@ files.
   (e.g. `useCalendarStore` for view mode, selected date).
 - Never put server data in Zustand. Never put UI state in TanStack Query cache.
 
-### Component Library
+### Component Library — Design System
+
+UI is layered: **semantic tokens → `components/ui/` (internal shadcn/Base UI
+primitives) → `components/design-system/` (public) → `components/patterns/`
+(public compositions) → feature components → pages.** Feature code consumes
+`@/components/design-system/*` and `@/components/patterns/*` — it must not
+import `@/components/ui/*` or `@base-ui/react/*` directly (enforced by
+ESLint's `no-restricted-imports` and `npm run ui:check`).
 
 `shadcn/ui` components are copied into `src/components/ui/`. When you need a
-new primitive, add it via the shadcn CLI:
+new low-level primitive, add it via the shadcn CLI and then wrap it under
+`design-system/`:
 
 ```bash
 npx shadcn@latest add button
 ```
 
 Do not modify files in `src/components/ui/` directly — they are owned by
-shadcn. Create wrapper components in `src/components/` (if domain-agnostic)
-or the owning feature's folder (if not) when you need customisation. Shared
-components each live in their own `ComponentName/index.tsx` +
-`ComponentName/__tests__/` folder.
+shadcn. Before writing new UI, query Storybook (`npm run storybook`, or its
+MCP endpoint) for an existing public component; only add a new one when no
+equivalent exists. Full contract, decision tree, and catalog:
+**[`lined-web/AGENTS.md`](lined-web/AGENTS.md)**, "UI Design System workflow".
 
-All colours come from Tailwind CSS design tokens defined in `tailwind.config.ts`.
+All colours come from Tailwind CSS design tokens (`src/index.css`'s `@theme`
+block) or the Design System's semantic tone props (`tone="danger"`, etc.).
 Never hard-code hex values in component files.
 
 ### TypeScript

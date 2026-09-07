@@ -166,7 +166,7 @@ describe('LobbyMemberList', () => {
       ),
     ).toBeInTheDocument();
 
-    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+    const [confirmButton] = screen.getAllByRole(ROLES.button, {
       name: MEMBER_CARD_TEXT.makeOwnerButtonName,
     });
     await user.click(confirmButton!);
@@ -186,7 +186,7 @@ describe('LobbyMemberList', () => {
     await screen.findByText('nastia_k');
 
     await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.makeOwnerButtonName }));
-    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+    const [confirmButton] = screen.getAllByRole(ROLES.button, {
       name: MEMBER_CARD_TEXT.makeOwnerButtonName,
     });
     await user.click(confirmButton!);
@@ -201,7 +201,7 @@ describe('LobbyMemberList', () => {
     await screen.findByText('nastia_k');
 
     await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }));
-    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+    const [confirmButton] = screen.getAllByRole(ROLES.button, {
       name: MEMBER_CARD_TEXT.removeButtonName,
     });
     await user.click(confirmButton!);
@@ -224,7 +224,7 @@ describe('LobbyMemberList', () => {
     await screen.findByText('nastia_k');
 
     await user.click(screen.getByRole(ROLES.button, { name: MEMBER_CARD_TEXT.removeButtonName }));
-    const [, confirmButton] = screen.getAllByRole(ROLES.button, {
+    const [confirmButton] = screen.getAllByRole(ROLES.button, {
       name: MEMBER_CARD_TEXT.removeButtonName,
     });
     await user.click(confirmButton!);

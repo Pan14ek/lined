@@ -14,9 +14,9 @@ import { LOBBY_TYPE_ICONS } from '@/features/lobby/lib/constants';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { ConflictBanner } from './ConflictBanner';
-import { FormField } from '@/components/FormField';
-import { AssigneeAvatar } from '@/components/AssigneeAvatar';
-import { ToggleRow } from '@/components/ToggleRow';
+import { TextField } from '@/components/design-system/forms/TextField';
+import { UserAvatar } from '@/features/users/UserAvatar';
+import { SwitchField } from '@/components/patterns/SwitchField';
 
 interface ReserveSlotModalProps {
   lobbies: LobbyDto[];
@@ -199,11 +199,11 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           </div>
         ) : null}
 
-        <FormField
+        <TextField
           id="reserve-slot-title"
           label={t('reserveSlotModal.whatWouldYouLikeToDo')}
           value={title}
-          onChange={setTitle}
+          onValueChange={setTitle}
           placeholder={t('reserveSlotModal.titlePlaceholder')}
           required
         />
@@ -241,11 +241,11 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           }}
         />
 
-        <FormField
+        <TextField
           id="reserve-slot-location"
           label={t('reserveSlotModal.locationLabel')}
           value={location}
-          onChange={setLocation}
+          onValueChange={setLocation}
           placeholder={t('reserveSlotModal.locationPlaceholder')}
         />
 
@@ -258,7 +258,7 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
               <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-border bg-input-bg px-3 py-2.5">
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-1.5">
-                    <AssigneeAvatar assignee={member} size="sm" />
+                    <UserAvatar user={member} size="sm" />
                     <span className="text-sm text-text-primary">{member.username}</span>
                     {member.id === currentUserId && (
                       <span className="text-xs text-text-secondary">{t('reserveSlotModal.you')}</span>
@@ -274,11 +274,11 @@ const ReserveSlotForm = ({ lobbies, slot, onClose, onReserved }: ReserveSlotForm
           </div>
         )}
 
-        <ToggleRow
+        <SwitchField
           label={t('reserveSlotModal.notifyToggle.label')}
           description={t('reserveSlotModal.notifyToggle.description')}
           checked={notifyMembers}
-          onChange={setNotifyMembers}
+          onCheckedChange={setNotifyMembers}
         />
 
         {createEvent.isError && <AuthAlert message={getReserveErrorMessage(createEvent.error, t)} />}

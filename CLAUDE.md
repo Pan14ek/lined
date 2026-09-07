@@ -56,7 +56,7 @@ npm run build
 1. **Data fetching:** Only through TanStack Query hooks in a feature's `hooks/` (or shared `src/hooks/` for domain-agnostic hooks) — never direct `ky` calls in components.
 2. **State split:** Server data → TanStack Query. UI state → Zustand.
 3. **Colours:** Only Tailwind tokens from `tailwind.config.ts` — no hard-coded hex values.
-4. **Components:** Never modify `src/components/ui/` (shadcn-owned). Wrap in `src/components/` (if domain-agnostic) or the owning feature's folder.
+4. **Components:** Never modify `src/components/ui/` (shadcn-owned) — it's internal; feature code consumes `@/components/design-system/*` and `@/components/patterns/*` instead (ESLint-enforced), or the owning feature's folder for domain-specific UI. See `lined-web/src/components/design-system/CONTEXT.md`.
 5. **Tests:** Use MSW v2 for API mocking — never mock `ky` directly. Every component/util file needs a test with positive + negative coverage.
 6. **Node version:** 22 LTS (`.nvmrc` — run `nvm use` first).
 

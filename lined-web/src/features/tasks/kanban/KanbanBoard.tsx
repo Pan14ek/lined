@@ -10,10 +10,10 @@ import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { STATUS_ORDER, filterTasks, groupTasksByStatus, type TaskDateFilter } from '@/features/tasks/lib/taskUtils';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { KanbanColumn, type KanbanActions, type KanbanMoveState } from './KanbanColumn';
 import { KanbanFilters } from './KanbanFilters';
 import { KANBAN_TEST_IDS } from './kanbanConstants';
@@ -64,7 +64,7 @@ const KanbanBoardContent = ({
   const isStalled = useQueryStall(isLoading);
 
   if (isStalled || isError) {
-    return <LoadErrorState onRetry={onRetry} message={t('kanban.loadError')} />;
+    return <ErrorState onRetry={onRetry} title={t('kanban.loadError')} />;
   }
 
   if (isLoading) return <KanbanBoardSkeleton />;
@@ -201,18 +201,19 @@ export const KanbanBoard = () => {
         }}
       />
 
-      {pendingDelete && (
-        <ConfirmDialog
-          title={t('kanban.deleteDialogTitle')}
-          message={t('kanban.deleteConfirmMessage', { title: pendingDelete.title })}
-          confirmLabel={t('kanban.deleteConfirmLabel')}
-          danger
-          isPending={deleteTask.isPending}
-          error={deleteError}
-          onConfirm={handleDeleteConfirm}
-          onCancel={handleDeleteCancel}
-        />
-      )}
+      <ConfirmDialog
+        open={pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open) handleDeleteCancel();
+        }}
+        title={t('kanban.deleteDialogTitle')}
+        description={t('kanban.deleteConfirmMessage', { title: pendingDelete?.title ?? '' })}
+        confirmLabel={t('kanban.deleteConfirmLabel')}
+        tone="danger"
+        loading={deleteTask.isPending}
+        error={deleteError}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };

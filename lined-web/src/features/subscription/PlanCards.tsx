@@ -4,8 +4,8 @@ import type { PlanDto } from '@/features/subscription/model';
 import { useStartSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice } from '@/features/subscription/lib/subscriptionUtils';
-import { Button } from '@/components/Button';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { Button } from '@/components/design-system/actions/Button';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonCard } from '@/components/skeletons/SkeletonCard';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ export const PlanCards = ({
   const isStalled = useQueryStall(isLoading);
 
   if (isStalled || (!isLoading && isError)) {
-    return <LoadErrorState onRetry={onRetry} message={t('planCards.errors.loadFailed')} />;
+    return <ErrorState onRetry={onRetry} title={t('planCards.errors.loadFailed')} />;
   }
 
   if (isLoading) return <PlanCardsSkeleton />;
@@ -80,12 +80,10 @@ export const PlanCards = ({
               </div>
               <Button
                 disabled={isCurrent}
-                pending={!isCurrent && startSubscription.isPending}
+                loading={!isCurrent && startSubscription.isPending}
                 onClick={() => startSubscription.mutate(plan.id)}
-                className={cn(
-                  'mt-4 h-9 w-full',
-                  isCurrent && 'bg-brand-green-light text-brand-green-dark dark:text-brand-green',
-                )}
+                fullWidth
+                className={cn('mt-4', isCurrent && 'bg-brand-green-light text-brand-green-dark dark:text-brand-green')}
               >
                 {isCurrent ? t('planCards.yourPlan') : t('planCards.subscribe')}
               </Button>

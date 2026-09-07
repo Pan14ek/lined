@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 
 interface LobbyLoadStatesProps {

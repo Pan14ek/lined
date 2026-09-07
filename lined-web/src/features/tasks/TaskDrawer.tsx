@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -13,19 +12,19 @@ import { getApiErrorMessage } from '@/lib/apiErrors';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/features/calendar/lib/calendarUtils';
 import { AuthAlert } from '@/features/auth/AuthAlert';
-import { Button } from '@/components/Button';
-import { FormField } from '@/components/FormField';
-import { ToggleRow } from '@/components/ToggleRow';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Button } from '@/components/design-system/actions/Button';
+import { TextField } from '@/components/design-system/forms/TextField';
+import { SwitchField } from '@/components/patterns/SwitchField';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
 import { AssigneePicker } from '@/features/lobby/members/AssigneePicker';
 import {
-  Sheet,
+  SheetRoot,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
   SheetFooter,
-} from '@/components/ui/sheet';
+} from '@/components/design-system/overlays/Sheet';
 
 interface TaskDrawerProps {
   lobbies: LobbyDto[];
@@ -166,7 +165,7 @@ export const TaskDrawer = ({
 
   return (
     <>
-      <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetRoot open onOpenChange={(open) => !open && onClose()}>
         <SheetContent
           className="w-full gap-0 p-0 sm:max-w-[420px] data-[side=bottom]:h-[85vh] data-[side=bottom]:rounded-t-2xl"
           side={isPhone ? 'bottom' : 'right'}
@@ -212,11 +211,11 @@ export const TaskDrawer = ({
                 </div>
               )}
 
-              <FormField
+              <TextField
                 id="add-task-title"
                 label={t('drawer.titleFieldLabel')}
                 value={title}
-                onChange={setTitle}
+                onValueChange={setTitle}
                 placeholder={t('drawer.titlePlaceholder')}
                 required
               />
@@ -252,12 +251,12 @@ export const TaskDrawer = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <FormField
+                  <TextField
                     id="add-task-due-date"
                     label={t('drawer.dueDateLabel')}
                     type="date"
                     value={dueDate}
-                    onChange={setDueDate}
+                    onValueChange={setDueDate}
                   />
                   {isPastDue && (
                     <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -310,11 +309,11 @@ export const TaskDrawer = ({
               </div>
 
               {!isEditMode && (
-                <ToggleRow
+                <SwitchField
                   label={t('drawer.notifyAssignee')}
                   description={t('drawer.notifyAssigneeDescription')}
                   checked={notifyAssignee}
-                  onChange={setNotifyAssignee}
+                  onCheckedChange={setNotifyAssignee}
                 />
               )}
 
@@ -345,31 +344,29 @@ export const TaskDrawer = ({
               </button>
               <Button
                 type="submit"
-                pending={mutation.isPending}
-                className={cn('px-6', !isEditMode && 'flex-[2]')}
+                loading={mutation.isPending}
+                className={cn(!isEditMode && 'flex-[2]')}
               >
                 {isEditMode ? t('drawer.save') : t('drawer.add')}
               </Button>
             </SheetFooter>
           </form>
         </SheetContent>
-      </Sheet>
+      </SheetRoot>
 
-      {isConfirmingDelete &&
-        task &&
-        createPortal(
-          <ConfirmDialog
-            title={t('drawer.deleteDialogTitle')}
-            message={t('drawer.deleteConfirmMessage', { title: task.title })}
-            confirmLabel={t('drawer.deleteConfirmLabel')}
-            danger
-            isPending={deleteTask.isPending}
-            error={deleteTask.isError ? getDeleteTaskErrorMessage(t, deleteTask.error) : null}
-            onConfirm={handleDeleteConfirm}
-            onCancel={() => setIsConfirmingDelete(false)}
-          />,
-          document.body,
-        )}
+      {task && (
+        <ConfirmDialog
+          open={isConfirmingDelete}
+          onOpenChange={setIsConfirmingDelete}
+          title={t('drawer.deleteDialogTitle')}
+          description={t('drawer.deleteConfirmMessage', { title: task.title })}
+          confirmLabel={t('drawer.deleteConfirmLabel')}
+          tone="danger"
+          loading={deleteTask.isPending}
+          error={deleteTask.isError ? getDeleteTaskErrorMessage(t, deleteTask.error) : null}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
     </>
   );
 }

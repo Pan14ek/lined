@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/design-system/overlays/DropdownMenu';
 import { useCreateMenuStore } from '@/store/createMenu';
 
 export const CreateMenu = () => {

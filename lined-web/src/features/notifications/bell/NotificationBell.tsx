@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/design-system/overlays/DropdownMenu';
 import { useMyNotifications, useMarkNotificationRead } from '@/features/notifications/hooks/useNotifications';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from '@/features/lobby/hooks/useInvites';

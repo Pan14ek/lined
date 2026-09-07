@@ -5,9 +5,9 @@ import type { PlanDto, SubscriptionDto } from '@/features/subscription/model';
 import { useCancelSubscription } from '@/features/subscription/hooks/useSubscriptions';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { formatPlanPrice, formatShortDate } from '@/features/subscription/lib/subscriptionUtils';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { LoadErrorState } from '@/components/LoadErrorState';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
+import { ErrorState } from '@/components/patterns/ErrorState';
+import { Skeleton } from '@/components/design-system/feedback/Skeleton';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { SettingsCard } from '@/features/settings/SettingsCard';
 
@@ -44,7 +44,7 @@ export const CurrentPlanCard = ({
   if (isStalled || (!isLoading && isError)) {
     return (
       <SettingsCard id="current-plan" title={t('currentPlan.title')}>
-        <LoadErrorState onRetry={onRetry} message={t('currentPlan.errors.loadFailed')} />
+        <ErrorState onRetry={onRetry} title={t('currentPlan.errors.loadFailed')} />
       </SettingsCard>
     );
   }
@@ -84,22 +84,21 @@ export const CurrentPlanCard = ({
         <p className="py-3.5 text-sm text-text-secondary">{t('currentPlan.freePlan')}</p>
       )}
 
-      {isConfirmOpen && (
-        <ConfirmDialog
-          title={t('currentPlan.cancelDialog.title')}
-          message={t('currentPlan.cancelDialog.message')}
-          confirmLabel={t('currentPlan.cancelDialog.confirmLabel')}
-          danger
-          isPending={cancelSubscription.isPending}
-          error={cancelSubscription.isError ? getCancelErrorMessage(cancelSubscription.error, t) : null}
-          onConfirm={() =>
-            cancelSubscription.mutate(undefined, {
-              onSuccess: () => setIsConfirmOpen(false),
-            })
-          }
-          onCancel={() => setIsConfirmOpen(false)}
-        />
-      )}
+      <ConfirmDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title={t('currentPlan.cancelDialog.title')}
+        description={t('currentPlan.cancelDialog.message')}
+        confirmLabel={t('currentPlan.cancelDialog.confirmLabel')}
+        tone="danger"
+        loading={cancelSubscription.isPending}
+        error={cancelSubscription.isError ? getCancelErrorMessage(cancelSubscription.error, t) : null}
+        onConfirm={() =>
+          cancelSubscription.mutate(undefined, {
+            onSuccess: () => setIsConfirmOpen(false),
+          })
+        }
+      />
     </SettingsCard>
   );
 };

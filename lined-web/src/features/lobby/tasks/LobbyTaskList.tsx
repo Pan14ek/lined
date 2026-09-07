@@ -8,8 +8,8 @@ import { useRowMutationState } from '@/hooks/useRowMutationState';
 import { useCreateMenuStore } from '@/store/createMenu';
 import { TASK_STATUS_LABELS } from '@/features/tasks/lib/constants';
 import { sortTasksByDueDate } from '@/features/tasks/lib/taskUtils';
-import { EmptyState } from '@/components/EmptyState';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { SkeletonRow } from '@/components/skeletons/SkeletonRow';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,7 @@ const TaskListContent = ({
   const isStalled = useQueryStall(isLoading);
 
   if (isStalled || (!isLoading && isError)) {
-    return <LoadErrorState onRetry={onRetry} message={t('tasks.loadError')} />;
+    return <ErrorState onRetry={onRetry} title={t('tasks.loadError')} />;
   }
 
   if (isLoading) {
@@ -67,14 +67,14 @@ const TaskListContent = ({
     return (
       <EmptyState
         icon="✅"
-        message={t('tasks.emptyTitle')}
+        title={t('tasks.emptyTitle')}
         action={{ label: t('tasks.inviteSomeone'), to: `/lobbies/${lobbyId}?tab=members` }}
       />
     );
   }
 
   if (sorted.length === 0) {
-    return <EmptyState message={t('tasks.emptyFilterMessage')} />;
+    return <EmptyState title={t('tasks.emptyFilterMessage')} />;
   }
 
   return (

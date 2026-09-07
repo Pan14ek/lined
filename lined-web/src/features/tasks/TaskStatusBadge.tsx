@@ -1,34 +1,35 @@
 import type { ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { useTranslation } from 'react-i18next';
+import { Badge, type BadgeTone } from '@/components/design-system/data-display/Badge';
 import { cn } from '@/lib/utils';
-import { TASK_STATUS_BADGE_CLASSES } from './lib/constants';
 import type { TaskStatus } from './model';
 
-const taskStatusBadgeVariants = cva('', {
-  variants: {
-    status: TASK_STATUS_BADGE_CLASSES,
-    size: {
-      default: 'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-      count: 'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-    },
-  },
-  defaultVariants: { size: 'default' },
-});
+/** Maps a task status to the closest generic Badge tone — todo is neutral, in-progress/done are the semantic info/success states. */
+const TASK_STATUS_TONE: Record<TaskStatus, BadgeTone> = {
+  TODO: 'neutral',
+  IN_PROGRESS: 'info',
+  DONE: 'success',
+};
 
-interface TaskStatusBadgeProps extends VariantProps<typeof taskStatusBadgeVariants> {
+const SIZE_CLASSES = {
+  default: 'text-[10px] font-semibold uppercase tracking-wide',
+  count: 'text-[11px] font-semibold',
+} as const;
+
+interface TaskStatusBadgeProps {
   status: TaskStatus;
   children?: ReactNode;
+  size?: keyof typeof SIZE_CLASSES;
   className?: string;
 }
 
-export const TaskStatusBadge = ({
-  status,
-  children,
-  size,
-  className,
-}: TaskStatusBadgeProps) => {
+/** Domain wrapper mapping a task status to the generic `Badge`'s tone/geometry. */
+export const TaskStatusBadge = ({ status, children, size = 'default', className }: TaskStatusBadgeProps) => {
   const { t } = useTranslation('tasks');
   const label = children ?? t(`status.${status}`);
-  return <span className={cn(taskStatusBadgeVariants({ status, size }), className)}>{label}</span>;
+  return (
+    <Badge tone={TASK_STATUS_TONE[status]} variant="soft" className={cn(SIZE_CLASSES[size], className)}>
+      {label}
+    </Badge>
+  );
 };

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { AuthCard } from '@/features/auth/AuthCard';
-import { FormField } from '@/components/FormField';
+import { TextField } from '@/components/design-system/forms/TextField';
 import { useRequestPasswordReset } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
 
@@ -58,13 +58,13 @@ export const ForgotPasswordPage = () => {
     <AuthCard heading={t('forgotPassword.heading')} subheading={t('forgotPassword.subheading')}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="mt-5">
-          <FormField
+          <TextField
             id="forgot-password-identifier"
             label={t('forgotPassword.identifierLabel')}
             type="text"
             autoComplete="username"
             value={values.identifier}
-            onChange={(v) => set('identifier', v)}
+            onValueChange={(v) => set('identifier', v)}
             onBlur={() => markTouched('identifier')}
             placeholder={t('forgotPassword.identifierPlaceholder')}
             error={touched.identifier ? errors.identifier : null}

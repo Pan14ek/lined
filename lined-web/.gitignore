@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+storybook-static/
+*storybook.log
 
 # Coverage
 coverage/

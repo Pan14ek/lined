@@ -8,7 +8,7 @@ import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { getAdjacentStatus } from '@/features/tasks/lib/taskUtils';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
 import { TASK_PRIORITY_COLORS } from '@/features/tasks/lib/constants';
-import { AssigneeAvatar } from '@/components/AssigneeAvatar';
+import { UserAvatar } from '@/features/users/UserAvatar';
 import { KANBAN_TEST_IDS } from './kanbanConstants';
 import { cn } from '@/lib/utils';
 
@@ -150,7 +150,7 @@ export const KanbanCard = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <AssigneeAvatar assignee={assignee} size="sm" fallbackTextClassName="text-[10px]" />
+            <UserAvatar user={assignee} size="sm" />
             <button
               type="button"
               aria-label={t('kanban.deleteTask', { title: task.title })}

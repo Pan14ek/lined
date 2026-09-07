@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useQueryStall } from '@/hooks/useQueryStall';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { CalendarSkeleton } from '@/features/calendar/CalendarSkeleton';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
 import { CreateEventModal } from '@/features/calendar/events/CreateEventModal';
@@ -187,10 +187,10 @@ export const CalendarPage = () => {
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {isStalled || (!activeQuery.isLoading && activeQuery.isError) ? (
-            <LoadErrorState
+            <ErrorState
               className="flex-1"
               onRetry={() => void activeQuery.refetch()}
-              message={t('page.loadError')}
+              title={t('page.loadError')}
             />
           ) : activeQuery.isLoading ? (
             <CalendarSkeleton dayCount={isPhone ? 1 : 7} testId="calendar-loading" />

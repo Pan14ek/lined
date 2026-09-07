@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
 import type { LobbyDto } from '@/features/lobby/model';
-import { LoadErrorState } from '@/components/LoadErrorState';
+import { ErrorState } from '@/components/patterns/ErrorState';
 import { useQueryStall } from '@/hooks/useQueryStall';
 import { CalendarSkeleton } from '@/features/calendar/CalendarSkeleton';
 import { CalendarTopBar } from '@/features/calendar/CalendarTopBar';
@@ -90,10 +90,10 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
       />
 
       {isStalled || (!isLoading && isError) ? (
-        <LoadErrorState
+        <ErrorState
           className="flex-1"
           onRetry={() => void refetch()}
-          message={t('calendar.loadError')}
+          title={t('calendar.loadError')}
         />
       ) : isLoading ? (
         <CalendarSkeleton testId="lobby-calendar-loading" />

@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
+// TEMPORARY MIGRATION EXCEPTION: the generic `Avatar`/`UserAvatar` API doesn't yet
+// support a per-item loading (pulsing) fallback state, which this member-avatar
+// stack needs while each member profile query resolves independently. Revisit once
+// the Design System has a loading variant for `Avatar`.
+// eslint-disable-next-line no-restricted-imports
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LOBBY_TYPE_BORDER_CLASSES, LOBBY_TYPE_ICONS } from '@/features/lobby/lib/constants';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';

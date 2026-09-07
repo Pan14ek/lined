@@ -25,6 +25,8 @@ npm run lint
 npm run typecheck
 npm run test:run
 npm run build
+npm run ui:check
+npm run build-storybook
 ```
 
 ## Code Review Standards
@@ -47,7 +49,12 @@ Run /simplify before presenting code to the user.
    `features/{feature}/hooks/` (or shared `src/hooks/` for generic hooks)
 3. Server data → TanStack Query; UI state → Zustand
 4. Tailwind tokens only — no hex values
-5. Never modify `src/components/ui/` (shadcn-owned)
+5. Never modify `src/components/ui/` (shadcn-owned). It's also internal now:
+   feature code consumes `@/components/design-system/*` and
+   `@/components/patterns/*` instead of `@/components/ui/*` or
+   `@base-ui/react/*` directly (ESLint-enforced) — see
+   `src/components/design-system/CONTEXT.md`
 6. MSW v2 for API mocking in tests — never mock `ky`
 7. Every component/util file has a test file with positive + negative
-   coverage — see `docs/TESTING.md`
+   coverage — see `docs/TESTING.md`; public Design System/patterns
+   components also need a `*.stories.tsx`
