@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { useMyTasks, useUpdateTaskStatus, useDeleteTask } from '@/features/tasks/hooks/useTasks';
 import { useMyLobbies } from '@/features/lobby/hooks/useLobbies';
 import { useUsers } from '@/features/users/hooks/useUsers';
@@ -44,7 +44,7 @@ interface KanbanBoardContentProps {
   onRetry: () => void;
   grouped: Record<TaskStatus, TaskDto[]>;
   lobbiesById: Map<number, LobbyDto>;
-  assigneesById: Map<number, UserDto | undefined>;
+  assigneesById: Map<number, UserPublicDto | undefined>;
   moveState: KanbanMoveState;
   actions: KanbanActions;
 }
@@ -95,7 +95,7 @@ export const KanbanBoard = () => {
 
   const memberIds = Array.from(new Set(lobbies.flatMap((lobby) => lobby.memberIds)));
   const memberQueries = useUsers(memberIds);
-  const members = memberQueries.map((q) => q.data).filter((u): u is UserDto => !!u);
+  const members = memberQueries.map((q) => q.data).filter((u): u is UserPublicDto => !!u);
   const assigneesById = new Map(memberIds.map((id, i) => [id, memberQueries[i]?.data]));
   const lobbiesById = new Map(lobbies.map((lobby) => [lobby.id, lobby]));
 

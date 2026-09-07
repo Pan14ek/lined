@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import { useRemoveMember, useDeleteLobby } from '@/features/lobby/hooks/useLobbies';
+import { removeLobbyScopedQueries } from '@/features/lobby/lib/cache';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { ConfirmDialog } from '@/components/patterns/ConfirmDialog';
 
@@ -23,6 +25,7 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
   const { t } = useTranslation('lobby');
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const removeMember = useRemoveMember(lobby.id);
   const deleteLobby = useDeleteLobby();
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
@@ -39,7 +42,10 @@ export const LobbyDangerZoneCard = ({ lobby, currentUserId }: LobbyDangerZoneCar
     if (currentUserId == null) return;
     setActionError(null);
     removeMember.mutate(currentUserId, {
-      onSuccess: () => navigate('/'),
+      onSuccess: () => {
+        removeLobbyScopedQueries(queryClient, lobby.id);
+        navigate('/');
+      },
       onError: (error) => setActionError(getLeaveErrorMessage(error, t)),
     });
   };

@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { UserAvatar } from '@/features/users/UserAvatar';
-import { formatMonthYear } from '@/features/calendar/lib/calendarUtils';
 import { cn } from '@/lib/utils';
 
 interface MemberCardProps {
-  member: UserDto;
+  member: UserPublicDto;
   isOwner: boolean;
   isCurrentUser: boolean;
   /** Whether the viewer (current user) may manage this member — owner-only actions. */
@@ -40,10 +39,6 @@ export const MemberCard = ({
           </span>
         </div>
         <p className="text-xs text-text-secondary">@{member.username}</p>
-        {/* No "joined lobby at" timestamp exists on the API — substitute the account creation date. */}
-        <p className="text-xs text-text-muted">
-          {t('members.memberSince', { date: formatMonthYear(new Date(member.createdAt)) })}
-        </p>
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-2">

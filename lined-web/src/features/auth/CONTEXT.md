@@ -65,3 +65,26 @@ Each file has a colocated `__tests__/`. `useAuth` tests exercise
 - Password-reset dev/MSW handlers use deterministic mock responses because
   delivery of reset material is outside the web client; production requests
   still use the backend's signed-out, single-use reset-token contract.
+
+## Session/cache isolation (security invariant)
+
+`clearClientAuthentication` (in `sessionCleanup.ts`) clears the full
+TanStack Query cache plus every `resetUserState()` Zustand store — not just
+the access token. This must run on **every** path that ends a session:
+explicit logout, account deletion, bootstrap failure, **and** a runtime
+refresh failure mid-session (the case where a request 401s while the app is
+already open and the automatic refresh attempt also fails).
+
+The runtime path is wired without giving the low-level `apiClient.ts`
+transport a dependency on `QueryClient`/React: `apiClient.ts` exposes
+`registerSessionInvalidatedHandler(handler)`, a plain callback slot with no
+framework imports. `AuthBootstrap` — already the app's top-level auth
+boundary — registers `() => clearClientAuthentication(queryClient)` on
+mount. `refreshAccessToken()`'s failure path calls both
+`useAuthStore.getState().clearAuthentication()` and this registered handler,
+so any caller of `refreshAccessToken` (bootstrap, or the ky `afterResponse`
+401 hook) triggers full cleanup, not just a token reset. See
+`AuthBootstrap.test.tsx`'s "clears the full user-scoped query cache" test
+for the regression coverage (seeds cache data, forces a runtime refresh
+failure, asserts the cache is empty afterward — not just that the token is
+gone).

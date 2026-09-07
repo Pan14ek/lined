@@ -8,9 +8,6 @@ const results: UserPageDto = {
     {
       id: 3,
       username: 'nastia_bondar',
-      email: 'nastia.bondar@lined.app',
-      createdAt: '2025-06-10T09:00:00Z',
-      roles: ['ROLE_USER'],
     },
   ],
   page: 0,

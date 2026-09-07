@@ -1,8 +1,8 @@
-import type { UserDto } from './model';
 import { Avatar, type AvatarSize } from '@/components/design-system/data-display/Avatar';
 
 interface UserAvatarProps {
-  user: UserDto | undefined;
+  /** Accepts either the full `UserDto` (the current user) or the minimal `UserPublicDto` (any other user) — only `username` is read. */
+  user: { username: string } | undefined;
   size?: AvatarSize;
   className?: string;
 }

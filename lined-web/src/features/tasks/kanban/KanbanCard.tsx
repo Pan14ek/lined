@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto } from '@/features/tasks/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { getAdjacentStatus } from '@/features/tasks/lib/taskUtils';
 import { LobbyTypeBadge } from '@/features/lobby/LobbyTypeBadge';
@@ -17,7 +17,7 @@ export const TASK_DRAG_DATA_FORMAT = 'application/x-lined-task-id';
 interface KanbanCardProps {
   task: TaskDto;
   lobby: LobbyDto | undefined;
-  assignee: UserDto | undefined;
+  assignee: UserPublicDto | undefined;
   isMoving: boolean;
   moveError?: string;
   onMove: (task: TaskDto, direction: 'prev' | 'next') => void;

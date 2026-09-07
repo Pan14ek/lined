@@ -52,8 +52,7 @@
     "memberBadge": "Учасник",
     "thatsYou": "Це ви",
     "makeOwner": "Призначити власником",
-    "remove": "Видалити",
-    "memberSince": "Учасник з {{date}}"
+    "remove": "Видалити"
   },
   "pendingInvites": {
     "heading": "Очікують запрошення",

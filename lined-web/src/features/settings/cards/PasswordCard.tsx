@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
+import { useUpdateCurrentUser } from '@/features/users/hooks/useUserSettings';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { SettingsCard } from '../SettingsCard';
 import { SettingsRow, SETTINGS_INPUT_CLASS } from '../SettingsRow';
@@ -22,7 +22,7 @@ const getPasswordErrorMessage = (error: unknown, t: TFunction<['settings', 'comm
 
 export const PasswordCard = ({ userId }: PasswordCardProps) => {
   const { t } = useTranslation(['settings', 'common']);
-  const updateUser = useUpdateUser(userId ?? 0);
+  const updateUser = useUpdateCurrentUser();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [touched, setTouched] = useState(false);

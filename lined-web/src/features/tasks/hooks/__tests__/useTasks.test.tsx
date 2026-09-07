@@ -108,6 +108,23 @@ describe('useUpdateTask', () => {
       'Original title',
     );
   });
+
+  it('removes the task from every cached list instead of restoring it when the task is gone (404)', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    const task = makeTask({ id: 1, lobbyId: 1, title: 'Original title' });
+    queryClient.setQueryData(QUERY_KEYS.myTasks, [task]);
+    queryClient.setQueryData(QUERY_KEYS.lobbyTasks(1), [task]);
+    server.use(http.patch(`${BASE}/tasks/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND })));
+
+    const { result } = renderHook(() => useUpdateTask(), { wrapper: makeWrapper(queryClient) });
+    result.current.mutate({ id: 1, data: { title: 'Updated title' } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(queryClient.getQueryData<TaskDto[]>(QUERY_KEYS.myTasks)).toEqual([]);
+    expect(queryClient.getQueryData<TaskDto[]>(QUERY_KEYS.lobbyTasks(1))).toEqual([]);
+  });
 });
 
 describe('useDeleteTask', () => {

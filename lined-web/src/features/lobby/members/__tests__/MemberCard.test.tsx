@@ -1,22 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { ROLES, MEMBER_CARD_TEXT } from '@/test/lobbyMemberContent';
 import { MemberCard } from '../MemberCard';
 
-const member: UserDto = {
+const member: UserPublicDto = {
   id: 2,
   username: 'nastia_k',
-  email: 'anastasiia@lined.app',
-  createdAt: '2025-02-01T12:00:00Z',
-  roles: ['ROLE_USER'],
-  activePlan: null,
-  activeUntil: null,
 };
 
 describe('MemberCard', () => {
-  it('renders the username, @handle, and "Member since" date', () => {
-    expect.assertions(3);
+  it('renders the username and @handle', () => {
+    expect.assertions(2);
     renderWithProviders(
       <MemberCard
         member={member}
@@ -30,7 +25,6 @@ describe('MemberCard', () => {
 
     expect(screen.getByText(member.username)).toBeInTheDocument();
     expect(screen.getByText(`@${member.username}`)).toBeInTheDocument();
-    expect(screen.getByText('Member since February 2025')).toBeInTheDocument();
   });
 
   it('shows the Owner badge for the lobby owner', () => {

@@ -1,8 +1,13 @@
 import { api, requestVoid } from '@/lib/apiClient';
-import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto } from '@/features/users/model';
+import type { UserDto, UserCreateDto, UserUpdateDto, UserPageDto, UserPublicDto } from '@/features/users/model';
 
-export const getUser = (id: number): Promise<UserDto> => {
-  return api.get(`users/${id}`).json<UserDto>();
+/**
+ * Returns the full profile only when `id` is the caller's own account; the
+ * backend returns a minimal `UserPublicDto` for every other id, so callers
+ * must not rely on more than `id`/`username` from this response.
+ */
+export const getUser = (id: number): Promise<UserPublicDto> => {
+  return api.get(`users/${id}`).json<UserPublicDto>();
 }
 
 export const getCurrentUser = (): Promise<UserDto> => {

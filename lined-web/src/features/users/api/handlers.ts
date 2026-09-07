@@ -3,8 +3,11 @@ import { mockNetworkDelay } from '@/lib/apiClient';
 import { MOCK_USERS } from './mockData';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { getMockUserFromRequest } from '@/features/auth/api/mockIdentity';
+import type { UserDto, UserPublicDto } from '@/features/users/model';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+
+const toPublicDto = (user: UserDto): UserPublicDto => ({ id: user.id, username: user.username });
 
 export const userHandlers = [
   http.get(`${BASE}/users/me`, async ({ request }) => {
@@ -26,7 +29,7 @@ export const userHandlers = [
         u.email.toLowerCase().includes(q),
     );
     return HttpResponse.json({
-      content: matches,
+      content: matches.map(toPublicDto),
       page: 0,
       size: 20,
       totalElements: matches.length,
@@ -34,11 +37,13 @@ export const userHandlers = [
     });
   }),
 
-  http.get(`${BASE}/users/:id`, async ({ params }) => {
+  http.get(`${BASE}/users/:id`, async ({ params, request }) => {
     await mockNetworkDelay();
     const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
     if (!user) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(user);
+    const requester = getMockUserFromRequest(request);
+    if (requester?.id === user.id) return HttpResponse.json(user);
+    return HttpResponse.json(toPublicDto(user));
   }),
 
   http.post(`${BASE}/users`, async ({ request }) => {

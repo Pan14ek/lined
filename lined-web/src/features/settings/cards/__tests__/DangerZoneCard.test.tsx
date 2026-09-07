@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
-import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
+import { createTestQueryClient, renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { useAuthStore } from '@/store/auth';
+import { QUERY_KEYS } from '@/features/users/lib/constants';
 import { DangerZoneCard } from '../DangerZoneCard';
 import { HTTP_STATUS } from '@/test/httpStatus';
 
@@ -12,13 +13,19 @@ const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const lobbyOwner = MOCK_USERS[0]!; // owns every mock lobby -> 409 on delete
 const noLobbyUser = MOCK_USERS[2]!; // owns nothing -> 204 on delete
 
+/** `useDeleteCurrentAccount` resolves its target id from the `/users/me` cache. */
 const renderCard = (userId: number | undefined) => {
+  const queryClient = createTestQueryClient();
+  if (userId != null) {
+    const currentUser = MOCK_USERS.find((u) => u.id === userId);
+    queryClient.setQueryData(QUERY_KEYS.currentUser, currentUser);
+  }
   return renderWithProviders(
     <Routes>
       <Route path="/settings" element={<DangerZoneCard userId={userId} />} />
       <Route path="/sign-in" element={<div>Sign In Page</div>} />
     </Routes>,
-    { initialEntries: ['/settings'] },
+    { initialEntries: ['/settings'], queryClient },
   );
 }
 

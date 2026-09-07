@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore, type Locale } from '@/store/settings';
-import { useUpdateUser } from '@/features/users/hooks/useUserSettings';
+import { useUpdateCurrentUser } from '@/features/users/hooks/useUserSettings';
 import { SettingsCard } from '../SettingsCard';
 
 interface LanguageCardProps {
@@ -29,7 +29,7 @@ export const LanguageCard = ({ userId }: LanguageCardProps) => {
   const { t } = useTranslation(['settings', 'common']);
   const locale = useSettingsStore((s) => s.locale);
   const setLocale = useSettingsStore((s) => s.setLocale);
-  const updateUser = useUpdateUser(userId ?? 0);
+  const updateUser = useUpdateCurrentUser();
 
   const handleSelect = (next: Locale) => {
     if (next === locale) return;

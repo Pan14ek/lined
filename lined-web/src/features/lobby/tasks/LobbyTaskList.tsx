@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { useLobbyTasks, useUpdateTask } from '@/features/tasks/hooks/useTasks';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { useRowMutationState } from '@/hooks/useRowMutationState';
@@ -26,7 +26,7 @@ interface TaskListContentProps {
   onRetry: () => void;
   tasks: TaskDto[] | undefined;
   sorted: TaskDto[];
-  assigneesById: Map<number, UserDto | undefined>;
+  assigneesById: Map<number, UserPublicDto | undefined>;
   updatingTaskId: number | null;
   rowErrors: Record<number, string>;
   onToggle: (task: TaskDto) => void;

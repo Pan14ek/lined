@@ -5,6 +5,7 @@ import {
   type QueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
+import { getErrorStatus } from '@/lib/apiClient';
 import { createTask, deleteTask, listMyTasks, listTasks, updateTask } from '@/features/tasks/api';
 import { QUERY_KEYS } from '@/features/tasks/lib/constants';
 import type { TaskDto, TaskStatus, TaskUpdateDto } from '@/features/tasks/model';
@@ -51,6 +52,31 @@ const rollbackTaskCaches = (queryClient: QueryClient, snapshot: TaskCacheSnapsho
   snapshot?.previous.forEach(([key, data]) => queryClient.setQueryData(key, data));
 }
 
+const removeTaskFromCaches = (queryClient: QueryClient, id: number) => {
+  queryClient.setQueriesData<TaskDto[]>({ queryKey: QUERY_KEYS.tasks }, (old) =>
+    old?.filter((t) => t.id !== id),
+  );
+}
+
+/**
+ * A `404` means the task is gone/inaccessible — restoring the pre-mutation
+ * snapshot would resurrect a phantom row, so remove it from every cached
+ * list instead. Any other error (e.g. `403`) rolls back to the last known
+ * legitimate state as before.
+ */
+const handleTaskMutationError = (
+  queryClient: QueryClient,
+  id: number,
+  error: unknown,
+  snapshot: TaskCacheSnapshot | undefined,
+) => {
+  if (getErrorStatus(error) === 404) {
+    removeTaskFromCaches(queryClient, id);
+    return;
+  }
+  rollbackTaskCaches(queryClient, snapshot);
+}
+
 export const useUpdateTask = () => {
   const queryClient = useQueryClient();
   return useMutation<TaskDto, unknown, { id: number; data: TaskUpdateDto }, TaskCacheSnapshot>({
@@ -61,7 +87,7 @@ export const useUpdateTask = () => {
       return snapshot;
     },
     onSuccess: (updatedTask) => patchTaskCaches(queryClient, updatedTask.id, updatedTask),
-    onError: (_err, _vars, context) => rollbackTaskCaches(queryClient, context),
+    onError: (error, { id }, context) => handleTaskMutationError(queryClient, id, error, context),
   });
 };
 
@@ -75,7 +101,7 @@ export const useUpdateTaskStatus = () => {
       return snapshot;
     },
     onSuccess: (updatedTask) => patchTaskCaches(queryClient, updatedTask.id, updatedTask),
-    onError: (_err, _vars, context) => rollbackTaskCaches(queryClient, context),
+    onError: (error, { id }, context) => handleTaskMutationError(queryClient, id, error, context),
   });
 };
 

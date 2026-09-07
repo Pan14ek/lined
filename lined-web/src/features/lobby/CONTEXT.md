@@ -19,6 +19,10 @@ lobby/
                           — covers BOTH /lobbies/* and /lobby-invites/* endpoints
   lib/constants.ts        LOBBY_TYPE_* label/color/icon/tagline maps,
                           lobbyAccentColor(), QUERY_KEYS (lobbies + invites)
+  lib/cache.ts            removeLobbyScopedQueries(queryClient, lobbyId) —
+                          purges lobby detail + every lobby-scoped dependent
+                          cache (tasks, free-slots, invites, notification
+                          prefs, calendar/conflicts)
   hooks/
     useLobbies.ts          useMyLobbies, useLobby, useCreateLobby, useUpdateLobby,
                           useDeleteLobby, useUpdateLobbyOwner, useRemoveMember
@@ -76,6 +80,30 @@ Every subfolder has its own `__tests__/`. `LobbyMemberList`/`AddMemberModal`
 tests share accessible-name constants from `src/test/lobbyMemberContent.ts`
 — reuse those instead of hardcoding copy in a new member-flow test. See root
 `docs/TESTING.md`.
+
+## Access-revocation cache purge (security invariant)
+
+`GET lobbies/{id}` returns `404` for both a missing lobby and one the caller
+is no longer a member of (the backend doesn't distinguish, to avoid an
+existence oracle). `useLobby(id)` treats a `404` as terminal: it disables
+further fetching for that id (`enabled` gate, so a purged/no-data query
+never bounces back into a refetch loop) and, in an effect keyed off that
+disablement, calls `removeLobbyScopedQueries` so the stale lobby — and
+everything scoped to it — is actually gone from the cache, not just hidden
+by a render guard. `LobbyNotFoundState` renders unconditionally on error;
+its copy ("may have been deleted, or you may not have access") must stay
+neutral — never confirm that a lobby exists for a caller who isn't a member.
+
+The same helper runs on the two other ways a caller loses access to a
+lobby while the SPA is open:
+
+- **Delete** (`useDeleteLobby`'s `onSuccess`) — owner-only, purges before
+  invalidating the my-lobbies list.
+- **Leave** (`LobbyDangerZoneCard.handleLeave`'s `onSuccess`) — self-removal
+  via `useRemoveMember`; the component calls the purge (an owner removing
+  *another* member keeps using `useRemoveMember`'s existing
+  `setQueryData`/`invalidateQueries` path unchanged, since the owner keeps
+  their own access).
 
 ## Known gaps
 

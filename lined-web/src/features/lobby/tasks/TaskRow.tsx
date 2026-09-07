@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TaskDto } from '@/features/tasks/model';
-import type { UserDto } from '@/features/users/model';
+import type { UserPublicDto } from '@/features/users/model';
 import { formatTaskDueDate } from '@/features/calendar/lib/calendarUtils';
 import { taskDetailsLabel } from '@/features/tasks/lib/taskUtils';
 import { TaskStatusBadge } from '@/features/tasks/TaskStatusBadge';
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface TaskRowProps {
   task: TaskDto;
-  assignee: UserDto | undefined;
+  assignee: UserPublicDto | undefined;
   onToggle: (task: TaskDto) => void;
   isUpdating: boolean;
   updateError?: string;

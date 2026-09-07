@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getErrorStatus } from '@/lib/apiClient';
 import { listEvents, createEvent, updateEvent, deleteEvent, findConflicts } from '@/features/calendar/api';
 import type { EventConflictDto, EventDto, EventUpdateDto } from '@/features/calendar/model';
 import { QUERY_KEYS } from '@/features/calendar/lib/constants';
@@ -76,6 +77,14 @@ export const useUpdateEvent = () => {
       // every cached event list in place instead of refetching.
       queryClient.setQueriesData<EventDto[]>({ queryKey: QUERY_KEYS.events }, (old) =>
         old?.map((e) => (e.id === updated.id ? updated : e)),
+      );
+    },
+    onError: (error, { id }) => {
+      // A 404 means the event is gone/inaccessible — drop the stale row
+      // instead of leaving it visible from a now-invalid cached list.
+      if (getErrorStatus(error) !== 404) return;
+      queryClient.setQueriesData<EventDto[]>({ queryKey: QUERY_KEYS.events }, (old) =>
+        old?.filter((e) => e.id !== id),
       );
     },
   });

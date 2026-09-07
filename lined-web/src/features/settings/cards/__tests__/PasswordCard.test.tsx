@@ -1,14 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
+import { createTestQueryClient, renderWithProviders, screen, userEvent, waitFor } from '@/test/utils';
 import { server } from '@/test/server';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { useAuthStore } from '@/store/auth';
+import { QUERY_KEYS } from '@/features/users/lib/constants';
 import { PasswordCard } from '../PasswordCard';
 import { HTTP_STATUS } from '@/test/httpStatus';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const user = MOCK_USERS[0]!;
+
+/** `useUpdateCurrentUser` resolves its target id from the `/users/me` cache. */
+const renderWithCurrentUser = (ui: Parameters<typeof renderWithProviders>[0]) => {
+  const queryClient = createTestQueryClient();
+  queryClient.setQueryData(QUERY_KEYS.currentUser, user);
+  return renderWithProviders(ui, { queryClient });
+}
 
 describe('PasswordCard', () => {
   beforeEach(() => {
@@ -50,7 +58,7 @@ describe('PasswordCard', () => {
       }),
     );
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<PasswordCard userId={user.id} />);
+    renderWithCurrentUser(<PasswordCard userId={user.id} />);
 
     await userEventInstance.type(screen.getByLabelText('New password'), 'longenough1');
     await userEventInstance.type(screen.getByLabelText('Confirm new password'), 'longenough1');
@@ -64,7 +72,7 @@ describe('PasswordCard', () => {
     expect.assertions(1);
     server.use(http.patch(`${BASE}/users/:id`, () => new HttpResponse(null, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR })));
     const userEventInstance = userEvent.setup();
-    renderWithProviders(<PasswordCard userId={user.id} />);
+    renderWithCurrentUser(<PasswordCard userId={user.id} />);
 
     await userEventInstance.type(screen.getByLabelText('New password'), 'longenough1');
     await userEventInstance.type(screen.getByLabelText('Confirm new password'), 'longenough1');

@@ -50,8 +50,7 @@
     "memberBadge": "Member",
     "thatsYou": "That's you",
     "makeOwner": "Make owner",
-    "remove": "Remove",
-    "memberSince": "Member since {{date}}"
+    "remove": "Remove"
   },
   "pendingInvites": {
     "heading": "Pending Invites",

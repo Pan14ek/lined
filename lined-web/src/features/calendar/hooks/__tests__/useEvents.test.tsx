@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { getErrorStatus } from '@/lib/apiClient';
+import { QUERY_KEYS } from '@/features/calendar/lib/constants';
+import type { EventDto } from '@/features/calendar/model';
 import { useRangeEvents, useUpdateEvent } from '../useEvents';
 
 const makeWrapper = (queryClient: QueryClient) => {
@@ -55,5 +57,20 @@ describe('useUpdateEvent — unauthorized private access', () => {
     // The 404 body carries no body at all — nothing that could leak a
     // "this is private" message to the caller.
     expect((result.current.error as Error).message).not.toMatch(/private/i);
+  });
+
+  it('removes the stale event from every cached event list on a 404 instead of leaving it visible', async () => {
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
+    const queryClient = newQueryClient();
+    const cachedKey = [...QUERY_KEYS.events, 'range', 'x', 'y'];
+    queryClient.setQueryData<EventDto[]>(cachedKey, [
+      { id: 15, title: 'Therapy appointment' } as EventDto,
+    ]);
+    const { result } = renderHook(() => useUpdateEvent(), { wrapper: makeWrapper(queryClient) });
+
+    result.current.mutate({ id: 15, data: { title: 'Snooping' } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(queryClient.getQueryData<EventDto[]>(cachedKey)).toEqual([]);
   });
 });
