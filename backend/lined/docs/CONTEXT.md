@@ -7,6 +7,7 @@ documents for their domain.
 | Domain | Description | Folder path |
 |---|---|---|
 | Foundation | Backend-wide architecture, database migration ownership, API contract, and testing conventions. | `docs/foundation/` |
+| Engineering quality | Repository-local reuse, refactoring, pattern, Guardian, and quality-gate guidance. | `docs/engineering/` |
 | Governance | Contribution workflow and durable research-knowledge guidance. | `docs/governance/` |
 | Product authentication | Login, password reset, JWT/session security design, and SDD implementation tasks. | `docs/product/authentication/` |
 | Product users | Account profile, registration, and identity-record behavior. | `docs/product/users/` |
