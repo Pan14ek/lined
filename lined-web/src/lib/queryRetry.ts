@@ -1,7 +1,13 @@
 import { getErrorStatus } from '@/lib/apiClient';
 
 /** Terminal auth/authorization responses should not be blindly retried. */
-const AUTH_TERMINAL_STATUSES = new Set([401, 403, 404]);
+import { HTTP_STATUS } from '@/lib/httpStatus';
+
+const AUTH_TERMINAL_STATUSES = new Set([
+  HTTP_STATUS.UNAUTHORIZED,
+  HTTP_STATUS.FORBIDDEN,
+  HTTP_STATUS.NOT_FOUND,
+]);
 const DEFAULT_QUERY_RETRY_LIMIT = 3;
 
 /** Default `QueryClient` retry policy: skip 401/403/404, keep the default limit otherwise. */

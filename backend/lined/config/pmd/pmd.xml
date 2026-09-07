@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<ruleset name="Lined high-signal PMD rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.github.io/pmd-7.8.0/ruleset_xml_schema.xsd">
+    <description>
+        A deliberately narrow production ruleset. Existing debt is managed as
+        baseline work; these rules target avoidable duplication and unsafe
+        parameter mutation without enabling noisy design rules wholesale.
+    </description>
+
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+        <priority>3</priority>
+        <properties>
+            <property name="skipAnnotations" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UnnecessaryLocalBeforeReturn">
+        <priority>3</priority>
+    </rule>
+</ruleset>

@@ -21,6 +21,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-duplicate-imports': 'error',
+      'no-constant-binary-expression': 'error',
     },
   },
   {

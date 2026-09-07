@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import type { DragEvent } from 'react';
+import { useState, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LobbyDto } from '@/features/lobby/model';
 import type { TaskDto, TaskStatus } from '@/features/tasks/model';

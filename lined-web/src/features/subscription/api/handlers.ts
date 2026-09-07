@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_SUBSCRIPTIONS, MOCK_PLANS } from './mockData';
 import type { SubscriptionDto } from '@/features/subscription/model';
 
@@ -24,7 +25,7 @@ export const subscriptionHandlers = [
     await mockNetworkDelay();
     const userId = Number(params['userId']);
     const active = findActive(userId);
-    if (!active) return new HttpResponse(null, { status: 404 });
+    if (!active) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     return HttpResponse.json(active);
   }),
 
@@ -43,11 +44,11 @@ export const subscriptionHandlers = [
     if (findActive(body.userId)) {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'An active subscription already exists' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     const plan = MOCK_PLANS.find((p) => p.id === body.planId);
-    if (!plan) return new HttpResponse(null, { status: 404 });
+    if (!plan) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
 
     const now = new Date();
     const end = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
@@ -62,13 +63,13 @@ export const subscriptionHandlers = [
       createdAt: now.toISOString(),
     };
     mockSubscriptions = [created, ...mockSubscriptions];
-    return HttpResponse.json(created, { status: 201 });
+    return HttpResponse.json(created, { status: HTTP_STATUS.CREATED });
   }),
 
   http.post(`${BASE}/subscriptions/:userId/cancel-active`, ({ params }) => {
     const userId = Number(params['userId']);
     const active = findActive(userId);
-    if (!active) return new HttpResponse(null, { status: 404 });
+    if (!active) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
 
     const cancelled: SubscriptionDto = {
       ...active,

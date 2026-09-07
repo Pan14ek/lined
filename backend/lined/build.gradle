@@ -6,6 +6,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.spotbugs' version '6.0.18'
     id 'checkstyle'
+    id 'pmd'
     id 'jacoco'
     id "org.sonarqube" version "7.2.2.6593"
 }
@@ -38,6 +39,7 @@ sourceSets {
 configurations {
     integrationTestImplementation.extendsFrom testImplementation
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+    cpd
 }
 
 dependencies {
@@ -81,6 +83,9 @@ dependencies {
     integrationTestImplementation 'org.springframework.boot:spring-boot-testcontainers'
     integrationTestImplementation 'org.testcontainers:postgresql'
     integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    cpd 'net.sourceforge.pmd:pmd-cli:7.8.0'
+    cpd 'net.sourceforge.pmd:pmd-java:7.8.0'
 }
 
 tasks.named('test') {
@@ -126,6 +131,68 @@ checkstyle {
     ignoreFailures = false
 }
 
+pmd {
+    toolVersion = '7.8.0'
+    consoleOutput = true
+    ignoreFailures = false
+    ruleSetFiles = files("$rootDir/config/pmd/pmd.xml")
+    ruleSets = []
+}
+
+tasks.withType(Pmd).configureEach {
+    enabled = name == 'pmdMain'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+def cpdReport = layout.buildDirectory.file('reports/cpd/main.xml')
+
+tasks.register('cpdCheck', JavaExec) {
+    description = 'Checks authored Java production code for copy/paste duplication.'
+    group = 'verification'
+    ignoreExitValue = true
+    doFirst {
+        classpath = configurations.cpd
+        mainClass = 'net.sourceforge.pmd.cli.PmdCli'
+    }
+    inputs.files(sourceSets.main.allSource)
+    outputs.file(cpdReport)
+    doFirst {
+        def reportFile = cpdReport.get().asFile
+        reportFile.parentFile.mkdirs()
+        reportFile.delete()
+        standardOutput = reportFile.newOutputStream()
+    }
+    args(
+        'cpd',
+        '--minimum-tokens', '100',
+        '--ignore-identifiers',
+        '--no-fail-on-violation',
+        '--format', 'xml',
+        '--dir', sourceSets.main.java.srcDirs.first().absolutePath
+    )
+    doLast {
+        def reportFile = cpdReport.get().asFile
+        def exitCode = executionResult.get().exitValue
+        if (exitCode != 0 && exitCode != 4) {
+            throw new GradleException("CPD failed with exit code ${exitCode}; inspect the Gradle output.")
+        }
+        def currentCount = reportFile.getText('UTF-8').count('<duplication')
+        def baseline = file("$rootDir/config/cpd/cpd-baseline.properties").readLines()
+            .find { it.startsWith('duplicates=') }
+            .split('=', 2)[1] as Integer
+        if (currentCount > baseline) {
+            throw new GradleException("CPD baseline increased from ${baseline} to ${currentCount}; inspect ${reportFile}")
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('pmdMain'), tasks.named('cpdCheck')
+}
+
 jacocoTestReport {
     dependsOn test
     reports {
@@ -140,6 +207,8 @@ sonar {
         property "sonar.projectKey", "Pan14ek_lined"
         property "sonar.organization", "pan14ek"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+        property "sonar.newCode.referenceBranch", "main"
+        property "sonar.qualitygate.wait", "true"
     }
 }
 

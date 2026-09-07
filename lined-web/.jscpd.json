@@ -1,0 +1,17 @@
+{
+  "minLines": 8,
+  "minTokens": 80,
+  "format": ["typescript", "tsx"],
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "public/mockServiceWorker.js",
+    "src/components/ui/**",
+    "**/*.stories.tsx"
+  ],
+  "reporters": ["console", "json", "html"],
+  "output": "build/reports/jscpd",
+  "threshold": 100
+}

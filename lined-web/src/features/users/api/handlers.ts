@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_USERS } from './mockData';
 import { MOCK_LOBBIES } from '@/features/lobby/api/mockData';
 import { getMockUserFromRequest } from '@/features/auth/api/mockIdentity';
@@ -13,7 +14,7 @@ export const userHandlers = [
   http.get(`${BASE}/users/me`, async ({ request }) => {
     await mockNetworkDelay();
     const user = getMockUserFromRequest(request);
-    if (!user) return new HttpResponse(null, { status: 401 });
+    if (!user) return new HttpResponse(null, { status: HTTP_STATUS.UNAUTHORIZED });
     return HttpResponse.json(user);
   }),
 
@@ -40,7 +41,7 @@ export const userHandlers = [
   http.get(`${BASE}/users/:id`, async ({ params, request }) => {
     await mockNetworkDelay();
     const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
-    if (!user) return new HttpResponse(null, { status: 404 });
+    if (!user) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const requester = getMockUserFromRequest(request);
     if (requester?.id === user.id) return HttpResponse.json(user);
     return HttpResponse.json(toPublicDto(user));
@@ -54,7 +55,7 @@ export const userHandlers = [
     if (taken) {
       return HttpResponse.json(
         { code: 'EMAIL_EXISTS', message: 'Username or email already registered' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     return HttpResponse.json(
@@ -66,18 +67,18 @@ export const userHandlers = [
         activePlan: null,
         activeUntil: null,
       },
-      { status: 201 },
+      { status: HTTP_STATUS.CREATED },
     );
   }),
 
   http.patch(`${BASE}/users/:id`, async ({ params, request }) => {
     const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
-    if (!user) return new HttpResponse(null, { status: 404 });
+    if (!user) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const body = (await request.json()) as Record<string, unknown>;
     if (typeof body['username'] === 'string' && !body['username'].trim()) {
       return HttpResponse.json(
         { code: 'VALIDATION_ERROR', message: 'username must not be blank' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     const taken = MOCK_USERS.some(
@@ -88,7 +89,7 @@ export const userHandlers = [
     if (taken) {
       return HttpResponse.json(
         { code: 'EMAIL_EXISTS', message: 'Username or email already registered' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     return HttpResponse.json({ ...user, ...body });
@@ -96,14 +97,14 @@ export const userHandlers = [
 
   http.delete(`${BASE}/users/:id`, ({ params }) => {
     const user = MOCK_USERS.find((u) => u.id === Number(params['id']));
-    if (!user) return new HttpResponse(null, { status: 404 });
+    if (!user) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const ownsLobby = MOCK_LOBBIES.some((l) => l.ownerId === user.id);
     if (ownsLobby) {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'Account owns one or more lobbies' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
-    return new HttpResponse(null, { status: 204 });
+    return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
   }),
 ];
