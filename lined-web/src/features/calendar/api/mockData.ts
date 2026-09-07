@@ -1,7 +1,9 @@
 import type { EventDto } from '@/features/calendar/model';
 
 const today = new Date();
-const todayStr = today.toISOString().slice(0, 10);
+const todayStr = [today.getFullYear(), today.getMonth() + 1, today.getDate()]
+  .map((part, index) => (index === 0 ? String(part) : String(part).padStart(2, '0')))
+  .join('-');
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 const tomorrowStr = tomorrow.toISOString().slice(0, 10);
