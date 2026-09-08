@@ -9,7 +9,7 @@ sub-project owns its implementation-specific patterns.
 
 ## Navigation
 
-- [GoF patterns](design-patterns/gof/) — 23 patterns with applicability and anti-overengineering guidance.
+- [GoF patterns](design-patterns/gof/README.md) — 23 patterns with applicability and anti-overengineering guidance.
 - [Lined Pattern Registry](registry/LINED_PATTERN_REGISTRY.md) — audited owners and consumers across backend and web.
 - [Backend engineering handbook](../../backend/lined/docs/engineering/README.md) — Spring/Lined guidance and backend patterns.
 - [Web engineering handbook](../../lined-web/docs/engineering/README.md) — React/TypeScript guidance and web patterns.

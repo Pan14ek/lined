@@ -7,7 +7,7 @@ their domain-specific documentation under `backend/lined/docs/` and
 ## Shared engineering
 
 - [Shared engineering handbook](engineering/README.md)
-- [GoF patterns](engineering/design-patterns/gof/)
+- [GoF patterns](engineering/design-patterns/gof/README.md)
 - [Lined Pattern Registry](engineering/registry/LINED_PATTERN_REGISTRY.md)
 
 ## Cross-project design records

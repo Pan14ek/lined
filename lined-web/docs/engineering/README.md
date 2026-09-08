@@ -9,7 +9,7 @@ Cross-project vocabulary lives in the [shared Lined engineering handbook](../../
 ## Navigation
 
 - [Web design patterns](design-patterns/) — patterns consistent with the feature-first React application.
-- [Shared GoF patterns](../../../docs/engineering/design-patterns/gof/) — cross-project design vocabulary.
+- [Shared GoF patterns](../../../docs/engineering/design-patterns/gof/README.md) — cross-project design vocabulary.
 - [Shared Lined Pattern Registry](../../../docs/engineering/registry/LINED_PATTERN_REGISTRY.md) — actual backend and web owners and consumers.
 - [UI component context](../../src/components/CONTEXT.md) — public Design System and patterns ownership.
 - [Web architecture](../../docs/ARCHITECTURE.md) — feature-first structure and dependency direction.

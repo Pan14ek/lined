@@ -17,7 +17,7 @@ require_count() {
   local directory="$2"
   local expected="$3"
   local actual
-  actual="$(find "${base}/${directory}" -type f -name '*.md' | wc -l | tr -d ' ')"
+  actual="$(find "${base}/${directory}" -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')"
   if [[ "${actual}" != "${expected}" ]]; then
     echo "Expected ${expected} Markdown files in ${base}/${directory}; found ${actual}." >&2
     exit 1

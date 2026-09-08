@@ -22,7 +22,7 @@ Before creating a backend abstraction, service, helper, mapper, constant, type, 
 - [Refactorings](refactoring/) — individually retrievable transformations.
 - [Backend patterns](design-patterns/backend/) — patterns relevant to Spring/Lined.
 - [Decision guides](decision-guides/) — practical choices before abstraction.
-- [Shared GoF patterns](../../../../docs/engineering/design-patterns/gof/) — cross-project vocabulary with applicability and anti-overengineering guidance.
+- [Shared GoF patterns](../../../../docs/engineering/design-patterns/gof/README.md) — cross-project vocabulary with applicability and anti-overengineering guidance.
 - [Shared Lined Pattern Registry](../../../../docs/engineering/registry/LINED_PATTERN_REGISTRY.md) — actual backend and web owners and consumers.
 - [Web patterns](../../../../lined-web/docs/engineering/design-patterns/) — patterns consistent with feature-first React.
 
