@@ -10,6 +10,7 @@ to choose the domain, then open the document needed for the change.
 - [Database migration system design](foundation/database-migration-system-design.md)
 - [API reference](foundation/api.md)
 - [Testing guide](foundation/testing.md)
+- [Backend engineering quality handbook](engineering/README.md), [shared root engineering handbook](../../../docs/engineering/README.md), and [web engineering handbook](../../../lined-web/docs/engineering/README.md)
 - [BOLA/IDOR authorization inventory](foundation/bola-idor-authorization-inventory.md)
 - [BOLA/IDOR security audit and hardening design](foundation/bola-idor-security-audit-system-design.md)
 

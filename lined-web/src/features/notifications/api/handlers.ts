@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_NOTIFICATIONS } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -58,7 +59,7 @@ export const notificationHandlers = [
 
   http.patch(`${BASE}/notifications/:id/read`, ({ params }) => {
     const notification = MOCK_NOTIFICATIONS.find((n) => n.id === Number(params['id']));
-    if (!notification) return new HttpResponse(null, { status: 404 });
+    if (!notification) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     return HttpResponse.json({ ...notification, readAt: new Date().toISOString() });
   }),
 ];

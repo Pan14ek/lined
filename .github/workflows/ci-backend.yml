@@ -54,6 +54,9 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
+      - name: Validate engineering handbook structure
+        run: ./scripts/validate-engineering-docs.sh
+
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
@@ -70,6 +73,12 @@ jobs:
 
       - name: Run static checks (Checkstyle + SpotBugs + Tests)
         run: ./gradlew check
+
+      - name: Run PMD production analysis
+        run: ./gradlew pmdMain
+
+      - name: Run CPD production duplication check
+        run: ./gradlew cpdCheck
 
       - name: Run PostgreSQL API integration tests
         run: ./gradlew integrationTest
@@ -89,6 +98,10 @@ jobs:
         working-directory: lined-web
         run: npm run typecheck
 
+      - name: Check web duplication baseline
+        working-directory: lined-web
+        run: npm run quality:duplication
+
       - name: Test web application
         working-directory: lined-web
         run: npm run test:run
@@ -100,7 +113,15 @@ jobs:
       - name: Analyze with SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonarqube --info -Dsonar.login=$SONAR_TOKEN
+        run: ./gradlew sonarqube --info -Dsonar.login=$SONAR_TOKEN -Dsonar.qualitygate.wait=true
+
+      - name: Verify Sonar new-code duplication
+        if: github.event_name == 'pull_request'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: ./scripts/verify-sonar-new-code-duplication.sh
 
       - name: Upload reports (JaCoCo + Checkstyle + SpotBugs)
         if: always()
@@ -110,8 +131,11 @@ jobs:
           path: |
             backend/lined/build/reports/jacoco/**
             backend/lined/build/reports/checkstyle/**
+            backend/lined/build/reports/pmd/**
+            backend/lined/build/reports/cpd/**
             backend/lined/build/reports/spotbugs/**
             backend/lined/build/jacoco/*.exec
+            lined-web/build/reports/jscpd/**
           if-no-files-found: warn
           retention-days: 14
 

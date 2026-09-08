@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_EVENTS } from './mockData';
 import type { EventDto } from '@/features/calendar/model';
 import { getMockUserFromRequest } from '@/features/auth/api/mockIdentity';
@@ -50,13 +51,13 @@ export const eventHandlers = [
     if (typeof body['title'] !== 'string' || body['title'].trim() === '') {
       return HttpResponse.json(
         { code: 'VALIDATION_ERROR', message: 'title must not be blank' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     if (body['visibility'] === 'PRIVATE' && body['notifyMembers'] === true) {
       return HttpResponse.json(
         { code: 'private_item.notification_invalid', message: 'Private items cannot notify other lobby members' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
@@ -68,17 +69,19 @@ export const eventHandlers = [
         ownerId: requesterId ? Number(requesterId) : 1,
         createdAt: new Date().toISOString(),
       },
-      { status: 201 },
+      { status: HTTP_STATUS.CREATED },
     );
   }),
 
   http.patch(`${BASE}/calendar/events/:id`, async ({ params, request }) => {
     const event = MOCK_EVENTS.find((e) => e.id === Number(params['id']));
     const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
-    if (!event) return new HttpResponse(null, { status: 404 });
+    if (!event) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const body = (await request.json()) as Record<string, unknown>;
     if (isUnauthorizedVisibilityChange(event, requesterId, body['visibility'])) {
-      return new HttpResponse(null, { status: event.visibility === 'PRIVATE' ? 404 : 403 });
+      return new HttpResponse(null, {
+        status: event.visibility === 'PRIVATE' ? HTTP_STATUS.NOT_FOUND : HTTP_STATUS.FORBIDDEN,
+      });
     }
     if (typeof body['location'] === 'string' && body['location'].trim() === '') {
       body['location'] = null;
@@ -90,9 +93,9 @@ export const eventHandlers = [
     const event = MOCK_EVENTS.find((e) => e.id === Number(params['id']));
     const requesterId = String(getMockUserFromRequest(request)?.id ?? '');
     if (!event || isUnauthorizedVisibilityChange(event, requesterId)) {
-      return new HttpResponse(null, { status: 404 });
+      return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     }
-    return new HttpResponse(null, { status: 204 });
+    return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
   }),
 
   http.get(`${BASE}/calendar/conflicts`, async () => {

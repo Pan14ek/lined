@@ -1,5 +1,6 @@
 import ky, { HTTPError } from 'ky';
 import { useAuthStore } from '@/store/auth';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import type { LoginResponseDto } from '@/features/auth/model';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -153,7 +154,7 @@ export const api = ky.create({
       const context = options.context as AuthContext;
       if (
         context.skipAuthHooks ||
-        response.status !== 401 ||
+        response.status !== HTTP_STATUS.UNAUTHORIZED ||
         state.retryCount > 0 ||
         isExcludedFromRefresh(request.url)
       ) {

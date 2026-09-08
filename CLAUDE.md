@@ -63,7 +63,8 @@ npm run build
 ## Key Conventions (Backend)
 
 - DTO types: `{Domain}CreateDto` / `{Domain}UpdateDto` / `{Domain}Dto` (Java records)
-- Auth MVP: `X-User-Id: <Long>` header on every endpoint that needs the caller
+- Auth: `Authorization: Bearer <JWT>` with caller resolution through the backend
+  `CurrentUserProvider`; `X-User-Id` is not an identity source
 - Timestamps: `OffsetDateTime` (UTC) — never `LocalDateTime`
 - Enums in DB: `EnumType.STRING` — never `ORDINAL`
 - Associations: always `FetchType.LAZY`
@@ -88,6 +89,12 @@ A fitness score (−1 to +1) is computed and stored in Azure Cosmos DB.
 ## Skills
 
 Custom skills live in `.claude/skills/` and are invokable as slash commands.
+
+For backend/web quality work, read `docs/engineering/README.md` and the owning
+sub-project handbook, search the shared Pattern Registry before creating
+abstractions, classify decisions as `REUSE`, `EXTEND`, `EXTRACT`, or justified
+`CREATE`, and run the read-only Refactoring Guardian plus the applicable
+PMD/CPD/ESLint/jscpd gates.
 
 | Skill | Command | When to use |
 |---|---|---|

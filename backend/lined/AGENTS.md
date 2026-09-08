@@ -140,6 +140,20 @@ Use `./gradlew sonarqube` only when `SONAR_TOKEN` is configured.
 - For Kubernetes/runtime work, preserve existing REST behavior and measure
   deployment/runtime differences rather than changing the product domain.
 
+## Engineering quality workflow
+
+Before creating or moving a backend abstraction, read the shared handbook at
+`../../docs/engineering/README.md`, this backend handbook at
+`docs/engineering/README.md`, and the affected feature context. Search the
+shared Pattern Registry first and classify
+the decision as `REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`. Prefer the
+smallest local owner, protect behavior with tests, run the read-only Refactoring
+Guardian, and run `./gradlew check`, `./gradlew integrationTest`,
+`./gradlew jacocoTestReport`, `./gradlew pmdMain`, and `./gradlew cpdCheck`.
+Shared GoF guidance and the Pattern Registry live in `../../docs/engineering/`;
+backend-specific patterns live in `docs/engineering/design-patterns/backend/`.
+Do not copy either catalog into agent instructions.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 
 ## Beads Issue Tracker

@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { mockNetworkDelay } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_LOBBIES, MOCK_FREE_SLOT, MOCK_LOBBY_INVITES } from './mockData';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
@@ -13,7 +14,7 @@ export const lobbyHandlers = [
   http.get(`${BASE}/lobbies/:id`, async ({ params }) => {
     await mockNetworkDelay();
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
-    if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (!lobby) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     return HttpResponse.json(lobby);
   }),
 
@@ -23,7 +24,7 @@ export const lobbyHandlers = [
     if (!name.trim()) {
       return HttpResponse.json(
         { code: 'VALIDATION_ERROR', message: 'name must not be blank' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     return HttpResponse.json(
@@ -33,18 +34,18 @@ export const lobbyHandlers = [
         ownerId: 1,
         memberIds: [1],
       },
-      { status: 201 },
+      { status: HTTP_STATUS.CREATED },
     );
   }),
 
   http.patch(`${BASE}/lobbies/:id`, async ({ params, request }) => {
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
-    if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (!lobby) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const body = (await request.json()) as Record<string, unknown>;
     if (body['ownerId'] != null && !lobby.memberIds.includes(Number(body['ownerId']))) {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'ownerId must be an existing lobby member' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     return HttpResponse.json({ ...lobby, ...body });
@@ -53,14 +54,14 @@ export const lobbyHandlers = [
   http.get(`${BASE}/lobbies/:id/free-slots`, async ({ params, request }) => {
     await mockNetworkDelay();
     const lobby = MOCK_LOBBIES.find((l) => l.id === Number(params['id']));
-    if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (!lobby) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     const url = new URL(request.url);
     const from = url.searchParams.get('from');
     const to = url.searchParams.get('to');
     if (!from || !to) {
       return HttpResponse.json(
         { code: 'VALIDATION_ERROR', message: 'from and to must define a non-empty window' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     const slots =
@@ -72,11 +73,11 @@ export const lobbyHandlers = [
     const lobby = MOCK_LOBBIES.find(
       (l) => l.id === Number(params['lobbyId']),
     );
-    if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (!lobby) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     if (lobby.ownerId === Number(params['userId'])) {
       return HttpResponse.json(
         { code: 'BAD_REQUEST', message: 'Owner cannot be removed from lobby' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
     return HttpResponse.json({
@@ -89,14 +90,14 @@ export const lobbyHandlers = [
 
   http.delete(`${BASE}/lobbies/:id`, ({ params }) => {
     const exists = MOCK_LOBBIES.some((l) => l.id === Number(params['id']));
-    if (!exists) return new HttpResponse(null, { status: 404 });
-    return new HttpResponse(null, { status: 204 });
+    if (!exists) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
+    return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
   }),
 
   http.post(`${BASE}/lobbies/:lobbyId/invites`, ({ params, request }) => {
     const lobbyId = Number(params['lobbyId']);
     const lobby = MOCK_LOBBIES.find((l) => l.id === lobbyId);
-    if (!lobby) return new HttpResponse(null, { status: 404 });
+    if (!lobby) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
 
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
@@ -106,7 +107,7 @@ export const lobbyHandlers = [
     if (lobby.memberIds.includes(inviteeId)) {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'User is already a lobby member' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     const duplicate = MOCK_LOBBY_INVITES.some(
@@ -115,13 +116,13 @@ export const lobbyHandlers = [
     if (duplicate) {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'A pending invite already exists for this user' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     if (!userId && !userEmail) {
       return HttpResponse.json(
         { code: 'VALIDATION_ERROR', message: 'Supply exactly one of userId or userEmail' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
@@ -137,7 +138,7 @@ export const lobbyHandlers = [
         createdAt: now,
         updatedAt: now,
       },
-      { status: 201 },
+      { status: HTTP_STATUS.CREATED },
     );
   }),
 
@@ -151,14 +152,14 @@ export const lobbyHandlers = [
 
   http.post(`${BASE}/lobbies/:lobbyId/invites/:inviteId/resend`, ({ params }) => {
     const invite = MOCK_LOBBY_INVITES.find((i) => i.id === Number(params['inviteId']));
-    if (!invite) return new HttpResponse(null, { status: 404 });
+    if (!invite) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     return HttpResponse.json({ ...invite, sentAt: new Date().toISOString() });
   }),
 
   http.delete(`${BASE}/lobbies/:lobbyId/invites/:inviteId`, ({ params }) => {
     const exists = MOCK_LOBBY_INVITES.some((i) => i.id === Number(params['inviteId']));
-    if (!exists) return new HttpResponse(null, { status: 404 });
-    return new HttpResponse(null, { status: 204 });
+    if (!exists) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
+    return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
   }),
 
   http.get(`${BASE}/lobby-invites/mine`, async () => {
@@ -168,11 +169,11 @@ export const lobbyHandlers = [
 
   http.post(`${BASE}/lobby-invites/:inviteId/accept`, ({ params }) => {
     const invite = MOCK_LOBBY_INVITES.find((i) => i.id === Number(params['inviteId']));
-    if (!invite) return new HttpResponse(null, { status: 404 });
+    if (!invite) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     if (invite.status !== 'PENDING') {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'Invite is no longer pending' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     return HttpResponse.json({ ...invite, status: 'ACCEPTED' });
@@ -180,11 +181,11 @@ export const lobbyHandlers = [
 
   http.post(`${BASE}/lobby-invites/:inviteId/decline`, ({ params }) => {
     const invite = MOCK_LOBBY_INVITES.find((i) => i.id === Number(params['inviteId']));
-    if (!invite) return new HttpResponse(null, { status: 404 });
+    if (!invite) return new HttpResponse(null, { status: HTTP_STATUS.NOT_FOUND });
     if (invite.status !== 'PENDING') {
       return HttpResponse.json(
         { code: 'CONFLICT', message: 'Invite is no longer pending' },
-        { status: 409 },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
     return HttpResponse.json({ ...invite, status: 'DECLINED' });

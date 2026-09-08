@@ -157,9 +157,21 @@ Full detail and rationale: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and
 | Directory layout & naming | `docs/PROJECT_STRUCTURE.md` |
 | Testing conventions | `docs/TESTING.md` |
 | Design System / patterns catalog | `src/components/design-system/CONTEXT.md`, `src/components/patterns/CONTEXT.md`; executable catalog via `npm run storybook` |
+| Web engineering patterns | `docs/engineering/README.md` and `docs/engineering/design-patterns/` |
 | Task plan (work queue) | `docs/UI_TASKS.md` + `docs/tasks/UI-NN-*.md` |
 | Mockups (design source of truth) | `../mockups/index.html` (15 screens; see `../mockups/AGENTS.md`) |
 | Mockup → route/component map | `docs/mockups.md` |
 | Backend API and DTOs | `backend/lined/` controllers/DTOs; endpoint summary in `docs/UI_TASKS.md` |
 | Backend gap backlog | `../backend/lined/docs/experiment-tasks.md` |
 | Full web conventions | `../AGENTS.md`, section "Web — Vite + React" |
+
+## Engineering quality workflow
+
+For new hooks, components, API helpers, abstractions, or refactors, read
+`docs/engineering/README.md`, `../docs/engineering/README.md`, and the affected
+feature context. Search the shared Pattern Registry before creating anything
+and classify the decision as `REUSE`, `EXTEND`, `EXTRACT`, or justified
+`CREATE`. Keep one-consumer code feature-local, protect behavior with tests,
+run the read-only Refactoring Guardian, then run `npm run lint`,
+`npm run typecheck`,
+`npm run quality:duplication`, `npm run test:run`, and `npm run build`.

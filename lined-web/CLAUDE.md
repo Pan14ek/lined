@@ -58,3 +58,10 @@ Run /simplify before presenting code to the user.
 7. Every component/util file has a test file with positive + negative
    coverage — see `docs/TESTING.md`; public Design System/patterns
    components also need a `*.stories.tsx`
+
+## Engineering quality
+
+Read `docs/engineering/` and `../docs/engineering/` plus the relevant feature
+context before adding abstractions. Search the shared Pattern Registry, classify decisions as
+`REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`, and run the read-only
+Refactoring Guardian plus lint, typecheck, duplication, test, and build gates.

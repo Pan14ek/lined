@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { MOCK_USERS } from '@/features/users/api/mockData';
 import { getMockUserFromRequest } from './mockIdentity';
 
@@ -14,7 +15,7 @@ export const authHandlers = [
     if (!user || body['password'] === '') {
       return HttpResponse.json(
         { title: 'Unauthorized', detail: 'Invalid email, username, or password' },
-        { status: 401 },
+        { status: HTTP_STATUS.UNAUTHORIZED },
       );
     }
     return HttpResponse.json({
@@ -28,7 +29,7 @@ export const authHandlers = [
 
   http.post(`${BASE}/auth/refresh`, ({ request }) => {
     const user = getMockUserFromRequest(request);
-    if (!user) return new HttpResponse(null, { status: 401 });
+    if (!user) return new HttpResponse(null, { status: HTTP_STATUS.UNAUTHORIZED });
     return HttpResponse.json({
       accessToken: `mock-token-${user.id}-refreshed`,
       tokenType: 'Bearer',
@@ -36,18 +37,18 @@ export const authHandlers = [
     });
   }),
 
-  http.post(`${BASE}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
+  http.post(`${BASE}/auth/logout`, () => new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT })),
 
-  http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, { status: 202 })),
+  http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, { status: HTTP_STATUS.ACCEPTED })),
 
   http.post(`${BASE}/auth/password-resets`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     if (body['token'] !== 'valid-token') {
       return HttpResponse.json(
         { title: 'Bad Request', detail: 'Invalid or expired reset token' },
-        { status: 400 },
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
-    return new HttpResponse(null, { status: 204 });
+    return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
   }),
 ];
