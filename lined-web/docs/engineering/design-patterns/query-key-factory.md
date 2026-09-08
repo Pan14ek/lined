@@ -1,6 +1,6 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
 # Query-Key Factory
 

@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# Compound Component
+# State Colocation
 
 ## Purpose
-Coordinates related child components through an explicit parent-owned interaction model.
+Keeps state at the narrowest owner that needs it.
 
 ## Applicability
-Use for genuinely coupled UI parts such as a dialog with structured slots or tabs.
+Use local state for local interaction, feature store for shared UI state, Query for server state.
 
 ## Ownership
-Owner: public UI when domain-neutral; feature layer when domain-specific.
+Owner: smallest stable scope that preserves behavior.
 
 ## Anti-patterns
-Do not introduce context and many slots for a simple component.
+Do not lift state only because it might be useful later.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

@@ -1,13 +1,13 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Engineering Handbook Router
-# Lined Engineering Quality Handbook
+> Applies to: Java 21 / Spring Boot 3.5.x
+> Category: Backend Engineering Handbook Router
+# Lined Backend Engineering Quality Handbook
 
-This is the canonical repository-local source for reuse, refactoring, ownership, patterns, and quality-gate decisions. External websites are not required.
+This is the backend-owned source for Spring/Lined reuse, refactoring, and quality-gate decisions. Cross-project guidance is owned by the [shared Lined engineering handbook](../../../../docs/engineering/README.md); web-specific pattern guidance is owned by the [lined-web engineering handbook](../../../../lined-web/docs/engineering/README.md).
 
 ## Mandatory workflow
 
-Before creating a component, hook, service, helper, mapper, constant, type, interface, policy, adapter, or query-key helper:
+Before creating a backend abstraction, service, helper, mapper, constant, type, interface, policy, adapter, or query helper:
 
 1. Load architecture and feature/domain context.
 2. Search the codebase and the Pattern Registry.
@@ -20,11 +20,11 @@ Before creating a component, hook, service, helper, mapper, constant, type, inte
 - [Principles](principles/) — semantic DRY, locality, ownership, simplicity, and safe change.
 - [Code smells](code-smells/) — signals to investigate, not automatic defects.
 - [Refactorings](refactoring/) — individually retrievable transformations.
-- [GoF patterns](design-patterns/gof/) — 23 patterns with applicability and anti-overengineering guidance.
 - [Backend patterns](design-patterns/backend/) — patterns relevant to Spring/Lined.
-- [Frontend patterns](design-patterns/frontend/) — patterns consistent with feature-first React.
 - [Decision guides](decision-guides/) — practical choices before abstraction.
-- [Lined Pattern Registry](registry/LINED_PATTERN_REGISTRY.md) — actual repository owners and consumers.
+- [Shared GoF patterns](../../../../docs/engineering/design-patterns/gof/) — cross-project vocabulary with applicability and anti-overengineering guidance.
+- [Shared Lined Pattern Registry](../../../../docs/engineering/registry/LINED_PATTERN_REGISTRY.md) — actual backend and web owners and consumers.
+- [Web patterns](../../../../lined-web/docs/engineering/design-patterns/) — patterns consistent with feature-first React.
 
 ## Common problem lookup
 
@@ -33,7 +33,7 @@ Before creating a component, hook, service, helper, mapper, constant, type, inte
 | Repeated implementation | code-smells/duplicate-code.md and decision-guides/reuse-vs-duplication.md |
 | Repeated domain literal | code-smells/primitive-obsession.md and decision-guides/constants-and-magic-values.md |
 | Large conditional | code-smells/switch-statements.md and refactoring/simplifying-conditionals/ |
-| New provider behavior | design-patterns/backend/provider-adapter.md and GoF Adapter |
+| New provider behavior | design-patterns/backend/provider-adapter.md and [shared GoF Adapter](../../../../docs/engineering/design-patterns/gof/structural/adapter.md) |
 | Unsure where helper belongs | decision-guides/feature-local-vs-shared.md |
 | Considering an interface | decision-guides/when-to-create-an-interface.md |
 | Risky refactor | decision-guides/test-protected-refactoring.md |

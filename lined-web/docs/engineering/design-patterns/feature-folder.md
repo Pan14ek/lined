@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# Presentational Component
+# Feature Folder
 
 ## Purpose
-Renders props without owning domain fetching or policy.
+Groups model, API, hooks, utilities, pages, and UI for one cohesive domain.
 
 ## Applicability
-Use public design-system/pattern components for domain-agnostic presentation.
+Use the existing src/features/{feature} structure to keep change local and discoverable.
 
 ## Ownership
-Owner: shared UI when generic; domain wrapper when mapping feature data.
+Owner: feature; cross-feature imports are allowed when dependency ownership is real.
 
 ## Anti-patterns
-Do not put API calls in a presentational component.
+Do not create a feature folder for generic transport or presentation infrastructure.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

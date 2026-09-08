@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# Feature Folder
+# API Adapter Switch
 
 ## Purpose
-Groups model, API, hooks, utilities, pages, and UI for one cohesive domain.
+Keeps production and development API implementations behind one feature-owned function contract.
 
 ## Applicability
-Use the existing src/features/{feature} structure to keep change local and discoverable.
+Use the existing api/prod.ts, api/dev.ts, and api/index.ts convention.
 
 ## Ownership
-Owner: feature; cross-feature imports are allowed when dependency ownership is real.
+Owner: feature API; shared apiClient owns transport mechanics.
 
 ## Anti-patterns
-Do not create a feature folder for generic transport or presentation infrastructure.
+Do not make components choose between mock and production implementations.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

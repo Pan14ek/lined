@@ -561,12 +561,13 @@ The analyzer categorises experiments by branch prefix:
 ## Engineering quality workflow
 
 For backend or web changes that add abstractions, reuse logic, or refactor
-behavior, route through `backend/lined/docs/engineering/README.md` and the
-relevant feature/domain context. Search before create and classify decisions as
-`REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`; use the read-only
-Refactoring Guardian and applicable mechanical gates. Canonical theory stays
-under `backend/lined/docs/engineering/` rather than being copied into agent
-instructions.
+behavior, route through `docs/engineering/README.md`, the owning sub-project
+handbook, and the relevant feature/domain context. Search before create and
+classify decisions as `REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`; use
+the read-only Refactoring Guardian and applicable mechanical gates. Shared GoF
+vocabulary and the cross-surface registry stay under `docs/engineering/`, backend patterns under
+`backend/lined/docs/engineering/`, and web patterns under
+`lined-web/docs/engineering/` rather than being copied into agent instructions.
 
 ### CI/CD Pipeline
 

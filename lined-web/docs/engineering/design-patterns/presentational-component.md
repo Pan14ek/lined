@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# Optimistic Update
+# Presentational Component
 
 ## Purpose
-Updates cached UI before a write completes, with snapshot and rollback behavior.
+Renders props without owning domain fetching or policy.
 
 ## Applicability
-Use when latency matters and the mutation has a clear reversible cache representation.
+Use public design-system/pattern components for domain-agnostic presentation.
 
 ## Ownership
-Owner: feature hook; error semantics must distinguish missing resources from transient failure.
+Owner: shared UI when generic; domain wrapper when mapping feature data.
 
 ## Anti-patterns
-Do not use it when rollback is ambiguous or side effects are non-local.
+Do not put API calls in a presentational component.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

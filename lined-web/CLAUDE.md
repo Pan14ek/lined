@@ -61,7 +61,7 @@ Run /simplify before presenting code to the user.
 
 ## Engineering quality
 
-Read `../backend/lined/docs/engineering/` and the relevant feature context
-before adding abstractions. Search the Pattern Registry, classify decisions as
+Read `docs/engineering/` and `../docs/engineering/` plus the relevant feature
+context before adding abstractions. Search the shared Pattern Registry, classify decisions as
 `REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`, and run the read-only
 Refactoring Guardian plus lint, typecheck, duplication, test, and build gates.

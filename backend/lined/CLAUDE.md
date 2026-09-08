@@ -75,8 +75,10 @@ _Add your project-specific conventions here_
 
 ## Engineering quality
 
-Before adding an abstraction or duplicating logic, read `docs/engineering/`
-and the affected feature context, search `registry/LINED_PATTERN_REGISTRY.md`,
+Before adding an abstraction or duplicating logic, read `../../docs/engineering/`
+and the affected feature context, search
+`../../docs/engineering/registry/LINED_PATTERN_REGISTRY.md`,
 and classify the decision as `REUSE`, `EXTEND`, `EXTRACT`, or justified
 `CREATE`. Run the read-only Refactoring Guardian and the documented PMD/CPD
-gates; keep canonical theory in `docs/engineering/`.
+gates; keep shared theory in `../../docs/engineering/` and backend-specific
+guidance in `docs/engineering/`.

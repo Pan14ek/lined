@@ -26,7 +26,7 @@ At every branch, test externally meaningful behavior and record why the next bra
 
 ## What to inspect
 
-Search the owning feature/domain, shared infrastructure, tests, context documents, and LINED_PATTERN_REGISTRY.md. Compare lifecycle, invariants, errors, data shape, and change reasons.
+Search the owning feature/domain, shared infrastructure, tests, context documents, and the [shared Lined Pattern Registry](../../../../docs/engineering/registry/LINED_PATTERN_REGISTRY.md). Compare lifecycle, invariants, errors, data shape, and change reasons.
 
 ## Stop conditions
 

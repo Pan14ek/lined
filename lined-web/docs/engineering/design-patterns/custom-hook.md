@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# API Adapter Switch
+# Custom Hook
 
 ## Purpose
-Keeps production and development API implementations behind one feature-owned function contract.
+Encapsulates reusable React lifecycle, query, or UI behavior behind a focused hook.
 
 ## Applicability
-Use the existing api/prod.ts, api/dev.ts, and api/index.ts convention.
+Use for behavior with a stable input/output contract, especially TanStack Query flows.
 
 ## Ownership
-Owner: feature API; shared apiClient owns transport mechanics.
+Feature owns domain hooks; src/hooks owns domain-neutral hooks.
 
 ## Anti-patterns
-Do not make components choose between mock and production implementations.
+Do not wrap one obvious expression or hide a page's important business flow.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

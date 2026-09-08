@@ -1,20 +1,20 @@
 > Status: Active
-> Applies to: Java 21 / Spring Boot 3.5.x / React 19 / TypeScript 6
-> Category: Frontend Application Pattern
+> Applies to: React 19 / TypeScript 6
+> Category: Web Application Pattern
 
-# Custom Hook
+# Optimistic Update
 
 ## Purpose
-Encapsulates reusable React lifecycle, query, or UI behavior behind a focused hook.
+Updates cached UI before a write completes, with snapshot and rollback behavior.
 
 ## Applicability
-Use for behavior with a stable input/output contract, especially TanStack Query flows.
+Use when latency matters and the mutation has a clear reversible cache representation.
 
 ## Ownership
-Feature owns domain hooks; src/hooks owns domain-neutral hooks.
+Owner: feature hook; error semantics must distinguish missing resources from transient failure.
 
 ## Anti-patterns
-Do not wrap one obvious expression or hide a page's important business flow.
+Do not use it when rollback is ambiguous or side effects are non-local.
 
 ## Relationship to Lined web architecture
 Feature-first ownership, TanStack Query for server state, Zustand for UI state, public design-system wrappers, MSW for network tests, and the prod/dev API switch remain the existing model.

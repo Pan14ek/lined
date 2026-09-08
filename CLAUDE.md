@@ -90,10 +90,11 @@ A fitness score (−1 to +1) is computed and stored in Azure Cosmos DB.
 
 Custom skills live in `.claude/skills/` and are invokable as slash commands.
 
-For backend/web quality work, read `backend/lined/docs/engineering/README.md`,
-search the Pattern Registry before creating abstractions, classify decisions as
-`REUSE`, `EXTEND`, `EXTRACT`, or justified `CREATE`, and run the read-only
-Refactoring Guardian plus the applicable PMD/CPD/ESLint/jscpd gates.
+For backend/web quality work, read `docs/engineering/README.md` and the owning
+sub-project handbook, search the shared Pattern Registry before creating
+abstractions, classify decisions as `REUSE`, `EXTEND`, `EXTRACT`, or justified
+`CREATE`, and run the read-only Refactoring Guardian plus the applicable
+PMD/CPD/ESLint/jscpd gates.
 
 | Skill | Command | When to use |
 |---|---|---|
