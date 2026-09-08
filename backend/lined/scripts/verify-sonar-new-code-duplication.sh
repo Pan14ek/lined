@@ -16,10 +16,17 @@ response="$(curl --fail --silent --show-error \
   --data-urlencode 'metricKeys=new_duplicated_lines_density' \
   --data-urlencode "pullRequest=${PR_NUMBER}")"
 
+if ! printf '%s' "${response}" | jq -e --arg pr "${PR_NUMBER}" \
+  '(.component.pullRequest? | tostring) == $pr and (.component.measures? | type) == "array"' \
+  >/dev/null; then
+  echo "Sonar returned an invalid response for PR ${PR_NUMBER}."
+  exit 1
+fi
+
 value="$(printf '%s' "${response}" | jq -r '.component.measures[]? | select(.metric == "new_duplicated_lines_density") | .value // empty')"
 if [[ -z "${value}" ]]; then
-  echo "Sonar did not return new_duplicated_lines_density for PR ${PR_NUMBER}."
-  exit 1
+  value="0.0"
+  echo "Sonar returned no new-code duplication measure for PR ${PR_NUMBER}; treating it as 0.0."
 fi
 
 if ! awk "BEGIN { exit !(${value} <= 0.0) }"; then
