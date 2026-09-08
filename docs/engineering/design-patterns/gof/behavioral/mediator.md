@@ -10,6 +10,32 @@ Coordinate peer interactions through a dedicated collaboration owner.
 ## Problem
 Many peers know each other directly and changes ripple across them.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  A[Colleague A] <--> B[Colleague B]
+  B <--> C[Colleague C]
+  C <--> D[Colleague D]
+  A <--> D
+```
+
+Peer-to-peer knowledge creates a dense collaboration graph and makes workflow
+changes ripple through multiple colleagues.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  A[Colleague A] --> M[Mediator]
+  B[Colleague B] --> M
+  C[Colleague C] --> M
+  M --> A
+  M --> B
+  M --> C
+```
+
+The mediator owns the workflow and coordinates colleagues through focused
+notifications.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

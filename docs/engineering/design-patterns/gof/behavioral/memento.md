@@ -10,6 +10,28 @@ Capture and restore state without exposing its internals.
 ## Problem
 Undo, rollback, or draft snapshots need encapsulated state capture.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Caretaker[Caretaker] --> Internals[Originator internals]
+  Caretaker --> Snapshot[Ad hoc snapshot]
+  Snapshot --> Restore[Fragile restore logic]
+```
+
+The state owner leaks representation details to whoever needs to save or
+restore it.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Originator[Originator] -->|creates| Memento[Opaque memento]
+  Caretaker[Caretaker] -->|stores| Memento
+  Memento -->|restores through owner| Originator
+```
+
+The originator controls state capture and restoration while the caretaker only
+stores opaque snapshots.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

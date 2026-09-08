@@ -10,6 +10,29 @@ Offer a small intention-revealing entry point over a subsystem.
 ## Problem
 Callers repeat subsystem coordination or need to know too many classes.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> ServiceA[Subsystem service A]
+  Client --> ServiceB[Subsystem service B]
+  Client --> ServiceC[Subsystem service C]
+  Client --> Rules[Coordination rules]
+```
+
+Every caller knows subsystem details and can coordinate them inconsistently.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Facade[Intent-revealing facade]
+  Facade --> ServiceA[Subsystem service A]
+  Facade --> ServiceB[Subsystem service B]
+  Facade --> ServiceC[Subsystem service C]
+  Facade --> Result[Stable use-case result]
+```
+
+The facade owns one meaningful workflow and hides subsystem coordination.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

@@ -10,6 +10,27 @@ Translate one interface into the contract callers already understand.
 ## Problem
 An external provider or legacy component has incompatible types, errors, or naming.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] -->|Target contract| Provider[Incompatible provider]
+  Provider --> TypeMismatch[Type and error mismatch]
+```
+
+The client must understand provider-specific types and failure semantics.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Target[Target contract]
+  Target --> Adapter[Adapter]
+  Adapter --> Adaptee[Provider or legacy adaptee]
+  Adapter --> Mapping[Mapped result and errors]
+```
+
+The adapter isolates provider details behind the contract the client already
+understands.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

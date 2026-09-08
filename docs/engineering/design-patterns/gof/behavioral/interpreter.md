@@ -10,6 +10,31 @@ Evaluate expressions in a small, stable language.
 ## Problem
 A limited grammar is owned by the application and expressions are composed repeatedly.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Caller[Caller] --> Branches[Repeated branching]
+  Branches --> RuleA[Rule A]
+  Branches --> RuleB[Rule B]
+  Branches --> RuleC[Rule C]
+  Branches --> Nested[More nested rules]
+```
+
+Grammar knowledge is duplicated in conditionals and becomes difficult to
+compose or extend consistently.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Input[Expression] --> Parser[Parser]
+  Parser --> Tree[Expression tree]
+  Tree --> Context[Evaluation context]
+  Tree --> Result[Evaluated result]
+```
+
+Small expression objects represent the grammar and evaluate recursively
+against one context.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

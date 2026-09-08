@@ -10,6 +10,30 @@ Share immutable intrinsic state while keeping request-specific state outside.
 ## Problem
 Large numbers of repeated immutable values consume memory.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  ObjectA[Object A] --> IntrinsicA[Repeated intrinsic state]
+  ObjectB[Object B] --> IntrinsicB[Repeated intrinsic state]
+  ObjectC[Object C] --> IntrinsicC[Repeated intrinsic state]
+  IntrinsicA -.->|duplicate| IntrinsicB
+  IntrinsicB -.->|duplicate| IntrinsicC
+```
+
+Each object stores the same immutable data even though only request-specific
+state differs.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Factory[Flyweight factory] --> Shared[Shared immutable flyweight]
+  Client[Client] --> Shared
+  Client --> Extrinsic[Request-specific state]
+  Shared -->|render or operate with| Extrinsic
+```
+
+Intrinsic state is shared while the client supplies extrinsic state per use.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

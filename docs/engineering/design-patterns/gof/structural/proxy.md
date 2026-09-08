@@ -10,6 +10,29 @@ Stand in for another object to control access, lifecycle, or expensive work.
 ## Problem
 Authorization, lazy loading, caching, or remote access needs a compatible boundary.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> RealSubject[Real subject]
+  Client --> Authorization[Authorization]
+  Client --> Cache[Cache]
+  Client --> Remote[Remote or expensive access]
+```
+
+Clients accumulate access-control, lifecycle, and performance concerns around
+the real subject.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Proxy[Proxy]
+  Proxy --> Authorization[Authorize or defer]
+  Proxy --> Cache[Cache or load]
+  Proxy --> RealSubject[Real subject]
+```
+
+The proxy preserves the subject contract while controlling access or work.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

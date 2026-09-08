@@ -10,6 +10,29 @@ Notify interested subscribers when a subject changes.
 ## Problem
 Multiple consumers need decoupled reactions to one event.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Subject[Subject] --> Email[Email handler]
+  Subject --> Metrics[Metrics handler]
+  Subject --> Search[Search indexer]
+  Subject --> Notifications[Notification handler]
+```
+
+The subject accumulates knowledge of every reaction and changes whenever a
+consumer is added or removed.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Subject[Subject] --> Event[Published event]
+  Event --> ObserverA[Observer A]
+  Event --> ObserverB[Observer B]
+  Event --> ObserverC[Observer C]
+```
+
+Observers subscribe to a stable event contract and own their reactions.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

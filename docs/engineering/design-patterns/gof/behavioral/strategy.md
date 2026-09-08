@@ -10,6 +10,28 @@ Select one of several interchangeable algorithms behind a focused contract.
 ## Problem
 Pricing, scheduling, or provider behavior varies independently from orchestration.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Context[Context] --> Switch{Algorithm?}
+  Switch --> A[Pricing A]
+  Switch --> B[Pricing B]
+  Switch --> C[Pricing C]
+```
+
+The orchestration code grows a conditional whenever an algorithm changes.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Context[Context] --> Strategy[Strategy contract]
+  Strategy --> A[Pricing A]
+  Strategy --> B[Pricing B]
+  Strategy --> C[Pricing C]
+```
+
+The context delegates the varying algorithm through one focused contract.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

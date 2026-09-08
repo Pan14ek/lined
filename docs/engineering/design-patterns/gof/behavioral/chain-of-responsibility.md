@@ -10,6 +10,30 @@ Pass a request through ordered handlers until one handles it.
 ## Problem
 Many handlers may handle or reject the same request and order is meaningful.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Validation[Validation]
+  Client --> Authorization[Authorization]
+  Client --> Audit[Audit]
+  Client --> RateLimit[Rate limit]
+```
+
+The caller knows every handler and must coordinate ordering and termination.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> H1[Validation]
+  H1 --> H2[Authorization]
+  H2 --> H3[Audit]
+  H3 --> H4[Rate limit]
+  H4 --> Result[Handled or rejected]
+```
+
+Each handler owns its decision and delegates only when the request remains
+unhandled.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

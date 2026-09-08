@@ -10,6 +10,30 @@ Represent an operation as an object with a stable execution contract.
 ## Problem
 Queueing, retrying, logging, undo, or authorization needs operation identity.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  UI[UI or caller] --> Receiver[Receiver]
+  UI --> Queue[Queue]
+  UI --> Log[Logging]
+  UI --> Retry[Retry logic]
+```
+
+The operation is coupled to immediate execution, making lifecycle concerns
+spread across callers.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Invoker[Invoker] --> Command[Command]
+  Command --> Receiver[Receiver]
+  Invoker --> History[Queue or history]
+  Command --> Result[Execution result]
+```
+
+The command gives the operation an identity that can be scheduled, retried,
+logged, authorized, or undone.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

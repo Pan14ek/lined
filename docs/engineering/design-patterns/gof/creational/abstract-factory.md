@@ -10,6 +10,28 @@ Create compatible families of related objects without coupling callers to concre
 ## Problem
 A report exporter needs a matched renderer and formatter for one output family.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> RendererA[Renderer A]
+  Client --> FormatterB[Formatter B]
+  RendererA -.->|incompatible family| FormatterB
+```
+
+The client constructs products independently and can accidentally mix families.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Factory[Abstract factory]
+  Factory --> Renderer[Matched renderer]
+  Factory --> Formatter[Matched formatter]
+  Renderer --> Output[Compatible output]
+  Formatter --> Output
+```
+
+One factory creates a compatible product family behind product contracts.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

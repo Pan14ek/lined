@@ -10,6 +10,31 @@ Fix workflow ordering while allowing selected steps to vary.
 ## Problem
 Variants share an invariant skeleton and only a few operations differ.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  VariantA[Variant A] --> Step1A[Step 1]
+  VariantA --> Step2A[Step 2]
+  VariantA --> Step3A[Step 3]
+  VariantB[Variant B] --> Step1B[Step 1]
+  VariantB --> Step2B[Step 2]
+  VariantB --> Step3B[Step 3]
+```
+
+The same workflow ordering is duplicated across variants and can diverge.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Template[Template workflow] --> Step1[Step 1]
+  Template --> Step2[Variable step]
+  Template --> Step3[Step 3]
+  ConcreteA[Variant A] -.-> Step2
+  ConcreteB[Variant B] -.-> Step2
+```
+
+The template owns ordering while implementations provide only bounded steps.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

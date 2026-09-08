@@ -10,6 +10,28 @@ Create a new object by copying a configured exemplar.
 ## Problem
 Construction is expensive or configuration snapshots are reused with controlled variation.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Constructor[Expensive construction]
+  Constructor --> Defaults[Rebuild defaults]
+  Constructor --> Setup[Repeat setup]
+  Setup --> Instance[New instance]
+```
+
+Repeated construction loses a configured exemplar and repeats expensive setup.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Registry[Prototype registry] --> Exemplar[Configured exemplar]
+  Client[Client] --> Registry
+  Exemplar -->|copy| Clone[New instance]
+  Clone -->|safe changes| Result[Configured result]
+```
+
+The client copies a controlled exemplar and then applies explicit variation.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

@@ -10,6 +10,33 @@ Add operations over a stable object structure without changing node classes.
 ## Problem
 Many operations vary while the object structure is stable.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  OperationA[Operation A] --> ElementA[Element A]
+  OperationA --> ElementB[Element B]
+  OperationB[Operation B] --> ElementA
+  OperationB --> ElementB
+  OperationC[Operation C] --> ElementA
+  OperationC --> ElementB
+```
+
+Each new operation spreads changes across every element class.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Structure[Stable element structure] --> ElementA[Element A]
+  Structure --> ElementB[Element B]
+  Visitor[Visitor operation] -->|visit| ElementA
+  Visitor -->|visit| ElementB
+  ElementA -->|accept| Visitor
+  ElementB -->|accept| Visitor
+```
+
+Operations stay in visitors while elements expose a controlled double-dispatch
+seam.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

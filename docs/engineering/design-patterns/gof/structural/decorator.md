@@ -10,6 +10,32 @@ Add behavior around an object without changing its core implementation.
 ## Problem
 Cross-cutting behavior varies by composition order, such as retries or metrics.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Base[Core service] --> Retry[Retry subclass]
+  Base --> Metrics[Metrics subclass]
+  Base --> Cache[Cache subclass]
+  Retry --> Combination[Subclass combinations]
+  Metrics --> Combination
+  Cache --> Combination
+```
+
+Cross-cutting combinations create a growing subclass hierarchy and hide
+composition order.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Metrics[Metrics decorator]
+  Metrics --> Retry[Retry decorator]
+  Retry --> Core[Core service]
+  Core --> Result[Same service contract]
+```
+
+Each decorator preserves the contract and adds one bounded concern around the
+wrapped object.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

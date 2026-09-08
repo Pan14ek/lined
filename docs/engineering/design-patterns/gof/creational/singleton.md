@@ -10,6 +10,29 @@ Provide one process-scoped instance for a resource with an explicitly required l
 ## Problem
 There is genuinely one shared coordinator or registry and its lifecycle is controlled.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  ClientA[Client A] --> NewA[New coordinator]
+  ClientB[Client B] --> NewB[New coordinator]
+  NewA -.->|divergent state| NewB
+```
+
+Multiple instances violate a resource's genuinely required process-scoped
+lifecycle and produce inconsistent coordination.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  ClientA[Client A] --> Access[Controlled access]
+  ClientB[Client B] --> Access
+  Access --> Singleton[One process-scoped instance]
+  Singleton --> Resource[Shared resource]
+```
+
+One explicit owner controls initialization, access, and lifecycle. Prefer a
+framework-managed singleton when the framework already provides that boundary.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

@@ -10,6 +10,31 @@ Let a creator choose a concrete product while callers depend on a product contra
 ## Problem
 A base workflow is stable but product selection varies by subclass or configuration.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Creator[Creator workflow] --> Switch{Product type?}
+  Switch --> ProductA[Product A]
+  Switch --> ProductB[Product B]
+  Switch --> ProductC[Product C]
+```
+
+The stable workflow owns product-selection conditionals and must change for
+each new product.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Creator[Creator workflow] --> FactoryMethod[Factory method]
+  FactoryMethod --> ProductA[Product A]
+  FactoryMethod --> ProductB[Product B]
+  ProductA -.-> Contract[Product contract]
+  ProductB -.-> Contract
+```
+
+The creator uses the product contract while subclasses or configuration choose
+the concrete product.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

@@ -10,6 +10,29 @@ Change behavior by delegating to an object representing current lifecycle state.
 ## Problem
 Transitions alter legal operations and repeated conditionals drift.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Context[Context] --> Switch{Current state?}
+  Switch --> Draft[Draft branch]
+  Switch --> Published[Published branch]
+  Switch --> Archived[Archived branch]
+```
+
+Lifecycle rules are scattered across conditionals, so legal transitions and
+operations drift apart.
+
+## Resolution diagram
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Published: publish
+  Published --> Archived: archive
+  Draft --> Draft: edit
+```
+
+Each state owns its valid behavior and transition rules.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

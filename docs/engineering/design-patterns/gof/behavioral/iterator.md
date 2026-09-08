@@ -10,6 +10,29 @@ Traverse a collection without exposing its representation.
 ## Problem
 Consumers need a consistent traversal contract over different collection shapes.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Array[Array indexes]
+  Client --> Page[Page offsets]
+  Client --> Tree[Tree internals]
+  Client --> Cursor[Database cursor]
+```
+
+Every consumer knows a collection's representation and traversal rules.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Iterator[Iterator]
+  Iterator --> Collection[Collection]
+  Iterator --> Next[Next element]
+  Iterator --> Done[Traversal complete]
+```
+
+The iterator owns position and exposes one traversal contract independent of
+the collection representation.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

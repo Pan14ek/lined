@@ -10,6 +10,29 @@ Separate a stable abstraction from an independently varying implementation.
 ## Problem
 Two dimensions vary, such as notification intent and delivery channel.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  AlertEmail[Alert + email] --> AlertBase[Duplicated hierarchy]
+  AlertSms[Alert + SMS] --> AlertBase
+  ReminderEmail[Reminder + email] --> ReminderBase[Duplicated hierarchy]
+  ReminderSms[Reminder + SMS] --> ReminderBase
+```
+
+Combining two varying dimensions multiplies subclasses or conditional branches.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Abstraction[Notification intent] --> Implementor[Channel contract]
+  Implementor --> Email[Email channel]
+  Implementor --> Sms[SMS channel]
+  Abstraction --> Alert[Alert]
+  Abstraction --> Reminder[Reminder]
+```
+
+The abstraction and implementation vary independently through a narrow bridge.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

@@ -10,6 +10,29 @@ Treat individual objects and groups uniformly through a tree contract.
 ## Problem
 Permissions, document nodes, or UI groups share operations over a hierarchy.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Branch{Leaf or group?}
+  Branch --> Leaf[Handle one item]
+  Branch --> Group[Loop through children]
+  Group --> Nested[Special nested handling]
+```
+
+The client branches on node shape and repeats recursion logic.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Client[Client] --> Component[Component contract]
+  Component --> Leaf[Leaf]
+  Component --> Composite[Composite]
+  Composite --> ChildA[Child component]
+  Composite --> ChildB[Child component]
+```
+
+Leaves and composites share one contract; composites delegate recursively.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 

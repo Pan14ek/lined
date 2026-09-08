@@ -12,6 +12,9 @@ Use the applicability and anti-overengineering guidance in each reference
 before choosing a pattern. Prefer the simplest design that makes the domain
 boundary, variation point, or collaboration explicit.
 
+Each reference includes a Mermaid diagram of the problem pressure and a second
+diagram showing the collaboration after applying the pattern.
+
 ## Creational patterns
 
 - [Abstract Factory](creational/abstract-factory.md)

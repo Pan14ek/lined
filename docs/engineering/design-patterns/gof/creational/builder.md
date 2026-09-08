@@ -10,6 +10,29 @@ Construct a complex object through explicit validated steps.
 ## Problem
 Requests or configurations have optional fields, ordering constraints, or multiple readable construction variants.
 
+## Problem diagram
+```mermaid
+flowchart LR
+  Caller[Caller] --> Constructor[Large constructor]
+  Constructor --> Required[Required fields]
+  Constructor --> Optional[Optional fields]
+  Constructor --> Invalid[Invalid partial object]
+```
+
+Construction arguments are hard to read, validate, and evolve safely.
+
+## Resolution diagram
+```mermaid
+flowchart LR
+  Caller[Caller] --> Builder[Builder]
+  Builder --> StepA[Set required fields]
+  Builder --> StepB[Set optional fields]
+  Builder --> Validate[Validate]
+  Validate --> Product[Immutable product]
+```
+
+The builder makes construction steps explicit and produces a validated product.
+
 ## Context
 Use this only when the variation, lifecycle, or collaboration pressure is real in the application. The pattern is a vocabulary for a concrete seam, not a target architecture.
 
