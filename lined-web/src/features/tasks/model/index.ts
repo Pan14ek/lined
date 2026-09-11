@@ -4,6 +4,7 @@ export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export interface TaskDto {
   id: number;
+  version?: number;
   title: string;
   description: string | null;
   priority: TaskPriority;

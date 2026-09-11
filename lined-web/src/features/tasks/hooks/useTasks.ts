@@ -77,10 +77,16 @@ const handleTaskMutationError = (
   rollbackTaskCaches(queryClient, snapshot);
 }
 
+interface TaskMutationInput {
+  id: number;
+  data: TaskUpdateDto;
+  version?: number;
+}
+
 export const useUpdateTask = () => {
   const queryClient = useQueryClient();
-  return useMutation<TaskDto, unknown, { id: number; data: TaskUpdateDto }, TaskCacheSnapshot>({
-    mutationFn: ({ id, data }) => updateTask(id, data),
+  return useMutation<TaskDto, unknown, TaskMutationInput, TaskCacheSnapshot>({
+    mutationFn: ({ id, data, version }) => updateTask(id, data, version),
     onMutate: async ({ id, data }) => {
       const snapshot = await snapshotTaskCaches(queryClient);
       patchTaskCaches(queryClient, id, data);

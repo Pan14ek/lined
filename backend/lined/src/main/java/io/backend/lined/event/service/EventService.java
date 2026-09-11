@@ -86,9 +86,10 @@ public interface EventService {
   }
 
   /**
-   * Lists all events in a lobby within a given time window.
+   * Lists visible events in a lobby, or across the requester's accessible lobbies when no lobby is
+   * supplied.
    *
-   * @param lobbyId       the lobby ID
+   * @param lobbyId       the optional lobby ID
    * @param from          the start of the time window (inclusive)
    * @param to            the end of the time window (exclusive)
    * @param currentUserId the ID of the requesting user

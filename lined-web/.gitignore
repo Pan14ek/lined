@@ -9,6 +9,9 @@ storybook-static/
 # Coverage
 coverage/
 
+# Playwright output
+e2e-artifacts/
+
 # Environment
 .env.local
 .env.*.local

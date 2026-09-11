@@ -83,10 +83,11 @@ public class EventController {
     return ResponseEntity.ok().eTag(VersionPrecondition.etag(updated.version())).body(updated);
   }
 
-  @Operation(summary = "List events", description = "List events overlapping a time window in lobby.")
+  @Operation(summary = "List events",
+      description = "List events overlapping a time window in a lobby or the caller's calendar.")
   @GetMapping("/events")
   public List<EventDto> list(
-      @Parameter(example = "101") @RequestParam Long lobbyId,
+      @Parameter(example = "101") @RequestParam(required = false) Long lobbyId,
       @Parameter(example = "2025-11-20T00:00:00Z") @RequestParam OffsetDateTime from,
       @Parameter(example = "2025-11-21T00:00:00Z") @RequestParam OffsetDateTime to) {
     return service.list(lobbyId, from, to, currentUserProvider.requireUserId());

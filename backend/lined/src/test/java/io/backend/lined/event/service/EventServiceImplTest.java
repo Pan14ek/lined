@@ -572,9 +572,18 @@ class EventServiceImplTest {
   }
 
   @Test
-  void list_throwsBadRequest_whenFromIsNull() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
+  void list_withoutLobbyId_usesRequesterAwarePersonalCalendarPredicate() {
+    when(repo.findVisibleOverlappingForUser(2L, startAt, endAt)).thenReturn(List.of(eventEntity));
+    when(mapper.toDto(eventEntity)).thenReturn(eventDto);
 
+    assertThat(eventService.list(null, startAt, endAt, 2L)).containsExactly(eventDto);
+
+    verify(repo).findVisibleOverlappingForUser(2L, startAt, endAt);
+    verify(repo, never()).findVisibleOverlapping(any(), any(), any(), any());
+  }
+
+  @Test
+  void list_throwsBadRequest_whenFromIsNull() {
     assertThatThrownBy(() -> eventService.list(101L, null, endAt, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");
@@ -582,8 +591,6 @@ class EventServiceImplTest {
 
   @Test
   void list_throwsBadRequest_whenToIsNull() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
-
     assertThatThrownBy(() -> eventService.list(101L, startAt, null, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");
@@ -591,8 +598,6 @@ class EventServiceImplTest {
 
   @Test
   void list_throwsBadRequest_whenFromIsAfterTo() {
-    when(lobbyRepo.findById(101L)).thenReturn(Optional.of(lobby));
-
     assertThatThrownBy(() -> eventService.list(101L, endAt, startAt, 1L))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid time window");

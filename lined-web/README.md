@@ -69,6 +69,11 @@ committed and should only contain placeholder values).
 | `npm run test:run` | Run tests once (useful in CI) |
 | `npm run test:ui` | Open Vitest browser UI |
 | `npm run test:coverage` | Generate coverage report → `coverage/` |
+| `npm run e2e` | Run the real-stack Chromium smoke suite; see [`docs/E2E.md`](docs/E2E.md) |
+| `npm run e2e:headed` | Run real-stack E2E with a visible browser |
+| `npm run e2e:ui` | Open Playwright UI mode with the isolated E2E environment |
+| `npm run e2e:report` | Open the last Playwright HTML report |
+| `npm run e2e:typecheck` | Type-check Playwright config and journey sources |
 | `npm run lint` | ESLint check across `src/` |
 | `npm run lint:fix` | ESLint with auto-fix |
 | `npm run typecheck` | `tsc --noEmit` — type-check without building |
@@ -235,6 +240,7 @@ npx shadcn@latest add data-table
 - [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) — exact directory
   layout and naming conventions
 - [docs/TESTING.md](docs/TESTING.md) — testing conventions
+- [docs/E2E.md](docs/E2E.md) — real-stack Playwright E2E runbook
 - [AGENTS.md](AGENTS.md) — agent instructions for this sub-project (task
   workflow, conventions)
 - [CLAUDE.md](CLAUDE.md) — quick reference for Claude Code

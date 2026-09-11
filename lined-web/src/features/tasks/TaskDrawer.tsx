@@ -124,7 +124,7 @@ export const TaskDrawer = ({
         if (isEditMode) {
           const patch = buildTaskPatch(task, { title, description, assigneeId, dueDate, priority, status });
           updateTask.mutate(
-            { id: task.id, data: patch },
+            { id: task.id, data: patch, version: task.version },
             {
               onSuccess: () => onClose(),
               // A 404 means the task is gone/inaccessible — close rather than

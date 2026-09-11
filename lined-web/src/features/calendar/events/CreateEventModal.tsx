@@ -205,10 +205,11 @@ export const CreateEventModal = ({
           <div className="px-6 py-5 space-y-5">
             {/* Title */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+              <label htmlFor="create-event-title" className="mb-1.5 block text-xs font-medium text-text-secondary">
                 {t('createEventModal.eventTitleLabel')}
               </label>
               <input
+                id="create-event-title"
                 type="text"
                 required
                 value={form.title}
@@ -220,7 +221,7 @@ export const CreateEventModal = ({
 
             {/* Lobby */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+              <label htmlFor="create-event-lobby" className="mb-1.5 block text-xs font-medium text-text-secondary">
                 {t('createEventModal.lobbyLabel')}
               </label>
               {lockedLobby ? (
@@ -229,6 +230,7 @@ export const CreateEventModal = ({
                 </div>
               ) : (
                 <select
+                  id="create-event-lobby"
                   required
                   value={form.lobbyId}
                   onChange={(e) => set('lobbyId', e.target.value)}
@@ -246,10 +248,11 @@ export const CreateEventModal = ({
             {/* Start / End */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                <label htmlFor="create-event-start" className="mb-1.5 block text-xs font-medium text-text-secondary">
                   {t('createEventModal.startLabel')}
                 </label>
                 <input
+                  id="create-event-start"
                   type="datetime-local"
                   required
                   value={form.startAt}
@@ -258,10 +261,11 @@ export const CreateEventModal = ({
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                <label htmlFor="create-event-end" className="mb-1.5 block text-xs font-medium text-text-secondary">
                   {t('createEventModal.endLabel')}
                 </label>
                 <input
+                  id="create-event-end"
                   type="datetime-local"
                   required
                   value={form.endAt}
@@ -283,10 +287,11 @@ export const CreateEventModal = ({
 
             {/* Location */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+              <label htmlFor="create-event-location" className="mb-1.5 block text-xs font-medium text-text-secondary">
                 {t('createEventModal.locationLabel')}
               </label>
               <input
+                id="create-event-location"
                 type="text"
                 value={form.location}
                 onChange={(e) => set('location', e.target.value)}
