@@ -20,9 +20,10 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   access-token metadata, and sends the opaque refresh credential in an
   HttpOnly cookie. Unknown identifiers and bad passwords receive one
   indistinguishable `401 auth.credentials.invalid` response.
-- `POST /api/auth/password-reset-requests` accepts an account identifier and
-  creates a time-limited reset request without revealing whether the account exists;
-  reset credentials are never written to application logs.
+- `POST /api/auth/password-reset-requests` accepts an account identifier,
+  creates a time-limited reset request, sends known-account delivery through
+  the SMTP-backed `PasswordResetDelivery` port, and never reveals whether the
+  account exists; reset credentials are never written to application logs.
 - `POST /api/auth/password-resets` atomically consumes one valid reset token and
   writes the replacement password.
 - `GET /api/auth/csrf` initializes the non-secret CSRF cookie used by browser
@@ -114,7 +115,7 @@ the MVC exception layer, without exposing authentication or authorization intern
 | API | `RefreshTokenCookieWriter`, `RefreshTokenCookieReader` | Writes and reads the raw refresh credential only through the configured cookie transport; the writer also applies the server-calculated deadline. |
 | Application | `AuthService`, `AuthServiceImpl`, `LinedUserDetailsService`, `LinedUserPrincipal`, `JwtTokenService`, `JwtProperties` | Delegates password authentication to framework primitives, resolves Lined account credentials, issues approved JWT claims, and owns validated JWT configuration. |
 | Application | `RefreshSessionService`, `RefreshTokenGenerator`, `RefreshTokenHasher`, `RefreshSessionProperties`, `RefreshCookieProperties` | Creates sessions, revokes the current session, atomically rotates one-time 256-bit Base64URL credentials, hashes them with SHA-256, enforces idle/absolute deadlines, and owns validated lifetime/cookie configuration. |
-| Application | `PasswordResetService`, `PasswordResetServiceImpl` | Issues reset requests and atomically redeems a reset token. |
+| Application | `PasswordResetService`, `PasswordResetServiceImpl`, `PasswordResetDelivery`, `SmtpPasswordResetDelivery` | Issues and atomically redeems reset tokens, then delivers typed reset commands through provider-neutral SMTP. |
 | Infrastructure | `SecurityConfig`, `ProblemAuthenticationEntryPoint`, `ProblemAccessDeniedHandler` | Enforces stateless default-deny policy, framework Bearer JWT validation, and safe security failures. |
 | Persistence | `PasswordResetTokenEntity`, `PasswordResetTokenRepository`, `AuthSessionEntity`, `AuthRefreshTokenEntity`, and their repositories | Stores reset-token and refresh-token hashes, session deadlines, and future token-history lifecycle state without raw refresh values. |
 | Collaborator | `user.domain.UserEntity`, `UserRepository` | Supplies credential data and persists the new password. |
@@ -122,8 +123,9 @@ the MVC exception layer, without exposing authentication or authorization intern
 ## Interactions and persistence
 
 - Users owns account creation; Authentication reads and updates its credentials.
-- Notifications may later deliver reset material, but this module does not make
-  delivery guarantees itself.
+- Password-reset delivery is owned by Authentication through the typed
+  `PasswordResetDelivery` port and SMTP adapter; Notifications does not own
+  password-recovery transport.
 - The reset-token table is managed by the repository schema and JPA update mode;
   its conditional claim prevents two concurrent redemptions from both succeeding.
 - `auth_sessions` owns one login/device lifecycle per successful authentication;
@@ -139,6 +141,7 @@ the MVC exception layer, without exposing authentication or authorization intern
 - [Authentication and session security system design](authentication-security-system-design.md)
 - [Authentication security SDD tasks](authentication-security-tasks.md)
 - [Password-reset proposal](../users/proposals/password-reset-flow.md)
+- [BETA-02 password-reset delivery](BETA-02-password-reset-delivery.md)
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)

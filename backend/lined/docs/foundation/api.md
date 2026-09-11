@@ -79,9 +79,10 @@ are registered.
 ```
 
 When the identifier matches an account, a single-use, random, high-entropy
-token is generated (30-minute expiry) and only its HMAC-SHA256 hash is
-persisted. The raw token is never logged; delivery requires the future
-out-of-band email/push integration.
+token is generated (30-minute default expiry), only its HMAC-SHA256 hash is
+persisted, and the raw token is sent through the configured SMTP delivery
+adapter. The raw token is never logged. Delivery failure does not change the
+generic `202` response.
 
 ### `POST /api/auth/password-resets`
 

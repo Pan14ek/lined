@@ -12,6 +12,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AuthSessionRepository extends JpaRepository<AuthSessionEntity, UUID> {
 
+  /** Revokes all still-active sessions after a successful password reset. */
+  @Modifying(flushAutomatically = true)
+  @Query("""
+      update AuthSessionEntity session
+      set session.revokedAt = :revokedAt,
+          session.revocationReason = :reason
+      where session.user.id = :userId
+        and session.revokedAt is null
+      """)
+  int revokeAllForUser(@Param("userId") Long userId,
+                       @Param("revokedAt") OffsetDateTime revokedAt,
+                       @Param("reason") String reason);
+
   /**
    * Revokes a session without exposing whether it had already been revoked.
    *

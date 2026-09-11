@@ -11,11 +11,14 @@ const repoDir = path.resolve(webDir, '..');
 const backendDir = path.join(repoDir, 'backend', 'lined');
 const runtime = process.env.E2E_CONTAINER_RUNTIME ?? 'docker';
 const image = process.env.E2E_POSTGRES_IMAGE ?? 'postgres:16-alpine';
+const mailpitImage = process.env.E2E_MAILPIT_IMAGE ?? 'axllent/mailpit:v1.21.8';
 const runId = `${Date.now()}-${process.pid}`;
 const containerName = `lined-e2e-postgres-${runId}`;
+const mailpitContainerName = `lined-e2e-mailpit-${runId}`;
 const playwrightArgs = process.argv.slice(2);
 
 let postgresStarted = false;
+let mailpitStarted = false;
 let backendProcess;
 let frontendProcess;
 let cleaningUp = false;
@@ -146,6 +149,13 @@ const cleanup = async () => {
       // --rm containers normally disappear after stop; cleanup is best effort.
     }
   }
+  if (mailpitStarted) {
+    try {
+      await runCommand(runtime, ['rm', '--force', mailpitContainerName]);
+    } catch {
+      // --rm containers normally disappear after stop; cleanup is best effort.
+    }
+  }
 };
 
 const onSignal = async (signal) => {
@@ -159,6 +169,8 @@ process.once('SIGTERM', () => void onSignal('SIGTERM'));
 try {
   const backendPort = await findFreePort();
   const frontendPort = await findFreePort();
+  const mailpitSmtpPort = await findFreePort();
+  const mailpitApiPort = await findFreePort();
   const postgres = await runCommand(runtime, [
     'run', '--detach', '--rm', '--name', containerName,
     '-e', 'POSTGRES_DB=lined_e2e',
@@ -173,9 +185,21 @@ try {
   const mappedPort = Number(portMapping.stdout.match(/:(\d+)\s*$/m)?.[1]);
   if (!mappedPort) throw new Error(`Could not determine PostgreSQL port from: ${portMapping.stdout}`);
   await waitForPostgres(mappedPort);
+  await runCommand(runtime, [
+    'run', '--detach', '--rm', '--name', mailpitContainerName,
+    '-p', `127.0.0.1:${mailpitSmtpPort}:1025`,
+    '-p', `127.0.0.1:${mailpitApiPort}:8025`, mailpitImage,
+  ]);
+  mailpitStarted = true;
+  await waitForHttp(`http://127.0.0.1:${mailpitApiPort}/api/v1/info`);
+
+  const javaHome = process.env.JAVA_HOME ?? (process.platform === 'darwin'
+    ? (await runCommand('/usr/libexec/java_home', ['-v', '21'])).stdout
+    : undefined);
 
   const backendEnv = {
     ...process.env,
+    ...(javaHome ? { JAVA_HOME: javaHome } : {}),
     GRADLE_USER_HOME: process.env.E2E_GRADLE_USER_HOME ?? path.join(tmpdir(), `lined-e2e-gradle-${runId}`),
     SERVER_PORT: String(backendPort),
     SPRING_DATASOURCE_URL: `jdbc:postgresql://127.0.0.1:${mappedPort}/lined_e2e?options=-c%20TimeZone=UTC`,
@@ -183,6 +207,12 @@ try {
     SPRING_DATASOURCE_PASSWORD: 'lined_e2e',
     LINED_JWT_SECRET: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
     LINED_PASSWORD_RESET_TOKEN_SECRET: 'lined-e2e-password-reset-secret-2026',
+    LINED_MAIL_ENABLED: 'true',
+    LINED_WEB_BASE_URL: `http://127.0.0.1:${frontendPort}`,
+    LINED_MAIL_HOST: '127.0.0.1',
+    LINED_MAIL_PORT: String(mailpitSmtpPort),
+    LINED_MAIL_FROM: 'no-reply@lined.test',
+    LINED_MAIL_TLS_ENABLED: 'false',
     LINED_SECURITY_REFRESH_COOKIE_SECURE: 'false',
     LINED_SECURITY_CORS_ALLOWED_ORIGINS: `http://127.0.0.1:${frontendPort}`,
     FEATURE_FLAG_ENVIRONMENT: 'LOCAL',
@@ -205,6 +235,7 @@ try {
     ...process.env,
     E2E_BASE_URL: `http://127.0.0.1:${frontendPort}`,
     E2E_API_BASE_URL: `http://127.0.0.1:${backendPort}/api`,
+    E2E_MAILPIT_API_URL: `http://127.0.0.1:${mailpitApiPort}`,
     E2E_RUN_ID: runId,
   };
   const playwright = await runCommand('npx', ['--no-install', 'playwright', 'test', ...playwrightArgs], {

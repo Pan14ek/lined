@@ -2,6 +2,9 @@ package io.backend.lined.integration.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.backend.lined.auth.service.PasswordResetDelivery;
+import io.backend.lined.auth.service.PasswordResetDeliveryException;
+import io.backend.lined.auth.service.PasswordResetDeliveryRequest;
 import io.backend.lined.integration.AbstractApiIntegrationTest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -24,8 +27,14 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.mockito.ArgumentCaptor;
+import org.springframework.web.util.UriComponentsBuilder;
 
 class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
+
+  @MockitoBean
+  private PasswordResetDelivery passwordResetDelivery;
 
   @Autowired
   private JwtEncoder jwtEncoder;
@@ -174,6 +183,76 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
         .isEqualTo(wrongPassword.getBody().path("detail").asText());
     assertThat(unknownIdentifier.getBody().path("code").asText())
         .isEqualTo(wrongPassword.getBody().path("code").asText());
+  }
+
+  @Test
+  void passwordResetDeliversOpaqueTokenAndInvalidatesOldPasswordAndSessions() {
+    String label = uniqueLabel("password-reset");
+    var user = registerUser(label);
+    var login = request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label, "password", "P@ssw0rd!"), null);
+    ArgumentCaptor<PasswordResetDeliveryRequest> deliveryCaptor =
+        ArgumentCaptor.forClass(PasswordResetDeliveryRequest.class);
+
+    var resetRequest = request(HttpMethod.POST, "/api/auth/password-reset-requests", Map.of(
+        "identifier", label + "@lined.test"), null);
+    org.mockito.Mockito.verify(passwordResetDelivery).deliver(deliveryCaptor.capture());
+
+    assertThat(resetRequest.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    PasswordResetDeliveryRequest delivered = deliveryCaptor.getValue();
+    String rawToken = UriComponentsBuilder.fromUriString(delivered.resetUrl()).build()
+        .getQueryParams().getFirst("token");
+    assertThat(rawToken).isNotBlank().isNotEqualTo(
+        jdbcTemplate.queryForObject("select token_hash from password_reset_tokens", String.class));
+
+    var reset = request(HttpMethod.POST, "/api/auth/password-resets", Map.of(
+        "token", rawToken, "newPassword", "N3wP@ssword!"), null);
+    assertThat(reset.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label, "password", "P@ssw0rd!"), null).getStatusCode())
+        .isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(request(HttpMethod.POST, "/api/auth/login", Map.of(
+        "username", label, "password", "N3wP@ssword!"), null).getStatusCode())
+        .isEqualTo(HttpStatus.OK);
+    assertThat(jdbcTemplate.queryForObject(
+        "select count(*) from auth_sessions where user_id = ? and revoked_at is not null",
+        Integer.class, user.path("id").asLong())).isEqualTo(1);
+
+    var reuse = request(HttpMethod.POST, "/api/auth/password-resets", Map.of(
+        "token", rawToken, "newPassword", "AnotherPassword!"), null);
+    assertThat(reuse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  void unknownAndKnownPasswordResetRequestsHaveEquivalentPublicResponses() {
+    String label = uniqueLabel("password-reset-enumeration");
+    registerUser(label);
+
+    var known = request(HttpMethod.POST, "/api/auth/password-reset-requests", Map.of(
+        "identifier", label + "@lined.test"), null);
+    var unknown = request(HttpMethod.POST, "/api/auth/password-reset-requests", Map.of(
+        "identifier", "missing-" + label + "@lined.test"), null);
+
+    assertThat(known.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    assertThat(unknown.getStatusCode()).isEqualTo(known.getStatusCode());
+    assertThat(unknown.getBody()).isEqualTo(known.getBody());
+  }
+
+  @Test
+  void providerFailurePreservesGenericAcceptedResponseAndDoesNotExposeDiagnostics() {
+    String label = uniqueLabel("password-reset-provider");
+    registerUser(label);
+    org.mockito.Mockito.doThrow(new PasswordResetDeliveryException(
+        new IllegalStateException("provider-secret")))
+        .when(passwordResetDelivery).deliver(org.mockito.ArgumentMatchers.any());
+
+    var response = request(HttpMethod.POST, "/api/auth/password-reset-requests", Map.of(
+        "identifier", label + "@lined.test"), null);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    assertThat(response.getBody()).isNull();
+    assertThat(response.toString()).doesNotContain("provider-secret");
   }
 
   @Test

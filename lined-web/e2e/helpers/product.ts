@@ -50,6 +50,28 @@ export const signOut = async (page: Page): Promise<void> => {
   await expect(page).toHaveURL(/\/sign-in$/);
 };
 
+export const resetLinkFromMailpit = async (email: string): Promise<string> => {
+  const mailpitUrl = process.env.E2E_MAILPIT_API_URL;
+  if (!mailpitUrl) throw new Error('E2E_MAILPIT_API_URL is not configured.');
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const search = await fetch(`${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
+    if (!search.ok) throw new Error(`Mailpit search failed with HTTP ${search.status}.`);
+    const result = await search.json() as { messages?: Array<{ ID: string }> };
+    const message = result.messages?.[0];
+    if (message) {
+      const detailResponse = await fetch(`${mailpitUrl}/api/v1/message/${message.ID}`);
+      if (!detailResponse.ok) throw new Error(`Mailpit message read failed with HTTP ${detailResponse.status}.`);
+      const detail = await detailResponse.json() as { Text?: string; HTML?: string };
+      const body = `${detail.Text ?? ''}\n${detail.HTML ?? ''}`;
+      const match = body.match(/https?:\/\/[^\s"'<>]+\/reset-password\?token=[^\s"'<>]+/);
+      if (match) return match[0].replace(/&amp;/g, '&').replace(/[.)]+$/, '');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`Timed out waiting for the password-reset email for ${email}.`);
+};
+
 export const createLobby = async (page: Page, name: string): Promise<string> => {
   await page.getByRole('button', { name: '+ Create', exact: true }).click();
   await page.getByRole('menuitem', { name: 'New Lobby' }).click();
