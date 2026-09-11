@@ -63,7 +63,8 @@ class SmtpPasswordResetDeliveryTest {
     doThrow(new MailSendException("smtp-password-secret"))
         .when(mailSender).send(message);
     var delivery = new SmtpPasswordResetDelivery(mailSender, properties, template);
-    assertThatThrownBy(() -> delivery.deliver(request()))
+    var request = request();
+    assertThatThrownBy(() -> delivery.deliver(request))
         .isInstanceOf(PasswordResetDeliveryException.class)
         .hasMessage("Password reset delivery failed")
         .hasMessageNotContaining("smtp-password-secret");
