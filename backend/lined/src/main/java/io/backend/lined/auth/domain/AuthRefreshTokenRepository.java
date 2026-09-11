@@ -55,4 +55,16 @@ public interface AuthRefreshTokenRepository extends JpaRepository<AuthRefreshTok
       """)
   int revokeActiveTokens(@Param("sessionId") UUID sessionId,
                          @Param("revokedAt") java.time.OffsetDateTime revokedAt);
+
+  /** Revokes active refresh credentials for every session owned by one user. */
+  @Modifying(flushAutomatically = true)
+  @Query("""
+      update AuthRefreshTokenEntity token
+      set token.revokedAt = :revokedAt
+      where token.session.user.id = :userId
+        and token.consumedAt is null
+        and token.revokedAt is null
+      """)
+  int revokeActiveTokensForUser(@Param("userId") Long userId,
+                                @Param("revokedAt") java.time.OffsetDateTime revokedAt);
 }

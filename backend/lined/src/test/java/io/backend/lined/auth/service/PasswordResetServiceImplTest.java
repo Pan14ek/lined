@@ -11,30 +11,28 @@ import static org.mockito.Mockito.when;
 
 import io.backend.lined.auth.api.PasswordResetDto;
 import io.backend.lined.auth.api.PasswordResetRequestDto;
-import io.backend.lined.auth.domain.PasswordResetTokenEntity;
+import io.backend.lined.auth.domain.AuthRefreshTokenRepository;
+import io.backend.lined.auth.domain.AuthSessionRepository;
 import io.backend.lined.auth.domain.PasswordResetTokenRepository;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
-import org.junit.jupiter.api.BeforeEach;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class PasswordResetServiceImplTest {
 
-  private static final String SECRET = "test-secret";
   private static final Long USER_ID = 7L;
   private static final String IDENTIFIER = "alice@example.com";
   private static final String RAW_TOKEN = "raw-token-value";
@@ -47,16 +45,30 @@ class PasswordResetServiceImplTest {
   private PasswordResetTokenRepository tokenRepository;
   @Mock
   private PasswordEncoder passwordEncoder;
+  @Mock
+  private PasswordResetTokenIssuer tokenIssuer;
+  @Mock
+  private PasswordResetTokenCodec tokenCodec;
+  @Mock
+  private PasswordResetDelivery delivery;
+  @Mock
+  private PasswordResetUrlFactory urlFactory;
+  @Mock
+  private AuthSessionRepository sessionRepository;
+  @Mock
+  private AuthRefreshTokenRepository refreshTokenRepository;
+  @Mock
+  private PasswordResetMetrics metrics;
 
   private PasswordResetServiceImpl service;
   private UserEntity user;
 
-  @BeforeEach
+  @org.junit.jupiter.api.BeforeEach
   void setUp() {
-    PasswordResetProperties properties = new PasswordResetProperties();
-    properties.setResetTokenSecret(SECRET);
     service = new PasswordResetServiceImpl(
-        userRepository, tokenRepository, passwordEncoder, properties);
+        userRepository, tokenRepository, passwordEncoder, tokenIssuer, tokenCodec, delivery,
+        urlFactory, sessionRepository, refreshTokenRepository, metrics,
+        Clock.fixed(Instant.parse("2026-09-09T10:15:30Z"), ZoneOffset.UTC));
     user = new UserEntity();
     user.setId(USER_ID);
     user.setUsername("alice");
@@ -68,34 +80,31 @@ class PasswordResetServiceImplTest {
   void requestReset_knownIdentifier_persistsSingleUseExpiringToken() {
     var dto = new PasswordResetRequestDto(IDENTIFIER);
     when(userRepository.findByEmailIgnoreCase(IDENTIFIER)).thenReturn(Optional.of(user));
+    var issued = new IssuedPasswordResetToken(RAW_TOKEN,
+        OffsetDateTime.parse("2026-09-09T10:45:30Z"), Duration.ofMinutes(30));
+    when(tokenIssuer.issue(user)).thenReturn(issued);
+    when(urlFactory.create(RAW_TOKEN)).thenReturn("https://app.lined.test/reset-password?token=" + RAW_TOKEN);
 
     service.requestReset(dto);
 
-    var captor = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
-    verify(tokenRepository).save(captor.capture());
-    var saved = captor.getValue();
-    assertThat(saved.getUser()).isEqualTo(user);
-    assertThat(saved.getTokenHash()).isNotBlank();
-    assertThat(saved.getUsedAt()).isNull();
-    assertThat(saved.getExpiresAt()).isAfter(OffsetDateTime.now());
+    verify(tokenIssuer).issue(user);
+    verify(delivery).deliver(any(PasswordResetDeliveryRequest.class));
+    verify(metrics).deliverySucceeded();
   }
 
   @Test
-  void requestReset_doesNotLogResetCredentials() {
-    Logger logger = (Logger) LoggerFactory.getLogger(PasswordResetServiceImpl.class);
-    ListAppender<ILoggingEvent> appender = new ListAppender<>();
-    appender.start();
-    logger.addAppender(appender);
-    try {
-      when(userRepository.findByEmailIgnoreCase(IDENTIFIER)).thenReturn(Optional.of(user));
+  void requestReset_passesTypedDeliveryCommand() {
+    when(userRepository.findByEmailIgnoreCase(IDENTIFIER)).thenReturn(Optional.of(user));
+    OffsetDateTime expiresAt = OffsetDateTime.parse("2026-09-09T10:45:30Z");
+    when(tokenIssuer.issue(user)).thenReturn(new IssuedPasswordResetToken(
+        RAW_TOKEN, expiresAt, Duration.ofMinutes(30)));
+    when(urlFactory.create(RAW_TOKEN)).thenReturn("https://app.lined.test/reset-password?token=" + RAW_TOKEN);
 
-      service.requestReset(new PasswordResetRequestDto(IDENTIFIER));
-    } finally {
-      logger.detachAppender(appender);
-    }
+    service.requestReset(new PasswordResetRequestDto(IDENTIFIER));
 
-    assertThat(appender.list)
-        .noneMatch(event -> event.getFormattedMessage().contains("token="));
+    verify(delivery).deliver(new PasswordResetDeliveryRequest(
+        IDENTIFIER, "https://app.lined.test/reset-password?token=" + RAW_TOKEN,
+        expiresAt, Duration.ofMinutes(30)));
   }
 
   @Test
@@ -106,19 +115,20 @@ class PasswordResetServiceImplTest {
 
     assertThatCode(() -> service.requestReset(dto)).doesNotThrowAnyException();
 
-    verify(tokenRepository, never()).save(any());
+    verify(tokenIssuer, never()).issue(any());
   }
 
   @Test
   void reset_validToken_updatesPasswordAndMarksTokenUsed() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
-    var tokenEntity = PasswordResetTokenEntity.builder()
+    var tokenEntity = io.backend.lined.auth.domain.PasswordResetTokenEntity.builder()
         .id(1L)
         .user(user)
         .tokenHash("stored-hash")
         .expiresAt(OffsetDateTime.now().plusMinutes(10))
         .build();
     when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(1);
+    when(tokenCodec.hash(RAW_TOKEN)).thenReturn("stored-hash");
     when(tokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(tokenEntity));
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
     when(tokenRepository.findAllByUser_IdAndUsedAtIsNull(USER_ID)).thenReturn(List.of(tokenEntity));
@@ -132,11 +142,12 @@ class PasswordResetServiceImplTest {
   @Test
   void reset_invalidatesOtherOutstandingTokensForSameUser() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
-    var redeemed = PasswordResetTokenEntity.builder()
+    var redeemed = io.backend.lined.auth.domain.PasswordResetTokenEntity.builder()
         .id(1L).user(user).tokenHash("hash-1").expiresAt(OffsetDateTime.now().plusMinutes(10)).build();
-    var other = PasswordResetTokenEntity.builder()
+    var other = io.backend.lined.auth.domain.PasswordResetTokenEntity.builder()
         .id(2L).user(user).tokenHash("hash-2").expiresAt(OffsetDateTime.now().plusMinutes(10)).build();
     when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(1);
+    when(tokenCodec.hash(RAW_TOKEN)).thenReturn("stored-hash");
     when(tokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(redeemed));
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
     when(tokenRepository.findAllByUser_IdAndUsedAtIsNull(USER_ID)).thenReturn(List.of(redeemed, other));
@@ -151,6 +162,7 @@ class PasswordResetServiceImplTest {
   void reset_expiredToken_throwsGenericBadRequest() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
     when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
+    when(tokenCodec.hash(RAW_TOKEN)).thenReturn("stored-hash");
 
     assertThatThrownBy(() -> service.reset(dto))
         .isInstanceOf(BadRequestException.class)
@@ -165,6 +177,7 @@ class PasswordResetServiceImplTest {
   void reset_unknownToken_throwsGenericBadRequest() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
     when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
+    when(tokenCodec.hash(RAW_TOKEN)).thenReturn("stored-hash");
 
     assertThatThrownBy(() -> service.reset(dto))
         .isInstanceOf(BadRequestException.class)
@@ -175,7 +188,9 @@ class PasswordResetServiceImplTest {
   void reset_alreadyUsedToken_throwsGenericBadRequest() {
     var dto = new PasswordResetDto(RAW_TOKEN, NEW_PASSWORD);
     when(tokenRepository.claimUnusedUnexpired(anyString(), any(), any())).thenReturn(0);
+    when(tokenCodec.hash(RAW_TOKEN)).thenReturn("stored-hash");
 
     assertThatThrownBy(() -> service.reset(dto)).isInstanceOf(BadRequestException.class);
   }
+
 }

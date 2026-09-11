@@ -49,6 +49,11 @@ The launcher’s explicit E2E-only differences are:
 - `FEATURE_FLAG_ENVIRONMENT=LOCAL` keeps the seeded capabilities enabled;
 - `OTEL_SDK_DISABLED=true` avoids requiring an OTLP collector.
 
+The launcher also starts an isolated Mailpit SMTP/API container. The test
+environment exposes its API as `E2E_MAILPIT_API_URL`; password-reset tests
+query that local API directly to retrieve the message and extract the reset
+link. No production token-retrieval endpoint is used.
+
 The existing backend Testcontainers configuration is the source for the
 PostgreSQL 16 image choice, but it is JVM-bound and cannot host a long-lived
 application process. The repository Compose file is not reused because it
@@ -80,8 +85,10 @@ the existing backend/frontend/Sonar gates unchanged.
 
 Add a journey under `e2e/journeys/` and reuse the small public-flow helpers in
 `e2e/helpers/product.ts`. Use roles, labels, and visible semantics; create a
-fresh unique identity instead of depending on another test’s state. Password
-reset is intentionally deferred to BETA-02.
+fresh unique identity instead of depending on another test’s state.
+`E2E-AUTH-05` covers the BETA-02 password-reset journey through Mailpit,
+including generic unknown-email UX, successful new-password login, old-password
+rejection, and one-time-link reuse rejection.
 
 Common failures are a missing Docker-compatible runtime, unavailable JDK 21,
 an absent Playwright browser, or backend readiness failing while Flyway

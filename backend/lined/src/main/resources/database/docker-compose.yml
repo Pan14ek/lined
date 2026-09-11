@@ -19,5 +19,10 @@ services:
     image: sonarqube:lts
     ports:
       - "9000:9000"
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    ports:
+      - "${LINED_MAIL_SMTP_PORT:-1025}:1025"
+      - "${LINED_MAIL_WEB_PORT:-8025}:8025"
 volumes:
   postgres_lined-data:
