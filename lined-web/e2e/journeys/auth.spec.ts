@@ -39,7 +39,7 @@ test('E2E-AUTH-05 resets a password through the real Mailpit delivery flow', asy
   await page.goto('/forgot-password');
   await page.getByLabel('Email or username').fill(user.email);
   await page.getByRole('button', { name: 'Send reset link' }).click();
-  await expect(page.getByText(/If an account exists for that email or username/)).toBeVisible();
+  await expect(page.getByText('If an account exists for that email or username', { exact: true })).toBeVisible();
 
   const resetLink = await resetLinkFromMailpit(user.email);
   await page.goto(resetLink);
@@ -66,5 +66,5 @@ test('E2E-AUTH-05 resets a password through the real Mailpit delivery flow', asy
   await page.goto('/forgot-password');
   await page.getByLabel('Email or username').fill(`unknown-${user.email}`);
   await page.getByRole('button', { name: 'Send reset link' }).click();
-  await expect(page.getByText(/If an account exists for that email or username/)).toBeVisible();
+  await expect(page.getByText('If an account exists for that email or username', { exact: true })).toBeVisible();
 });

@@ -1,6 +1,7 @@
 package io.backend.lined.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +32,7 @@ class SmtpPasswordResetDeliveryTest {
     when(mailSender.createMimeMessage()).thenReturn(message);
     when(template.text(org.mockito.ArgumentMatchers.any())).thenReturn("text");
     when(template.html(org.mockito.ArgumentMatchers.any())).thenReturn("<p>html</p>");
-    org.mockito.Mockito.doThrow(new MailSendException("smtp-password-secret"))
+    doThrow(new MailSendException("smtp-password-secret"))
         .when(mailSender).send(message);
     var delivery = new SmtpPasswordResetDelivery(mailSender, properties, template);
     var request = new PasswordResetDeliveryRequest("alex@example.com",
