@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,6 +106,22 @@ class PasswordResetServiceImplTest {
     verify(delivery).deliver(new PasswordResetDeliveryRequest(
         IDENTIFIER, "https://app.lined.test/reset-password?token=" + RAW_TOKEN,
         expiresAt, Duration.ofMinutes(30)));
+  }
+
+  @Test
+  void requestReset_deliveryFailureIsSwallowedAndRecorded() {
+    when(userRepository.findByEmailIgnoreCase(IDENTIFIER)).thenReturn(Optional.of(user));
+    when(tokenIssuer.issue(user)).thenReturn(new IssuedPasswordResetToken(
+        RAW_TOKEN, OffsetDateTime.parse("2026-09-09T10:45:30Z"), Duration.ofMinutes(30)));
+    when(urlFactory.create(RAW_TOKEN)).thenReturn("https://app.lined.test/reset-password?token=" + RAW_TOKEN);
+    doThrow(new PasswordResetDeliveryException(new IllegalStateException("smtp unavailable")))
+        .when(delivery).deliver(any(PasswordResetDeliveryRequest.class));
+
+    assertThatCode(() -> service.requestReset(new PasswordResetRequestDto(IDENTIFIER)))
+        .doesNotThrowAnyException();
+
+    verify(metrics).deliveryFailed();
+    verify(metrics, never()).deliverySucceeded();
   }
 
   @Test
