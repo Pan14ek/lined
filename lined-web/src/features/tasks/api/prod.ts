@@ -15,8 +15,11 @@ export const createTask = (data: TaskCreateDto): Promise<TaskDto> => {
   return api.post('tasks', { json: data }).json<TaskDto>();
 }
 
-export const updateTask = (id: number, data: TaskUpdateDto): Promise<TaskDto> => {
-  return api.patch(`tasks/${id}`, { json: data }).json<TaskDto>();
+export const updateTask = (id: number, data: TaskUpdateDto, version = 0): Promise<TaskDto> => {
+  return api.patch(`tasks/${id}`, {
+    json: data,
+    headers: { 'If-Match': `"${version}"` },
+  }).json<TaskDto>();
 }
 
 export const deleteTask = (id: number): Promise<void> => {

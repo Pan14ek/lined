@@ -192,11 +192,17 @@ public class EventServiceImpl implements EventService {
   @Override
   public List<EventDto> list(Long lobbyId, OffsetDateTime from, OffsetDateTime to,
                              Long currentUserId) {
-    var lobby = mustLobby(lobbyId);
-    accessPolicy.ensureVisibleMember(lobby, currentUserId);
     var window = queryWindow(from, to);
+    List<EventEntity> events;
+    if (lobbyId == null) {
+      events = repo.findVisibleOverlappingForUser(currentUserId, window.start(), window.end());
+    } else {
+      var lobby = mustLobby(lobbyId);
+      accessPolicy.ensureVisibleMember(lobby, currentUserId);
+      events = repo.findVisibleOverlapping(lobbyId, currentUserId, window.start(), window.end());
+    }
 
-    return repo.findVisibleOverlapping(lobbyId, currentUserId, window.start(), window.end()).stream()
+    return events.stream()
         .map(mapper::toDto)
         .toList();
   }

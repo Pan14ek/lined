@@ -130,7 +130,7 @@ export const LobbyTaskList = ({ lobbyId }: LobbyTaskListProps) => {
     const nextStatus: TaskStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
     start(task.id);
     updateTask.mutate(
-      { id: task.id, data: { status: nextStatus } },
+      { id: task.id, data: { status: nextStatus }, version: task.version },
       {
         onSettled: finish,
         onError: () => setError(task.id, t('tasks.updateError')),

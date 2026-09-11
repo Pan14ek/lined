@@ -60,7 +60,9 @@ calendar/
 Colocated `__tests__/` per component/hook/lib file. `calendarUtils.test.ts`
 is the largest pure-function suite in the app (grid math, event-lane
 assignment, free-slot computation) — read it before changing any date/time
-helper. See root `docs/TESTING.md`.
+helper. Event-create labels are associated with their controls so browser E2E
+tests can use accessible label selectors. See root `docs/TESTING.md` and the
+real-stack runbook at `docs/E2E.md`.
 
 ## Known gaps
 

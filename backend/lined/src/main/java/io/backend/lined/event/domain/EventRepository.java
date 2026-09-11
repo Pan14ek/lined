@@ -58,6 +58,23 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
                                             @Param("to") OffsetDateTime to);
 
   /**
+   * Finds events visible in the requester's personal calendar window across all accessible lobbies.
+   */
+  @Query("""
+      SELECT DISTINCT e FROM EventEntity e
+      LEFT JOIN e.lobby.members member
+      WHERE e.startAt < :to
+        AND e.endAt > :from
+        AND (e.owner.id = :requesterId
+             OR (e.visibility = io.backend.lined.event.domain.EventVisibility.SHARED
+                 AND (e.lobby.owner.id = :requesterId OR member.id = :requesterId)))
+      ORDER BY e.startAt ASC
+      """)
+  List<EventEntity> findVisibleOverlappingForUser(@Param("requesterId") Long requesterId,
+                                                   @Param("from") OffsetDateTime from,
+                                                   @Param("to") OffsetDateTime to);
+
+  /**
    * Resolves an event only when it is shared or owned by the requester.
    *
    * <p>For example, a guessed identifier for another member's private event produces an empty
