@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+TLS_DIR="$ROOT_DIR/.lined/tls"
+CERT_FILE="$TLS_DIR/localhost.pem"
+KEY_FILE="$TLS_DIR/localhost-key.pem"
+
+cd "$ROOT_DIR"
+
+compose() {
+  docker compose "$@"
+}
+
+usage() {
+  cat <<'EOF'
+Usage: ./lined <command>
+
+Commands:
+  up                  Build, start, and wait for the local Lined stack
+  down                Stop the stack and preserve PostgreSQL data
+  restart             Restart the stack and preserve PostgreSQL data
+  logs [service]      Follow all service logs or one service's logs
+  status              Show container state and readiness probes
+  reset [--yes]       Delete local PostgreSQL data and recreate the stack
+  help                Show this help
+
+Services accepted by "logs": postgres, mailpit, backend, frontend.
+The primary application URL is https://localhost.
+EOF
+}
+
+fail() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+require_docker() {
+  command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not on PATH."
+  docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required. Try: docker compose version"
+  docker info >/dev/null 2>&1 || fail "Docker daemon is unavailable. Start Docker Desktop or the Docker service and retry."
+  compose config --quiet || fail "The local Compose configuration is invalid."
+}
+
+print_mkcert_help() {
+  printf '%s\n' \
+    'Trusted local HTTPS requires mkcert.' \
+    '' \
+    'Install it once, then retry ./lined up:' \
+    '  macOS:  brew install mkcert' \
+    '  Windows: winget install FiloSottile.mkcert' \
+    '  Linux:  https://github.com/FiloSottile/mkcert#installation' \
+    '' \
+    'The launcher never installs system packages automatically.' >&2
+}
+
+valid_certificate() {
+  [[ -s "$CERT_FILE" && -s "$KEY_FILE" ]] || return 1
+  command -v openssl >/dev/null 2>&1 || return 0
+  openssl x509 -in "$CERT_FILE" -checkend 0 -noout >/dev/null 2>&1
+}
+
+ensure_tls() {
+  mkdir -p "$TLS_DIR"
+  if valid_certificate; then
+    return
+  fi
+
+  if ! command -v mkcert >/dev/null 2>&1; then
+    print_mkcert_help
+    return 1
+  fi
+
+  printf 'Generating trusted local certificate in %s...\n' "$TLS_DIR"
+  mkcert -install
+  mkcert -cert-file "$CERT_FILE" -key-file "$KEY_FILE" localhost 127.0.0.1 ::1
+  chmod 600 "$KEY_FILE"
+  chmod 644 "$CERT_FILE"
+}
+
+http_ok() {
+  local url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl --fail --silent --insecure --max-time 5 "$url" >/dev/null
+  elif command -v wget >/dev/null 2>&1; then
+    wget --quiet --no-check-certificate --timeout=5 --output-document=- "$url" >/dev/null
+  else
+    fail "A host curl or wget command is required for readiness checks."
+  fi
+}
+
+wait_for_http() {
+  local label="$1"
+  local url="$2"
+  local service="$3"
+  local timeout_seconds="${4:-180}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if http_ok "$url"; then
+      printf '✓ %s ready\n' "$label"
+      return
+    fi
+    sleep 2
+  done
+
+  printf '%s did not become ready within %s seconds.\n' "$label" "$timeout_seconds" >&2
+  printf 'Check: ./lined logs %s\n' "$service" >&2
+  compose logs --no-color --tail=120 "$service" >&2 || true
+  return 1
+}
+
+wait_for_postgres() {
+  local db_user="${LINED_POSTGRES_USER:-lined}"
+  local db_name="${LINED_POSTGRES_DB:-lineddb}"
+  local timeout_seconds=90
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if compose exec -T postgres pg_isready -U "$db_user" -d "$db_name" >/dev/null 2>&1; then
+      printf '✓ PostgreSQL ready\n'
+      return
+    fi
+    sleep 2
+  done
+
+  printf 'PostgreSQL did not become ready within %s seconds.\n' "$timeout_seconds" >&2
+  printf 'Check: ./lined logs postgres\n' >&2
+  compose logs --no-color --tail=120 postgres >&2 || true
+  return 1
+}
+
+port_or_default() {
+  local variable_name="$1"
+  local default_value="$2"
+  case "$variable_name" in
+    LINED_BACKEND_PORT) printf '%s' "${LINED_BACKEND_PORT:-$default_value}" ;;
+    LINED_HTTPS_PORT) printf '%s' "${LINED_HTTPS_PORT:-$default_value}" ;;
+    LINED_MAILPIT_PORT) printf '%s' "${LINED_MAILPIT_PORT:-$default_value}" ;;
+    *) fail "Unsupported local port variable '$variable_name'." ;;
+  esac
+}
+
+application_url() {
+  local https_port
+  https_port="$(port_or_default LINED_HTTPS_PORT 443)"
+  if [[ "$https_port" == '443' ]]; then
+    printf 'https://localhost'
+  else
+    printf 'https://localhost:%s' "$https_port"
+  fi
+}
+
+up() {
+  require_docker
+  ensure_tls || exit 1
+  mkdir -p "$ROOT_DIR/.lined"
+
+  compose up -d --build || {
+    printf 'The Compose stack failed to start.\nCheck: ./lined logs\n' >&2
+    compose logs --no-color --tail=120 >&2 || true
+    return 1
+  }
+
+  local backend_port mailpit_port app_url
+  backend_port="$(port_or_default LINED_BACKEND_PORT 8080)"
+  mailpit_port="$(port_or_default LINED_MAILPIT_PORT 8025)"
+  app_url="$(application_url)"
+
+  wait_for_postgres
+  wait_for_http 'Backend' "http://127.0.0.1:${backend_port}/actuator/health/readiness" backend
+  wait_for_http 'Mailpit' "http://127.0.0.1:${mailpit_port}/api/v1/info" mailpit
+  wait_for_http 'Frontend/Nginx' "$app_url/" frontend
+
+  printf '\nLined is running.\n\n'
+  printf 'Application: %s\n' "$app_url"
+  printf 'Mailpit:     http://localhost:%s\n' "$mailpit_port"
+  printf '\nUseful commands:\n  ./lined logs\n  ./lined status\n  ./lined down\n'
+}
+
+down() {
+  require_docker
+  compose down "$@"
+}
+
+restart() {
+  down
+  up
+}
+
+logs() {
+  require_docker
+  if (( $# > 1 )); then
+    fail "Usage: ./lined logs [postgres|mailpit|backend|frontend]"
+  fi
+  if (( $# == 1 )); then
+    case "$1" in
+      postgres|mailpit|backend|frontend) ;;
+      *) fail "Unknown service '$1'. Use postgres, mailpit, backend, or frontend." ;;
+    esac
+  fi
+  compose logs --follow --tail=100 "$@"
+}
+
+status() {
+  require_docker
+  compose ps --all
+  printf '\nReadiness probes:\n'
+  local backend_port mailpit_port
+  backend_port="$(port_or_default LINED_BACKEND_PORT 8080)"
+  mailpit_port="$(port_or_default LINED_MAILPIT_PORT 8025)"
+  if compose exec -T postgres pg_isready -U "${LINED_POSTGRES_USER:-lined}" -d "${LINED_POSTGRES_DB:-lineddb}" >/dev/null 2>&1; then
+    printf '  PostgreSQL: ready\n'
+  else
+    printf '  PostgreSQL: not ready\n'
+  fi
+  if http_ok "http://127.0.0.1:${backend_port}/actuator/health/readiness"; then
+    printf '  Backend:    ready\n'
+  else
+    printf '  Backend:    not ready\n'
+  fi
+  if http_ok "http://127.0.0.1:${mailpit_port}/api/v1/info"; then
+    printf '  Mailpit:    ready\n'
+  else
+    printf '  Mailpit:    not ready\n'
+  fi
+  if http_ok "$(application_url)/"; then
+    printf '  Frontend:   ready\n'
+  else
+    printf '  Frontend:   not ready\n'
+  fi
+}
+
+reset() {
+  local confirmation=''
+  if (( $# > 1 )) || { (( $# == 1 )) && [[ "$1" != '--yes' ]]; }; then
+    fail 'Usage: ./lined reset [--yes]'
+  fi
+  printf 'This will delete the local Lined database and recreate the environment.\n'
+  if [[ "${1:-}" != '--yes' ]]; then
+    printf 'Continue? [y/N] '
+    read -r confirmation
+    [[ "$confirmation" =~ ^[Yy]$ ]] || { printf 'Reset cancelled.\n'; return 0; }
+  fi
+  require_docker
+  compose down --volumes --remove-orphans
+  up
+}
+
+command_name="${1:-help}"
+shift || true
+case "$command_name" in
+  up) up "$@" ;;
+  down) down "$@" ;;
+  restart) restart "$@" ;;
+  logs) logs "$@" ;;
+  status) status "$@" ;;
+  reset) reset "$@" ;;
+  help|-h|--help) usage ;;
+  *) fail "Unknown command '$command_name'. Run ./lined help." ;;
+esac

@@ -1,6 +1,85 @@
 # Lined  
 **Where life and quality time meet.**
 
+## Local full-stack quick start
+
+### Prerequisites
+
+- Docker with Docker Compose v2
+- [mkcert](https://github.com/FiloSottile/mkcert#installation) for trusted local HTTPS
+
+The launcher never installs system packages automatically. If `mkcert` is
+missing, install it once and rerun `./lined up`.
+
+### Quick Start
+
+```bash
+git clone https://github.com/Pan14ek/lined.git
+cd lined
+./lined up
+```
+
+Open [https://localhost](https://localhost). The first startup builds the
+backend and frontend images, creates the local certificate under `.lined/`,
+waits for PostgreSQL/Flyway, the backend, Mailpit, and Nginx, then prints the
+available URLs. `.lined/` is ignored and must not be committed.
+
+### URLs
+
+| Service | URL |
+|---|---|
+| Lined application | [https://localhost](https://localhost) |
+| Mailpit inbox | [http://localhost:8025](http://localhost:8025) |
+| Backend (developer diagnostics) | http://localhost:8080 |
+
+### Common commands
+
+```bash
+./lined up                 # build/start and wait for readiness
+./lined down               # stop services; preserve database data
+./lined restart            # restart services; preserve database data
+./lined logs               # follow all logs
+./lined logs backend       # follow one service
+./lined status             # show container state and readiness
+./lined reset              # confirm, delete database, and recreate stack
+./lined reset --yes        # non-interactive reset
+./lined help
+```
+
+Ports can be overridden through environment variables such as
+`LINED_HTTPS_PORT`, `LINED_HTTP_PORT`, `LINED_BACKEND_PORT`, and
+`LINED_MAILPIT_PORT`. When the HTTPS port is not 443, the launcher prints the
+corresponding `https://localhost:<port>` URL.
+
+### Troubleshooting
+
+- If Docker is stopped, start Docker Desktop or the Docker service and rerun
+  `./lined up`.
+- If `mkcert` is missing, install it using the prerequisite link above; the
+  launcher does not use elevated package-manager commands.
+- If a service fails readiness, inspect `./lined logs` or
+  `./lined logs backend`. Flyway migration errors and invalid local secrets
+  are reported by the backend logs.
+- Ports 80, 443, 8025, or 8080 must be free, unless you override them as
+  described above.
+
+The Compose stack uses PostgreSQL 16 with a persistent named volume and runs
+Flyway automatically during backend startup. Use `./lined reset` only when
+you intentionally want to delete local database data.
+
+### First-Time HTTPS Note
+
+On the first run, `./lined up` uses `mkcert` to create and trust a local
+certificate for `localhost`. The generated certificate and private key stay
+under the ignored `.lined/tls/` directory. If `mkcert` is unavailable, the
+launcher exits with installation instructions and does not install packages.
+
+### Reset Local Data
+
+`./lined down` preserves the named PostgreSQL volume. To rebuild the schema
+from the Flyway migrations and delete all local data, run `./lined reset` and
+confirm the warning, or use `./lined reset --yes` in automation.
+
 ## 🌟 Description
 **Lined** is an app for couples, families, and friends that helps synchronize schedules, coordinate tasks, and find shared quality time.  
 
