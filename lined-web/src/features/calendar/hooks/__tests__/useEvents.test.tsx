@@ -1,12 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { QUERY_KEYS } from '@/features/calendar/lib/constants';
+import { MOCK_EVENTS } from '@/features/calendar/api/mockData';
 import type { EventDto } from '@/features/calendar/model';
-import { useRangeEvents, useUpdateEvent } from '../useEvents';
+import { server } from '@/test/server';
+import { useDeleteEvent, useRangeEvents, useUpdateEvent } from '../useEvents';
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 const makeWrapper = (queryClient: QueryClient) => {
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -72,5 +78,43 @@ describe('useUpdateEvent — unauthorized private access', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(queryClient.getQueryData<EventDto[]>(cachedKey)).toEqual([]);
+  });
+});
+
+describe('useDeleteEvent — optimistic locking', () => {
+  it('sends the event version as a quoted If-Match header', async () => {
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
+    let receivedIfMatch: string | null = null;
+    server.use(
+      http.delete(`${BASE}/calendar/events/:id`, ({ request }) => {
+        receivedIfMatch = request.headers.get('If-Match');
+        return new HttpResponse(null, { status: HTTP_STATUS.NO_CONTENT });
+      }),
+    );
+
+    const { result } = renderHook(() => useDeleteEvent(), { wrapper: makeWrapper(newQueryClient()) });
+    result.current.mutate({ id: 1, version: 7 });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(receivedIfMatch).toBe('"7"');
+  });
+});
+
+describe('useUpdateEvent — optimistic locking', () => {
+  it('sends the event version as a quoted If-Match header', async () => {
+    useAuthStore.setState({ accessToken: 'mock-token-1', status: 'authenticated' });
+    let receivedIfMatch: string | null = null;
+    server.use(
+      http.patch(`${BASE}/calendar/events/:id`, ({ request }) => {
+        receivedIfMatch = request.headers.get('If-Match');
+        return HttpResponse.json({ ...MOCK_EVENTS[0], title: 'Updated title', version: 8 });
+      }),
+    );
+
+    const { result } = renderHook(() => useUpdateEvent(), { wrapper: makeWrapper(newQueryClient()) });
+    result.current.mutate({ id: 1, version: 7, data: { title: 'Updated title' } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(receivedIfMatch).toBe('"7"');
   });
 });

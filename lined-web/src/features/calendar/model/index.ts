@@ -2,6 +2,7 @@ export type EventVisibility = 'PRIVATE' | 'SHARED';
 
 export interface EventDto {
   id: number;
+  version?: number;
   title: string;
   location: string | null;
   /** @deprecated use `visibility` */

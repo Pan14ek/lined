@@ -1,4 +1,4 @@
-import { api, requestVoid, toSearchParams } from '@/lib/apiClient';
+import { api, toSearchParams } from '@/lib/apiClient';
 import type { EventDto, EventCreateDto, EventUpdateDto, EventConflictDto, UserConflictDto } from '@/features/calendar/model';
 
 export const listEvents = (params: {
@@ -15,12 +15,17 @@ export const createEvent = (data: EventCreateDto): Promise<EventDto> => {
   return api.post('calendar/events', { json: data }).json<EventDto>();
 }
 
-export const updateEvent = (id: number, data: EventUpdateDto): Promise<EventDto> => {
-  return api.patch(`calendar/events/${id}`, { json: data }).json<EventDto>();
+export const updateEvent = (id: number, data: EventUpdateDto, version = 0): Promise<EventDto> => {
+  return api.patch(`calendar/events/${id}`, {
+    json: data,
+    headers: { 'If-Match': `"${version}"` },
+  }).json<EventDto>();
 }
 
-export const deleteEvent = (id: number): Promise<void> => {
-  return requestVoid('delete', `calendar/events/${id}`);
+export const deleteEvent = (id: number, version = 0): Promise<void> => {
+  return api.delete(`calendar/events/${id}`, {
+    headers: { 'If-Match': `"${version}"` },
+  }).then(() => undefined);
 }
 
 export const findConflicts = (params: {
