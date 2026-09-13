@@ -69,9 +69,9 @@ export const LobbyCalendarView = ({ lobby }: LobbyCalendarViewProps) => {
   ];
 
   const handleDelete = () => {
-        if (selectedEventId == null) return;
+        if (selectedEvent == null) return;
         setDeleteError(null);
-        deleteEvent.mutate(selectedEventId, {
+        deleteEvent.mutate({ id: selectedEvent.id, version: selectedEvent.version }, {
           onSuccess: () => setSelectedEventId(null),
           onError: (error) => setDeleteError(getDeleteEventErrorMessage(error, t)),
         });
