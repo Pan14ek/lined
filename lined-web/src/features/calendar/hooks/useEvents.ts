@@ -71,7 +71,8 @@ export const useCreateEvent = () => {
 export const useUpdateEvent = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: EventUpdateDto }) => updateEvent(id, data),
+    mutationFn: ({ id, data, version }: { id: number; data: EventUpdateDto; version?: number }) =>
+      updateEvent(id, data, version),
     onSuccess: (updated) => {
       // The PATCH response is already the authoritative updated event, so patch
       // every cached event list in place instead of refetching.
@@ -154,7 +155,7 @@ export const useConflictCheck = (params: {
 export const useDeleteEvent = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteEvent(id),
+    mutationFn: ({ id, version }: { id: number; version?: number }) => deleteEvent(id, version),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
     },

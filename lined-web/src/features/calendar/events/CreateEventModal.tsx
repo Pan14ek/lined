@@ -135,6 +135,7 @@ export const CreateEventModal = ({
           updateEvent.mutate(
             {
               id: event.id,
+              version: event.version,
               data: {
                 title: form.title.trim(),
                 startAt: startDate.toISOString(),

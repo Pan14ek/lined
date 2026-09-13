@@ -139,8 +139,9 @@ export const createEventFromDashboard = async (
   await page.getByRole('menuitem', { name: 'New Event' }).click();
   await expect(page.getByRole('heading', { name: 'New Event' })).toBeVisible();
   await page.getByLabel('Event title').fill(title);
+  // Keep the fixture inside the calendar's initially visible week. Choosing
+  // tomorrow makes the test fall outside that week when it runs on Sunday.
   const start = new Date();
-  start.setDate(start.getDate() + 1);
   start.setHours(12, 0, 0, 0);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   await page.getByLabel('Start').fill(toLocalDateTime(start));

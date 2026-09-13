@@ -20,7 +20,7 @@ const dayAfterPlusOneStr = new Date(dayAfter.getTime() + 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
 
-export const MOCK_EVENTS: EventDto[] = [
+export const MOCK_EVENTS: EventDto[] = ([
   {
     id: 1,
     title: 'Morning Coffee',
@@ -224,4 +224,4 @@ export const MOCK_EVENTS: EventDto[] = [
     ownerId: 2,
     createdAt: '2026-04-12T09:00:00Z',
   },
-];
+] satisfies EventDto[]).map((event) => ({ ...event, version: 0 }));
