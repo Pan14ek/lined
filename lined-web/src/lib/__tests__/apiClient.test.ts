@@ -6,7 +6,9 @@ import {
   invalidateAuthTransport,
   logoutSession,
   MockHttpError,
+  RateLimitError,
   getErrorStatus,
+  getRateLimitRetryAfterSeconds,
   mockDelay,
   mockNetworkDelay,
   refreshAccessToken,
@@ -32,6 +34,15 @@ describe('MockHttpError', () => {
     const error = new MockHttpError(HTTP_STATUS.CONFLICT, 'Already exists');
 
     expect(error.message).toBe('Already exists');
+  });
+});
+
+describe('rate-limit transport errors', () => {
+  it('exposes a typed retry delay without trusting arbitrary response text', () => {
+    const error = new RateLimitError(12);
+
+    expect(getErrorStatus(error)).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
+    expect(getRateLimitRetryAfterSeconds(error)).toBe(12);
   });
 });
 
@@ -233,6 +244,39 @@ describe('authenticated API transport', () => {
 
     await expect(request()).rejects.toBeDefined();
     expect(refreshCount).toBe(0);
+  });
+
+  it('parses Retry-After and never retries an auth POST after 429', async () => {
+    let attempts = 0;
+    server.use(http.post(`${BASE}/auth/login`, () => {
+      attempts += 1;
+      return new HttpResponse(null, {
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        headers: { 'Retry-After': '12' },
+      });
+    }));
+
+    await expect(linedApi.post('auth/login')).rejects.toMatchObject({
+      retryAfterSeconds: 12,
+    });
+    expect(attempts).toBe(1);
+  });
+
+  it('preserves authentication when refresh is rate limited', async () => {
+    const handler = vi.fn();
+    registerSessionInvalidatedHandler(handler);
+    server.use(http.post(`${BASE}/auth/refresh`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '30' },
+    })));
+
+    try {
+      await expect(refreshAccessToken()).rejects.toMatchObject({ retryAfterSeconds: 30 });
+      expect(useAuthStore.getState().accessToken).toBe('mock-token-1');
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      registerSessionInvalidatedHandler(null);
+    }
   });
 
   it('invokes the registered session-invalidated handler when a runtime refresh fails', async () => {

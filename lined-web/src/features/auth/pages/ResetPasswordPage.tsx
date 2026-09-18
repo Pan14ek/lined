@@ -6,6 +6,7 @@ import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useResetPassword } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
+import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 
 interface FormValues {
   newPassword: string;
@@ -49,6 +50,7 @@ export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const resetPassword = useResetPassword();
+  const cooldown = useRateLimitCooldown('reset-password', resetPassword.error);
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { newPassword: '', confirmPassword: '' },
@@ -107,11 +109,16 @@ export const ResetPasswordPage = () => {
 
         <button
           type="submit"
-          disabled={resetPassword.isPending}
+          disabled={resetPassword.isPending || cooldown > 0}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
           {resetPassword.isPending ? t('resetPassword.submitting') : t('resetPassword.submit')}
         </button>
+        {cooldown > 0 && (
+          <p className="mt-3 text-sm text-text-secondary" role="status" aria-live="polite">
+            {t('errors.rateLimited')} {t('errors.retryIn', { seconds: cooldown })}
+          </p>
+        )}
 
         {resetPassword.isError && (
           <p className="mt-6 text-center text-sm text-text-secondary">

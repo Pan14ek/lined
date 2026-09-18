@@ -3,6 +3,7 @@ package io.backend.lined.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
 import io.backend.lined.auth.service.JwtProperties;
+import io.backend.lined.ratelimit.RateLimitFilter;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -166,8 +168,9 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
-      ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
-    return http
+      ProblemAccessDeniedHandler accessDeniedHandler,
+      ObjectProvider<RateLimitFilter> rateLimitFilter) throws Exception {
+    http
         .cors(Customizer.withDefaults())
         .csrf(csrf -> csrf
             // NOSONAR: this non-secret token must be readable by browser JavaScript for the
@@ -197,8 +200,12 @@ public class SecurityConfig {
             .accessDeniedHandler(accessDeniedHandler))
         .oauth2ResourceServer(resourceServer -> resourceServer
             .jwt(Customizer.withDefaults())
-            .authenticationEntryPoint(authenticationEntryPoint))
-        .build();
+            .authenticationEntryPoint(authenticationEntryPoint));
+    RateLimitFilter filter = rateLimitFilter.getIfAvailable();
+    if (filter != null) {
+      http.addFilterAfter(filter, org.springframework.security.web.csrf.CsrfFilter.class);
+    }
+    return http.build();
   }
 
   private OAuth2TokenValidator<Jwt> jwtValidator(JwtProperties properties, Clock clock) {

@@ -57,4 +57,22 @@ public class SecurityProblemDetailsWriter {
     objectMapper.writeValue(response.getOutputStream(), problem);
   }
 
+  /** Writes the stable external admission rejection contract before MVC is available. */
+  public void writeRateLimited(
+      HttpServletRequest request, HttpServletResponse response, long retryAfterSeconds)
+      throws IOException {
+    response.setHeader("Retry-After", Long.toString(Math.max(1, retryAfterSeconds)));
+    response.setHeader("Cache-Control", "no-store");
+    write(request, response, HttpStatus.TOO_MANY_REQUESTS, "rate-limit-exceeded",
+        "Too Many Requests", "Please try again later.", "rate_limit.exceeded");
+  }
+
+  /** Writes a generic fail-closed response for a mandatory limiter decision. */
+  public void writeUnavailable(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    response.setHeader("Cache-Control", "no-store");
+    write(request, response, HttpStatus.SERVICE_UNAVAILABLE, "rate-limit-unavailable",
+        "Service Unavailable", "Service temporarily unavailable.", "rate_limit.unavailable");
+  }
+
 }

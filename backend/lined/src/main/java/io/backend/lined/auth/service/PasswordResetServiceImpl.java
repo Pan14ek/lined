@@ -9,6 +9,7 @@ import io.backend.lined.auth.domain.PasswordResetTokenRepository;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import io.backend.lined.ratelimit.PasswordResetDeliveryGuard;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -46,6 +47,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   private final AuthRefreshTokenRepository refreshTokenRepository;
   private final PasswordResetMetrics metrics;
   private final Clock clock;
+  private final PasswordResetDeliveryGuard deliveryGuard;
 
   /**
    * Starts recovery for an identifier while keeping account existence private.
@@ -61,6 +63,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   public void requestReset(PasswordResetRequestDto dto) {
     metrics.requestAccepted();
     String identifier = dto.identifier().trim();
+    if (!deliveryGuard.mayDeliver(identifier)) {
+      return;
+    }
     userRepository.findByEmailIgnoreCase(identifier)
         .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
         .ifPresent(this::issueAndDeliver);

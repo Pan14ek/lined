@@ -3,6 +3,8 @@ package io.backend.lined.config;
 import io.backend.lined.common.exception.BaseAppException;
 import io.backend.lined.common.exception.FeatureDisabledException;
 import io.backend.lined.common.exception.InvalidCredentialsException;
+import io.backend.lined.ratelimit.RateLimitExceededException;
+import io.backend.lined.ratelimit.RateLimitUnavailableException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,10 +35,22 @@ public class GlobalExceptionHandler {
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));
     pd.setProperty("code", ex.getCode());
+    if (ex instanceof RateLimitExceededException) {
+      pd.setType(URI.create("https://lined.app/problems/rate-limit-exceeded"));
+      pd.setTitle("Too Many Requests");
+    } else if (ex instanceof RateLimitUnavailableException) {
+      pd.setType(URI.create("https://lined.app/problems/rate-limit-unavailable"));
+      pd.setTitle("Service Unavailable");
+    }
     if (ex instanceof FeatureDisabledException featureDisabledException) {
       pd.setProperty("feature", featureDisabledException.getFeature());
     }
-    return ResponseEntity.status(ex.getStatus()).body(pd);
+    ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.getStatus())
+        .header("Cache-Control", "no-store");
+    if (ex instanceof RateLimitExceededException rateLimit) {
+      response.header("Retry-After", Long.toString(rateLimit.getRetryAfterSeconds()));
+    }
+    return response.body(pd);
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

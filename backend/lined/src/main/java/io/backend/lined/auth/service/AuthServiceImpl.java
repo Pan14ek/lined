@@ -5,6 +5,7 @@ import io.backend.lined.auth.api.AuthLoginResponseDto;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.common.exception.InvalidCredentialsException;
 import io.backend.lined.common.exception.InvalidRefreshSessionException;
+import io.backend.lined.ratelimit.AuthenticationOutcomeRateLimiter;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +23,7 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationManager authenticationManager;
   private final JwtTokenService tokenService;
   private final RefreshSessionService refreshSessionService;
+  private final AuthenticationOutcomeRateLimiter authenticationOutcomeRateLimiter;
 
   @Override
   public AuthLoginResult login(AuthLoginDto dto) {
@@ -31,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     LinedUserPrincipal user = authenticatedUser(identifier, dto.password());
+    authenticationOutcomeRateLimiter.recordSuccess(identifier);
     IssuedRefreshSession session = refreshSessionService.createSession(user.getUserId());
     AuthLoginResponseDto response = new AuthLoginResponseDto(
         tokenService.issueFor(user.getUserId()),
@@ -63,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
       }
       throw new AuthenticationServiceException("Authentication returned an unsupported principal");
     } catch (BadCredentialsException ex) {
+      authenticationOutcomeRateLimiter.recordFailure(identifier);
       throw new InvalidCredentialsException();
     }
   }
