@@ -41,6 +41,22 @@ class ClientAddressResolverTest {
     assertThat(resolver.resolve(request)).isEqualTo("127.0.0.1");
   }
 
+  @Test
+  void trustedProxyMayForwardRealIpWhenForwardedForIsMissing() {
+    MockHttpServletRequest request = request("127.0.0.1");
+    request.addHeader("X-Real-IP", "2001:db8::10");
+
+    assertThat(resolver.resolve(request)).isEqualTo("2001:db8:0:0:0:0:0:10");
+  }
+
+  @Test
+  void invalidRealIpFallsBackToTrustedPeer() {
+    MockHttpServletRequest request = request("127.0.0.1");
+    request.addHeader("X-Real-IP", "attacker.example");
+
+    assertThat(resolver.resolve(request)).isEqualTo("127.0.0.1");
+  }
+
   private MockHttpServletRequest request(String remoteAddress) {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRemoteAddr(remoteAddress);

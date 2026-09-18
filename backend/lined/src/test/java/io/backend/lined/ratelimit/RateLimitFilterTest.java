@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,12 +20,13 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 class RateLimitFilterTest {
 
+  private RateLimitProperties properties;
   private RateLimitStore store;
   private RateLimitFilter filter;
 
   @BeforeEach
   void setUp() {
-    RateLimitProperties properties = new RateLimitProperties();
+    properties = new RateLimitProperties();
     properties.setKeySecret("test-rate-limit-key-secret-with-at-least-32-bytes");
     store = mock(RateLimitStore.class);
     filter = new RateLimitFilter(properties, new RateLimitPolicyResolver(properties),
@@ -60,6 +62,67 @@ class RateLimitFilterTest {
 
     assertThat(reached).isTrue();
     verify(store).tryConsume(any(), any());
+  }
+
+  @Test
+  void optionsRequestBypassesAdmission() throws Exception {
+    AtomicBoolean reached = new AtomicBoolean();
+
+    filter.doFilter(request("OPTIONS", "/api/auth/login"), new MockHttpServletResponse(),
+        (ignoredRequest, ignoredResponse) -> reached.set(true));
+
+    assertThat(reached).isTrue();
+    verifyNoInteractions(store);
+  }
+
+  @Test
+  void disabledLimiterBypassesAdmission() throws Exception {
+    properties.setEnabled(false);
+    AtomicBoolean reached = new AtomicBoolean();
+
+    filter.doFilter(request("POST", "/api/auth/login"), new MockHttpServletResponse(),
+        (ignoredRequest, ignoredResponse) -> reached.set(true));
+
+    assertThat(reached).isTrue();
+    verifyNoInteractions(store);
+  }
+
+  @Test
+  void unprotectedRequestReachesHandlerWithoutAdmission() throws Exception {
+    AtomicBoolean reached = new AtomicBoolean();
+
+    filter.doFilter(request("GET", "/api/health"), new MockHttpServletResponse(),
+        (ignoredRequest, ignoredResponse) -> reached.set(true));
+
+    assertThat(reached).isTrue();
+    verifyNoInteractions(store);
+  }
+
+  @Test
+  void storageFailureWritesUnavailableProblemForSensitiveRoute() throws Exception {
+    when(store.tryConsume(any(), any()))
+        .thenThrow(new RateLimitStorageException("capacity exhausted"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    AtomicBoolean reached = new AtomicBoolean();
+
+    filter.doFilter(request("POST", "/api/auth/login"), response,
+        (ignoredRequest, ignoredResponse) -> reached.set(true));
+
+    assertThat(response.getStatus()).isEqualTo(503);
+    assertThat(response.getContentAsString()).contains("rate_limit.unavailable");
+    assertThat(reached).isFalse();
+  }
+
+  @Test
+  void storageFailureStillAllowsLogout() throws Exception {
+    when(store.tryConsume(any(), any()))
+        .thenThrow(new RateLimitStorageException("capacity exhausted"));
+    AtomicBoolean reached = new AtomicBoolean();
+
+    filter.doFilter(request("POST", "/api/auth/logout"), new MockHttpServletResponse(),
+        (ignoredRequest, ignoredResponse) -> reached.set(true));
+
+    assertThat(reached).isTrue();
   }
 
   private MockHttpServletRequest request(String method, String path) {

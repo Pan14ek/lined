@@ -21,8 +21,7 @@ class RateLimitKeyFactoryTest {
     String first = factory.identifierKey(" Alice@Example.com ");
     String second = factory.identifierKey("alice@example.com");
 
-    assertThat(first).isEqualTo(second);
-    assertThat(first).doesNotContain("alice", "example.com");
+    assertThat(first).isEqualTo(second).doesNotContain("alice", "example.com");
   }
 
   @Test

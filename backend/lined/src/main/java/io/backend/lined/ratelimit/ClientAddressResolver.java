@@ -36,7 +36,10 @@ public class ClientAddressResolver {
       }
     }
     String realIp = request.getHeader("X-Real-IP");
-    return isAddress(realIp) ? canonical(realIp) : canonical(peer);
+    if (isAddress(realIp)) {
+      return canonical(realIp);
+    }
+    return canonical(peer);
   }
 
   private boolean isTrusted(String address) {
@@ -66,7 +69,7 @@ public class ClientAddressResolver {
     }
   }
 
-  private record Cidr(byte[] network, int prefix) {
+  private record Cidr(InetAddress network, int prefix) {
 
     static Cidr parse(String value) {
       String[] parts = value.trim().split("/", 2);
@@ -79,7 +82,7 @@ public class ClientAddressResolver {
         if (prefix < 0 || prefix > address.getAddress().length * 8) {
           throw new IllegalArgumentException("Proxy CIDR prefix is invalid");
         }
-        return new Cidr(address.getAddress(), prefix);
+        return new Cidr(address, prefix);
       } catch (UnknownHostException | NumberFormatException ex) {
         throw new IllegalArgumentException("Proxy CIDR is invalid", ex);
       }
@@ -102,19 +105,21 @@ public class ClientAddressResolver {
     boolean contains(String value) {
       try {
         byte[] address = InetAddress.getByName(value).getAddress();
-        if (address.length != network.length) {
+        byte[] networkAddress = network.getAddress();
+        if (address.length != networkAddress.length) {
           return false;
         }
         int fullBytes = prefix / 8;
         int remainingBits = prefix % 8;
-        if (!Arrays.equals(Arrays.copyOf(address, fullBytes), Arrays.copyOf(network, fullBytes))) {
+        if (!Arrays.equals(Arrays.copyOf(address, fullBytes),
+            Arrays.copyOf(networkAddress, fullBytes))) {
           return false;
         }
         if (remainingBits == 0) {
           return true;
         }
         int mask = 0xFF << (8 - remainingBits);
-        return (address[fullBytes] & mask) == (network[fullBytes] & mask);
+        return (address[fullBytes] & mask) == (networkAddress[fullBytes] & mask);
       } catch (UnknownHostException ex) {
         return false;
       }
