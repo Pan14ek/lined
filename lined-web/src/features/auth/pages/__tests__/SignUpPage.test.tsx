@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
+import { server } from '@/test/server';
 import { SignUpPage } from '../SignUpPage';
 import { useAuthStore } from '@/store/auth';
+import { HTTP_STATUS } from '@/test/httpStatus';
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 const renderSignUp = () => {
   return renderWithProviders(
@@ -80,5 +85,21 @@ describe('SignUpPage', () => {
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
     expect(useAuthStore.getState().accessToken).toBeNull();
+  });
+
+  it('shows a cooldown and disables submission after a rate-limit response', async () => {
+    server.use(http.post(`${BASE}/users`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '5' },
+    })));
+    const user = userEvent.setup();
+    renderSignUp();
+
+    await fillValidForm(user, { username: 'new-user', email: 'new@lined.app' });
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/too many attempts/i);
+    expect(screen.getByRole('status')).toHaveTextContent(/try again in \d+ seconds/i);
+    expect(screen.getByRole('button', { name: /create account/i })).toBeDisabled();
   });
 });

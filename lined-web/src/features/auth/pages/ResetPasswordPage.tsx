@@ -1,6 +1,8 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
@@ -51,6 +53,8 @@ export const ResetPasswordPage = () => {
   const token = searchParams.get('token');
   const resetPassword = useResetPassword();
   const cooldown = useRateLimitCooldown('reset-password', resetPassword.error);
+  const resetErrorStatus = getErrorStatus(resetPassword.error);
+  const isRateLimited = resetErrorStatus === HTTP_STATUS.TOO_MANY_REQUESTS;
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { newPassword: '', confirmPassword: '' },
@@ -104,7 +108,13 @@ export const ResetPasswordPage = () => {
         </div>
 
         {resetPassword.isError && (
-          <AuthAlert message={t('resetPassword.invalidLink')} />
+          <AuthAlert
+            message={isRateLimited
+              ? t('errors.rateLimited')
+              : resetErrorStatus === HTTP_STATUS.BAD_REQUEST
+                ? t('resetPassword.invalidLink')
+                : t('errors.generic')}
+          />
         )}
 
         <button
@@ -120,7 +130,7 @@ export const ResetPasswordPage = () => {
           </p>
         )}
 
-        {resetPassword.isError && (
+        {resetPassword.isError && !isRateLimited && (
           <p className="mt-6 text-center text-sm text-text-secondary">
             <Link to="/forgot-password" className="font-medium text-brand-green hover:underline">
               {t('resetPassword.requestNewLink')}

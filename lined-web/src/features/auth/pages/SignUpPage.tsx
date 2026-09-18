@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
@@ -157,10 +158,10 @@ export const SignUpPage = () => {
 
 const getServerErrorMessage = (t: TFunction<'auth'>, error: unknown): string | null => {
   if (!error) return null;
-  if (getErrorStatus(error) === 409) {
+  if (getErrorStatus(error) === HTTP_STATUS.CONFLICT) {
     return t('signUp.errors.usernameOrEmailTaken');
   }
-  if (getErrorStatus(error) === 429) {
+  if (getErrorStatus(error) === HTTP_STATUS.TOO_MANY_REQUESTS) {
     return t('errors.rateLimited');
   }
   return t('errors.generic');

@@ -1,4 +1,4 @@
-import ky, { HTTPError } from 'ky';
+import ky, { HTTPError, type NormalizedOptions } from 'ky';
 import { useAuthStore } from '@/store/auth';
 import { HTTP_STATUS } from '@/lib/httpStatus';
 import type { LoginResponseDto } from '@/features/auth/model';
@@ -26,12 +26,17 @@ export class MockHttpError extends Error {
 }
 
 /** Typed transport error used by auth forms and recovery UI for HTTP 429. */
-export class RateLimitError extends Error {
+export class RateLimitError extends HTTPError {
   readonly status = HTTP_STATUS.TOO_MANY_REQUESTS;
   readonly retryAfterSeconds: number;
 
-  constructor(retryAfterSeconds: number) {
-    super('Too many requests');
+  constructor(
+    response: Response,
+    request: Request,
+    options: NormalizedOptions,
+    retryAfterSeconds: number,
+  ) {
+    super(response, request, options);
     this.name = 'RateLimitError';
     this.retryAfterSeconds = retryAfterSeconds;
   }
@@ -203,9 +208,12 @@ export const api = ky.create({
     }],
     beforeError: [async (error) => {
       if (error.response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
-        return (new RateLimitError(
-          parseRetryAfter(error.response.headers.get('Retry-After'))
-        ) as unknown as HTTPError);
+        return new RateLimitError(
+          error.response,
+          error.request,
+          error.options,
+          parseRetryAfter(error.response.headers.get('Retry-After')),
+        );
       }
       return error;
     }],

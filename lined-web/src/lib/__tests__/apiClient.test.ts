@@ -39,10 +39,17 @@ describe('MockHttpError', () => {
 
 describe('rate-limit transport errors', () => {
   it('exposes a typed retry delay without trusting arbitrary response text', () => {
-    const error = new RateLimitError(12);
+    const error = new RateLimitError(
+      new Response(null, { status: HTTP_STATUS.TOO_MANY_REQUESTS }),
+      new Request('http://localhost/'),
+      {} as never,
+      12,
+    );
 
     expect(getErrorStatus(error)).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
     expect(getRateLimitRetryAfterSeconds(error)).toBe(12);
+    expect(error).toBeInstanceOf(HTTPError);
+    expect(error.response.status).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
   });
 });
 
@@ -260,6 +267,17 @@ describe('authenticated API transport', () => {
       retryAfterSeconds: 12,
     });
     expect(attempts).toBe(1);
+  });
+
+  it('uses the fallback retry delay for malformed Retry-After values', async () => {
+    server.use(http.post(`${BASE}/auth/login`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': 'not-a-delay' },
+    })));
+
+    await expect(linedApi.post('auth/login')).rejects.toMatchObject({
+      retryAfterSeconds: 60,
+    });
   });
 
   it('preserves authentication when refresh is rate limited', async () => {

@@ -6,6 +6,7 @@ import { TextField } from '@/components/design-system/forms/TextField';
 import { useRequestPasswordReset } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
 import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 
 interface FormValues {
@@ -40,7 +41,9 @@ export const ForgotPasswordPage = () => {
 
   // Always shown once a submission has settled, whether it succeeded or
   // failed — the identifier's existence must never be observable.
-  const submitted = requestReset.isSuccess || (requestReset.isError && getErrorStatus(requestReset.error) !== 429);
+  const submitted = requestReset.isSuccess
+    || (requestReset.isError
+      && getErrorStatus(requestReset.error) !== HTTP_STATUS.TOO_MANY_REQUESTS);
 
   if (submitted) {
     return (
