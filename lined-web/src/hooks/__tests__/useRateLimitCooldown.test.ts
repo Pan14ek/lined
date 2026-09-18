@@ -26,6 +26,7 @@ describe('useRateLimitCooldown', () => {
   });
 
   it('persists a server retry deadline and counts down', () => {
+    expect.assertions(3);
     const { result, unmount } = renderHook(() => useRateLimitCooldown(
       'sign-in',
       createRateLimitError(),
@@ -42,6 +43,7 @@ describe('useRateLimitCooldown', () => {
   });
 
   it('restores a persisted deadline and removes it on expiry', () => {
+    expect.assertions(3);
     window.localStorage.setItem(STORAGE_KEY, String(Date.now() + 1_000));
 
     const { result } = renderHook(() => useRateLimitCooldown('sign-in', null));
@@ -54,6 +56,7 @@ describe('useRateLimitCooldown', () => {
   });
 
   it('ignores malformed persisted deadlines and non-rate-limit errors', () => {
+    expect.assertions(1);
     window.localStorage.setItem(STORAGE_KEY, 'not-a-deadline');
 
     const { result } = renderHook(() => useRateLimitCooldown('sign-in', new Error('network')));
