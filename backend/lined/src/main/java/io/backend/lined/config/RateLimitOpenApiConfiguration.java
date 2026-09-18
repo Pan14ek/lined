@@ -1,7 +1,6 @@
 package io.backend.lined.config;
 
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -18,6 +17,10 @@ public class RateLimitOpenApiConfiguration {
       "/api/users", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
       "/api/auth/csrf", "/api/auth/password-reset-requests", "/api/auth/password-resets");
 
+  /** Supplies the OpenAPI customizer for covered admission-controlled routes.
+   *
+   * @return customizer adding 429 and 503 responses
+   */
   @Bean
   public GlobalOpenApiCustomizer rateLimitResponses() {
     return openApi -> addResponses(openApi.getPaths());
@@ -29,12 +32,13 @@ public class RateLimitOpenApiConfiguration {
     }
     paths.forEach((path, item) -> {
       if (COVERED_PATHS.contains(path)) {
-        item.readOperationsMap().forEach(this::addResponses);
+        item.readOperationsMap().values().forEach(this::addResponses);
       }
     });
   }
 
-  private void addResponses(HttpMethod method, Operation operation) {
+  /** Adds the shared 429 and 503 responses to one OpenAPI operation. */
+  private void addResponses(Operation operation) {
     ApiResponses responses = operation.getResponses();
     if (responses == null) {
       responses = new ApiResponses();

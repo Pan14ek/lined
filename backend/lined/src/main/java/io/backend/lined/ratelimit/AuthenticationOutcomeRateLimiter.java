@@ -13,6 +13,12 @@ public class AuthenticationOutcomeRateLimiter {
   private final RateLimitStore store;
   private final RateLimitMetrics metrics;
 
+  /** Records a failed login and rejects the request when the identifier bucket is exhausted.
+   *
+   * @param identifier submitted login identifier
+   * @throws RateLimitExceededException when the identifier has exceeded its failure budget
+   * @throws RateLimitUnavailableException when the limiter cannot make a safe decision
+   */
   public void recordFailure(String identifier) {
     String normalized = keyFactory.normalizeIdentifier(identifier);
     if (normalized == null) {
@@ -34,6 +40,10 @@ public class AuthenticationOutcomeRateLimiter {
     }
   }
 
+  /** Clears the failed-login bucket after a successful authentication.
+   *
+   * @param identifier authenticated login identifier
+   */
   public void recordSuccess(String identifier) {
     String normalized = keyFactory.normalizeIdentifier(identifier);
     if (normalized != null) {

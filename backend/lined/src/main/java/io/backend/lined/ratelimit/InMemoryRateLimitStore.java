@@ -34,6 +34,7 @@ public class InMemoryRateLimitStore implements RateLimitStore {
   }
 
   @Override
+  /** {@inheritDoc} */
   public RateLimitDecision tryConsume(RateLimitPolicy policy, String key) {
     Bucket bucket = bucket(policy, key);
     var probe = bucket.tryConsumeAndReturnRemaining(1);
@@ -41,16 +42,19 @@ public class InMemoryRateLimitStore implements RateLimitStore {
   }
 
   @Override
+  /** {@inheritDoc} */
   public void remove(RateLimitPolicy policy, String key) {
     buckets.invalidate(cacheKey(policy, key));
   }
 
   @Override
+  /** {@inheritDoc} */
   public long entryCount() {
     return buckets == null ? 0 : buckets.estimatedSize();
   }
 
   @Override
+  /** {@inheritDoc} */
   public long capacity() {
     return properties.getMaxKeys();
   }
@@ -61,16 +65,18 @@ public class InMemoryRateLimitStore implements RateLimitStore {
     if (existing != null) {
       return existing;
     }
+    return createBucket(cacheKey, policy);
+  }
+
+  /** Creates one bucket while serializing capacity checks and cache insertion. */
+  private Bucket createBucket(String cacheKey, RateLimitPolicy policy) {
     creationLock.lock();
     try {
-      existing = buckets.getIfPresent(cacheKey);
+      Bucket existing = buckets.getIfPresent(cacheKey);
       if (existing != null) {
         return existing;
       }
-      if (buckets.estimatedSize() >= properties.getMaxKeys()) {
-        throw new RateLimitStorageException("Rate-limit key capacity reached");
-      }
-      return buckets.get(cacheKey, ignored -> newBucket(policy));
+      return insertBucket(cacheKey, policy);
     } catch (RateLimitStorageException ex) {
       throw ex;
     } catch (RuntimeException ex) {
@@ -78,6 +84,14 @@ public class InMemoryRateLimitStore implements RateLimitStore {
     } finally {
       creationLock.unlock();
     }
+  }
+
+  /** Checks the bounded-cache invariant before allocating a new token bucket. */
+  private Bucket insertBucket(String cacheKey, RateLimitPolicy policy) {
+    if (buckets.estimatedSize() >= properties.getMaxKeys()) {
+      throw new RateLimitStorageException("Rate-limit key capacity reached");
+    }
+    return buckets.get(cacheKey, ignored -> newBucket(policy));
   }
 
   private Bucket newBucket(RateLimitPolicy policy) {

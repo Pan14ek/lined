@@ -8,11 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Applies the transport-side IP policies before authentication handlers and mutations. */
-@org.springframework.stereotype.Component
+@Component
 @ConditionalOnBean(RateLimitStore.class)
 @RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -28,7 +29,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                   FilterChain filterChain) throws ServletException, IOException {
-    if (!properties.isEnabled() || "OPTIONS".equalsIgnoreCase(request.getMethod())) {
+    if (shouldBypass(request)) {
       filterChain.doFilter(request, response);
       return;
     }
@@ -39,24 +40,42 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     String policyId = policy.get().id();
     try {
-      RateLimitDecision decision = store.tryConsume(policy.get(),
-          keyFactory.ipKey(addressResolver.resolve(request)));
-      if (decision.allowed()) {
-        metrics.allowed(policyId);
-        filterChain.doFilter(request, response);
-        return;
-      }
-      metrics.rejected(policyId);
-      problemWriter.writeRateLimited(request, response, decision.retryAfterSeconds());
+      admitRequest(request, response, filterChain, policy.get());
     } catch (RateLimitStorageException ex) {
-      metrics.storageFailure("capacity");
-      if ("logout-ip".equals(policyId)) {
-        metrics.unavailable(policyId);
-        filterChain.doFilter(request, response);
-      } else {
-        metrics.unavailable(policyId);
-        problemWriter.writeUnavailable(request, response);
-      }
+      handleStorageFailure(request, response, filterChain, policyId);
     }
+  }
+
+  /** Identifies requests that do not require transport-side admission. */
+  private boolean shouldBypass(HttpServletRequest request) {
+    return !properties.isEnabled() || "OPTIONS".equalsIgnoreCase(request.getMethod());
+  }
+
+  /** Consumes the selected IP bucket and either continues or writes the rejection response. */
+  private void admitRequest(HttpServletRequest request, HttpServletResponse response,
+                            FilterChain filterChain, RateLimitPolicy policy)
+      throws ServletException, IOException {
+    RateLimitDecision decision = store.tryConsume(policy,
+        keyFactory.ipKey(addressResolver.resolve(request)));
+    if (decision.allowed()) {
+      metrics.allowed(policy.id());
+      filterChain.doFilter(request, response);
+      return;
+    }
+    metrics.rejected(policy.id());
+    problemWriter.writeRateLimited(request, response, decision.retryAfterSeconds());
+  }
+
+  /** Applies the fail-closed policy while preserving logout availability. */
+  private void handleStorageFailure(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain, String policyId)
+      throws ServletException, IOException {
+    metrics.storageFailure("capacity");
+    metrics.unavailable(policyId);
+    if ("logout-ip".equals(policyId)) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+    problemWriter.writeUnavailable(request, response);
   }
 }

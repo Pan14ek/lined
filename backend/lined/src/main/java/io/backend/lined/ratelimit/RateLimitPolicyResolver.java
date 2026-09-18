@@ -13,6 +13,11 @@ public class RateLimitPolicyResolver {
 
   private final RateLimitProperties properties;
 
+  /** Resolves an allowlisted endpoint and method to its configured IP policy.
+   *
+   * @param request incoming HTTP request
+   * @return matching policy, or empty when the request is outside the protected allowlist
+   */
   public Optional<RateLimitPolicy> resolve(HttpServletRequest request) {
     String path = request.getRequestURI();
     String name = null;

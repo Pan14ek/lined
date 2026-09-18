@@ -4,16 +4,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /** Resolves the client address only through a configured, verified proxy peer. */
 @Component
-@RequiredArgsConstructor
 public class ClientAddressResolver {
 
-  private final RateLimitProperties properties;
+  private final List<Cidr> trustedProxies;
 
+  /** Creates a resolver with trusted proxy networks parsed during application startup. */
+  public ClientAddressResolver(RateLimitProperties properties) {
+    trustedProxies = properties.getTrustedProxies().stream().map(Cidr::parse).toList();
+  }
+
+  /** Resolves the client address using forwarded headers only from a trusted transport peer.
+   *
+   * @param request request whose raw transport peer and forwarding headers are inspected
+   * @return canonical client IP address, or {@code unknown} when no valid address is available
+   */
   public String resolve(HttpServletRequest request) {
     String peer = request.getRemoteAddr();
     if (!isTrusted(peer)) {
@@ -31,7 +40,7 @@ public class ClientAddressResolver {
   }
 
   private boolean isTrusted(String address) {
-    return properties.getTrustedProxies().stream().anyMatch(cidr -> Cidr.parse(cidr).contains(address));
+    return trustedProxies.stream().anyMatch(cidr -> cidr.contains(address));
   }
 
   private boolean isAddress(String address) {
@@ -62,6 +71,9 @@ public class ClientAddressResolver {
     static Cidr parse(String value) {
       String[] parts = value.trim().split("/", 2);
       try {
+        if (parts.length == 0 || !isIpLiteral(parts[0])) {
+          throw new IllegalArgumentException("Proxy CIDR address is invalid");
+        }
         InetAddress address = InetAddress.getByName(parts[0]);
         int prefix = parts.length == 2 ? Integer.parseInt(parts[1]) : address.getAddress().length * 8;
         if (prefix < 0 || prefix > address.getAddress().length * 8) {
@@ -70,6 +82,20 @@ public class ClientAddressResolver {
         return new Cidr(address.getAddress(), prefix);
       } catch (UnknownHostException | NumberFormatException ex) {
         throw new IllegalArgumentException("Proxy CIDR is invalid", ex);
+      }
+    }
+
+    private static boolean isIpLiteral(String value) {
+      return value != null && value.trim().matches("[0-9A-Fa-f:.]+")
+          && resolves(value.trim());
+    }
+
+    private static boolean resolves(String value) {
+      try {
+        InetAddress.getByName(value);
+        return true;
+      } catch (UnknownHostException ex) {
+        return false;
       }
     }
 

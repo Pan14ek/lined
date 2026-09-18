@@ -19,9 +19,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-@RestControllerAdvice
+  @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  /** Maps application exceptions to the stable Problem Details response contract. */
   @ExceptionHandler(BaseAppException.class)
   public ResponseEntity<ProblemDetail> handleBase(BaseAppException ex) {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
@@ -35,22 +36,32 @@ public class GlobalExceptionHandler {
     });
     pd.setType(URI.create("https://errors.lined.app/" + ex.getCode()));
     pd.setProperty("code", ex.getCode());
-    if (ex instanceof RateLimitExceededException) {
-      pd.setType(URI.create("https://lined.app/problems/rate-limit-exceeded"));
-      pd.setTitle("Too Many Requests");
-    } else if (ex instanceof RateLimitUnavailableException) {
-      pd.setType(URI.create("https://lined.app/problems/rate-limit-unavailable"));
-      pd.setTitle("Service Unavailable");
-    }
+    customizeRateLimitProblem(pd, ex);
     if (ex instanceof FeatureDisabledException featureDisabledException) {
       pd.setProperty("feature", featureDisabledException.getFeature());
     }
-    ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.getStatus())
+    return responseBuilder(ex).body(pd);
+  }
+
+  /** Adds the externally stable type and title for rate-limit failures. */
+  private void customizeRateLimitProblem(ProblemDetail problem, BaseAppException exception) {
+    if (exception instanceof RateLimitExceededException) {
+      problem.setType(URI.create("https://lined.app/problems/rate-limit-exceeded"));
+      problem.setTitle("Too Many Requests");
+    } else if (exception instanceof RateLimitUnavailableException) {
+      problem.setType(URI.create("https://lined.app/problems/rate-limit-unavailable"));
+      problem.setTitle("Service Unavailable");
+    }
+  }
+
+  /** Builds common no-store headers and the rate-limit retry hint when applicable. */
+  private ResponseEntity.BodyBuilder responseBuilder(BaseAppException exception) {
+    ResponseEntity.BodyBuilder response = ResponseEntity.status(exception.getStatus())
         .header("Cache-Control", "no-store");
-    if (ex instanceof RateLimitExceededException rateLimit) {
+    if (exception instanceof RateLimitExceededException rateLimit) {
       response.header("Retry-After", Long.toString(rateLimit.getRetryAfterSeconds()));
     }
-    return response.body(pd);
+    return response;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -96,11 +107,10 @@ public class GlobalExceptionHandler {
    * exception rather than allowing the generic handler to turn the absent route into a
    * {@code 500 Internal Server Error}.</p>
    *
-   * @param ex Spring MVC missing-resource exception for the requested path
    * @return RFC 7807 response with {@code 404 Not Found}
    */
   @ExceptionHandler(NoResourceFoundException.class)
-  public ResponseEntity<ProblemDetail> handleNoResourceFound(NoResourceFoundException ex) {
+  public ResponseEntity<ProblemDetail> handleNoResourceFound() {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Resource not found");
     pd.setTitle("Resource not found");
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);

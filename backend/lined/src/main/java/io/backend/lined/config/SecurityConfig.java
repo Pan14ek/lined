@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.ObjectProvider;
@@ -161,6 +162,7 @@ public class SecurityConfig {
    * @param http Spring Security HTTP configuration builder
    * @param authenticationEntryPoint writer for unauthenticated Problem Details responses
    * @param accessDeniedHandler writer for forbidden Problem Details responses
+   * @param rateLimitFilter optional transport admission filter
    * @return configured stateless filter chain
    * @throws Exception when Spring Security cannot build the filter chain
    */
@@ -203,9 +205,19 @@ public class SecurityConfig {
             .authenticationEntryPoint(authenticationEntryPoint));
     RateLimitFilter filter = rateLimitFilter.getIfAvailable();
     if (filter != null) {
-      http.addFilterAfter(filter, org.springframework.security.web.csrf.CsrfFilter.class);
+      http.addFilterBefore(filter, org.springframework.security.web.csrf.CsrfFilter.class);
     }
     return http.build();
+  }
+
+  /** Disables servlet-container auto-registration because the limiter belongs only in Security. */
+  @Bean
+  public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
+      ObjectProvider<RateLimitFilter> rateLimitFilter) {
+    FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>();
+    rateLimitFilter.ifAvailable(registration::setFilter);
+    registration.setEnabled(false);
+    return registration;
   }
 
   private OAuth2TokenValidator<Jwt> jwtValidator(JwtProperties properties, Clock clock) {

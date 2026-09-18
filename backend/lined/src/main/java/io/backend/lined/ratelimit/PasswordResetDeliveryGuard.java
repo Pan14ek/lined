@@ -13,6 +13,12 @@ public class PasswordResetDeliveryGuard {
   private final RateLimitStore store;
   private final RateLimitMetrics metrics;
 
+  /** Consumes delivery budget while preserving the generic reset response for suppressed users.
+   *
+   * @param identifier submitted email address or username
+   * @return {@code true} when delivery may proceed
+   * @throws RateLimitUnavailableException when the limiter cannot make a safe decision
+   */
   public boolean mayDeliver(String identifier) {
     String normalized = keyFactory.normalizeIdentifier(identifier);
     if (normalized == null) {

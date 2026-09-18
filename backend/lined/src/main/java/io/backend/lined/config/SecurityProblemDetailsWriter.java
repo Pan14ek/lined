@@ -38,6 +38,17 @@ public class SecurityProblemDetailsWriter {
 
   private final ObjectMapper objectMapper;
 
+  /** Serializes one pre-MVC security failure as Problem Details.
+   *
+   * @param request request used for the problem instance URI
+   * @param response response receiving status, content type, and body
+   * @param status HTTP status to expose
+   * @param type problem type suffix
+   * @param title human-readable problem title
+   * @param detail safe human-readable problem detail
+   * @param code stable machine-readable error code
+   * @throws IOException when the response body cannot be written
+   */
   void write(
       HttpServletRequest request,
       HttpServletResponse response,

@@ -17,10 +17,21 @@ public class RateLimitKeyFactory {
   private static final int MAX_IDENTIFIER_LENGTH = 255;
   private final RateLimitProperties properties;
 
+  /** Hashes a canonical IP address into a non-plaintext bucket key.
+   *
+   * @param address canonical client address
+   * @return keyed digest for the IP dimension
+   */
   public String ipKey(String address) {
     return digest("ip:" + address);
   }
 
+  /** Hashes a normalized identifier into a non-plaintext bucket key.
+   *
+   * @param identifier user-supplied identifier
+   * @return keyed digest for the identifier dimension
+   * @throws IllegalArgumentException when the identifier is invalid
+   */
   public String identifierKey(String identifier) {
     String normalized = normalizeIdentifier(identifier);
     if (normalized == null) {
@@ -29,6 +40,11 @@ public class RateLimitKeyFactory {
     return digest("identifier:" + normalized);
   }
 
+  /** Normalizes and bounds an attacker-controlled identifier.
+   *
+   * @param identifier user-supplied identifier
+   * @return normalized identifier, or {@code null} when invalid
+   */
   public String normalizeIdentifier(String identifier) {
     if (identifier == null) {
       return null;
