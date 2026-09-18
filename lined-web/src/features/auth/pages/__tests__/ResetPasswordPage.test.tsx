@@ -84,6 +84,7 @@ describe('ResetPasswordPage', () => {
   });
 
   it('shows rate-limit guidance instead of invalid-link guidance for HTTP 429', async () => {
+    expect.assertions(3);
     server.use(http.post(`${BASE}/auth/password-resets`, () => new HttpResponse(null, {
       status: HTTP_STATUS.TOO_MANY_REQUESTS,
       headers: { 'Retry-After': '5' },

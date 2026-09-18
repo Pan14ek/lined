@@ -74,6 +74,7 @@ describe('ForgotPasswordPage', () => {
   });
 
   it('keeps the form visible and shows a cooldown after a rate-limit response', async () => {
+    expect.assertions(3);
     server.use(http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, {
       status: HTTP_STATUS.TOO_MANY_REQUESTS,
       headers: { 'Retry-After': '5' },

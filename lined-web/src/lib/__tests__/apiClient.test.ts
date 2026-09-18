@@ -39,6 +39,7 @@ describe('MockHttpError', () => {
 
 describe('rate-limit transport errors', () => {
   it('exposes a typed retry delay without trusting arbitrary response text', () => {
+    expect.assertions(4);
     const error = new RateLimitError(
       new Response(null, { status: HTTP_STATUS.TOO_MANY_REQUESTS }),
       new Request('http://localhost/'),
@@ -270,6 +271,7 @@ describe('authenticated API transport', () => {
   });
 
   it('uses the fallback retry delay for malformed Retry-After values', async () => {
+    expect.assertions(1);
     server.use(http.post(`${BASE}/auth/login`, () => new HttpResponse(null, {
       status: HTTP_STATUS.TOO_MANY_REQUESTS,
       headers: { 'Retry-After': 'not-a-delay' },

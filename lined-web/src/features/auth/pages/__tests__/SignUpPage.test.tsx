@@ -88,6 +88,7 @@ describe('SignUpPage', () => {
   });
 
   it('shows a cooldown and disables submission after a rate-limit response', async () => {
+    expect.assertions(3);
     server.use(http.post(`${BASE}/users`, () => new HttpResponse(null, {
       status: HTTP_STATUS.TOO_MANY_REQUESTS,
       headers: { 'Retry-After': '5' },
