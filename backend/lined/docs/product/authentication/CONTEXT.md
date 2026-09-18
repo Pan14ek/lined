@@ -70,6 +70,10 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   user IDs.
 - AUTH-SEC-09 delivers production secret, cookie, CORS, Swagger, Actuator, and
   credential-redaction hardening.
+- BETA-03 adds bounded single-instance IP admission, HMAC identifier outcome
+  guards, generic 429/503 contracts, trusted-proxy handling, and web cooldown
+  behavior. The refresh-session dimension remains deferred until a verified
+  pre-rotation lookup seam and distributed store exist.
 
 ## Architecture and data flow
 
@@ -142,6 +146,7 @@ the MVC exception layer, without exposing authentication or authorization intern
 - [Authentication security SDD tasks](authentication-security-tasks.md)
 - [Password-reset proposal](../users/proposals/password-reset-flow.md)
 - [BETA-02 password-reset delivery](BETA-02-password-reset-delivery.md)
+- [BETA-03 rate-limiting implementation](BETA-03-rate-limiting-implementation.md)
 - [Backend architecture](../../foundation/architecture.md)
 - [Testing guide](../../foundation/testing.md)
 - [Authentication source package](../../../src/main/java/io/backend/lined/auth/)

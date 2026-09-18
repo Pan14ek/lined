@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
     "spring.sql.init.mode=never",
     "lined.security.jwt.secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
     "lined.auth.reset-token-secret=production-exposure-test-reset-secret",
+    "lined.rate-limit.key-secret=production-exposure-test-rate-limit-secret",
     "lined.auth.mail.enabled=false"
 })
 class ProductionExposureMvcTest {

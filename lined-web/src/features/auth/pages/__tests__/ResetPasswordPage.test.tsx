@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen, userEvent } from '@/test/utils';
+import { server } from '@/test/server';
 import { ResetPasswordPage } from '../ResetPasswordPage';
+import { HTTP_STATUS } from '@/test/httpStatus';
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 const renderResetPassword = (initialEntry: string) => {
   return renderWithProviders(
@@ -76,5 +81,22 @@ describe('ResetPasswordPage', () => {
       'href',
       '/forgot-password',
     );
+  });
+
+  it('shows rate-limit guidance instead of invalid-link guidance for HTTP 429', async () => {
+    expect.assertions(3);
+    server.use(http.post(`${BASE}/auth/password-resets`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '5' },
+    })));
+    const user = userEvent.setup();
+    renderResetPassword('/reset-password?token=valid-token');
+
+    await fillPasswords(user, 'password123', 'password123');
+    await user.click(screen.getByRole('button', { name: /reset password/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/too many attempts/i);
+    expect(screen.queryByText(/invalid or expired/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /request a new reset link/i })).not.toBeInTheDocument();
   });
 });

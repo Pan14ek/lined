@@ -9,6 +9,7 @@ import io.backend.lined.auth.domain.PasswordResetTokenRepository;
 import io.backend.lined.common.exception.BadRequestException;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
+import io.backend.lined.ratelimit.PasswordResetDeliveryGuard;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -46,6 +47,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   private final AuthRefreshTokenRepository refreshTokenRepository;
   private final PasswordResetMetrics metrics;
   private final Clock clock;
+  private final PasswordResetDeliveryGuard deliveryGuard;
 
   /**
    * Starts recovery for an identifier while keeping account existence private.
@@ -61,6 +63,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   public void requestReset(PasswordResetRequestDto dto) {
     metrics.requestAccepted();
     String identifier = dto.identifier().trim();
+    if (!deliveryGuard.mayDeliver(identifier)) {
+      return;
+    }
     userRepository.findByEmailIgnoreCase(identifier)
         .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
         .ifPresent(this::issueAndDeliver);
@@ -82,21 +87,31 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   public void reset(PasswordResetDto dto) {
     String hash = tokenCodec.hash(dto.token());
     OffsetDateTime now = OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    PasswordResetTokenEntity resetToken = claimToken(hash, now);
+    applyPasswordReset(resetToken, dto.newPassword(), now);
+    metrics.redemptionSucceeded();
+  }
+
+  /** Claims the token exactly once and preserves the generic invalid-token response. */
+  private PasswordResetTokenEntity claimToken(String hash, OffsetDateTime now) {
     int claimed = tokenRepository.claimUnusedUnexpired(hash, now, now);
     if (claimed != 1) {
       metrics.redemptionFailed();
       throw new BadRequestException(INVALID_TOKEN_MESSAGE);
     }
-    PasswordResetTokenEntity resetToken = tokenRepository.findByTokenHash(hash)
+    return tokenRepository.findByTokenHash(hash)
         .orElseThrow(() -> new BadRequestException(INVALID_TOKEN_MESSAGE));
+  }
 
+  /** Changes the password and revokes all credentials that predate the reset. */
+  private void applyPasswordReset(PasswordResetTokenEntity resetToken, String newPassword,
+                                  OffsetDateTime now) {
     UserEntity user = resetToken.getUser();
-    user.setPassword(passwordEncoder.encode(dto.newPassword()));
+    user.setPassword(passwordEncoder.encode(newPassword));
     resetToken.setUsedAt(now);
     invalidateOtherTokens(user.getId(), resetToken.getId(), now);
     sessionRepository.revokeAllForUser(user.getId(), now, "password_reset");
     refreshTokenRepository.revokeActiveTokensForUser(user.getId(), now);
-    metrics.redemptionSucceeded();
   }
 
   /**

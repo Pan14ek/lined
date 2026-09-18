@@ -50,6 +50,24 @@ describe('SignInPage', () => {
     expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
+  it('shows a cooldown and disables submission after a rate-limit response', async () => {
+    expect.assertions(3);
+    server.use(http.post(`${BASE}/auth/login`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '5' },
+    })));
+    const user = userEvent.setup();
+    renderSignIn();
+
+    await user.type(screen.getByLabelText(/email address/i), 'alex@lined.app');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(await screen.findByText(/too many attempts/i)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/try again in \d+ seconds/i);
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeDisabled();
+  });
+
   it('shows a pending label while the request is in flight', async () => {
     expect.assertions(1);
     server.use(

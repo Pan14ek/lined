@@ -1,4 +1,4 @@
-import ky, { HTTPError } from 'ky';
+import ky, { HTTPError, type NormalizedOptions } from 'ky';
 import { useAuthStore } from '@/store/auth';
 import { HTTP_STATUS } from '@/lib/httpStatus';
 import type { LoginResponseDto } from '@/features/auth/model';
@@ -16,17 +16,55 @@ export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
 /** Thrown by dev.ts mocks to stand in for a failed HTTP response. */
 export class MockHttpError extends Error {
   readonly status: number;
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: number, message?: string) {
+  constructor(status: number, message?: string, retryAfterSeconds?: number) {
     super(message ?? `Mock HTTP error ${status}`);
     this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
+
+/** Typed transport error used by auth forms and recovery UI for HTTP 429. */
+export class RateLimitError extends HTTPError {
+  readonly status = HTTP_STATUS.TOO_MANY_REQUESTS;
+  readonly retryAfterSeconds: number;
+
+  constructor(
+    response: Response,
+    request: Request,
+    options: NormalizedOptions,
+    retryAfterSeconds: number,
+  ) {
+    super(response, request, options);
+    this.name = 'RateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+const parseRetryAfter = (value: string | null): number => {
+  if (!value) return 60;
+  if (/^\d+$/.test(value.trim())) {
+    return Math.min(86_400, Math.max(1, Number(value.trim())));
+  }
+  const date = Date.parse(value);
+  if (!Number.isNaN(date)) {
+    return Math.min(86_400, Math.max(1, Math.ceil((date - Date.now()) / 1000)));
+  }
+  return 60;
+};
 
 /** Extracts a status code from either a real ky HTTPError or a MockHttpError. */
 export const getErrorStatus = (error: unknown): number | undefined => {
   if (error instanceof HTTPError) return error.response.status;
   if (error instanceof MockHttpError) return error.status;
+  if (error instanceof RateLimitError) return error.status;
+  return undefined;
+};
+
+export const getRateLimitRetryAfterSeconds = (error: unknown): number | undefined => {
+  if (error instanceof RateLimitError) return error.retryAfterSeconds;
+  if (error instanceof MockHttpError) return error.retryAfterSeconds;
   return undefined;
 };
 
@@ -117,8 +155,10 @@ export const refreshAccessToken = (): Promise<string> => {
     return response.accessToken;
   })()
     .catch((error: unknown) => {
-      useAuthStore.getState().clearAuthentication();
-      sessionInvalidatedHandler?.();
+      if (getErrorStatus(error) === HTTP_STATUS.UNAUTHORIZED) {
+        useAuthStore.getState().clearAuthentication();
+        sessionInvalidatedHandler?.();
+      }
       throw error;
     })
     .finally(() => {
@@ -166,6 +206,22 @@ export const api = ky.create({
       headers.set('Authorization', `Bearer ${accessToken}`);
       return ky.retry({ request: new Request(request, { headers }), code: 'AUTH_REFRESHED' });
     }],
+    beforeError: [async (error) => {
+      if (error.response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
+        return new RateLimitError(
+          error.response,
+          error.request,
+          error.options,
+          parseRetryAfter(error.response.headers.get('Retry-After')),
+        );
+      }
+      return error;
+    }],
+  },
+  retry: {
+    limit: 1,
+    methods: ['get', 'head', 'options'],
+    statusCodes: [408, 500, 502, 503, 504],
   },
 });
 

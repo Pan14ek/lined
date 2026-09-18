@@ -3,13 +3,16 @@ package io.backend.lined.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
 import io.backend.lined.auth.service.JwtProperties;
+import io.backend.lined.ratelimit.RateLimitFilter;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -159,6 +162,7 @@ public class SecurityConfig {
    * @param http Spring Security HTTP configuration builder
    * @param authenticationEntryPoint writer for unauthenticated Problem Details responses
    * @param accessDeniedHandler writer for forbidden Problem Details responses
+   * @param rateLimitFilter optional transport admission filter
    * @return configured stateless filter chain
    * @throws Exception when Spring Security cannot build the filter chain
    */
@@ -166,8 +170,9 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       ProblemAuthenticationEntryPoint authenticationEntryPoint,
-      ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
-    return http
+      ProblemAccessDeniedHandler accessDeniedHandler,
+      ObjectProvider<RateLimitFilter> rateLimitFilter) throws Exception {
+    http
         .cors(Customizer.withDefaults())
         .csrf(csrf -> csrf
             // NOSONAR: this non-secret token must be readable by browser JavaScript for the
@@ -197,8 +202,22 @@ public class SecurityConfig {
             .accessDeniedHandler(accessDeniedHandler))
         .oauth2ResourceServer(resourceServer -> resourceServer
             .jwt(Customizer.withDefaults())
-            .authenticationEntryPoint(authenticationEntryPoint))
-        .build();
+            .authenticationEntryPoint(authenticationEntryPoint));
+    RateLimitFilter filter = rateLimitFilter.getIfAvailable();
+    if (filter != null) {
+      http.addFilterBefore(filter, org.springframework.security.web.csrf.CsrfFilter.class);
+    }
+    return http.build();
+  }
+
+  /** Disables servlet-container auto-registration because the limiter belongs only in Security. */
+  @Bean
+  public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
+      ObjectProvider<RateLimitFilter> rateLimitFilter) {
+    FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>();
+    rateLimitFilter.ifAvailable(registration::setFilter);
+    registration.setEnabled(false);
+    return registration;
   }
 
   private OAuth2TokenValidator<Jwt> jwtValidator(JwtProperties properties, Clock clock) {

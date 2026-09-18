@@ -36,12 +36,15 @@ class AuthServiceImplTest {
   private JwtTokenService tokenService;
   @Mock
   private RefreshSessionService refreshSessionService;
+  @Mock
+  private io.backend.lined.ratelimit.AuthenticationOutcomeRateLimiter authenticationOutcomeRateLimiter;
 
   private AuthServiceImpl authService;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthServiceImpl(authenticationManager, tokenService, refreshSessionService);
+    authService = new AuthServiceImpl(authenticationManager, tokenService, refreshSessionService,
+        authenticationOutcomeRateLimiter);
   }
 
   @Test

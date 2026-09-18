@@ -16,6 +16,7 @@ import io.backend.lined.auth.domain.AuthRefreshTokenRepository;
 import io.backend.lined.auth.domain.AuthSessionRepository;
 import io.backend.lined.auth.domain.PasswordResetTokenRepository;
 import io.backend.lined.common.exception.BadRequestException;
+import io.backend.lined.ratelimit.PasswordResetDeliveryGuard;
 import io.backend.lined.user.domain.UserEntity;
 import io.backend.lined.user.domain.UserRepository;
 import java.time.Clock;
@@ -60,6 +61,8 @@ class PasswordResetServiceImplTest {
   private AuthRefreshTokenRepository refreshTokenRepository;
   @Mock
   private PasswordResetMetrics metrics;
+  @Mock
+  private PasswordResetDeliveryGuard deliveryGuard;
 
   private PasswordResetServiceImpl service;
   private UserEntity user;
@@ -69,7 +72,8 @@ class PasswordResetServiceImplTest {
     service = new PasswordResetServiceImpl(
         userRepository, tokenRepository, passwordEncoder, tokenIssuer, tokenCodec, delivery,
         urlFactory, sessionRepository, refreshTokenRepository, metrics,
-        Clock.fixed(Instant.parse("2026-09-09T10:15:30Z"), ZoneOffset.UTC));
+        Clock.fixed(Instant.parse("2026-09-09T10:15:30Z"), ZoneOffset.UTC), deliveryGuard);
+    org.mockito.Mockito.lenient().when(deliveryGuard.mayDeliver(anyString())).thenReturn(true);
     user = new UserEntity();
     user.setId(USER_ID);
     user.setUsername("alice");

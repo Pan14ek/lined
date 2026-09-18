@@ -39,6 +39,8 @@ services:
       # These credentials are intentionally deterministic and LOCAL-ONLY.
       LINED_JWT_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
       LINED_PASSWORD_RESET_TOKEN_SECRET: lined-local-password-reset-secret-2026
+      LINED_RATE_LIMIT_KEY_SECRET: lined-local-rate-limit-key-secret-2026-local-only
+      LINED_RATE_LIMIT_TRUSTED_PROXIES: 172.16.0.0/12
       LINED_MAIL_ENABLED: "true"
       LINED_MAIL_HOST: mailpit
       LINED_MAIL_PORT: 1025

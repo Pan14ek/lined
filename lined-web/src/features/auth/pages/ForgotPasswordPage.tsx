@@ -5,6 +5,9 @@ import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
 import { useRequestPasswordReset } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
+import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
+import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 
 interface FormValues {
   identifier: string;
@@ -21,6 +24,7 @@ const validate =
 export const ForgotPasswordPage = () => {
   const { t } = useTranslation('auth');
   const requestReset = useRequestPasswordReset();
+  const cooldown = useRateLimitCooldown('forgot-password', requestReset.error);
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { identifier: '' },
@@ -37,7 +41,9 @@ export const ForgotPasswordPage = () => {
 
   // Always shown once a submission has settled, whether it succeeded or
   // failed — the identifier's existence must never be observable.
-  const submitted = requestReset.isSuccess || requestReset.isError;
+  const submitted = requestReset.isSuccess
+    || (requestReset.isError
+      && getErrorStatus(requestReset.error) !== HTTP_STATUS.TOO_MANY_REQUESTS);
 
   if (submitted) {
     return (
@@ -73,11 +79,16 @@ export const ForgotPasswordPage = () => {
 
         <button
           type="submit"
-          disabled={requestReset.isPending}
+          disabled={requestReset.isPending || cooldown > 0}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
           {requestReset.isPending ? t('forgotPassword.submitting') : t('forgotPassword.submit')}
         </button>
+        {cooldown > 0 && (
+          <p className="mt-3 text-sm text-text-secondary" role="status" aria-live="polite">
+            {t('errors.rateLimited')} {t('errors.retryIn', { seconds: cooldown })}
+          </p>
+        )}
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           <Link to="/sign-in" className="font-medium text-brand-green hover:underline">

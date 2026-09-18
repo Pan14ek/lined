@@ -72,4 +72,21 @@ describe('ForgotPasswordPage', () => {
 
     expect(screen.getByRole('button', { name: /sending/i })).toBeDisabled();
   });
+
+  it('keeps the form visible and shows a cooldown after a rate-limit response', async () => {
+    expect.assertions(3);
+    server.use(http.post(`${BASE}/auth/password-reset-requests`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '5' },
+    })));
+    const user = userEvent.setup();
+    renderForgotPassword();
+
+    await user.type(screen.getByLabelText(/email or username/i), 'alex@lined.app');
+    await user.click(screen.getByRole('button', { name: /send reset link/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/too many attempts/i);
+    expect(screen.getByRole('button', { name: /send reset link/i })).toBeDisabled();
+    expect(screen.queryByText(/check your email/i)).not.toBeInTheDocument();
+  });
 });

@@ -207,6 +207,11 @@ try {
     SPRING_DATASOURCE_PASSWORD: 'lined_e2e',
     LINED_JWT_SECRET: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
     LINED_PASSWORD_RESET_TOKEN_SECRET: 'lined-e2e-password-reset-secret-2026',
+    LINED_RATE_LIMIT_KEY_SECRET: 'lined-e2e-rate-limit-key-secret-2026-local-only',
+    LINED_RATE_LIMIT_TRUSTED_PROXIES: '127.0.0.1/32',
+    SPRING_APPLICATION_JSON: JSON.stringify({
+      'lined.rate-limit.policies.register-ip.capacity': 100,
+    }),
     LINED_MAIL_ENABLED: 'true',
     LINED_WEB_BASE_URL: `http://127.0.0.1:${frontendPort}`,
     LINED_MAIL_HOST: '127.0.0.1',

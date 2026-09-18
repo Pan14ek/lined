@@ -38,6 +38,17 @@ public class SecurityProblemDetailsWriter {
 
   private final ObjectMapper objectMapper;
 
+  /** Serializes one pre-MVC security failure as Problem Details.
+   *
+   * @param request request used for the problem instance URI
+   * @param response response receiving status, content type, and body
+   * @param status HTTP status to expose
+   * @param type problem type suffix
+   * @param title human-readable problem title
+   * @param detail safe human-readable problem detail
+   * @param code stable machine-readable error code
+   * @throws IOException when the response body cannot be written
+   */
   void write(
       HttpServletRequest request,
       HttpServletResponse response,
@@ -55,6 +66,24 @@ public class SecurityProblemDetailsWriter {
     response.setStatus(status.value());
     response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
     objectMapper.writeValue(response.getOutputStream(), problem);
+  }
+
+  /** Writes the stable external admission rejection contract before MVC is available. */
+  public void writeRateLimited(
+      HttpServletRequest request, HttpServletResponse response, long retryAfterSeconds)
+      throws IOException {
+    response.setHeader("Retry-After", Long.toString(Math.max(1, retryAfterSeconds)));
+    response.setHeader("Cache-Control", "no-store");
+    write(request, response, HttpStatus.TOO_MANY_REQUESTS, "rate-limit-exceeded",
+        "Too Many Requests", "Please try again later.", "rate_limit.exceeded");
+  }
+
+  /** Writes a generic fail-closed response for a mandatory limiter decision. */
+  public void writeUnavailable(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    response.setHeader("Cache-Control", "no-store");
+    write(request, response, HttpStatus.SERVICE_UNAVAILABLE, "rate-limit-unavailable",
+        "Service Unavailable", "Service temporarily unavailable.", "rate_limit.unavailable");
   }
 
 }

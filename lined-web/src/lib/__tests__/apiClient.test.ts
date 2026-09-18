@@ -6,7 +6,9 @@ import {
   invalidateAuthTransport,
   logoutSession,
   MockHttpError,
+  RateLimitError,
   getErrorStatus,
+  getRateLimitRetryAfterSeconds,
   mockDelay,
   mockNetworkDelay,
   refreshAccessToken,
@@ -32,6 +34,23 @@ describe('MockHttpError', () => {
     const error = new MockHttpError(HTTP_STATUS.CONFLICT, 'Already exists');
 
     expect(error.message).toBe('Already exists');
+  });
+});
+
+describe('rate-limit transport errors', () => {
+  it('exposes a typed retry delay without trusting arbitrary response text', () => {
+    expect.assertions(4);
+    const error = new RateLimitError(
+      new Response(null, { status: HTTP_STATUS.TOO_MANY_REQUESTS }),
+      new Request('http://localhost/'),
+      {} as never,
+      12,
+    );
+
+    expect(getErrorStatus(error)).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
+    expect(getRateLimitRetryAfterSeconds(error)).toBe(12);
+    expect(error).toBeInstanceOf(HTTPError);
+    expect(error.response.status).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
   });
 });
 
@@ -233,6 +252,51 @@ describe('authenticated API transport', () => {
 
     await expect(request()).rejects.toBeDefined();
     expect(refreshCount).toBe(0);
+  });
+
+  it('parses Retry-After and never retries an auth POST after 429', async () => {
+    let attempts = 0;
+    server.use(http.post(`${BASE}/auth/login`, () => {
+      attempts += 1;
+      return new HttpResponse(null, {
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        headers: { 'Retry-After': '12' },
+      });
+    }));
+
+    await expect(linedApi.post('auth/login')).rejects.toMatchObject({
+      retryAfterSeconds: 12,
+    });
+    expect(attempts).toBe(1);
+  });
+
+  it('uses the fallback retry delay for malformed Retry-After values', async () => {
+    expect.assertions(1);
+    server.use(http.post(`${BASE}/auth/login`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': 'not-a-delay' },
+    })));
+
+    await expect(linedApi.post('auth/login')).rejects.toMatchObject({
+      retryAfterSeconds: 60,
+    });
+  });
+
+  it('preserves authentication when refresh is rate limited', async () => {
+    const handler = vi.fn();
+    registerSessionInvalidatedHandler(handler);
+    server.use(http.post(`${BASE}/auth/refresh`, () => new HttpResponse(null, {
+      status: HTTP_STATUS.TOO_MANY_REQUESTS,
+      headers: { 'Retry-After': '30' },
+    })));
+
+    try {
+      await expect(refreshAccessToken()).rejects.toMatchObject({ retryAfterSeconds: 30 });
+      expect(useAuthStore.getState().accessToken).toBe('mock-token-1');
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      registerSessionInvalidatedHandler(null);
+    }
   });
 
   it('invokes the registered session-invalidated handler when a runtime refresh fails', async () => {

@@ -2,6 +2,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
+import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
@@ -28,6 +30,7 @@ export const SignInPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const signIn = useSignIn();
+  const cooldown = useRateLimitCooldown('sign-in', signIn.error);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const resetSucceeded = searchParams.get('reset') === 'success';
 
@@ -90,10 +93,15 @@ export const SignInPage = () => {
         </div>
 
         {serverError && <AuthAlert message={serverError} />}
+        {cooldown > 0 && (
+          <p className="mt-3 text-sm text-text-secondary" role="status" aria-live="polite">
+            {t('errors.retryIn', { seconds: cooldown })}
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={signIn.isPending}
+          disabled={signIn.isPending || cooldown > 0}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
           {signIn.isPending ? t('signIn.submitting') : t('signIn.submit')}
@@ -112,8 +120,11 @@ export const SignInPage = () => {
 
 const getServerErrorMessage = (t: TFunction<'auth'>, error: unknown): string | null => {
   if (!error) return null;
-  if (getErrorStatus(error) === 401) {
+  if (getErrorStatus(error) === HTTP_STATUS.UNAUTHORIZED) {
     return t('signIn.errors.invalidCredentials');
+  }
+  if (getErrorStatus(error) === HTTP_STATUS.TOO_MANY_REQUESTS) {
+    return t('errors.rateLimited');
   }
   return t('errors.generic');
 }

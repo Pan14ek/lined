@@ -58,6 +58,8 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.0'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
     implementation 'org.mnode.ical4j:ical4j:4.2.5'
+    implementation 'com.bucket4j:bucket4j_jdk17-core:8.19.0'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.0'
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
@@ -94,6 +96,7 @@ tasks.named('test') {
     systemProperty 'lined.reminders.scheduling.enabled', 'false'
     systemProperty 'lined.security.jwt.secret', 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
     systemProperty 'lined.auth.reset-token-secret', 'test-password-reset-token-secret'
+    systemProperty 'lined.rate-limit.key-secret', 'test-rate-limit-key-secret-with-at-least-32-bytes'
 }
 
 tasks.register('integrationTest', Test) {
@@ -104,6 +107,12 @@ tasks.register('integrationTest', Test) {
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
     systemProperty 'lined.reminders.scheduling.enabled', 'false'
+    systemProperty 'lined.rate-limit.key-secret', 'integration-rate-limit-key-secret-with-at-least-32-bytes'
+    ['login-ip', 'login-failed-identifier', 'register-ip', 'reset-request-ip',
+     'reset-delivery-identifier', 'reset-redeem-ip', 'refresh-ip', 'refresh-session',
+     'logout-ip', 'csrf-ip'].each { policy ->
+        systemProperty "lined.rate-limit.policies.${policy}.capacity", '100000'
+    }
     shouldRunAfter tasks.named('test')
     maxParallelForks = 1
 

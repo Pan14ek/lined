@@ -19,6 +19,8 @@ lined:
       secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
   auth:
     reset-token-secret: integration-password-reset-token-secret
+  rate-limit:
+    key-secret: integration-rate-limit-key-secret-with-at-least-32-bytes
 
 logging:
   level:

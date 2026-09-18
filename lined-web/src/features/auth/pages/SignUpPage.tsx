@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
+import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
@@ -44,6 +46,7 @@ export const SignUpPage = () => {
   const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const signUp = useSignUp();
+  const cooldown = useRateLimitCooldown('sign-up', signUp.error);
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { username: '', email: '', password: '', confirmPassword: '' },
@@ -128,10 +131,15 @@ export const SignUpPage = () => {
         </p>
 
         {serverError && <AuthAlert message={serverError} />}
+        {cooldown > 0 && (
+          <p className="mt-3 text-sm text-text-secondary" role="status" aria-live="polite">
+            {t('errors.retryIn', { seconds: cooldown })}
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={signUp.isPending}
+          disabled={signUp.isPending || cooldown > 0}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
           {signUp.isPending ? t('signUp.submitting') : t('signUp.submit')}
@@ -150,8 +158,11 @@ export const SignUpPage = () => {
 
 const getServerErrorMessage = (t: TFunction<'auth'>, error: unknown): string | null => {
   if (!error) return null;
-  if (getErrorStatus(error) === 409) {
+  if (getErrorStatus(error) === HTTP_STATUS.CONFLICT) {
     return t('signUp.errors.usernameOrEmailTaken');
+  }
+  if (getErrorStatus(error) === HTTP_STATUS.TOO_MANY_REQUESTS) {
+    return t('errors.rateLimited');
   }
   return t('errors.generic');
 }

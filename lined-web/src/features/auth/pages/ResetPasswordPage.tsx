@@ -1,11 +1,14 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { getErrorStatus } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/httpStatus';
 import { AuthCard } from '@/features/auth/AuthCard';
 import { TextField } from '@/components/design-system/forms/TextField';
 import { AuthAlert } from '@/features/auth/AuthAlert';
 import { useResetPassword } from '@/features/auth/hooks/useAuth';
 import { useFormState } from '@/hooks/useFormState';
+import { useRateLimitCooldown } from '@/hooks/useRateLimitCooldown';
 
 interface FormValues {
   newPassword: string;
@@ -49,6 +52,9 @@ export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const resetPassword = useResetPassword();
+  const cooldown = useRateLimitCooldown('reset-password', resetPassword.error);
+  const resetErrorStatus = getErrorStatus(resetPassword.error);
+  const isRateLimited = resetErrorStatus === HTTP_STATUS.TOO_MANY_REQUESTS;
 
   const { values, errors, touched, set, markTouched, markAllTouched, hasErrors } = useFormState<FormValues>(
     { newPassword: '', confirmPassword: '' },
@@ -102,18 +108,29 @@ export const ResetPasswordPage = () => {
         </div>
 
         {resetPassword.isError && (
-          <AuthAlert message={t('resetPassword.invalidLink')} />
+          <AuthAlert
+            message={isRateLimited
+              ? t('errors.rateLimited')
+              : resetErrorStatus === HTTP_STATUS.BAD_REQUEST
+                ? t('resetPassword.invalidLink')
+                : t('errors.generic')}
+          />
         )}
 
         <button
           type="submit"
-          disabled={resetPassword.isPending}
+          disabled={resetPassword.isPending || cooldown > 0}
           className="mt-6 h-12 w-full rounded-lg bg-brand-green text-sm font-semibold text-white transition-colors hover:bg-brand-green-dark disabled:opacity-60"
         >
           {resetPassword.isPending ? t('resetPassword.submitting') : t('resetPassword.submit')}
         </button>
+        {cooldown > 0 && (
+          <p className="mt-3 text-sm text-text-secondary" role="status" aria-live="polite">
+            {t('errors.rateLimited')} {t('errors.retryIn', { seconds: cooldown })}
+          </p>
+        )}
 
-        {resetPassword.isError && (
+        {resetPassword.isError && !isRateLimited && (
           <p className="mt-6 text-center text-sm text-text-secondary">
             <Link to="/forgot-password" className="font-medium text-brand-green hover:underline">
               {t('resetPassword.requestNewLink')}
