@@ -489,8 +489,11 @@ class UserAuthenticationApiIT extends AbstractApiIntegrationTest {
   }
 
   private String tamper(String token) {
-    char last = token.charAt(token.length() - 1);
-    return token.substring(0, token.length() - 1) + (last == 'a' ? 'b' : 'a');
+    int signatureStart = token.lastIndexOf('.') + 1;
+    char first = token.charAt(signatureStart);
+    char replacement = first == 'a' ? 'b' : 'a';
+    return token.substring(0, signatureStart) + replacement
+        + token.substring(signatureStart + 1);
   }
 
   private record CsrfCredentials(String token, String cookie) {
