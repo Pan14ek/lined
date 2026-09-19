@@ -43,7 +43,8 @@ import org.springframework.web.bind.annotation.RestController;
     ProblemAuthenticationEntryPoint.class, ProblemAccessDeniedHandler.class,
     FeatureRequiredResolver.class, FeatureFlagBlockedRequestLogger.class,
     SecurityPolicyMvcTest.SecurityPolicyController.class})
-@TestPropertySource(properties = "lined.security.cors.allowed-origins=https://app.lined.test")
+@TestPropertySource(properties =
+    "lined.security.cors.allowed-origins=https://app.lined.test,https://localhost")
 class SecurityPolicyMvcTest {
 
   private static final Instant NOW = Instant.now();
@@ -141,6 +142,17 @@ class SecurityPolicyMvcTest {
             .header("Access-Control-Request-Headers", "Authorization"))
         .andExpect(status().isOk())
         .andExpect(header().string("Access-Control-Allow-Origin", "https://app.lined.test"))
+        .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+  }
+
+  @Test
+  void sameOriginRegistrationRequest_isAllowedWithCorsOriginHeader() throws Exception {
+    mockMvc.perform(post("/api/users")
+            .header("Origin", "https://localhost")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", "https://localhost"))
         .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
   }
 
