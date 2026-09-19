@@ -57,7 +57,10 @@ without credentials, and valid Bearer JWTs authenticate all other routes.
   cookie plus `X-XSRF-TOKEN` header and keeps the refresh credential HttpOnly.
 - CORS uses an explicit origin allowlist with credentials enabled; production
   origins must use HTTPS and wildcard origins are rejected. Same-origin
-  production needs no configured cross-origin origin.
+  production needs no configured cross-origin origin. The local Compose stack
+  explicitly allowlists its HTTPS frontend origin (including a configured
+  non-default HTTPS port), because browsers include an `Origin` header on
+  registration POST requests even when the frontend and API share a host.
 - The `prod` profile disables Swagger/OpenAPI, exposes only minimal health,
   hides health component details, enforces secure refresh cookies, and lowers
   application logging verbosity. Local and kind profiles retain development

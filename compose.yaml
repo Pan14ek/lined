@@ -47,6 +47,7 @@ services:
       LINED_MAIL_FROM: no-reply@lined.local
       LINED_MAIL_TLS_ENABLED: "false"
       LINED_WEB_BASE_URL: https://localhost
+      LINED_SECURITY_CORS_ALLOWED_ORIGINS: "https://localhost,https://localhost:${LINED_HTTPS_PORT:-443}"
       LINED_SECURITY_REFRESH_COOKIE_SECURE: "true"
       OTEL_SDK_DISABLED: "true"
     ports:
