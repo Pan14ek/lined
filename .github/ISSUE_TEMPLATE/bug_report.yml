@@ -1,0 +1,181 @@
+name: "🐛 Bug Report"
+description: "Report a reproducible defect in Lined."
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Lined. Please report one defect per issue and
+        search existing issues before submitting a new report.
+
+        Never include passwords, access or refresh tokens, API keys, real personal
+        information, or other secrets. Use synthetic or sanitized test data.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched existing issues and did not find this defect.
+          required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected Area
+      options:
+        - Authentication / Account
+        - Lobby / Membership
+        - Calendar / Events
+        - Free Slots
+        - Tasks
+        - Notifications
+        - Billing / Subscriptions
+        - UI / UX
+        - Other / Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did you reproduce the issue?
+      options:
+        - Local
+        - Development
+        - Staging / Beta
+        - Production
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: Preconditions
+      description: Describe the initial state required to reproduce the issue.
+      placeholder: |
+        - User role: MEMBER
+        - Subscription: FREE
+        - Feature flags: ...
+        - Lobby membership: ...
+        - Existing events or tasks: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Use precise numbered actions so another engineer can reproduce the issue without follow-up questions.
+      value: |
+        1. Sign in as ...
+        2. Navigate to ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe what should happen according to the intended product behavior.
+      placeholder: The application should ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: Describe what happened, including exact visible errors or HTTP status codes when relevant.
+      placeholder: Instead, the application ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-data
+    attributes:
+      label: Test Data
+      description: Provide synthetic or sanitized examples that help investigation. Never include credentials, tokens, API keys, or real personal information.
+      placeholder: |
+        - Synthetic test account identifier: qa-member@example.test
+        - User role: MEMBER
+        - Subscription plan: FREE
+        - Lobby configuration: ...
+        - Event or task details: ...
+        - Relevant sanitized API payload: ...
+    validations:
+      required: true
+
+  - type: upload
+    id: screenshots-videos
+    attributes:
+      label: Screenshots / Videos
+      description: Attach screenshots, GIFs, or screen recordings when useful. Redact secrets, tokens, credentials, and personal information before uploading.
+    validations:
+      required: false
+
+  - type: input
+    id: build-version
+    attributes:
+      label: Build / Version
+      description: Include the application version, commit SHA, or deployment/build identifier when known.
+      placeholder: "e.g. beta-0.3.1 / abc1234 / build-2026-09-19"
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Always (100%)
+        - Frequently
+        - Sometimes
+        - Once
+        - Unable to reproduce again
+    validations:
+      required: true
+
+  - type: dropdown
+    id: suggested-severity
+    attributes:
+      label: Suggested Severity
+      description: Choose the technical or user impact, not implementation priority. Priority is determined separately during triage.
+      options:
+        - Blocker
+        - Major
+        - Minor
+        - Cosmetic
+        - Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-diagnostics
+    attributes:
+      label: Technical Diagnostics
+      description: Include sanitized browser and browser version, operating system, HTTP status codes, relevant API endpoints, console errors, request or correlation IDs, and application logs when available. Do not include secrets or personal information.
+      placeholder: |
+        - Browser / version: ...
+        - Operating system: ...
+        - Request: POST /api/... -> 403
+        - Request or correlation ID: ...
+        - Console error or sanitized log: ...
+
+  - type: input
+    id: related-issues-specifications
+    attributes:
+      label: Related Issues / Specifications
+      description: Link related issues, pull requests, feature specifications, or test cases when applicable.
+      placeholder: "e.g. #123, PR #456, https://..."
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other information that could help investigation.

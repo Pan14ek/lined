@@ -14,3 +14,7 @@ their domain-specific documentation under `backend/lined/docs/` and
 
 - [Entitlement module and free-limit design](entitlement-module-free-limits-system-design.md)
 - [Subscription implementation audit](subscription-implementation-audit.md)
+
+## QA workflows
+
+- [QA bug reporting](qa/bug-reporting.md)

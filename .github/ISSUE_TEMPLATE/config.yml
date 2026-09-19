@@ -1,0 +1,2 @@
+# Keep blank issues enabled while the repository adds more issue forms.
+blank_issues_enabled: true
